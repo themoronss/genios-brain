@@ -572,7 +572,8 @@ def test_e03_activation_is_never_a_global_boolean_and_this_wave_leaves_the_old_o
     kill switch in the same change that installs its subject leaves a cutover with no way back."""
     from genios_engine.platform.config import get_settings
     assert get_settings().use_domain_compiler is False
-    assert ACT.L3_DOMAINS == ("admin", "customer_support", "sales")
+    # The fourth corpus, `founder_office`, is authored by STEP-11 (`06` D2) and activatable per tenant.
+    assert ACT.L3_DOMAINS == ("admin", "customer_support", "founder_office", "sales")
     assert ACT.DOMAIN_ADMIN == "admin"
 
 

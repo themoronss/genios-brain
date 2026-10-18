@@ -281,10 +281,14 @@ def test_the_runaway_view_separates_a_heavy_month_from_a_heavy_day(engine):
     assert store is not None
 
     original, A._graph = A._graph, store
+    # The rows are written at the fixed NOW, so the 30-day window must be read from NOW too. On the
+    # wall clock this test expired on 17 Oct 2026, the day its oldest row (NOW - 3 days) fell out.
+    original_now, A._now = A._now, (lambda: NOW)
     try:
         out = A.top_spending_seats(days=30, limit=50, include_internal=True)
     finally:
         A._graph = original
+        A._now = original_now
 
     rows = {r["seat_id"]: r for r in out["seats"] if r["org_id"] == "org_cost_a"}
     assert rows[steady]["cost_usd"] == pytest.approx(rows[spike]["cost_usd"], rel=1e-6)

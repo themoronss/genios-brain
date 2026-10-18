@@ -641,6 +641,8 @@ RETAINED_AFTER_ERASURE: frozenset[str] = frozenset({
 })
 
 _ORG_SCOPED_TABLES = [
+    # STEP-14 (0222): what the card contract refused — the tenant's card words, as refused.
+    "card_refusals",
     # migrations 0147-0149 (P3 hot lane): moments name the tenant's counterparties; feedback
     # before moments (FK). The slice versions go too, so every device re-pulls in full.
     "moment_feedback", "moment_cache", "moments", "realtime_events", "seat_slice_versions",
@@ -652,6 +654,22 @@ _ORG_SCOPED_TABLES = [
     "delivery_outbox", "agent_claims", "card_build_claims", "card_feedback_revisions",
     # migration 0135: who else a card reached by declared responsibility — named staff
     "card_feedback_verdicts", "card_events", "card_recipients", "cards", "signals",
+    # migration 0191: what each subject's last decision was made on — the change gate's memory.
+    # Runtime state: a reset tenant is decided afresh, so nothing may skip on a pre-reset row.
+    "reasoning_fingerprints",
+    # migration 0197: the expert's review of each file per fingerprint (STEP-12). Judgment ABOUT the
+    # tenant's own counterparties, quoting their material; and a reset tenant is reviewed afresh.
+    "expert_reviews",
+    # migration 0201: the one question each file asks the founder, and the founder's answer (STEP-13).
+    # Questions ABOUT the tenant's counterparties, and answers in the founder's own words.
+    "founder_questions",
+    # migration 0230: each seat's morning brief and the marks on its lines (STEP-15). Lines ABOUT the
+    # tenant's counterparties, in the expert's checked words, and marks in the founder's own words. Marks
+    # first: each belongs to its brief.
+    "morning_brief_marks", "morning_briefs",
+    # migration 0241: your corrections of a file, in your own words (STEP-16). Words ABOUT the tenant's
+    # counterparties; a `company` correction's line of the brief is the brief's, which the reset keeps.
+    "founder_corrections",
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
     # the context FK also cascades them.
@@ -810,6 +828,9 @@ _ORG_SCOPED_TABLES = [
     # L2.5.8's boundary ledger contains the candidate BSO (including evidence quotes) and the
     # reason it was admitted, held or rejected.  It is tenant content even when the candidate
     # never crossed the boundary, so reset must erase it as deliberately as a published signal.
+    # STEP-06 (migration 0194): what came of each ADMITTED candidate goes first — it hangs off the
+    # admission row by foreign key, and a tenant's situation ends are tenant content like the rest.
+    "situation_outcomes",
     "situation_admission_decisions",
     # X8/H8's Layer 2 pilot switch (migration 0106). Same argument as the row above it, and the
     # same behavioural direction: it names a person (`enabled_by`) and carries free text about the

@@ -234,7 +234,8 @@ def test_a_manifest_without_a_situation_says_so_rather_than_claiming_a_clean_run
 
 def test_the_adapter_declares_the_version_that_produced_this_shape(deal_with_absence):
     manifest = _manifest(deal_with_absence)
-    assert manifest.metadata["adapter_version"] == ADAPTER_VERSION == "2.0.0"
+    # 2.1.0 since STEP-11 (M30.C2.L-logic.V1.U02, 2026-10-09): plays named, runtime fields read.
+    assert manifest.metadata["adapter_version"] == ADAPTER_VERSION == "2.1.0"
     assert manifest.metadata[WELD_KEY]["adapter_version"] == ADAPTER_VERSION
 
 

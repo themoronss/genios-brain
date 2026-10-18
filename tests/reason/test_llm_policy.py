@@ -246,6 +246,9 @@ def test_the_tiers_are_the_ones_doc_11_budgeted():
     # T1, because the deterministic validator (`context/proposal_gate`) is what makes a cheap
     # model safe; Sonnet is the ESCALATION on two numbers, not the tier.
     assert S.tier_for(S.SITE_SITUATION) == S.TIER_T1
+    # ⛔ STEP-12 REGISTERED R-7 — the expert's review of a file. T2 and only T2: `06` D7, answered
+    # 10 Oct, is Sonnet-class only, so no Opus tier was added for it.
+    assert S.tier_for(S.SITE_EXPERT) == S.TIER_T2
     # The claim this test actually makes — an UNBUDGETED site is refused — pointed at a name
     # nobody has budgeted for. "A typo must be a refusal rather than a ledger row that reads as
     # an activated site right up until the month's bill."

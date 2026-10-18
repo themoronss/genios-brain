@@ -249,12 +249,17 @@ class ReasoningOrchestrator:
                 + f":{len(degraded_step.available_sources)}of"
                   f"{len(degraded_step.declared_sources)}")
 
-        if terminal is None:
+        if terminal is None and not getattr(self._decision_maker, "asks_no_model", False):
             # TEST MODE (`GENIOS_L4_LLM_DECISION_MAKER`): R-1 read by a model, only for a run that
             # is about to reach the decision maker. It adds `interpretation.*` facts, so the run is
             # executed once more on the augmented request — every stored hash then describes the
             # snapshot the decision was made on. The one-hop law makes the second pass return here
             # unchanged, so this cannot loop.
+            #
+            # ⛔ NEVER BEFORE A DECISION MAKER THAT ASKS NO MODEL (STEP-12 M33.C1.L-logic.V1.U05). A
+            # covered file's decision is read from a review the model already wrote
+            # (`reason/expert/decide.ExpertDecisionMaker`): R-1's readings would be read by nothing,
+            # paid for, and would move the snapshot that decision is replayed from.
             from genios_engine.reason import llm_decision_maker as llm_dm
             if llm_dm.enabled_for(getattr(request, "org_id", "")):
                 from genios_engine.reason.llm_interpretation import interpret_request

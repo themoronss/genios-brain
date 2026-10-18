@@ -41,6 +41,7 @@ from genios_engine.context.correlation_membership import declare_finding_events
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.situations import SITUATION_STATUS_ON_CONFLICT, SCORE_MAX, freshness_score
 from genios_engine.platform.ids import new_id
+from genios_engine.platform.self_identity import SelfIdentity, identity_for
 
 #: The anchor this module mints. WHICH DOMAIN CLAIMS IT IS NOT NAMED HERE — it is asked of the
 #: registry, because a domain named in Layer 2 means adding a domain requires editing Layer 2, and
@@ -81,7 +82,10 @@ _MEETINGS = (
     "select n.node_id, n.display_name, "
     "  max(case when f.field = 'meeting.start_at' then f.value #>> '{}' end) as start_at, "
     "  max(case when f.field = 'meeting.status' then f.value #>> '{}' end) as status, "
-    "  array_agg(distinct att.display_name) as counterparties "
+    # EVERY ATTENDEE, WITH WHAT SAYS WHETHER THEY ARE US — `meeting_rows` asks `identity_for`.
+    # The name leads, so the distinct aggregate keeps the order the counterparties always had.
+    "  jsonb_agg(distinct jsonb_build_array(att.display_name, att.node_type, att.canonical_key)) "
+    "    as attendees "
     "from graph_nodes n "
     "left join graph_facts f "
     "  on f.org_id = n.org_id and f.subject_node_id = n.node_id and f.status = 'active' "
@@ -116,27 +120,41 @@ _MEETINGS = (
     # The module docstring's "48 of them carrying `meeting.external_counterparty`" describes a
     # state no table in this database has ever been in.
     #
-    # NOTHING IS LOOSENED BY REMOVING IT, because the predicate below already answers the same
-    # question from data that does exist: an attendee is external when they are NOT one of our
-    # seats, the account owner, or a connected mailbox — the identical rule
-    # `reduce_meeting` applies, evaluated here against the `attended` edges the calendar
-    # connector really writes. The fact was a second, weaker statement of a test this query was
-    # already performing, and it was the only half that could fail.
+    # NOTHING IS LOOSENED BY REMOVING IT, because `meeting_rows` already answers the same
+    # question from data that does exist: an attendee is external when they are not one of us,
+    # evaluated against the `attended` edges the calendar connector really writes. The fact was a
+    # second, weaker statement of a test the reading was already performing, and it was the only
+    # half that could fail.
     "where n.org_id = :o and n.node_type = 'meeting' and n.valid_to is null "
-    # US IS NOT A COUNTERPARTY. `meeting.external_counterparty` is written on the owner's own
-    # person node too, so every meeting listed the founder as someone it reached — and one
-    # meeting listed ONLY him, which is an internal calendar entry reported as an outside touch.
-    # The internal set is derived the way `runner._internal_emails` derives it: seats, the account
-    # owner, and the connected mailbox. A meeting left with nobody external is not a touch and
-    # falls out through the `having`.
-    "  and lower(coalesce(att.canonical_key, '')) not in ( "
-    "     select lower(email) from org_seats where org_id = :o and active and email is not null "
-    "     union select lower(email) from orgs where id = :o and email is not null "
-    "     union select lower(external_account_id) from connections "
-    "       where org_id = :o and external_account_id like '%@%' ) "
+    # US IS NOT A COUNTERPARTY — and who is us is not decided here (STEP-04). This clause used to
+    # re-derive it inline (seats, `orgs.email`, connected accounts), so an address of ours that
+    # was none of those — `ceo@thegenios.com`, which only ever receives the founder's mail — was
+    # an outside attendee, and a meeting of the two of them a touch. `meeting_rows` asks
+    # `platform/self_identity` instead and drops a meeting with nobody outside in it.
     "group by n.node_id, n.display_name "
     "having count(distinct att.node_id) > 0"
 )
+
+
+def meeting_rows(c, org_id: str, us: SelfIdentity) -> list[dict]:
+    """Every live meeting with somebody outside in it, in the shape both meeting readings take:
+    `node_id`, `display_name`, `start_at`, `status`, `counterparties`.
+
+    `us` is `platform/self_identity.identity_for`'s answer, asked once by the caller for the
+    sweep: a declared address, and any address at a declared domain, are us. A meeting of only us
+    is the org talking to itself and is left out HERE, not in each reader, so `channel_touch` and
+    Admin's `meeting_follow_through` cannot disagree about which meetings reached somebody.
+    `counterparties` is every outside attendee's name — none of ours.
+    """
+    rows: list[dict] = []
+    for r in c.execute(text(_MEETINGS), {"o": org_id}):
+        outside = [a for a in (r.attendees or []) if not us.is_us_node(a[1], a[2])]
+        if not outside:
+            continue
+        rows.append({"node_id": r.node_id, "display_name": r.display_name,
+                     "start_at": r.start_at, "status": r.status,
+                     "counterparties": list(dict.fromkeys(name for name, _kind, _key in outside))})
+    return rows
 
 
 def _as_utc(value) -> datetime | None:
@@ -182,7 +200,8 @@ def refresh_channel_touch_situations(store, org_id: str, *,
     live: dict[str, set[str]] = {}
 
     with store.engine.begin() as c:
-        rows = c.execute(text(_MEETINGS), {"o": org_id}).fetchall()
+        # WHO IS US, asked once for the sweep (STEP-04) — see `meeting_rows`.
+        rows = [SimpleNamespace(**m) for m in meeting_rows(c, org_id, identity_for(c, org_id))]
         for r in rows:
             # A cancelled meeting is a real fact about the relationship and NOT a touch: nobody
             # met. It is left out rather than recorded at low confidence, because a card advising

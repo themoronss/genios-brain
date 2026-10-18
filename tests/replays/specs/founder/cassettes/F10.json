@@ -1,0 +1,344 @@
+{
+ "case_id": "F10",
+ "source": "ideal_reader",
+ "recorded_at": "417c10fb",
+ "answers": {
+  "08ed957f72519c2f233b5e7403717be61e8a50bb1a9be04c064187b0f2532a6c": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Nimbus Labs - data room?",
+    "start_offset": 0,
+    "end_offset": 24,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Nimbus Labs - data room?\", \"start_offset\": 0, \"end_offset\": 24, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1556,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5a41c1e43ab39948fe839b9dada179ccab25e969f66a5226543d4249b62d290e": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising",
+     "data room"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Kiran Agnihotri",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Kiran Agnihotri",
+        "start_offset": 260,
+        "end_offset": 275
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Banyan Seed Fund",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Banyan Seed Fund",
+        "start_offset": 287,
+        "end_offset": 303
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Nimbus Labs",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Nimbus Labs",
+        "start_offset": 0,
+        "end_offset": 11
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Share the data-room link and the current cap table",
+      "asked_by": "Kiran Agnihotri",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "could you share your data-room link and the current cap table?",
+        "start_offset": 123,
+        "end_offset": 185
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Kiran Agnihotri",
+      "value": "Principal",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Principal, Banyan Seed Fund",
+        "start_offset": 276,
+        "end_offset": 303
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "diligence after the demo day"
+    },
+    "implied_actions": [
+     "send Kiran the data-room link and the cap table"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\", \"data room\"], \"entity_mentions\": [{\"surface_form\": \"Kiran Agnihotri\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kiran Agnihotri\", \"start_offset\": 260, \"end_offset\": 275}], \"confidence_bp\": 9000}, {\"surface_form\": \"Banyan Seed Fund\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Banyan Seed Fund\", \"start_offset\": 287, \"end_offset\": 303}], \"confidence_bp\": 9000}, {\"surface_form\": \"Nimbus Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 11}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the data-room link and the current cap table\", \"asked_by\": \"Kiran Agnihotri\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"could you share your data-room link and the current cap table?\", \"start_offset\": 123, \"end_offset\": 185}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Kiran Agnihotri\", \"value\": \"Principal\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Principal, Banyan Seed Fund\", \"start_offset\": 276, \"end_offset\": 303}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"diligence after the demo day\"}, \"implied_actions\": [\"send Kiran the data-room link and the cap table\"]}",
+   "framed": true,
+   "input_tokens": 5549,
+   "output_tokens": 362,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6e3754a0f0c5c812468d8b039747839e69bd7d7db7447d1245a0e6780409ec24": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1767,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d00aca46d4a8d459f45a557510b323f6dbb4f3e7d4de4e4815a17e3a3da288e9": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Kiran Agnihotri, a principal at Banyan Seed Fund, wrote following up on a chat at the demo day and asked Arjun to share the data-room link and the current cap table.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Kiran Agnihotri Principal, Banyan Seed Fund"
+     },
+     {
+      "claim": "Kiran says the fund attached its term-sheet FAQ and a short portfolio note for context.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "attached our term-sheet FAQ and a short portfolio note for context. Kiran"
+     },
+     {
+      "claim": "The file holds one open ask, Kiran's question, waiting on us.",
+      "evidence": [
+       "loop:loop_#1"
+      ]
+     },
+     {
+      "claim": "Our reply time to Kiran is not measured: the file holds no mail from Arjun to Kiran.",
+      "evidence": [
+       "num:your_reply_time:kiran@banyanseed.test"
+      ]
+     },
+     {
+      "claim": "The investor playbook, not yet reviewed, says a firm opens diligence with a data-room, reference or customer-call request.",
+      "evidence": [
+       "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+      ]
+     },
+     {
+      "claim": "The playbook holds that when the turn is ours the clock runs against us, and conversations where we owe the reply come first.",
+      "evidence": [
+       "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+      ]
+     },
+     {
+      "claim": "The file's history records no earlier verdict or outcome.",
+      "evidence": [
+       "hist:derived.history.prior_card_verdict@fundraising",
+       "hist:derived.history.prior_outcome@fundraising"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Banyan is past a first look: asking for the data room and the cap table means the fund wants to work on Nimbus Labs, not only hear about it.",
+      "based_on": [
+       "fact:1",
+       "fact:5"
+      ]
+     },
+     {
+      "claim": "The term-sheet FAQ and the portfolio note are context from the fund, not asks; nothing in the mail asks Arjun to accept any term.",
+      "based_on": [
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Every day without an answer reads to the fund as lost momentum, the one thing a raise cannot afford to project.",
+      "based_on": [
+       "fact:3",
+       "fact:6"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "When the turn is ours, nobody says the clock is running; a partial or late answer reads to a fund as a company that lost momentum.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+      ]
+     },
+     {
+      "kind": "base_rate",
+      "claim": "In the playbook's cited funnel, about one company in three that reaches diligence is offered a term sheet.",
+      "based_on": [
+       "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+      ]
+     },
+     {
+      "kind": "counter_pattern",
+      "claim": "Only a definite offer in writing counts; a data-room request, however warm, is not a commitment.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.only_an_offer_counts"
+      ]
+     },
+     {
+      "kind": "pattern",
+      "claim": "A round's momentum comes from running investors in parallel; a fund that is working on the company is the one to keep moving.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Banyan is screening several demo-day companies and will move first on those that answer quickly.",
+      "needs": "Kiran's pace after Arjun's answer, or word of a next step from the fund."
+     },
+     {
+      "proposition": "The data room is ready and the cap table in it is current.",
+      "needs": "Arjun confirming the room's link and the cap table's date."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether Nimbus Labs has a data room ready and a current cap table in it.",
+      "relevance": "If not, the answer is a date for both rather than a link, and the reply still goes now."
+     },
+     {
+      "question": "What the fund's term-sheet FAQ and portfolio note say.",
+      "relevance": "They may show the fund's cheque size or terms, which shape what Arjun shares and asks; the file holds only that they were attached."
+     },
+     {
+      "question": "What was said at the demo-day chat, and with whom.",
+      "relevance": "It sets what Kiran knows and what the reply need not repeat."
+     },
+     {
+      "question": "Whether the seed-wave mail the brief mentions ever reached Banyan.",
+      "relevance": "The brief says the fund was written to in the seed wave, yet this file holds none of our mail; a thread outside the file may hold earlier context."
+     }
+    ],
+    "frames": {
+     "primary": "A seed fund that met you at a demo day is opening diligence: its principal wants the data room and the current cap table, and the reply is ours to send.",
+     "rivals": [
+      "A principal's early screen of many demo-day companies, where the data room is a filter before any partner looks.",
+      "A fund reading the cap table to judge its own fit, with no intent yet to lead the round."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": "diligence",
+     "expected": "At diligence the firm is working — the data room, references, customers — and a few quiet days on its side are the work; what it asks for goes to it promptly, so its clock never stalls on us.",
+     "actual": "The fund asked for the data-room link and the current cap table, and the file holds no answer from Arjun."
+    },
+    "scenarios": {
+     "do_nothing": "Kiran's request ages unanswered; the fund reads it as lost momentum, moves on to the demo-day companies that answered, and the conversation decays into a no nobody sends.",
+     "act": "Sending the data-room link with the current cap table now keeps the fund's process moving and invites a next step, a call or a partner's look.",
+     "best": "Banyan works through the room, asks for a call with a partner, and moves toward a firm offer.",
+     "worst": "The reply goes late or incomplete and the fund loses interest, or a cap table sent without context raises questions Arjun is not there to answer.",
+     "signals_to_watch": [
+      "Kiran opening the data room and asking follow-up questions",
+      "A request for a call with a partner, or for references",
+      "A new question each time the last one is answered",
+      "Silence past a date Kiran gives"
+     ]
+    },
+    "appraisal": {
+     "stakes": "high",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "The fund is asking for diligence material on the seed round, the brief's first goal.",
+      "The reply is ours, and the playbook ages conversations where we owe the answer first.",
+      "A cap table once shared cannot be called back, and momentum lost to a slow answer is hard to regain."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Reply to Kiran with the data-room link and the current cap table, and offer a short call to walk through them",
+     "for_whom": "Kiran Agnihotri at Banyan Seed Fund",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "to": "Kiran",
+     "answers": "loop:loop_#1"
+    },
+    "alternative": "If the room or the cap table is not ready, reply to Kiran now with the date both will be in Kiran's hands, and send them by then.",
+    "wait_or_stop": "No waiting on our side. Once the room is with Kiran, a few quiet days are the fund's work; stop reading quiet as work if it runs past a date Kiran gives, or if each answer brings a new question.",
+    "done_when": "Kiran has the data-room link and the current cap table, and a next step with the fund is named.",
+    "draft": "Hi Kiran, good to hear from you after the demo day. Here is our data-room link, with the current cap table in it: [link]. Happy to walk you through it on a short call — would [two or three times] suit? Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Kiran Agnihotri, a principal at Banyan Seed Fund, wrote following up on a chat at the demo day and asked Arjun to share the data-room link and the current cap table.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Kiran Agnihotri Principal, Banyan Seed Fund\"}, {\"claim\": \"Kiran says the fund attached its term-sheet FAQ and a short portfolio note for context.\", \"evidence\": [\"evt_#1\"], \"quote\": \"attached our term-sheet FAQ and a short portfolio note for context. Kiran\"}, {\"claim\": \"The file holds one open ask, Kiran's question, waiting on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"Our reply time to Kiran is not measured: the file holds no mail from Arjun to Kiran.\", \"evidence\": [\"num:your_reply_time:kiran@banyanseed.test\"]}, {\"claim\": \"The investor playbook, not yet reviewed, says a firm opens diligence with a data-room, reference or customer-call request.\", \"evidence\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]}, {\"claim\": \"The playbook holds that when the turn is ours the clock runs against us, and conversations where we owe the reply come first.\", \"evidence\": [\"pb:founder_office.heu.investor_relations.investors_do_not_chase\"]}, {\"claim\": \"The file's history records no earlier verdict or outcome.\", \"evidence\": [\"hist:derived.history.prior_card_verdict@fundraising\", \"hist:derived.history.prior_outcome@fundraising\"]}], \"inferences\": [{\"claim\": \"Banyan is past a first look: asking for the data room and the cap table means the fund wants to work on Nimbus Labs, not only hear about it.\", \"based_on\": [\"fact:1\", \"fact:5\"]}, {\"claim\": \"The term-sheet FAQ and the portfolio note are context from the fund, not asks; nothing in the mail asks Arjun to accept any term.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Every day without an answer reads to the fund as lost momentum, the one thing a raise cannot afford to project.\", \"based_on\": [\"fact:3\", \"fact:6\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"When the turn is ours, nobody says the clock is running; a partial or late answer reads to a fund as a company that lost momentum.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.investors_do_not_chase\"]}, {\"kind\": \"base_rate\", \"claim\": \"In the playbook's cited funnel, about one company in three that reaches diligence is offered a term sheet.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"Only a definite offer in writing counts; a data-room request, however warm, is not a commitment.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.only_an_offer_counts\"]}, {\"kind\": \"pattern\", \"claim\": \"A round's momentum comes from running investors in parallel; a fund that is working on the company is the one to keep moving.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process\"]}], \"hypotheses\": [{\"proposition\": \"Banyan is screening several demo-day companies and will move first on those that answer quickly.\", \"needs\": \"Kiran's pace after Arjun's answer, or word of a next step from the fund.\"}, {\"proposition\": \"The data room is ready and the cap table in it is current.\", \"needs\": \"Arjun confirming the room's link and the cap table's date.\"}], \"unknowns\": [{\"question\": \"Whether Nimbus Labs has a data room ready and a current cap table in it.\", \"relevance\": \"If not, the answer is a date for both rather than a link, and the reply still goes now.\"}, {\"question\": \"What the fund's term-sheet FAQ and portfolio note say.\", \"relevance\": \"They may show the fund's cheque size or terms, which shape what Arjun shares and asks; the file holds only that they were attached.\"}, {\"question\": \"What was said at the demo-day chat, and with whom.\", \"relevance\": \"It sets what Kiran knows and what the reply need not repeat.\"}, {\"question\": \"Whether the seed-wave mail the brief mentions ever reached Banyan.\", \"relevance\": \"The brief says the fund was written to in the seed wave, yet this file holds none of our mail; a thread outside the file may hold earlier context.\"}], \"frames\": {\"primary\": \"A seed fund that met you at a demo day is opening diligence: its principal wants the data room and the current cap table, and the reply is ours to send.\", \"rivals\": [\"A principal's early screen of many demo-day companies, where the data room is a filter before any partner looks.\", \"A fund reading the cap table to judge its own fit, with no intent yet to lead the round.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"diligence\", \"expected\": \"At diligence the firm is working — the data room, references, customers — and a few quiet days on its side are the work; what it asks for goes to it promptly, so its clock never stalls on us.\", \"actual\": \"The fund asked for the data-room link and the current cap table, and the file holds no answer from Arjun.\"}, \"scenarios\": {\"do_nothing\": \"Kiran's request ages unanswered; the fund reads it as lost momentum, moves on to the demo-day companies that answered, and the conversation decays into a no nobody sends.\", \"act\": \"Sending the data-room link with the current cap table now keeps the fund's process moving and invites a next step, a call or a partner's look.\", \"best\": \"Banyan works through the room, asks for a call with a partner, and moves toward a firm offer.\", \"worst\": \"The reply goes late or incomplete and the fund loses interest, or a cap table sent without context raises questions Arjun is not there to answer.\", \"signals_to_watch\": [\"Kiran opening the data room and asking follow-up questions\", \"A request for a call with a partner, or for references\", \"A new question each time the last one is answered\", \"Silence past a date Kiran gives\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"The fund is asking for diligence material on the seed round, the brief's first goal.\", \"The reply is ours, and the playbook ages conversations where we owe the answer first.\", \"A cap table once shared cannot be called back, and momentum lost to a slow answer is hard to regain.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Reply to Kiran with the data-room link and the current cap table, and offer a short call to walk through them\", \"for_whom\": \"Kiran Agnihotri at Banyan Seed Fund\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Kiran\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the room or the cap table is not ready, reply to Kiran now with the date both will be in Kiran's hands, and send them by then.\", \"wait_or_stop\": \"No waiting on our side. Once the room is with Kiran, a few quiet days are the fund's work; stop reading quiet as work if it runs past a date Kiran gives, or if each answer brings a new question.\", \"done_when\": \"Kiran has the data-room link and the current cap table, and a next step with the fund is named.\", \"draft\": \"Hi Kiran, good to hear from you after the demo day. Here is our data-room link, with the current cap table in it: [link]. Happy to walk you through it on a short call — would [two or three times] suit? Arjun\"}",
+   "framed": true,
+   "input_tokens": 8380,
+   "output_tokens": 1796,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d3aed5d11a8bd54ca5f47c0f8e5a86b6f9abfcf1a6ca01b2f40aaf0aac62679a": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1562,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

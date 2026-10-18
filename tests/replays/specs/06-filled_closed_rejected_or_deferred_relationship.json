@@ -96,8 +96,8 @@
       "expected_decision": "Record a deferred conditional state; produce an update only when a verified material milestone exists and accepted expertise supports it.",
       "prohibited": "Labelling it a fresh rejection, or treating it as an active opportunity.",
       "pass_condition": "Either exactly one milestone-specific decision, or No action.",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "Requires conditional-deferral state plus accepted L3 expertise; the L3 domain compiler is dark and unroutable (73/73 NoExpertiseRoute, 140/152 capabilities stubs, zero accepted), and no abstention vocabulary can express the conditional wait."
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "Generic 'great to hear from you' message arrives after rejection",

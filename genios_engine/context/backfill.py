@@ -29,13 +29,17 @@ situations are rebuilt from scratch every time.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 
 from sqlalchemy import bindparam, text
 
 from genios_engine.context.correlation import correlate_event
 from genios_engine.context.identity import register_node_identity
+from genios_engine.context.introductions import connector_roles
 from genios_engine.context.pipeline import _normalise_deal_status, is_platform_sender
 from genios_engine.context.situations import refresh_situations
+from genios_engine.platform.company_brief import current as company_brief_now
+from genios_engine.platform.self_identity import identity_for
 
 # Events per transaction. Small enough that a failure costs little and a long backfill
 # does not hold one transaction open across a tenant's entire history.
@@ -71,6 +75,22 @@ def backfill_aliases(store, org_id: str) -> dict:
     return {"nodes_registered": registered, "merge_proposals_raised": proposals}
 
 
+def _is_the_product(node_type: str | None, canonical_key: str | None) -> bool:
+    """GeniOS's own mail domain (`settings.platform_domains`), as the live pipeline sees it.
+
+    `pipeline._works_at` keeps the company of a platform address out of the anchors in every event
+    (`is_platform_sender`), whoever the tenant is; the rebuild asked only who the TENANT is, so on a
+    rebuild the product's onboarding mail anchored a situation on `thegenios.com` for every tenant
+    that had not declared it — the disagreement STEP-04 removes (`yc2_w27_s04 · U22`).
+    """
+    key = str(canonical_key or "").strip().lower()
+    if node_type == "company":
+        return is_platform_sender("x@" + key)
+    if node_type in ("person", "service"):
+        return is_platform_sender(key)
+    return False
+
+
 def backfill_correlations(store, org_id: str, *, limit: int | None = None,
                           rebuild: bool = False) -> dict:
     """Group historical events into situations.
@@ -79,9 +99,20 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
     fact, observation and node it created. That is the same material the live path uses
     — it just reads it back out of the graph instead of holding it in memory.
 
-    Our own seats are excluded here exactly as in the live path. Without it, every
+    Our own people are excluded here exactly as in the live path. Without it, every
     outbound email in the tenant's history would anchor on our own company and the
     backfill would build one situation containing the entire business.
+
+    STEP-04: "our own" is the one answer, `platform/self_identity.identity_for` — a person of ours
+    by address or declared domain, a company by a declared domain. It used to be the active seats
+    alone, so a rebuild anchored situations on the founder (`orgs.email`, not a seat) and on our own
+    company, both of which the live pipeline keeps out.
+
+    STEP-09: a connector the founder's company brief names is an introducer here exactly as in the
+    drain (`introductions.connector_roles`, the one answer both read). The rebuild passed no roles,
+    so every introduction filed under its person was filed again under the intro network. And what
+    the drain called noise is never filed here: it filed every newsletter the drain kept out — on
+    the replay after every backfill drain, and on every rebuild (`03` F101).
 
     `rebuild` re-derives the WHOLE set instead of only correlating what is not yet grouped.
 
@@ -103,9 +134,7 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
                           "context_correlations"):
                 conn.execute(text(f"delete from {table} where org_id = :o"), {"o": org_id})
     with store.engine.connect() as conn:
-        internal = frozenset(r.e for r in conn.execute(text(
-            "select lower(email) as e from org_seats "
-            "where org_id = :o and active and email is not null"), {"o": org_id}) if r.e)
+        us = identity_for(conn, org_id)
 
         events = conn.execute(text(
             "select se.event_id, se.occurred_at, se.parent_object_id, se.domain_hints "
@@ -113,6 +142,13 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
             "where se.org_id = :o and se.outcome = 'emitted' "
             "  and se.event_id not in ("
             "    select event_id from context_correlation_members where org_id = :o) "
+            # WHAT THE DRAIN CALLED NOISE IS NO FILE HERE EITHER (`03` F101). The drain never
+            # correlates a newsletter, spam or an auto-reply, and records its verdict as an
+            # `email_noise:*` observation the event created; the replay recovers an event's nodes
+            # from what it created and, without this, filed every one of them.
+            "  and not exists (select 1 from graph_observations o "
+            "                   where o.org_id = se.org_id and o.created_by_event_id = se.event_id "
+            "                     and o.kind like 'email_noise:%') "
             "order by se.occurred_at asc nulls last" +
             (" limit :lim" if limit else "")),
             {"o": org_id, **({"lim": limit} if limit else {})}).all()
@@ -139,9 +175,13 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
                 "  where n.org_id = :o and n.valid_to is null "
                 "    and n.created_by_event_id is not null"
                 ") reached"), {"o": org_id}):
-            if (row.canonical_key or "").lower() in internal:
-                continue                       # our own people never anchor a situation
+            if us.is_us_node(row.node_type, row.canonical_key) or _is_the_product(
+                    row.node_type, row.canonical_key):
+                continue           # one of us, our company, or the product itself never anchors
             touched.setdefault(row.ev, {})[row.node_id] = row.node_type
+        # Read once, as the drain reads it once per pass — beside who is us.
+        roles = connector_roles(conn, org_id=org_id,
+                                company_brief=company_brief_now(store, org_id))
 
     correlated = 0
     for start in range(0, len(events), _BATCH):
@@ -154,7 +194,8 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
                                    occurred_at=event.occurred_at,
                                    thread_id=event.parent_object_id,
                                    node_types=nodes,
-                                   domain_hints=event.domain_hints):
+                                   domain_hints=event.domain_hints,
+                                   node_roles=roles):
                     correlated += 1
     return {"events_seen": len(events), "events_correlated": correlated}
 
@@ -228,14 +269,16 @@ def backfill_deal_nodes(store, org_id: str) -> dict:
         # and the platform's own address (is this us, the product?) — and a backfill that skips
         # them produces `thegenios.com — deal`: a card advising a founder about a negotiation with
         # his own vendor's website. It appeared on the first live run of this pass.
-        seat_domains = {e.rsplit("@", 1)[1] for e in (
-            (r.e or "") for r in conn.execute(text(
-                "select lower(email) as e from org_seats where org_id=:o and active "
-                "and email is not null"), {"o": org_id})) if "@" in e}
+        #
+        # STEP-04: which company is OURS is the identity's answer — a domain the tenant declared,
+        # or a subdomain of one (`SelfIdentity.is_us_node`) — the same answer the live pipeline
+        # now keeps out of the anchors in every event. It was the domains of the active seats,
+        # which never included a declared domain.
+        us = identity_for(conn, org_id)
         internal = {r.node_id for r in conn.execute(text(
             "select node_id, canonical_key from graph_nodes where org_id=:o "
             "and node_type='company' and valid_to is null"), {"o": org_id})
-            if (r.canonical_key or "").lower() in seat_domains
+            if us.is_us_node("company", r.canonical_key)
             or is_platform_sender("x@" + (r.canonical_key or ""))}
 
     orphaned = sum(1 for r in rows if not r.company_id or r.company_id in internal)
@@ -373,8 +416,12 @@ def _release_stale_correlations(store, org_id: str, event_ids: set[str]) -> int:
 
 
 def backfill_layer2(store, org_id: str, *, limit: int | None = None,
-                    rebuild: bool = False) -> dict:
-    """The whole of Layer 2 applied to existing history, in the only order that works."""
+                    rebuild: bool = False, eval_time: datetime | None = None) -> dict:
+    """The whole of Layer 2 applied to existing history, in the only order that works.
+
+    `eval_time` is the instant the situations are judged at — `None`, as every production caller
+    passes, is now. A caller replaying history at a pinned instant passes it, or a situation seeded
+    more than `DORMANT_AFTER_DAYS` earlier is judged dormant against the wall clock."""
     aliases = backfill_aliases(store, org_id)
     # BEFORE correlations, and that ordering is as non-negotiable as the alias one above it.
     # `correlate_event` chooses an anchor from the node types an event touched, and `deal` is
@@ -386,7 +433,7 @@ def backfill_layer2(store, org_id: str, *, limit: int | None = None,
     # between the pass reporting success and the pass changing anything.
     correlations = backfill_correlations(
         store, org_id, limit=limit, rebuild=rebuild or bool(deals["deal_nodes_created"]))
-    situations = refresh_situations(store, org_id)
+    situations = refresh_situations(store, org_id, eval_time=eval_time)
     return {**aliases, **deals, **correlations, "situations_written": situations}
 
 
@@ -621,33 +668,36 @@ def name_thread_nodes(store, org_id: str | None = None, *, limit: int = _NAME_BA
 
     Safe to re-run: `name_thread_node` promotes only over a label this module generated, so a
     thread named by anything better is left alone and a second pass writes nothing.
+
+    NEVER AFTER US (STEP-04). The party is the oldest correspondent who is NOT one of us, by the
+    identity of the thread's own tenant (`platform/self_identity.identity_for`, once per tenant per
+    pass). The pipeline writes these edges only for addresses outside the self set at write time,
+    so an address declared later — or a colleague known only by a declared domain — is a
+    correspondent, and the oldest one named the conversation after us. With nobody else in it, the
+    thread is named by what it is for alone.
     """
     scope = "" if org_id is None else " and t.org_id = :org"
-    rows = store.engine.connect().execute(text(
-        "select t.org_id as org_id, t.node_id as node_id, t.canonical_key as canonical_key, "
-        "       t.display_name as display_name, "
-        "       (select f.value from graph_facts f "
-        "         where f.org_id = t.org_id and f.subject_node_id = t.node_id "
-        "           and f.field = 'thread.objective' and f.status = 'active' "
-        "           and f.valid_to is null limit 1) as objective, "
-        # OLDEST EDGE WINS — see the docstring. `min(created_at)` rather than any row, so the
-        # answer does not depend on which correspondent the planner happened to return first.
-        "       (select p.display_name from graph_edges e "
-        "          join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
-        "                            and p.node_type = 'person' and p.valid_to is null "
-        "         where e.org_id = t.org_id and e.to_node_id = t.node_id "
-        "           and e.edge_type = 'corresponded_with' and e.valid_to is null "
-        "         order by e.created_at, p.node_id limit 1) as party "
-        "  from graph_nodes t "
-        " where t.node_type = 'thread' and t.valid_to is null"
-        f"{scope} order by t.node_id limit :limit"),
-        {"limit": int(limit), **({} if org_id is None else {"org": org_id})}).mappings().all()
+    # ⛔ `03` F65 (STEP-18, `yc2_w27_s18` M48.C2.L-data.V0.U09): this read opened its connection
+    # inside the expression — `store.engine.connect().execute(...)` — and never closed it.
+    with store.engine.connect() as conn:
+        rows = conn.execute(text(
+            "select t.org_id as org_id, t.node_id as node_id, t.canonical_key as canonical_key, "
+            "       t.display_name as display_name, "
+            "       (select f.value from graph_facts f "
+            "         where f.org_id = t.org_id and f.subject_node_id = t.node_id "
+            "           and f.field = 'thread.objective' and f.status = 'active' "
+            "           and f.valid_to is null limit 1) as objective "
+            "  from graph_nodes t "
+            " where t.node_type = 'thread' and t.valid_to is null"
+            f"{scope} order by t.node_id limit :limit"),
+            {"limit": int(limit), **({} if org_id is None else {"org": org_id})}).mappings().all()
+    parties = _oldest_party_not_us(store, rows)
 
     renamed = 0
     with store.engine.begin() as conn:
         for row in rows:
             objective = str(row["objective"] or "").strip().strip('"')
-            party = str(row["party"] or "").strip()
+            party = str(parties.get((row["org_id"], row["node_id"])) or "").strip()
             # An address is not a name. It is still better than a hex fragment, so it is kept as
             # the counterparty rather than dropped — `index_person_names` will improve it the day
             # the graph learns what this person is called.
@@ -655,6 +705,45 @@ def name_thread_nodes(store, org_id: str | None = None, *, limit: int = _NAME_BA
                                       objective=objective or None, counterparty=party or None):
                 renamed += 1
     return renamed
+
+
+def _oldest_party_not_us(store, threads) -> dict[tuple[str, str], str | None]:
+    """(org, thread) → the display name of its oldest correspondent who is not one of us.
+
+    OLDEST EDGE WINS — see `name_thread_nodes`: `created_at`, then node id, so the answer does not
+    depend on which correspondent the planner happens to return first. One of us is skipped, never
+    chosen; who is us is read once per tenant in the batch, never per row.
+    """
+    if not threads:
+        return {}
+    from sqlalchemy import inspect as sa_inspect
+
+    from genios_engine.platform.self_identity import SelfIdentity
+    with store.engine.connect() as c:
+        # A store that keeps no identity tables — the graph-only doubles the unit suite builds —
+        # records nobody as us. Every database the engine runs on has them (migration 0193).
+        known = sa_inspect(c).has_table("org_self_identities")
+        us = {org: identity_for(c, org) if known else SelfIdentity()
+              for org in sorted({t["org_id"] for t in threads})}
+        candidates = c.execute(text(
+            "select e.org_id as org_id, e.to_node_id as thread_id, p.display_name as name, "
+            "       p.canonical_key as canonical_key "
+            "  from graph_edges e "
+            "  join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
+            "                    and p.node_type = 'person' and p.valid_to is null "
+            " where e.to_node_id in :threads and e.edge_type = 'corresponded_with' "
+            "   and e.valid_to is null "
+            " order by e.to_node_id, e.created_at, p.node_id").bindparams(
+                bindparam("threads", expanding=True)),
+            {"threads": [t["node_id"] for t in threads]}).all()
+    parties: dict[tuple[str, str], str | None] = {}
+    for p in candidates:
+        key = (p.org_id, p.thread_id)
+        if key in parties or p.org_id not in us:
+            continue
+        if not us[p.org_id].is_us_node("person", p.canonical_key):
+            parties[key] = p.name
+    return parties
 
 
 def best_person_name(rows) -> dict[tuple[str, str], tuple[int, str]]:

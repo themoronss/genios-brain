@@ -7,6 +7,7 @@ context window — could not be produced by anything, however carefully it had b
 """
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -33,6 +34,9 @@ class _Conn:
     def __init__(self, rows): self._rows = rows
     def execute(self, *_a, **_k): return self
     def fetchall(self): return self._rows
+    # ⛔ A SAVEPOINT PER READ since `03` F120 (yc2_w27_s18 M48.C2.L-data.V0.U07): a real connection
+    # rolls a failed read back to it; this double has nothing to roll back.
+    def begin_nested(self): return contextlib.nullcontext()
 
 
 def _cov(*rows) -> WindowCoverage:
@@ -142,6 +146,7 @@ def test_a_missing_table_is_unknown_rather_than_an_error():
     """A tenant whose migrations have not run has not proven anything about their mailbox."""
     class _Broken:
         def execute(self, *_a, **_k): raise RuntimeError("relation l1_sync_runs does not exist")
+        def begin_nested(self): return contextlib.nullcontext()
     cov = coverage_for_window(_Broken(), org_id="o", source="gmail", since=T0, until=T1)
     assert cov.health is SyncHealth.UNKNOWN
 

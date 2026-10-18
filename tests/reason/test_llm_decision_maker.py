@@ -388,8 +388,21 @@ def test_newer_models_get_no_sampling_params_and_haiku_keeps_temperature_zero():
     # Sonnet 5 / Opus 5 answer a `temperature` with a 400, which would DEFER every decision.
     assert llm_dm.request_kwargs("claude-sonnet-5") == {"thinking": {"type": "disabled"}}
     assert llm_dm.request_kwargs("claude-opus-5") == {"thinking": {"type": "disabled"}}
-    assert llm_dm.request_kwargs("claude-fable-5-1") == {}
+    # `yc2_w27_s18` M50.C1.L-logic.V1.U10: Fable cannot turn thinking off — the lowest effort (was {}).
+    assert llm_dm.request_kwargs("claude-fable-5-1") == {"output_config": {"effort": "low"}}
     assert llm_dm.request_kwargs("claude-haiku-4-5-20251001") == {"temperature": 0}
+
+
+def test_opus_5_5_is_never_sent_opus_5s_disabled():
+    """⛔ s5t-F8: `"claude-opus-5-5".startswith("claude-opus-5")` — a 400 on every decision."""
+    assert llm_dm.request_kwargs("claude-opus-5-5") == {"output_config": {"effort": "low"}}
+    assert llm_dm.request_kwargs("claude-opus-5-5-20261101") == {"output_config": {"effort": "low"}}
+    assert llm_dm.request_kwargs("claude-sonnet-5-20260601") == {"thinking": {"type": "disabled"}}
+
+
+def test_a_model_the_table_has_not_met_keeps_temperature_and_gets_no_thinking_control():
+    assert llm_dm.request_kwargs("claude-sonnet-5-5") == {}
+    assert llm_dm.request_kwargs("some-model-we-have-never-seen") == {"temperature": 0}
 
 
 def test_the_answer_parser_refuses_rather_than_repairs():
@@ -417,13 +430,25 @@ class ScoringLLM(FakeLLM):
 
     It prefers them in REVERSE alphabetical order, so the winner is chosen by this answer rather
     than by anything the formula would have picked.
+
+    It also answers R-1. Since 10a4f14f the orchestrator asks `reason/llm_interpretation` — through
+    the SAME switch and the SAME client — before a run reaches the decision maker, so a live run
+    makes two calls. R-1's are kept apart in `r1_prompts` and answered with a valid reading that
+    finds nothing ambiguous: the snapshot is unchanged, and the answer is cached like the
+    decision's, so a replay can be held to zero calls of either kind.
     """
 
     def __init__(self, confidence=4_000):
         super().__init__()
         self.confidence = confidence
+        self.r1_prompts: list[str] = []
 
     def call(self, prompt, *, max_tokens=4096):
+        if '{"readings": [' in prompt.rsplit("\n", 1)[-1]:
+            self.r1_prompts.append(prompt)
+            reading = {"readings": []}
+            return LLMResult(parsed=reading, raw=json.dumps(reading), input_tokens=10,
+                             output_tokens=5, model=self.model)
         self.prompts.append(prompt)
         template = json.loads(prompt.rsplit("\n", 1)[-1])
         ids = sorted(template["scores"], reverse=True)
@@ -486,6 +511,9 @@ def pg_org(pg_engine, request):
 
 def test_an_llm_decision_persists_verifies_and_replays_on_real_postgres(
         pg_engine, pg_org, monkeypatch):
+    from genios_engine.reason import llm_interpretation
+
+    llm_interpretation._reset_for_tests()
     fake = ScoringLLM(confidence=4_000)          # under the formula's 4,500 floor
     monkeypatch.setattr(llm_dm, "enabled_for", lambda _org: True)
     monkeypatch.setattr(llm_dm, "client", lambda: fake)
@@ -496,7 +524,8 @@ def test_an_llm_decision_persists_verifies_and_replays_on_real_postgres(
         evaluation_time=PG_NOW, trigger_kind="email.received", trigger_ref="event_1",
         mode=ExecutionMode.LIVE, config_snapshot_id=None))
 
-    assert len(fake.prompts) == 1
+    assert len(fake.prompts) == 1                # one decision...
+    assert len(fake.r1_prompts) == 1             # ...and one R-1 reading before it
     assert execution.decision.outcome == DecisionOutcome.DECISION
     assert execution.decision.confidence_bp == 4_000
     selected = execution.selected_candidate
@@ -519,3 +548,4 @@ def test_an_llm_decision_persists_verifies_and_replays_on_real_postgres(
                                              orchestrator=orchestrator)
     assert comparison.matches
     assert len(fake.prompts) == 1                # replay was answered from the cache
+    assert len(fake.r1_prompts) == 1             # R-1's reading too

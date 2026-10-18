@@ -853,7 +853,7 @@ inference_patterns:
       status: executable
       when:
         - {exists: commitment.action}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 5}}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 2, floor: 5}}
       yields: {confidence_bp: 7000, attribute: null, corroborates: [cmt.past_due]}
       evidence_fields: [thread.last_inbound, commitment.action]
       false_positive: >

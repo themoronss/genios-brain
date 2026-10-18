@@ -142,6 +142,13 @@ def test_tick_submits_after_the_wait_and_a_later_tick_writes_memory(monkeypatch)
                     "due": None, "quote": "Can you send the deck by Friday?"},
                    {"kind": "their_promise", "text": "Priya shares pricing next week",
                     "who": email, "due": None, "quote": "Pricing next week"},
+                   # ⛔ 2026-10-09, merging `harsh/mvp` (`b5c6b064`): a promise the model pins on
+                   # the MANAGER is dropped now, not kept with who=None — "the manager does not owe
+                   # himself". The promise above is that one; Priya's own, below, is kept with her
+                   # name, so this test still proves a their_promise is written, and that the
+                   # manager's is not.
+                   {"kind": "their_promise", "text": "Priya shares pricing next week",
+                    "who": "Priya Shah", "due": None, "quote": "Pricing next week"},
                    {"kind": "risk", "text": "Invented", "who": None, "due": None,
                     "quote": "words that are not on the screen"}]}
     fake = FakeBatches(lambda jid: _ok(payload))
@@ -183,7 +190,7 @@ def test_tick_submits_after_the_wait_and_a_later_tick_writes_memory(monkeypatch)
     assert set(fus) == {"ask", "their_promise"}                   # the ungrounded risk dropped
     assert fus["ask"].quote == "Can you send the deck by Friday?"
     assert fus["ask"].subject_node_id == priya and fus["ask"].graph_written_at is not None
-    assert fus["their_promise"].who is None                       # the manager is never "who"
+    assert fus["their_promise"].who == "Priya Shah"               # the manager's own was dropped
     assert obs == ["screen.ask", "screen.their_promise"]
     assert summary == "Priya (Acme) wants the deck.\nPricing comes next week."
     assert [(c.model, c.input_tokens, c.output_tokens) for c in costs] == [

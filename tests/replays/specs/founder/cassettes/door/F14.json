@@ -1,0 +1,166 @@
+{
+ "case_id": "F14",
+ "source": "ideal_reader",
+ "recorded_at": "417c10fb",
+ "answers": {
+  "37e033cc2065ff0d15af5469c690246220d337782160912d0f0eab938e987e5a": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Tara Lindqvist of Fjord Venture Partners wrote that it is too early for the fund right now, asked Arjun to keep her posted, and said she would be happy to look again if Nimbus Labs hits a real milestone.",
+      "evidence": [
+       "evt_#4"
+      ]
+     },
+     {
+      "claim": "Arjun then sent Tara three updates, numbered in sequence and a week apart, each with the same news word for word: two more pilot teams onboarded and calendar sync shipped.",
+      "evidence": [
+       "evt_#3",
+       "evt_#2",
+       "evt_#1",
+       "num:usual_gap"
+      ]
+     },
+     {
+      "claim": "The file holds no word from Tara after her deferral.",
+      "evidence": [
+       "evt_#4",
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "The investor playbook's conditional deferral says to take the conversation out of the round's count, record the condition in the investor's own words, write about the condition and nothing else when it is met, and stop expecting the investor to reopen it if updates draw no reply.",
+      "evidence": [
+       "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+      ]
+     },
+     {
+      "claim": "The playbook holds that most passes are about timing, stage or a metric and carry a date on which they stop being true.",
+      "evidence": [
+       "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Repeating one piece of news three times is not the real milestone Tara named, and it risks teaching her to skim the note that matters.",
+      "based_on": [
+       "fact:1",
+       "fact:2",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "Her quiet after the updates is the parked state of a deferral, not a cue to write again.",
+      "based_on": [
+       "fact:3",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "This is a deferral on timing with an open door, not a verdict on the company.",
+      "based_on": [
+       "fact:1",
+       "fact:5"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "The founder's own pattern in this file is a note a week, three weeks running, with no new fact after the first.",
+      "based_on": [
+       "num:usual_gap",
+       "fact:2"
+      ]
+     },
+     {
+      "kind": "counter_pattern",
+      "claim": "A note that is not about the condition is the conversation the investor already deferred; it teaches her to skim the next one.",
+      "based_on": [
+       "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+       "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+      ]
+     },
+     {
+      "kind": "pattern",
+      "claim": "A deferral on stage or timing stops being true later, and investors who defer are often warm leads when the condition is met.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Tara reads the repeated updates as noise and will skim the next note.",
+      "needs": "Whether she answers a note that carries a real milestone."
+     },
+     {
+      "proposition": "She welcomes regular news and the cadence does no harm.",
+      "needs": "Any reply or question from her to the updates."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "What Tara would count as a real milestone.",
+      "relevance": "She named none in particular; the note that reopens the conversation depends on it, and it must not be guessed for her."
+     },
+     {
+      "question": "Whether more pilot teams and calendar sync are all the news there is since the deferral.",
+      "relevance": "If something bigger has happened the next note leads with it; if not, there is nothing to send."
+     },
+     {
+      "question": "Why the updates repeat word for word — the same news resent, or a template never updated.",
+      "relevance": "If the copy is stale, the founder's own updates misstate the company's progress."
+     }
+    ],
+    "frames": {
+     "primary": "A conditional deferral being worked with routine notes: Fjord said too early and named a real milestone, three weekly updates have gone out with the same news, and the right move is to stop and wait for the milestone.",
+     "rivals": [
+      "A fund that wants regular news, where a short monthly update is welcome and its quiet is only reading.",
+      "A soft no phrased kindly, where neither updates nor a milestone will reopen it."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": "passed",
+     "expected": "At this stage quiet is the resting state: the reason and the condition are recorded, and the investor hears again when the condition is met, about that and nothing else.",
+     "actual": "Tara named a real milestone as her condition; since then three updates have gone to her a week apart with the same news, and the file holds no word from her."
+    },
+    "scenarios": {
+     "do_nothing": "Fjord rests as a deferred investor on its condition; nothing decays, and stopping the weekly notes costs nothing.",
+     "act": "Another note with the same news, or a nudge, spends Tara's attention on the conversation she deferred and makes the milestone note easier to skim.",
+     "best": "Nimbus Labs hits a real milestone, Arjun writes to Tara about that alone, and she looks again with a meeting.",
+     "worst": "Routine notes keep going out until she filters them, and the milestone note goes unread.",
+     "signals_to_watch": [
+      "A real milestone at Nimbus Labs, the trigger to write",
+      "Any reply or question from Tara",
+      "Another update going out with no new fact in it"
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "Fjord is out of the round's count until a real milestone, so nothing here moves the raise now.",
+      "Nothing is owed to Tara: the note she asked for comes only with a real milestone.",
+      "Attention spent on repeated notes cannot be won back when the milestone note goes out."
+     ]
+    },
+    "mode": "wait",
+    "next_move": null,
+    "alternative": "If you want Fjord to follow progress, ask Tara once whether she wants a periodic update, and send one a month only if she says yes.",
+    "wait_or_stop": "Stop the weekly updates to Tara and wait for a real milestone; then write to her once, about that milestone and nothing else.",
+    "done_when": "The routine notes have stopped, and the next note to Tara carries a real milestone, or Fjord stays parked on its condition.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Tara Lindqvist of Fjord Venture Partners wrote that it is too early for the fund right now, asked Arjun to keep her posted, and said she would be happy to look again if Nimbus Labs hits a real milestone.\", \"evidence\": [\"evt_#4\"]}, {\"claim\": \"Arjun then sent Tara three updates, numbered in sequence and a week apart, each with the same news word for word: two more pilot teams onboarded and calendar sync shipped.\", \"evidence\": [\"evt_#3\", \"evt_#2\", \"evt_#1\", \"num:usual_gap\"]}, {\"claim\": \"The file holds no word from Tara after her deferral.\", \"evidence\": [\"evt_#4\", \"evt_#1\"]}, {\"claim\": \"The investor playbook's conditional deferral says to take the conversation out of the round's count, record the condition in the investor's own words, write about the condition and nothing else when it is met, and stop expecting the investor to reopen it if updates draw no reply.\", \"evidence\": [\"pb:founder_office.pb.investor_relations.the_conditional_deferral\"]}, {\"claim\": \"The playbook holds that most passes are about timing, stage or a metric and carry a date on which they stop being true.\", \"evidence\": [\"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"]}], \"inferences\": [{\"claim\": \"Repeating one piece of news three times is not the real milestone Tara named, and it risks teaching her to skim the note that matters.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}, {\"claim\": \"Her quiet after the updates is the parked state of a deferral, not a cue to write again.\", \"based_on\": [\"fact:3\", \"fact:4\"]}, {\"claim\": \"This is a deferral on timing with an open door, not a verdict on the company.\", \"based_on\": [\"fact:1\", \"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"The founder's own pattern in this file is a note a week, three weeks running, with no new fact after the first.\", \"based_on\": [\"num:usual_gap\", \"fact:2\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"A note that is not about the condition is the conversation the investor already deferred; it teaches her to skim the next one.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.the_conditional_deferral\", \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\"]}, {\"kind\": \"pattern\", \"claim\": \"A deferral on stage or timing stops being true later, and investors who defer are often warm leads when the condition is met.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"]}], \"hypotheses\": [{\"proposition\": \"Tara reads the repeated updates as noise and will skim the next note.\", \"needs\": \"Whether she answers a note that carries a real milestone.\"}, {\"proposition\": \"She welcomes regular news and the cadence does no harm.\", \"needs\": \"Any reply or question from her to the updates.\"}], \"unknowns\": [{\"question\": \"What Tara would count as a real milestone.\", \"relevance\": \"She named none in particular; the note that reopens the conversation depends on it, and it must not be guessed for her.\"}, {\"question\": \"Whether more pilot teams and calendar sync are all the news there is since the deferral.\", \"relevance\": \"If something bigger has happened the next note leads with it; if not, there is nothing to send.\"}, {\"question\": \"Why the updates repeat word for word — the same news resent, or a template never updated.\", \"relevance\": \"If the copy is stale, the founder's own updates misstate the company's progress.\"}], \"frames\": {\"primary\": \"A conditional deferral being worked with routine notes: Fjord said too early and named a real milestone, three weekly updates have gone out with the same news, and the right move is to stop and wait for the milestone.\", \"rivals\": [\"A fund that wants regular news, where a short monthly update is welcome and its quiet is only reading.\", \"A soft no phrased kindly, where neither updates nor a milestone will reopen it.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"passed\", \"expected\": \"At this stage quiet is the resting state: the reason and the condition are recorded, and the investor hears again when the condition is met, about that and nothing else.\", \"actual\": \"Tara named a real milestone as her condition; since then three updates have gone to her a week apart with the same news, and the file holds no word from her.\"}, \"scenarios\": {\"do_nothing\": \"Fjord rests as a deferred investor on its condition; nothing decays, and stopping the weekly notes costs nothing.\", \"act\": \"Another note with the same news, or a nudge, spends Tara's attention on the conversation she deferred and makes the milestone note easier to skim.\", \"best\": \"Nimbus Labs hits a real milestone, Arjun writes to Tara about that alone, and she looks again with a meeting.\", \"worst\": \"Routine notes keep going out until she filters them, and the milestone note goes unread.\", \"signals_to_watch\": [\"A real milestone at Nimbus Labs, the trigger to write\", \"Any reply or question from Tara\", \"Another update going out with no new fact in it\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Fjord is out of the round's count until a real milestone, so nothing here moves the raise now.\", \"Nothing is owed to Tara: the note she asked for comes only with a real milestone.\", \"Attention spent on repeated notes cannot be won back when the milestone note goes out.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If you want Fjord to follow progress, ask Tara once whether she wants a periodic update, and send one a month only if she says yes.\", \"wait_or_stop\": \"Stop the weekly updates to Tara and wait for a real milestone; then write to her once, about that milestone and nothing else.\", \"done_when\": \"The routine notes have stopped, and the next note to Tara carries a real milestone, or Fjord stays parked on its condition.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 8584,
+   "output_tokens": 1481,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

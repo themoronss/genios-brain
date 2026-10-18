@@ -281,3 +281,59 @@ def test_this_module_does_not_import_context():
 def test_the_report_distinguishes_all_five_things_that_can_happen():
     assert {f for f in NeedSweepReport.__dataclass_fields__} >= {
         "examined", "met", "unavailable", "deferred", "already_closed", "malformed", "refused"}
+
+
+# =================================================================================================
+# STEP-13 · the composition root — the two halves joined, a layer above both
+# (`reason/domain_shadow.work_the_needs`, `yc2_w27_s13` M36.C2.L-integration.V2.U03, STEP-13 §1 claim 5)
+# =================================================================================================
+def _pg_store():
+    import os
+    if not os.environ.get("GENIOS_TEST_DATABASE_URL"):
+        pytest.skip("needs GENIOS_TEST_DATABASE_URL pointing at a scratch database")
+    from genios_engine.context.graph_store import GraphStore
+    return GraphStore(os.environ["GENIOS_TEST_DATABASE_URL"])
+
+
+def _filed(store, org: str, need_id: str):
+    from sqlalchemy import text
+    from genios_engine.contracts.evidence import EvidenceNeed
+    from genios_engine.context.evidence_need_store import store_needs
+    with store.engine.begin() as c:
+        c.execute(text("delete from evidence_needs where org_id = :o"), {"o": org})
+        c.execute(text("delete from orgs where id = :o"), {"o": org})
+        c.execute(text("insert into orgs (id, name, email) values (:o, :o, :e)"),
+                  {"o": org, "e": f"{org}@needs.test"})
+        store_needs(c, [EvidenceNeed(need_id=need_id, org_id=org, trace_id="t",
+                                     question="Is the countersigned MSA in the thread?",
+                                     why_it_matters="The renewal cannot be called closed without it.",
+                                     subject_ref="signal:SIG-1")])
+
+
+def _state(store, org: str, need_id: str) -> str:
+    from sqlalchemy import text
+    with store.engine.connect() as c:
+        return c.execute(text("select state from evidence_needs where org_id = :o and need_id = :n"),
+                         {"o": org, "n": need_id}).scalar()
+
+
+@pytest.mark.pg
+def test_the_sweep_joins_the_halves_and_with_no_connector_refuses_and_closes_nothing():
+    from genios_engine.reason.domain_shadow import work_the_needs
+    store, org = _pg_store(), "org_s13_needs_refused"
+    _filed(store, org, "en_s13_refused")
+    report = work_the_needs(store, org, eval_time=_NOW)
+    assert not report.ran and "no fetcher is wired" in report.refused
+    assert _state(store, org, "en_s13_refused") == "open", "a question this deployment cannot answer survives"
+
+
+@pytest.mark.pg
+def test_with_a_connector_the_real_queue_is_read_and_its_need_closed():
+    from genios_engine.reason.domain_shadow import work_the_needs
+    store, org = _pg_store(), "org_s13_needs_worked"
+    _filed(store, org, "en_s13_worked")
+    report = work_the_needs(store, org, eval_time=_NOW,
+                            fetchers={FETCH_THREAD: _found("gmail"), REEXTRACT: _found("gmail"),
+                                      BACKFILL_WINDOW: _found("gmail")})
+    assert report.ran and report.examined == 1 and report.closed == 1
+    assert _state(store, org, "en_s13_worked") in ("met", "unavailable")

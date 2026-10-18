@@ -5,6 +5,31 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+#: The JWT signing secret this repository ships. ANYONE can read it here, so anyone can sign a session
+#: with it: it may serve only where `env` names a development environment (`insecure_boot`).
+DEFAULT_JWT_SECRET = "genios-dev-secret-change-in-prod"
+#: Every JWT secret the repository itself hands out — the default above, and the placeholder
+#: `.env.example` gives every checkout (`06` D62): public both, so refused alike outside dev.
+PUBLIC_JWT_SECRETS: frozenset[str] = frozenset({DEFAULT_JWT_SECRET, "change-me-in-prod"})
+
+#: THE development environments — named EXPLICITLY, one list for the boot (`insecure_boot`) and for
+#: egress's loopback exception (`platform/egress.is_dev`), `06` D62. `local` is in it: egress named
+#: dev/development/test and this list added `local`, which the device routes read as a laptop too
+#: (`api/device_routes._verification_base`); no deployment in the repository names it. Measured, and
+#: not folded in: the device routes' own (dev, test, local) and the Composio webhook's exact `"dev"`
+#: (`api/routes.py`) — each still reads `Settings.env`, whose default is "dev".
+DEV_ENVS: frozenset[str] = frozenset({"dev", "development", "test", "local"})
+
+
+def is_dev_env(settings: "Settings") -> bool:
+    """SAFE BY DEFAULT (`06` D62): a development environment only when `GENIOS_ENV` NAMES one.
+    `Settings.env` defaults to "dev" for every other reader; an environment that never provided the
+    field — `"env" not in model_fields_set` — is not dev, as `platform/egress` always read it."""
+    if "env" not in settings.model_fields_set:
+        return False
+    return str(settings.env or "").strip().lower() in DEV_ENVS
+
+
 class Settings(BaseSettings):
     """Typed settings from env (GENIOS_* prefix) / .env file.
 
@@ -34,7 +59,7 @@ class Settings(BaseSettings):
     # auth + cache (ported from genios-brain, engine-native). Both optional:
     # empty REDIS_URL → NullCache no-op (Redis is a prod accelerator, not a hard dep).
     redis_url: str = ""                          # rediss://… (Upstash) or redis://localhost
-    jwt_secret: str = "genios-dev-secret-change-in-prod"   # dashboard-session JWT signing
+    jwt_secret: str = DEFAULT_JWT_SECRET                    # dashboard-session JWT signing
     # Seat sessions (platform/sessions.py): a short-lived access JWT, renewed through a rotating
     # refresh token that can be revoked (logout, deactivation, reuse of a rotated token).
     # 7 days, the lifetime every client was built against. The dashboard, the desktop app and the
@@ -86,6 +111,10 @@ class Settings(BaseSettings):
     l4_llm_decision_maker_orgs: str = ""
     l4_llm_decision_model: str = ""
     l4_llm_decision_max_calls_per_org_day: int = 400
+    # STEP-07 · the company brief's drafter (`reason/brief_drafter.py`): one Sonnet-class call that
+    # PROPOSES the brief's lines from memory patterns, and one a week for what it is missing (`06`
+    # D28). Empty = the engine's `anthropic_model`.
+    company_brief_model: str = "claude-sonnet-5"
     # OUR OWN domains — the product's transactional mail, not anybody's counterparty.
     #
     # A customer's inbox contains our onboarding, invite and billing mail. Without this the
@@ -246,6 +275,36 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def insecure_boot(settings: Settings) -> str | None:
+    """Why this configuration may not serve, or None when it may.
+
+    ⛔ STEP-18 B7 (`yc2_w27_s18` M49.C3.L-contract.V0.U07). `jwt_secret` defaults to a string in the
+    repository and nothing checked it: an image deployed without `GENIOS_JWT_SECRET` signed and
+    verified every session (`platform/sessions`, `platform/auth`) with a key anyone can read. The
+    rule: an environment outside `DEV_ENVS` may not serve with a public secret (`PUBLIC_JWT_SECRETS`),
+    nor with an empty one.
+
+    ⛔ `06` D62 (Rohit, 12 Oct; M49.C3.L-contract.V1.U10, crosscheck S18-X03): an UNSET `GENIOS_ENV`
+    is not dev (`is_dev_env`). It read `dev` before, so a production that never named its
+    environment booted on the public secret; and `.env.example`'s `change-me-in-prod` passed under
+    any environment. Before deploying, Harsh reads `GET /config` and sets `GENIOS_ENV` and a real
+    `GENIOS_JWT_SECRET` (`08`, STEP-18's section).
+    """
+    if is_dev_env(settings):
+        return None
+    secret = str(settings.jwt_secret or "").strip()
+    if secret and secret not in PUBLIC_JWT_SECRETS:
+        return None
+    env = (f"GENIOS_ENV={str(settings.env or '').strip().lower()!r} is not a development environment"
+           if "env" in settings.model_fields_set
+           else "GENIOS_ENV is unset, and an unset environment is not a development one")
+    what = ("empty" if not secret else "the default this repository ships"
+            if secret == DEFAULT_JWT_SECRET else "the placeholder .env.example ships")
+    return (f"{env}, and GENIOS_JWT_SECRET is {what} — anyone could sign a session with it. Set "
+            "GENIOS_JWT_SECRET to a secret of this deployment's own, and GENIOS_ENV to this "
+            "environment's name.")
 
 
 def l1_seam_enabled(engine, org_id: str) -> bool:

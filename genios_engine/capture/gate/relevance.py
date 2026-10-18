@@ -122,6 +122,25 @@ EMAILS:
 {emails}"""
 
 
+def with_company_brief(prompt: str, block: str) -> str:
+    """`prompt` with the company brief's block as its own paragraph after the opening one — before
+    the mail it judges (STEP-07). An empty block returns the prompt unchanged, byte for byte."""
+    if not block:
+        return prompt
+    head, sep, rest = prompt.partition("\n\n")
+    return f"{head}{sep}{block.rstrip()}\n\n{rest}" if sep else f"{prompt}\n\n{block.rstrip()}"
+
+
+def _masked(subject: str, body: str, oid: str | None = None) -> str:
+    """Subject and body as the model may see them: PII masked TOGETHER, as the batch always sent
+    them (`03` F78). Masking that fails sends the two without the raw subject line in front."""
+    from genios_engine.capture.preprocess.preprocess import preprocess
+    try:
+        return preprocess(f"{subject}\n\n{body}", event_id=oid, mask_phone=False).clean_text
+    except Exception:      # noqa: BLE001 — never a raw subject; the body alone is still judgeable
+        return body
+
+
 class LLMRelevanceClassifier:
     """S2 LLM junk-gate — the single reliable filter that keeps noise OUT of the graph.
 
@@ -147,9 +166,15 @@ class LLMRelevanceClassifier:
         self._cost_sink = cost_sink
         self._org_id = org_id
         self._seat_id: str | None = None
+        # STEP-07 · where the tenant's company brief is read from, and who it names. Both
+        # unbound by default: an unbound classifier asks exactly what it asked before.
+        self._brief_source = None
+        self._senders = None
+        self._named = None
 
     def bind_costs(self, cost_sink, org_id: str,
-                   seat_id: str | None = None) -> "LLMRelevanceClassifier":
+                   seat_id: str | None = None, *,
+                   brief_source=None) -> "LLMRelevanceClassifier":
         """Attach cost recording once the org is known (the classifier is built before the sync).
 
         `seat_id` is the CONNECTION's seat, re-bound with the org for the same reason the org is:
@@ -157,7 +182,47 @@ class LLMRelevanceClassifier:
         connection would bill this mailbox's gate calls to the last person synced."""
         self._cost_sink, self._org_id = cost_sink, org_id
         self._seat_id = (str(seat_id) if seat_id else None)
+        # STEP-07 · the same act binds where this tenant's company brief is read from
+        # (anything `platform/company_brief.current` accepts), so the classifier one sync
+        # door builds and the one the golden runner builds cannot differ in what they ask.
+        if brief_source is not None:
+            self._brief_source = brief_source
         return self
+
+    def bind_senders(self, sender_resolver) -> "LLMRelevanceClassifier":
+        """The tenant's sender resolver (`api/routes._sender_resolver_for`). Who the company
+        brief names (`.named`) costs the batch nothing — the gate whitelists them as W-07 and
+        never asks; and no known sender is settled from a list snippet (`keeps_whole`)."""
+        self._senders = sender_resolver
+        self._named = getattr(sender_resolver, "named", None)
+        return self
+
+    def keeps_whole(self, obj) -> bool:
+        """Whether the connector must fetch this message in full rather than settle it from its
+        list snippet: a known counterparty, or a sender the company brief names (STEP-07). The
+        snippet gate exists for the newsletter flood; neither of these is that."""
+        senders = getattr(self, "_senders", None)
+        if senders is None:
+            return False
+        try:
+            return bool(senders(obj))
+        except Exception:      # noqa: BLE001 — unknown is the old behaviour, never a lost mail
+            return False
+
+    def _brief_block(self) -> str:
+        """The tenant's company brief, as its prompts carry it — "" when unbound or empty."""
+        if self._brief_source is None or not self._org_id:
+            return ""
+        from genios_engine.platform.company_brief import current
+        return current(self._brief_source, self._org_id).prompt_block()
+
+    def _named_in_brief(self, obj) -> bool:
+        if self._named is None:
+            return False
+        try:
+            return bool(self._named(obj))
+        except Exception:      # noqa: BLE001 — a brief that cannot be read names nobody
+            return False
 
     def _record(self, res) -> None:
         if self._cost_sink is None or not self._org_id:
@@ -186,6 +251,8 @@ class LLMRelevanceClassifier:
             raw = getattr(o, "raw", None) or {}
             if not oid or oid in self._cache or getattr(o, "actor_type", "") == "agent":
                 continue                                    # already gated (e.g. by the connector) → skip re-call
+            if self._named_in_brief(o):
+                continue                                    # W-07: the gate never asks (STEP-07)
             subject = raw.get("subject") or ""
             snippet = raw.get("snippet") or raw.get("body") or ""
             try:                                            # SAME PII masking as the single path
@@ -206,7 +273,9 @@ class LLMRelevanceClassifier:
             return
         emails = "\n\n".join(f"[{idx}] {content}" for idx, (_oid, content) in enumerate(chunk))
         res = self._llm.call(
-            _GATE_BATCH_PROMPT.format(n=len(chunk), last=len(chunk) - 1, emails=emails),
+            with_company_brief(
+                _GATE_BATCH_PROMPT.format(n=len(chunk), last=len(chunk) - 1, emails=emails),
+                self._brief_block()),
             max_tokens=40 * len(chunk) + 60)
         self._record(res)
         if not res.ok:
@@ -236,13 +305,21 @@ class LLMRelevanceClassifier:
         oid = getattr(ctx.event, "source_object_id", None)
         if oid and oid in self._cache:                        # batched verdict — no extra LLM call
             return self._cache[oid]
-        subject = ctx.raw.get("subject") or ""
-        body = (prepared.clean_text if prepared else (ctx.raw.get("snippet") or ""))[:1500]
-        content = f"Subject: {subject}\n{body}".strip()
+        # ⛔ THE SUBJECT GOES IN MASKED (`03` F78). `prepared.clean_text` is the subject and the
+        # body masked together (`capture/pipeline.py`, preprocess); putting the raw subject in
+        # front of it sent a subject line's PII to the model unmasked. Without prepared text,
+        # the subject and snippet are masked here, exactly as the batch masks them.
+        if prepared is not None:
+            content = (prepared.clean_text or "")[:1500].strip()
+        else:
+            content = _masked(ctx.raw.get("subject") or "", ctx.raw.get("snippet") or "",
+                              oid)[:1500].strip()
         if not content:                                       # nothing to judge → don't drop blind
             return RelevanceVerdict(True, 0.50, disposition="keep", reason="empty_pass")
-        res = self._llm.call(_GATE_PROMPT.format(source=ctx.event.source, content=content),
-                             max_tokens=120)
+        res = self._llm.call(
+            with_company_brief(_GATE_PROMPT.format(source=ctx.event.source, content=content),
+                               self._brief_block()),
+            max_tokens=120)
         self._record(res)
         if not res.ok:                                        # fail OPEN — never lose mail on an error
             return RelevanceVerdict(True, 0.50, disposition="keep", reason="gate_llm_unavailable")

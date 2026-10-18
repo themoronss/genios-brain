@@ -1,7 +1,8 @@
 """L4-00 · the executive layer could not say which of its silences were deliberate.
 
-⛔ WHAT THIS LAYER IS, MEASURED FIRST. `executive/` is 25 files and 5,731 lines, and unlike Layer
-3's dormant machinery it IS wired: `api/routes.py:1150` calls `sweep.run_executive` for every org
+⛔ WHAT THIS LAYER IS, MEASURED FIRST. `executive/` is 27 files and 6,167 lines (25 / 5,731 when
+this file was written), and unlike Layer 3's dormant machinery it IS wired: `api/routes.py:1195`
+calls `sweep.run_executive` for every org
 on every heartbeat tick, before distribution, and that plans commitments from authoritative
 decisions then validates, transitions, reminds, escalates and closes them. Five tables, delegation
 wiring, fourteen test files, and `record_outcome` feeding Layer 7. **The execution half is done.**
@@ -10,7 +11,13 @@ wiring, fourteen test files, and `record_outcome` feeding Layer 7. **The executi
 `context/lane_health.DORMANT_LANES` and `patterns/routing.UNROUTED_PATTERN_TYPES` all exist so a
 reader can tell a deferred capability from a forgotten one. `executive/` had NOTHING of the kind,
 so three public functions with no caller looked exactly like three oversights — and one of them,
-`monitor.blocking_action`, is a real product gap while the other two are correct.
+`monitor.blocking_action`, was a real product gap while the other two are correct.
+
+⛔ **UPDATED 2026-10-01.** `monitor.blocking_action` is now wired (see the count test below), so
+the table is five. And the citation above was `api/routes.py:1150`; it is **1195** — the claim was
+true and the address had gone stale, which is finding **F11** in
+`speedrun008/YCW27/layer-4-executive/03-FINDINGS.md`. ⛔ `tests/test_spec_deferrals_resolve.py`
+cannot catch that: it resolves document paths, not `file.py:line` citations in prose.
 
 This file makes that distinction enforceable in both directions.
 """
@@ -37,8 +44,20 @@ def _sources() -> dict[str, str]:
 
 
 def _unreached() -> frozenset[str]:
-    """`{module.function}` for every public executive function nothing calls."""
-    called = U.called_names(_sources())          # ONE pass over the engine, not one per function
+    """`{module.function}` for every public executive function nothing calls.
+
+    ⛔ CHANGED 2026-10-01 FROM `called_names` TO `qualified_call_counts`, AND IT FOUND FIVE.
+    `called_names` counts by NAME ALONE, so any function sharing a name with any method anywhere
+    in the engine read as reached. `readiness.read` had 11 apparent callers and has none;
+    `execution_guard.is_live` had 3; `execution_store.supersede` 2; `delegation.propose` 1;
+    `lifecycle.is_open` 2. All five are now declared, and the whole of `executive/readiness.py`
+    turned out to be unreached rather than just one function of it.
+
+    ⛔ **A call resolved by name alone is a call to any function with that name.** The declaration
+    was never wrong -- it was answering a question the tool could not ask. `called_names` keeps its
+    other jobs in this module; this is the one question that needs the module not to be collapsed.
+    """
+    counts = U.qualified_call_counts(_sources())  # ONE pass over the engine, keyed (module, name)
     found = set()
     for path in sorted(EXECUTIVE.glob("*.py")):
         # ⛔ `unreached.py` IS THE GUARD, and its callers are this file by design. Scanning it
@@ -47,7 +66,7 @@ def _unreached() -> frozenset[str]:
         if path.name in {"__init__.py", "unreached.py"}:
             continue
         for name in U.public_functions(path):
-            if called.get(name, 0) == 0:
+            if counts.get((path.stem, name), 0) == 0:
                 found.add(f"{path.stem}.{name}")
     return frozenset(found)
 
@@ -76,19 +95,81 @@ def test_every_declared_entry_is_still_unreached():
         "stale silence is worse than none, because somebody will act on it.")
 
 
-def test_the_count_is_six_and_they_are_the_measured_six():
+#: ⛔ STEP-15 (`yc2_w27_s15`) built the morning brief bottom-up, so for a run of commits a part landed before the
+#: composer that calls it. Each was declared in `executive/unreached.UNREACHED` and named here, and both entries
+#: left in the commit that wired the caller — the ten in `test_the_count_is_ten_and_they_are_the_measured_ten` are
+#: the layer's own and do not move. EMPTY NOW: `morning.compose` (M45.C3.L-integration.V0.U01) wired the last of
+#: the three (`morning_writer.write_brief`), so nothing of STEP-15's own build order is still declared here.
+STEP_15_BUILDING = frozenset()
+
+
+def test_the_count_is_ten_and_they_are_the_measured_ten():
     """Pinned so the gap is a number rather than an impression. It may shrink; it may not grow
-    without somebody writing down why."""
+    without somebody writing down why.
+
+    ⛔⛔ FIVE -> TEN ON 2026-10-01, AND THE LAYER DID NOT GET WORSE -- THE TOOL GOT SHARPER.
+    `_unreached()` asked `called_names`, which counts by NAME ALONE, so any function sharing a name
+    with any method anywhere in the engine read as reached. Switching to `qualified_call_counts`,
+    which keys on `(module, name)` and resolves aliases, found five that were never called:
+
+        readiness.read              11 apparent callers  ->  0    ⛔ and the WHOLE module is unreached
+        execution_guard.is_live      3                   ->  0    ⛔ third spelling of a closed set
+        lifecycle.is_open            2                   ->  0    ⛔ second spelling of the same set
+        execution_store.supersede    2                   ->  0    a race-free replacement, uncalled
+        delegation.propose           1                   ->  0    superseded by two better names
+
+    ⛔ *A call resolved by name alone is a call to any function with that name.* This docstring says
+    the number may not grow without somebody writing down why. **This is the why, and it is the one
+    reason a growth is good news: the gap was always ten.** The engine-wide form of the same
+    measurement found 28 such functions and is `STEP-17` in the YCW27 programme.
+
+    ⛔ SIX -> FIVE ON 2026-10-01, and it shrank the way the docstring invites.
+    `monitor.blocking_action` is now called from `executive/reminder.reminder_facts`, so its
+    `next_action` names the step actually outstanding instead of `actions[0]`.
+
+    What it was doing before: `reminder_facts` read `execution.first_action`, which is
+    `self.actions[0]` with **no completion filter**, and that value travels to
+    `deliver/executive_bridge.py:105` and onto a Slack message. ⛔ So a commitment whose first step
+    was already done was reminded about the **finished** step — which `sweep.py`'s own docstring
+    calls *"the single most damaging thing a system like this can do"*.
+
+    ⛔ Measured 2026-10-01: **0 of 794 actions had ever been completed**, so the two agreed on every
+    commitment in existence and it had never fired. It fires on the first completion, and
+    `api/executive_routes.complete_action` is live — which is why it was fixed before the feature
+    was used. Tests:
+    `tests/executive/test_a_reminder_names_the_step_it_waits_on.py` (11, and six of them are the
+    first tests `blocking_action` has ever had).
+    """
     assert set(U.UNREACHED) == {"assignment.resolve_approver_seat",
                                 "coordination.can_complete",
                                 "coordination.coordination_snapshot",
+                                "delegation.propose",
                                 "execution.build_from_decision",
+                                "execution_guard.is_live",
+                                "execution_store.supersede",
+                                "lifecycle.is_open",
                                 "lifecycle.is_terminal",
-                                "monitor.blocking_action"}
-    # ⛔ TWO OF THE SIX ARE REAL PRODUCT GAPS, and they are marked so a reader scanning this table
-    # does not weigh a one-line predicate the same as a missing approver.
+                                "readiness.read"} | STEP_15_BUILDING
+    # ⛔ STEP-15 (`yc2_w27_s15`) built the morning brief bottom-up: `morning_store.mark_line` landed before
+    # its caller and was named here until M45.C3.L-interface.V0.U02 wired the mark route — the ten above
+    # are the layer's own and never moved. `morning_prompt.build_prompt`, `morning_check.check_answer` and
+    # `morning_writer.write_brief` were the same shape, each in turn, and are all gone from the table now:
+    # M45.C3.L-integration.V0.U01 wired `morning.compose` to call `write_brief` instead of
+    # `morning_template.template_brief` directly, which was the last link in the chain.
+    # ⛔ AND NONE OF THE FIVE IS NOW UNTESTED. Two were — `blocking_action` (wired in U3) and
+    # `lifecycle.is_terminal`, which got its first tests in
+    # `tests/executive/test_a_closed_set_with_two_spellings.py`. Measured there: the guard at
+    # `execution_guard.py:126` re-inlines `TERMINAL_STATES` and CANNOT import the predicate,
+    # because `lifecycle.py:39` imports `execution_guard`. The caller that wants it may not have
+    # it, which is why the entry stays rather than closing.
+    #
+    # ⛔ ONE OF THE FIVE IS A REAL PRODUCT GAP — it was two. `assignment.resolve_approver_seat` is
+    # the one left, and it is blocked twice over: `execution_actions` has no approver column (so a
+    # contract field and migration `0191`, behind the unapplied `0186`-`0190`) and
+    # `authority_rules` holds zero rows, so the answer would be `None` on all 410 gated actions.
+    # Receipt #32 counts it rather than leaving it to prose.
     real = [k for k, (why, _m) in U.UNREACHED.items() if "REAL PRODUCT GAP" in why]
-    assert sorted(real) == ["assignment.resolve_approver_seat", "monitor.blocking_action"]
+    assert sorted(real) == ["assignment.resolve_approver_seat"]
 
 
 def test_every_declaration_carries_a_reason_and_a_mover():
@@ -160,11 +241,44 @@ def test_no_surface_is_in_both_tables():
     assert pull & unreached == set()
 
 
-def test_the_preventive_surface_records_that_no_card_is_built():
-    """⛔ THE CLAIM WORTH PROTECTING. `modes.py` calls preventive mode the vision's USP, and
-    measured, `deliver/` contains no reference to it — so no preventive finding has ever become a
-    card. The day one does, this entry is stale and must be rewritten rather than left saying the
-    opposite of what ships."""
+def test_no_pull_only_surface_has_quietly_acquired_a_producer():
+    """⛔ THE MISSING DIRECTION, AND THE STALENESS IT LET THROUGH FOR WEEKS.
+
+    `UNREACHED` is checked both ways: undeclared silences fail, and declarations for things now
+    called fail too. `PULL_ONLY` had only the first half — three tests asking whether the routes
+    exist, whether the tables overlap, and one BESPOKE check on `modes.load_preventive`. Nothing
+    asked the other four whether they had grown a producer.
+
+    ⛔ So `summary.build_summary` sat here saying the ladder *"is still only composed where a caller
+    asks for a summary, **never as a scheduled digest**"* while
+    `deliver/outbox._current_digest_payload` composed a `one_minute` summary and `_drain_claimed`
+    sent it on the very next line (`outbox.py:1073`, inside `drain`). It had a route AND a
+    producer, so it was not pull-only — it was simply shipped. It has been removed.
+
+    > ⛔ **One direction alone is half a guard, and a guard written for one member of a closed
+    > table is half of that.**
+
+    This is the preventive check generalised: for every surface, the function it names must not be
+    CALLED anywhere under `deliver/`. A route plus a producer is a push, whatever the entry says.
+    """
+    delivery = {name: src for name, src in _sources().items()
+                if name.startswith("genios_engine/deliver/")}
+    called = U.called_names(delivery)
+
+    for surface in U.PULL_ONLY:
+        function = surface.split(".")[-1]
+        assert called.get(function, 0) == 0, (
+            f"⛔ `{surface}` is called {called[function]} time(s) under `deliver/`, so it has a "
+            "producer and is no longer pull-only. Either it ships — remove the entry and say so "
+            "where a reader will look — or the call is not a producer and the entry must say why. "
+            "This is exactly how `summary.build_summary` went stale.")
+
+
+def test_the_preventive_surface_still_records_that_no_card_is_built():
+    """⛔ THE ONE CLAIM THAT NEEDS MORE THAN THE GENERAL CHECK. `modes.py` calls preventive mode
+    the vision's USP. The general test above proves `load_preventive` has no caller in `deliver/`;
+    this proves `deliver/` does not reach preventive mode by ANY other spelling, which is a
+    stronger statement and the one the entry actually makes."""
     delivered = any("preventive" in src for name, src in _sources().items()
                     if name.startswith("genios_engine/deliver/"))
     assert not delivered, (

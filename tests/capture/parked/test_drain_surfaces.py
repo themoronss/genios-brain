@@ -16,7 +16,8 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from sqlalchemy import text
 
-from genios_engine.capture.parked.drain import (NEEDS_REFETCH, RE_ADJUDICABLE, drain_parked,
+from genios_engine.capture.parked.drain import (NEEDS_REEXTRACTION, NEEDS_REFETCH,
+                                                RE_ADJUDICABLE, drain_parked,
                                                 parked_aging)
 from genios_engine.platform.db import get_engine
 
@@ -100,6 +101,17 @@ def test_every_refetch_code_is_accounted_as_needs_refetch_not_walked_past(engine
     assert out["reinjected"] == 0, "a stub cannot be re-adjudicated; that is the whole class"
 
 
+@pytest.mark.parametrize("reason_code", sorted(NEEDS_REEXTRACTION))
+def test_every_reextraction_code_is_counted_not_walked_past(engine, reason_code):
+    """⛔ The fourth class D2 missed. The event is already emitted, so the drain's flip would do
+    nothing; the re-read pass owns it — and the drain must still COUNT it, or it vanishes again."""
+    _park(engine, event_id=f"evt_{reason_code}", reason=reason_code)
+    out = drain_parked(engine, org_id=ORG, now=NOW)
+    assert out["examined"] == 1
+    assert out["needs_reextraction"] == 1, f"{reason_code} was examined and then walked past"
+    assert out["reinjected"] == 0 and out["blocked_no_payload"] == 0
+
+
 @pytest.mark.parametrize("reason_code", sorted(RE_ADJUDICABLE))
 def test_every_re_adjudicable_code_is_dropped_when_its_payload_is_gone(engine, reason_code):
     """The other class, and its honest exit: with no retained payload there is nothing to read
@@ -126,6 +138,7 @@ def test_an_old_park_is_reported_as_stale(engine):
 @pytest.mark.parametrize("reason_code, expected_class", (
     [(code, "needs_refetch") for code in sorted(NEEDS_REFETCH)]
     + [(code, "re_adjudicable") for code in sorted(RE_ADJUDICABLE)]
+    + [(code, "needs_reextraction") for code in sorted(NEEDS_REEXTRACTION)]
     + [("poison_quarantine", "terminal")]))
 def test_the_aging_surface_names_the_class_that_owns_each_code(engine, reason_code,
                                                                expected_class):

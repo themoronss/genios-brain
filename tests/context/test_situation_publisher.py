@@ -831,9 +831,11 @@ def test_the_production_reasoning_pass_publishes_a_quoted_receipt(pg_store, monk
     """
     from sqlalchemy import text as sql
 
+    from genios_engine.context.runner import process_pending
     from genios_engine.platform.activation import activate_semantic
+    from genios_engine.platform.config import get_settings
     from genios_engine.reason import domain_shadow, runner
-    from tests.test_l2_reads_what_l1_publishes import _capture, _drain
+    from tests.test_l2_reads_what_l1_publishes import _capture, _FakeLLM, _l2_payload
 
     org = "l2_publisher_live"
     url = pg_store.engine.url.render_as_string(hide_password=False)
@@ -841,7 +843,12 @@ def test_the_production_reasoning_pass_publishes_a_quoted_receipt(pg_store, monk
         conn.execute(sql("delete from l1_semantic_activation where org_id = :o"), {"o": org})
     try:
         _capture(url, pg_store, org, monkeypatch, object_id="msg_publisher_1")
-        drained = _drain(pg_store, org)
+        # THE DRAIN RUNS ON THE SAME CLOCK AS THE REST OF THIS TEST. `_drain` reads the wall
+        # clock, the captured email is dated NOW, and `run_all` below runs at NOW: from
+        # 2026-09-22 (45 days on) `decide_lifecycle` made the email's own situation `dormant`
+        # before the reasoning pass could select it.
+        drained = process_pending(org_id=org, store=pg_store, llm=_FakeLLM(_l2_payload()),
+                                  crypto_key=get_settings().crypto_key, eval_time=NOW)
         assert drained["situation_rows"] >= 1, f"the drain built no situation: {drained}"
 
         # A SHADOW pattern fire on the situation's own anchor, so the fire reader is on the path
@@ -896,7 +903,13 @@ def test_the_production_reasoning_pass_publishes_a_quoted_receipt(pg_store, monk
         "every situation published without a single verified evidence span — the acceptance row "
         f"is 100%. Spans seen: {[b.metadata['evidence_spans'] for b in scored]}")
 
-    bso = quoted[0]
+    # THE ANCHOR PATH'S SITUATION, by type and not by position. Since 48fbabf1 the
+    # `dependency_stated` reading also rests on this email's L1 signal and carries verified spans,
+    # but its coverage is COVERAGE_UNKNOWN by its own declaration ("no expectations registered"),
+    # and the two tie on the publisher's ordering.
+    bso = next((b for b in quoted if b.type == "opportunity"), None)
+    assert bso is not None, (
+        f"the email's own situation published no quote: {[b.type for b in quoted]}")
     receipt = next(e for e in bso.evidence if e.get("verified"))
     assert receipt["quote"].strip(), "a verified span with no sentence in it"
     assert receipt["source"] == "l1_qualified_signal"

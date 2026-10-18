@@ -102,12 +102,23 @@ MAX_BEHAVIOR_ENTRIES_PER_RUN = 200
 #: registered metric, which is what makes a rename a build failure rather than a silent nothing.
 BEHAVIOR_ELIGIBLE_METRICS: frozenset[str] = frozenset({
     "engagement.outbound_count_28d",         # how much this company reaches out
-    "relationship.response_latency_hours",   # how fast this company answers
     "account.contact_breadth",               # how many people it engages per account
     "account.open_commitment_count",         # how many promises it carries
     "account.overdue_commitment_count",      # how it follows through on them
     "support.backlog_age_p50_days",          # how it works its queue
 })
+
+#: ⛔ WHAT READS LIKE A HABIT AND IS THE WORLD'S CONDUCT — refused by name, each with why, so the set
+#: above cannot take one of them back by accident. STEP-18 B11 (`yc2_w27_s18` M49.C2.L-logic.V0.U03):
+#: `relationship.response_latency_hours` stood in the set above as "how fast this company answers",
+#: and the sampler measures the opposite — so a pattern of it would have entered the Behavior brain as
+#: this company's habit. An entry published from it before is named `metric_not_ours` by `distill`.
+THEIR_CONDUCT: Mapping[str, str] = {
+    "relationship.response_latency_hours": (
+        "the COUNTERPARTY's reply latency: whole hours from our outbound to their next inbound "
+        "(`context/analytic/sampler._reply_latencies_hours`) — how fast THEY answer, not this "
+        "company"),
+}
 
 #: Words a DESCRIPTION does not contain. Doc 02's failure mode is *"model editorialises
 #: ('founder is a bottleneck')"* — the brain records what happens, Layer 4 draws the conclusion.
@@ -750,6 +761,13 @@ def distill(conn, *, org_id: str, policy: LearningPolicy,
     for subject, value in published.items():
         if subject in claimed_subjects or not value.get("active", True):
             continue
+        metric = str(value.get("metric") or "")
+        if metric and metric not in BEHAVIOR_ELIGIBLE_METRICS:
+            # Not a series gone dark: a metric this brain no longer holds (`THEIR_CONDUCT`), so its
+            # series is never read again. Named, for the entry's retirement (STEP-18 B11).
+            labeled.append(GateRefusal("metric_not_ours", metric,
+                                       str(value.get("direction") or "?"), detail=subject))
+            continue
         reading = by_subject.get(subject)
         if reading is None:
             labeled.append(GateRefusal("series_went_dark", str(value.get("metric") or "?"),
@@ -767,6 +785,7 @@ def distill(conn, *, org_id: str, policy: LearningPolicy,
 
 
 __all__ = ["BEHAVIOR_ELIGIBLE_METRICS", "BEHAVIOR_MIN_WINDOW_DAYS", "BEHAVIOR_SUBJECT_PREFIX",
+           "THEIR_CONDUCT",
            "COST_PURPOSE",
            "BEHAVIOR_UNIT", "DEFAULT_TEMPLATES", "JUDGMENT_LEXICON", "LAPSE_TEMPLATE",
            "MAX_BEHAVIOR_ENTRIES_PER_RUN", "MAX_TEMPLATE_LENGTH", "TEMPLATE_FIELDS",

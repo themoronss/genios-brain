@@ -41,6 +41,22 @@ class LearningBatch:
     delivery: tuple[DeliveryFact, ...] = ()
     enterprise: tuple[dict, ...] = ()
     inbox: tuple[dict, ...] = ()
+    #: ⛔ SEAMS WHOSE READ RAISED AND WAS ISOLATED — not seams that returned nothing.
+    #:
+    #: `_read_optional_seam` quarantines a failed read, records it in `learning_input_rejections`
+    #: and returns `()`. ⛔ So an isolated seam arrived at `run_learning` **identical to an empty
+    #: one**, and `degraded_seams` reported both as merely empty: *"no human has judged a card
+    #: yet"* and *"the verdict table read raised and we threw it away"* were the same line.
+    #:
+    #: ⛔ The Atlas names exactly this — `L7-29`: *"Sweep completes with every required input seam
+    #: empty → 'Learning healthy' is reported for no-op execution → Mark degraded/insufficient-input
+    #: → **Expose per-seam freshness, coverage, and empty REASON** → Empty canonical verdict seam
+    #: breaches a declared health SLO."* And the no-silent-drop contract requires a quarantine to be
+    #: an observable state, never a silent drop.
+    #:
+    #: ⛔ L5 learned the same shape one layer down: *a dead row cannot tell "we chose not to send"
+    #: from "we lost it".*
+    quarantined: tuple[str, ...] = ()
 
     @property
     def is_empty(self) -> bool:
@@ -160,8 +176,36 @@ def _attach_card_level(conn, rows: tuple[dict, ...], org_id: str,
 _OPTIONAL_INBOX_TABLE = "learning_event_inbox"
 
 
-def _read_optional_seam(conn, table: str, org_id: str, since: datetime, time_col: str) -> tuple[dict, ...]:
+#: ⛔ The seams a run's HEALTH is judged on — as `LearningBatch` FIELD NAMES, never as guessed
+#: strings.
+#:
+#: ⛔ `orchestrator.run_learning` built this set inline with `getattr(batch, "deliveries", ())`, and
+#: the field is `delivery`. The default fired on **every run**, so the delivery seam was reported
+#: DEGRADED forever regardless of how much delivery data arrived — and `degraded` was therefore
+#: always True. **A flag that is always set is a flag nobody reads.**
+#:
+#: ⛔ A `getattr` with a default turns a wrong attribute name into a plausible value. On a dataclass
+#: `batch.delivery` would have raised `AttributeError` the first time it ran.
+#: `tests/feedback/test_a_quarantined_seam_is_not_an_empty_one.py` asserts every name here is a
+#: real field, so the typo cannot come back.
+HEALTH_SEAMS: tuple[str, ...] = ("outcomes", "feedback", "delivery")
+
+#: ⛔ The seams whose read is isolated rather than allowed to fail the run — the only two that can
+#: be QUARANTINED, and therefore the only two whose emptiness is ambiguous.
+#:
+#: ⛔ Derived here and read by `platform/receipts.py` rather than spelled again there: a hand-copied
+#: seam list would drift the first time a third optional seam is added, and the drift would make the
+#: receipt blind to it. `_load_outcomes` raises instead of isolating, and `_load_enterprise`
+#: isolates individual ROWS through a lineage join — neither is a quarantine.
+QUARANTINABLE_SEAMS: tuple[str, ...] = (_OPTIONAL_FEEDBACK_TABLE, _OPTIONAL_INBOX_TABLE)
+
+
+def _read_optional_seam(conn, table: str, org_id: str, since: datetime, time_col: str,
+                        quarantine: list[str] | None = None) -> tuple[dict, ...]:
     if not _table_exists(conn, table):
+        # ⛔ NOT a quarantine. A table that does not exist yet is an absent seam, not a lost one —
+        # the `card_feedback_verdicts` ledger legitimately predates some deployments — and
+        # conflating the two would make the receipt red on a tenant whose schema is simply older.
         return ()
     try:
         # `order by 1` orders by whatever column happens to sit first, which is not a contract —
@@ -177,7 +221,13 @@ def _read_optional_seam(conn, table: str, org_id: str, since: datetime, time_col
         # nothing, and an input the system deliberately quarantined was indistinguishable from
         # one that never arrived. That is the no-silent-drop contract failing in the one place
         # built to uphold it.
+        # ⛔ AND THE RECORD WAS ONLY HALF OF IT, 2026-10-02. The row landed in a ledger nothing
+        # reads, and this function returned `()` — so the seam reached `run_learning` identical to
+        # an empty one and `degraded_seams` reported both as merely empty. The caller now learns
+        # WHICH seam was lost, which is what `L7-29` means by *"expose per-seam … empty reason"*.
         _record_rejection(conn, org_id, table, f"{type(exc).__name__}: {exc}"[:400])
+        if quarantine is not None:
+            quarantine.append(table)
         return ()
 
 
@@ -201,32 +251,48 @@ def _record_rejection(conn, org_id: str, seam: str, reason: str) -> None:
         pass
 
 
-def _load_feedback(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
+def _load_feedback(conn, org_id: str, since: datetime,
+                   quarantine: list[str] | None = None) -> tuple[dict, ...]:
     """Terminal card verdicts, once the canonical verdict ledger exists. Empty otherwise.
 
     Each row carries `card_level` — see `_attach_card_level` for why a verdict without it is
     ungradeable rather than negative.
     """
-    rows = _read_optional_seam(conn, _OPTIONAL_FEEDBACK_TABLE, org_id, since, "created_at")
+    rows = _read_optional_seam(conn, _OPTIONAL_FEEDBACK_TABLE, org_id, since, "created_at",
+                               quarantine)
     return _attach_card_level(conn, rows, org_id, since)
 
 
-def _load_inbox(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
+def _load_inbox(conn, org_id: str, since: datetime,
+                quarantine: list[str] | None = None) -> tuple[dict, ...]:
     """Trusted structured events/memory — attaches with the 0046 hardening `learning_event_inbox`."""
-    return _read_optional_seam(conn, _OPTIONAL_INBOX_TABLE, org_id, since, "observed_at")
+    return _read_optional_seam(conn, _OPTIONAL_INBOX_TABLE, org_id, since, "observed_at",
+                               quarantine)
 
 
 def load_batch(conn, *, org_id: str, now: datetime,
                cohort_days: int = COHORT_DAYS) -> LearningBatch:
-    """Assemble the bounded cohort for one tenant. Each seam is read independently and defensively."""
+    """Assemble the bounded cohort for one tenant. Each seam is read independently and defensively.
+
+    ⛔ `quarantined` CARRIES WHICH OPTIONAL SEAM WAS LOST, not merely that it is empty. A read that
+    raises is isolated, recorded in `learning_input_rejections` and returned as `()` — so until
+    2026-10-02 an isolated seam arrived here identical to one that genuinely had no rows, and
+    `run_learning`'s `degraded_seams` reported both the same way. `L7-29` requires the **reason**,
+    not just the emptiness.
+    """
     since = now - timedelta(days=cohort_days)
+    quarantine: list[str] = []
     return LearningBatch(
         org_id=org_id, since=since,
         outcomes=_load_outcomes(conn, org_id, since),
-        feedback=_load_feedback(conn, org_id, since),
+        feedback=_load_feedback(conn, org_id, since, quarantine),
         delivery=tuple(load_delivery_facts(conn, org_id=org_id, since=since)),
         enterprise=_load_enterprise(conn, org_id, since),
-        inbox=_load_inbox(conn, org_id, since))
+        inbox=_load_inbox(conn, org_id, since, quarantine),
+        # Sorted so two runs that lost the same seams produce the same `counts`, which is what
+        # lets an operator diff one week against the next.
+        quarantined=tuple(sorted(quarantine)))
 
 
-__all__ = ["COHORT_DAYS", "LearningBatch", "load_batch"]
+__all__ = ["COHORT_DAYS", "HEALTH_SEAMS", "QUARANTINABLE_SEAMS", "LearningBatch",
+           "load_batch"]

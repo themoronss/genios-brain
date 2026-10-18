@@ -37,7 +37,24 @@ policy.
 
 **ONE retry, then the template.** Doc 05 §4 and doc 11 guard 4. The retry carries the gauntlet's
 specific complaint, because the single regeneration is the only chance to turn a near miss into a
-narrative and "invalid output" wastes it.
+narrative and "invalid output" wastes it. A caller may narrow it to SYNTAX (`repair=REPAIR_SYNTAX`,
+STEP-12 §8.4 item 4): an answer that was not JSON is asked for once more, and so is one that is JSON
+but not the shape asked for — a refusal coded `MALFORMED`, its retry told what was misshapen (§3.4,
+"schema-checked; one repair on syntax only"); an answer the validator refused on substance is not —
+the expert's review is never argued into passing.
+
+**A CUT ANSWER IS NOT AN ANSWER** (`03` F140). `LLMClient.call` says when the API stopped at the
+token ceiling (`truncated`); the consult then ends as `truncated` — not validated, not retried at the
+same ceiling, its cost charged and recorded — whether or not the cut JSON parsed — and on the platform
+ledger (`llm_costs`) it is a FAILURE carrying the truncation error (M50.C2.L-logic.V3.U04, s5t-F6): a cut
+the lenient parser closed was recorded `success=True`, so no check that filters on `not success` saw it.
+
+**WHAT THE SITE WAS SIZED FOR** (`yc2_w27_s18` M50.C2.L-logic.V2.U03). Claude 5 models think by default
+and spend their thinking from the same `max_tokens` as the answer. Each site says whether it may think
+(`sites.SITE_THINKING`, OFF by `06` D71) and how long a call may take (`SITE_TIMEOUT_S`); the gate sends
+both to a client that says it takes them (`supports_thinking`), and prices and calls at the client's own
+ceiling for that mode (`context/llm/client.output_ceiling`: the site's, plus the headroom of a model
+that cannot turn thinking off).
 
 **Nothing here raises.** A consult is an enhancement on top of a decision that is already made and
 already stored; an exception escaping this module would turn a model outage into a failed sweep.
@@ -52,6 +69,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
+from genios_engine.context.llm.client import TRUNCATED
+from genios_engine.context.llm.client import output_ceiling
 from genios_engine.platform.l4_activation import FEATURE_BUNDLE
 from genios_engine.platform.logging import get_logger
 
@@ -66,9 +85,12 @@ from .sites import (
     OUTCOME_NO_CLIENT,
     OUTCOME_NO_PRECONDITION,
     OUTCOME_RAN,
+    OUTCOME_TRUNCATED,
     max_output_tokens,
     require_site,
+    thinking_mode,
     tier_for,
+    timeout_s,
 )
 
 _log = get_logger("genios.reason.bundle.gate")
@@ -83,6 +105,18 @@ FORCE_FAIL_ENV = "GENIOS_L4_FORCE_FAIL_R_SITES"
 #: 4 is "no retry storms", and a retry count read from configuration is a retry storm with an
 #: audit trail.
 MAX_ATTEMPTS = 2
+
+#: What the one retry may repair. `any`: a failed generation or a refused one, carrying the complaint
+#: (the narrative's rule). `syntax`: only an answer that was not JSON — a refusal on substance stands.
+REPAIR_ANY = "any"
+REPAIR_SYNTAX = "syntax"
+REPAIRS = (REPAIR_ANY, REPAIR_SYNTAX)
+
+#: The refusal code for an answer that is JSON but not the shape the prompt asked for. Under
+#: `REPAIR_SYNTAX` it is syntax, as an answer that is not JSON at all is: repaired once, and the retry
+#: is told what was misshapen (the refusal's `detail`). Never when the validator ALSO refused it on
+#: substance — then the substance stands.
+MALFORMED = "malformed"
 
 
 def force_fail_r_sites() -> bool:
@@ -191,8 +225,10 @@ class RSiteGate:
                 feature: str = FEATURE_BUNDLE, precondition: bool = True,
                 precondition_reason: str = "precondition_absent",
                 cached: Callable[[], Any] | None = None,
-                purpose: str | None = None, subject_ref: str | None = None) -> ConsultResult:
-        """Run one R-site under the policy. Never raises.
+                purpose: str | None = None, subject_ref: str | None = None,
+                repair: str = REPAIR_ANY) -> ConsultResult:
+        """Run one R-site under the policy. Never raises — except for a `site` or a `repair` nobody
+        named, which is a programming error and refused before anything is built or spent.
 
         `validate` returns `(value_or_None, reason_codes, trace_record)`. The trace record is what
         the gate stores beside the outcome — for R-2 it is the gauntlet's row per check, which is
@@ -200,6 +236,8 @@ class RSiteGate:
         rather than from a re-run.
         """
         require_site(site)
+        if repair not in REPAIRS:
+            raise ValueError(f"unknown repair {repair!r}; expected one of {REPAIRS}")
         tier = tier_for(site)
         base = {"site": site, "tier": tier, "cache_key": cache_key}
 
@@ -245,7 +283,11 @@ class RSiteGate:
                 reason_codes=("prompt_build_failed", type(exc).__name__), **base))
 
         # ── 5 · budget, against the ACTUAL prompt rather than a guess at one. ────────────────
-        ceiling = max_output_tokens(site)
+        # Priced at the ceiling the call will be made at — the site's, or more for a model that
+        # cannot turn thinking off (M50.C2.L-logic.V2.U03).
+        mode = thinking_mode(site)
+        ceiling = output_ceiling(str(getattr(self._client, "model", "") or ""),
+                                 max_output_tokens(site), mode)
         verdict = self._budget.check(estimate_micro_usd(
             site=site, prompt_chars=len(prompt), max_output_tokens=ceiling))
         if not verdict.allowed:
@@ -264,6 +306,13 @@ class RSiteGate:
         # outcome derived from the shape of the trace is an outcome that changes meaning the next
         # time the loop grows a branch.
         last_outcome = OUTCOME_FAILED_GENERATION
+        # What the site was sized for, to a client that takes it; a fake without `**kw` is called
+        # exactly as before.
+        sized: dict[str, Any] = {}
+        if getattr(self._client, "supports_thinking", False):
+            sized["thinking"] = mode
+            if timeout_s(site) is not None:
+                sized["timeout_s"] = timeout_s(site)
         for attempt in range(1, MAX_ATTEMPTS + 1):
             if attempt > 1:
                 try:
@@ -279,7 +328,7 @@ class RSiteGate:
                     last_codes = (*last_codes, verdict.reason or "budget_refused")
                     break
             try:
-                result = self._client.call(prompt, max_tokens=ceiling)
+                result = self._client.call(prompt, max_tokens=ceiling, **sized)
             except Exception as exc:      # noqa: BLE001 — a client that raises is a failed call
                 _log.warning("%s call raised for org=%s: %s", site, self.org_id, exc)
                 trace.append({"attempt": attempt, "error": type(exc).__name__})
@@ -293,12 +342,22 @@ class RSiteGate:
             charged = cost_micro_usd(tier=tier, input_tokens=call_in, output_tokens=call_out)
             spent += charged
             self._budget.charge(charged)
+            cut = bool(getattr(result, "truncated", False))
             self._record_platform_cost(model=getattr(result, "model", model) or "",
                                        purpose=purpose or f"l4_{site.lower().replace('-', '')}",
                                        input_tokens=call_in, output_tokens=call_out,
-                                       ok=bool(getattr(result, "ok", True)),
-                                       error=getattr(result, "error", None),
+                                       ok=bool(getattr(result, "ok", True)) and not cut,
+                                       error=(getattr(result, "error", None)
+                                              or (f"{TRUNCATED} (max_tokens={ceiling})" if cut
+                                                  else None)),
                                        subject_ref=subject_ref)
+            if cut:
+                # `03` F140: cut at the ceiling. Not validated, not retried at the same ceiling.
+                trace.append({"attempt": attempt, "truncated": True})
+                return self._record(ConsultResult(
+                    outcome=OUTCOME_TRUNCATED, reason_codes=("truncated_at_the_token_ceiling",),
+                    model=model, input_tokens=tokens_in, output_tokens=tokens_out,
+                    cost_micro_usd=spent, attempts=attempt, trace=tuple(trace), **base))
             if not getattr(result, "ok", False):
                 trace.append({"attempt": attempt, "error": str(getattr(result, "error", ""))[:200]})
                 last_codes, last_outcome = ("unparseable_generation",), OUTCOME_FAILED_GENERATION
@@ -318,6 +377,12 @@ class RSiteGate:
                     trace=tuple(trace), **base))
             last_codes, last_outcome = codes, OUTCOME_FAILED_VALIDATION
             feedback = str(record.get("feedback") or "") or None
+            if repair == REPAIR_SYNTAX:
+                if set(codes) != {MALFORMED}:
+                    break              # a refusal on substance stands: no argument, no second try
+                feedback = ("Your previous answer was JSON but not in the shape asked for: "
+                            f"{record.get('detail') or 'see the shape asked for'}. Answer with one "
+                            "JSON object in exactly that shape.")
 
         # ── 7 · every failure ends in the caller's deterministic fallback, recorded. ─────────
         return self._record(ConsultResult(
@@ -368,5 +433,5 @@ class RSiteGate:
             _log.warning("could not record l4 narrative spend for org=%s: %s", self.org_id, exc)
 
 
-__all__ = ["ConsultResult", "FORCE_FAIL_ENV", "MAX_ATTEMPTS", "RSiteGate", "force_fail_r_sites",
-           "force_failed"]
+__all__ = ["ConsultResult", "FORCE_FAIL_ENV", "MALFORMED", "MAX_ATTEMPTS", "REPAIRS", "REPAIR_ANY",
+           "REPAIR_SYNTAX", "RSiteGate", "force_fail_r_sites", "force_failed"]

@@ -7,6 +7,7 @@ from typing import Any, Mapping
 
 from genios_engine.capture.documents.native import process_document
 
+from .base import InferredInstant
 from .base import RawObject, SourceBatch
 from .composio_base import ComposioExec
 
@@ -103,7 +104,7 @@ def _parse_ts(s: str | None) -> datetime:
             return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
         except ValueError:
             pass
-    return datetime.now(timezone.utc)
+    return InferredInstant.now_utc()      # no readable time: say so (GeniOS-008 L1 A3)
 
 
 def _email_of(party: Any) -> str | None:

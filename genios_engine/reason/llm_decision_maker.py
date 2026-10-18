@@ -53,7 +53,17 @@ _log = logging.getLogger(__name__)
 #: v2: the subject and its messages lead the prompt; units give conclusions, not scores.
 #: v3: past-dated scheduling threads are closed. v4: the formula's own reading is the baseline.
 #: v5: R-1's job folded in — the hedge vocabulary, the stance classes, and unresolved conflicts.
-PROMPT_VERSION = "l4-llm-decision.v5"
+#: v6: `03` F121 — the corpus's claims by the contract's own keys, quoted whole; framing blocks;
+#:     each play's steps whole and numbered within a budget (STEP-11, M30.C3.L-logic.V0.U01).
+PROMPT_VERSION = "l4-llm-decision.v6"
+
+#: `03` F121 · HOW MUCH OF THE CORPUS ONE PROMPT CARRIES. A budget decides how MANY claims and steps
+#: reach the model, never how much of one. Measured on the corpus of 2026-10-09: the longest heuristic
+#: statement is 455 characters and the longest framing statement 510, so a 600-character claim budget
+#: keeps every authored claim whole; a playbook's steps run to a median of 691 characters and 1,500
+#: keeps 196 of 228 playbooks whole — the rest lose their last steps, counted, never cut mid-step.
+_CLAIM_BUDGET = 600
+_STEPS_BUDGET = 1_500
 
 #: R-1 (`reason/interpretation.py`) in the decision maker's own words. R-1 gates a model call on a
 #: CLOSED hedge list and asks for one of six stances; its reading reaches no unit at all, so in this
@@ -130,18 +140,23 @@ _clients: dict[tuple[str, str], Any] = {}
 #: for exactly that reason. `context/llm/client.py` now owns the set and omits the field; this
 #: module reads it so the two cannot drift apart again.
 from genios_engine.context.llm.client import NO_SAMPLING_PREFIXES as _NO_SAMPLING_PREFIXES
+from genios_engine.context.llm.client import THINKING_OFF
+from genios_engine.context.llm.client import request_controls
 
 
 def request_kwargs(model: str) -> dict[str, Any]:
     """The model-specific part of one decision request.
 
     Newer models: no sampling parameters, and thinking OFF — the answer is a small JSON object
-    and thinking tokens would be billed without being read (Fable cannot disable it, so it is
-    left to its default there). Haiku-class: `temperature=0`, as every other engine call.
+    and thinking tokens would be billed without being read. Haiku-class: `temperature=0`, as every
+    other engine call.
+
+    ⛔ ONE TABLE (`yc2_w27_s18` M50.C1.L-logic.V1.U10, s5t-F8). This used a bare prefix match, so
+    `claude-opus-5-5` — which cannot turn thinking off — was sent Opus 5's `disabled`: a 400, and every
+    decision would DEFER. It reads `context/llm/client.THINKING_FAMILIES` now, matched longest id
+    first: Opus 5.5 and Fable are asked at the lowest effort instead.
     """
-    if str(model).startswith(_NO_SAMPLING_PREFIXES):
-        return {} if str(model).startswith("claude-fable") else {"thinking": {"type": "disabled"}}
-    return {"temperature": 0}
+    return request_controls(str(model), thinking=THINKING_OFF, temperature=0)
 
 
 class DecisionClient:
@@ -287,6 +302,52 @@ def _units_block(results: Sequence[ReasonerResult]) -> list[str]:
     return lines or ["- (nothing notable)"]
 
 
+def _whole(text: Any, budget: int = _CLAIM_BUDGET) -> str:
+    """One authored claim, whitespace folded, WHOLE — cut at a word only past `budget`, which no
+    claim in the corpus reaches today (see `_CLAIM_BUDGET`)."""
+    folded = " ".join(str(text or "").split())
+    if len(folded) <= budget:
+        return folded
+    cut = folded[:budget].rsplit(" ", 1)[0]
+    return f"{cut}…"
+
+
+def _claims(items: Any, limit: int) -> list[str]:
+    """`03` F121 · each claim by the CONTRACT's keys. The weld's citations and framing blocks carry
+    `artifact_id` and `statement` (`contracts/domain_expertise.require_citation`); this prompt read
+    `rule_id`/`claim_id` and `quote`/`text`, keys no citation has, and so showed the model
+    `{"rule": null, "quote": null}` for every claim the corpus made. The old keys stay as fallbacks
+    for a hand-built citation; a record with neither an id nor words is not shown at all."""
+    lines = []
+    for item in (items or ())[:limit]:
+        if not isinstance(item, Mapping):
+            continue
+        ident = item.get("artifact_id") or item.get("rule_id") or item.get("claim_id")
+        words = item.get("statement") or item.get("quote") or item.get("text")
+        if ident and words:
+            lines.append(f"- {ident}: \"{_whole(words)}\"")
+    return lines
+
+
+def _steps(steps: Sequence[Any], budget: int = _STEPS_BUDGET) -> str:
+    """A play's steps WHOLE and numbered, until the budget; the rest are counted, never cut mid-step.
+
+    `_short(list(play.steps), 300)` cut a JSON list at 300 characters — the median playbook runs to
+    691 — so the model routinely saw half a step and an ellipsis (`03` F121). The first step is
+    always shown whole, whatever its length: a budget may stop the list, never a sentence.
+    """
+    shown: list[str] = []
+    used = 0
+    for number, step in enumerate(steps, 1):
+        piece = f"{number}. {' '.join(str(step).split())}"
+        if shown and used + len(piece) + 2 > budget:
+            rest = len(steps) - len(shown)
+            return "; ".join(shown) + f" (+{rest} more step{'' if rest == 1 else 's'})"
+        shown.append(piece)
+        used += len(piece) + 2
+    return "; ".join(shown)
+
+
 def _plays_block(proposals: Sequence[Any]) -> list[str]:
     lines = []
     for item in proposals:
@@ -310,7 +371,7 @@ def _plays_block(proposals: Sequence[Any]) -> list[str]:
                                ("importance", "impact", "urgency", "success", "effort", "risk")
                                if name in item.components)
         lines.append(f"- play_id={play.play_id} | {play.label} | "
-                     f"steps: {_short(list(play.steps), 300)} | formula utility "
+                     f"steps: {_steps(play.steps)} | formula utility "
                      f"{item.utility_bp} ({components}){note}")
     return lines
 
@@ -476,17 +537,34 @@ def business_context(request: Any) -> list[str]:
     return lines[:40]
 
 
+def _company_brief(request: Any):
+    """The tenant's company brief (STEP-07), read through the same engine as `business_context`.
+
+    `platform/company_brief.current` holds it a minute per process and fails open to the empty
+    brief, so a brief that cannot be read changes nothing — the prompt goes without it, exactly as
+    it did before STEP-07, and the decision is never lost to it. No database means no brief.
+    R-1's test-mode reader (`reason/llm_interpretation.py`) reads the brief through this too.
+    """
+    from genios_engine.contracts.company_brief import CompanyBrief
+    from genios_engine.platform.company_brief import current
+
+    engine = _engine()
+    if engine is None:
+        return CompanyBrief(org_id=str(request.org_id))
+    return current(engine, str(request.org_id))
+
+
 def build_prompt(request: Any, results: Sequence[ReasonerResult], proposals: Sequence[Any],
                  uncertainty: Sequence[str], degraded: bool, importance_bp: int | None,
-                 feedback: str | None = None, business: Sequence[str] = ()) -> str:
+                 feedback: str | None = None, business: Sequence[str] = (), *,
+                 company_brief: str = "") -> str:
     capability = request.capability
     context = request.context
     metadata = capability.metadata
     weld = metadata.get("weld") or {}
     situation = str(metadata.get("situation_type") or capability.capability_id)
-    citations = [_short({"rule": c.get("rule_id") or c.get("claim_id"),
-                         "quote": c.get("quote") or c.get("text")}, 300)
-                 for c in (weld.get("citations") or ())[:6] if isinstance(c, Mapping)]
+    citations = _claims(weld.get("citations"), 6)
+    framing = _claims(weld.get("framing_blocks"), 3)
     conflicts = [_short({k: c.get(k) for k in ("left", "right", "left_role", "right_role")}, 200)
                  for c in (weld.get("conflicts") or ())[:4] if isinstance(c, Mapping)]
     eligible_ids = [item.play.play_id for item in proposals
@@ -497,6 +575,11 @@ def build_prompt(request: Any, results: Sequence[ReasonerResult], proposals: Seq
         "their inbox and calendar. Decide whether it belongs in front of them today, and what "
         "they should do about it.",
         "",
+        # STEP-07 (`speedrun008/YC-II W27/` STEP-07 §8.3) · the
+        # company brief, as its own paragraph after the role and before the situation: what a chief
+        # of staff knows on day one, read before anything it judges. Without a brief this adds
+        # nothing, and the prompt is byte for byte the one it was before.
+        *([company_brief.rstrip("\n"), ""] if company_brief else []),
         "Decide:",
         "1. outcome — \"decision\" if a good chief of staff would put this in front of the founder "
         "now; \"defer\" if it is noise (automated or promotional mail), already handled, has "
@@ -570,7 +653,11 @@ def build_prompt(request: Any, results: Sequence[ReasonerResult], proposals: Seq
     sections += ["", "HOW THE ENGINE'S FORMULA SCORED THIS (your baseline, not your answer):",
                  *_formula_block(request, results)]
     if citations:
-        sections += ["", "AUTHORED EXPERT RULES THAT APPLY:", *[f"- {c}" for c in citations]]
+        sections += ["", "WHAT AN EXPERT WOULD KNOW HERE (authored claims, quoted whole):",
+                     *citations]
+    if framing:
+        sections += ["", "HOW AN EXPERT READS THIS KIND OF SITUATION (authored, quoted whole):",
+                     *framing]
     if conflicts:
         sections += ["", "AUTHORED RULES THAT CONTRADICT EACH OTHER HERE:",
                      *[f"- {c}" for c in conflicts]]
@@ -665,22 +752,30 @@ def _debug_dump(request: Any, attempt: int, prompt: str, res: Any, tag: str = "d
 
 
 def _cache_key(request: Any, results: Sequence[ReasonerResult], uncertainty: Sequence[str],
-               degraded: bool, model: str) -> str:
+               degraded: bool, model: str, *, company_brief_version: str = "") -> str:
     """What the decision is ABOUT — never how the run was invoked.
 
     `request.semantic_hash` would be the obvious key and is wrong: a replay rebuilds the request
     with `mode=REPLAY` and no `request_id`, so the hash moves while the situation does not, the
     replay pays for a second call, and a model that answers even slightly differently turns an
     honest run into a replay mismatch. Only what the model is shown (and which model) is keyed.
+
+    The company brief is shown, so its version is keyed (STEP-07 §8.2: this cache keys on a
+    version string, not the prompt, and would otherwise answer a changed brief with the decision
+    made under the old one). It joins the key ONLY when the tenant has a brief, so a tenant without
+    one keys exactly as before and nothing already cached for it is invalidated.
     """
-    return semantic_hash({"prompt": PROMPT_VERSION, "model": model,
-                          "org_id": str(request.org_id),
-                          "capability": request.capability.capability_snapshot_id,
-                          "context": request.context.context_snapshot_id,
-                          "evaluation_time": request.evaluation_time,
-                          "results": [item.semantic_hash for item in results],
-                          "uncertainty": sorted(set(str(u) for u in uncertainty)),
-                          "degraded": bool(degraded)})
+    material = {"prompt": PROMPT_VERSION, "model": model,
+                "org_id": str(request.org_id),
+                "capability": request.capability.capability_snapshot_id,
+                "context": request.context.context_snapshot_id,
+                "evaluation_time": request.evaluation_time,
+                "results": [item.semantic_hash for item in results],
+                "uncertainty": sorted(set(str(u) for u in uncertainty)),
+                "degraded": bool(degraded)}
+    if company_brief_version:
+        material["company_brief"] = company_brief_version
+    return semantic_hash(material)
 
 
 def _consult(request: Any, results: Sequence[ReasonerResult], proposals: Sequence[Any],
@@ -693,7 +788,12 @@ def _consult(request: Any, results: Sequence[ReasonerResult], proposals: Sequenc
                     if item.disposition == CandidateDisposition.ELIGIBLE]
     model = str(getattr(llm, "model", "") or "unknown")
     business = business_context(request)
-    key = semantic_hash({"base": _cache_key(request, results, uncertainty, degraded, model),
+    # STEP-07 · the tenant's company brief, read once for this decision: its block goes into both
+    # attempts' prompts, and its version into the key (empty for a tenant without one).
+    company_brief = _company_brief(request)
+    company_brief_block = company_brief.prompt_block()
+    key = semantic_hash({"base": _cache_key(request, results, uncertainty, degraded, model,
+                                            company_brief_version=company_brief.version),
                          "business": list(business)})
     with _lock:
         hit = _cache.get(key)
@@ -709,7 +809,8 @@ def _consult(request: Any, results: Sequence[ReasonerResult], proposals: Sequenc
     last_reason = "no_answer"
     for attempt in range(2):
         prompt = build_prompt(request, results, proposals, uncertainty, degraded,
-                              importance_bp, feedback, business=business)
+                              importance_bp, feedback, business=business,
+                              company_brief=company_brief_block)
         try:
             res = llm.call(prompt, max_tokens=_MAX_TOKENS)
         except Exception as exc:      # noqa: BLE001 — a transport failure is a DEFER
@@ -824,8 +925,20 @@ def decide_with_llm(request: Any, results: Sequence[ReasonerResult], *,
     selected = next((item for item in candidates
                      if item.disposition == CandidateDisposition.ELIGIBLE), None)
     play_by_id = {play.play_id: play for play in request.capability.plays}
+    # ⛔ THE LANE, routed where the outcome and the confidence first exist together — as the formula
+    # decider routes it (`decision_maker.DecisionMaker.decide`), by the pure router, the conflict read
+    # off the SAME uncertainty markers, and never from the model's answer: a lane is a route, and no
+    # model produces a route (STEP-13 §3.5, `yc2_w27_s13` M36.C1.L-logic.V0.U01; `03` F10, F186).
+    from genios_engine.reason.output_lane import route as _route_lane
+    lane = _route_lane(
+        outcome=outcome, confidence_bp=confidence_bp,
+        conflict_open=any(str(marker).startswith(("conflict_open", "cross_domain_contradiction"))
+                          for marker in uncertainty),
+        reader_actionable_block=False)
     decision = ReasoningDecision(
         outcome=outcome,
+        output_lane=lane.lane,
+        lane_reason=lane.reason,
         capability_id=request.capability.capability_id,
         capability_version=request.capability.version,
         context_snapshot_id=request.context.context_snapshot_id,

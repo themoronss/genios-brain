@@ -46,7 +46,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from genios_engine.platform.l4_activation import (FEATURE_CARDS_FROM_SITUATIONS,
+from genios_engine.platform.l4_activation import (FEATURE_CALIBRATION_APPLY,
+                                                  FEATURE_CARDS_FROM_SITUATIONS,
+                                                  FEATURE_EXPERT_REVIEW,
+                                                  FEATURE_MORNING_BRIEF,
                                                   FEATURE_SITUATION_REASONER, L4_FEATURES)
 from genios_engine.platform.logging import get_logger
 
@@ -162,15 +165,30 @@ def provision_intelligence(engine, org_id: str, *, by: str = PROVISIONED_BY) -> 
 #: unless somebody writes down here why it should not be.
 NOT_DEFAULT_ON = {
     FEATURE_SITUATION_REASONER:
-        "it spends a MODEL CALL per admitted situation. A default-on switch that costs money per "
-        "row is a bill a tenant never agreed to; this is armed deliberately, per tenant, once "
-        "somebody has looked at the volume.",
+        "it is RETIRED (06 D51, STEP-12): the sweep no longer consults R-6, and the switch is "
+        "refused — the expert pass reviews each changed file instead. (It was never default-on: "
+        "a model call per admitted situation is a bill a tenant never agreed to.)",
     FEATURE_CARDS_FROM_SITUATIONS:
         "it is a CUTOVER, not a feature. `deliver/card_source.COMPARISON_KEYS` exists so the old "
         "per-signal path and the new per-situation path are counted on the SAME sweep before "
         "either is retired, and switching it on at provisioning would mean no tenant ever ran the "
         "comparison. ⛔ It also needs an L3 domain live or every card reads UNINTERPRETED "
         "(`l4_activation.CROSS_LAYER_PRECONDITIONS`).",
+    FEATURE_CALIBRATION_APPLY:
+        "it lets the weekly calibration MUTE rules and MOVE gate thresholds with nobody "
+        "approving the change, and once it applies anything every open card of the pack is "
+        "hidden (STEP-18 B22-B24). Unattended autonomy is the founder's call (D13), armed per "
+        "tenant; until then calibration runs in shadow and only records what it would do.",
+    FEATURE_EXPERT_REVIEW:
+        "it spends a STRONG-MODEL CALL per changed file — the expert's review (STEP-12). A "
+        "default-on switch that costs money per file is a bill a tenant never agreed to; it is "
+        "armed per tenant, Rohit's org first, after the live golden pass on the D7 model (`06` "
+        "D50).",
+    FEATURE_MORNING_BRIEF:
+        "it spends a MODEL CALL every morning — the brief's writer (R-8 Haiku-class, R-8E "
+        "Sonnet-class once on a failed check). A default-on switch that costs money every day is "
+        "a bill a tenant never agreed to; it is armed per tenant only after the live look s15-D1 "
+        "names (58 briefs, under $1 `[MODELLED]`). Off, the brief is the template's own words.",
 }
 
 #: Layer 4's default features in wave order — `L4_FEATURES` minus the declared exclusions above.

@@ -124,8 +124,19 @@ def test_the_shipped_corpus_carries_no_pattern_routes_yet():
     catalog = ExpertBrainCatalog(default_authoring_root())
     assert {domain_id: len(record.pattern_routes)
             for domain_id, record in catalog.domains.items()} == {
-        "admin": 0, "customer_support": 0, "sales": 0}
-    assert all(record.routes for record in catalog.domains.values())
+        "admin": 0, "customer_support": 0, "founder_office": 0, "sales": 0}
+    # Every domain routes — except one under construction whose EVERY capability names why it has no
+    # door yet (its `deferrals.yaml`, carried into the generated registry): the Founder Office until
+    # STEP-11 authors its first route.
+    import yaml
+    for domain_id, record in catalog.domains.items():
+        if record.routes:
+            continue
+        registry = (default_authoring_root() / record.domain.relative_path).parent / "registry" \
+            / "situation-capability-map.yaml"
+        deferred = set((yaml.safe_load(registry.read_text()) or {}).get("deferred_capabilities") or ())
+        assert deferred and deferred == set(record.capabilities), (
+            f"{domain_id} routes nothing and does not say why for every capability")
 
 
 def test_the_per_condition_evidence_travels_into_the_package_address(authoring_root):

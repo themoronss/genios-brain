@@ -544,7 +544,11 @@ substrate:
     - sent_on           # the day a campaign went out
 
   baselines:
-    - reply_cadence
+    # HOW OFTEN THIS PERSON WRITES — the median gap, in days, between their OWN messages
+    # (reason/baselines.py). NOT a reply time: their reply time is the fact
+    # `party.reply_cadence_days`, from our outbound to their next inbound. This was named
+    # `reply_cadence` until STEP-10 (D41), and every `{baseline: reply_cadence}` moved with it.
+    - write_interval
     - contact_rate_per_account   # per-company contacts/week over the 56d window (reason/baselines.py)
 
   # Layer 2 situation types a situation file may bind to via `matches.l2_situation_types`.

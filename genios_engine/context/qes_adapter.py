@@ -19,6 +19,7 @@ from typing import Any
 from genios_engine.context.vocabulary import OWNER_INFERRED
 from genios_engine.context.extract.extractor import Extraction
 from genios_engine.contracts.extraction import ExtractionResult
+from genios_engine.contracts.units import DateCertainty
 
 
 def _span_quote(spans: Sequence[Any]) -> str:
@@ -48,6 +49,13 @@ def _relevance(confidence_bp: int) -> float:
     return confidence_bp / 10_000
 
 
+#: The confidence a mail BELOW the qualification floor enters memory at (STEP-05, `06` D20): under the
+#: pipeline's ranking floor (`context/pipeline.RELEVANCE_FLOOR`, 0.35), so it is stored, queryable and
+#: ranked low — never a gate, as relevance never is. This relevance, on every claim, IS the mark: an
+#: observation saying "below the floor" was tried and read as a quote (`yc2_w27_s05 · M23.C3 U06`).
+BELOW_FLOOR_CONFIDENCE_BP = 3000
+
+
 def adapt_qes_extraction(
     payload: Mapping[str, Any] | ExtractionResult,
     *,
@@ -61,6 +69,9 @@ def adapt_qes_extraction(
     typed L1 claim and carries that claim's exact quote.  In particular, role and relationship
     open lanes pass through as data, commitments keep their resolved due bound, and a signal type
     becomes an observation rather than a fabricated fact.
+
+    A mail Layer 1 READ and the floor did not publish (STEP-05) is projected the same way, at the
+    caller's `BELOW_FLOOR_CONFIDENCE_BP` and with no signal type: nothing marks it but that.
     """
     result = (payload if isinstance(payload, ExtractionResult)
               else ExtractionResult.model_validate(dict(payload)))
@@ -112,9 +123,16 @@ def adapt_qes_extraction(
 
     commitments = []
     for item in result.commitments:
+        # `03` F149 · A PROMISE IS DUE WHEN ITS WINDOW CLOSES. A bounded window ("this week", "by the
+        # 30th") is due at its last instant — `earliest` made a promise due the moment it was written.
+        # An exact date is one instant either way. A RELATIVE window ("soon") is a guess that
+        # `DateCertainty` says is never a deadline; what it is instead is `06`'s to decide, so it
+        # keeps its old reading until then.
         due_text = None
         if item.due is not None and item.due.earliest is not None:
-            due_text = item.due.earliest.isoformat()
+            relative = item.due.certainty is DateCertainty.RELATIVE
+            bound = item.due.earliest if relative or item.due.latest is None else item.due.latest
+            due_text = bound.isoformat()
         commitments.append({
             "actor": item.actor,
             "action": item.action,
@@ -184,4 +202,4 @@ def adapt_qes_extraction(
     )
 
 
-__all__ = ["adapt_qes_extraction"]
+__all__ = ["BELOW_FLOOR_CONFIDENCE_BP", "adapt_qes_extraction"]

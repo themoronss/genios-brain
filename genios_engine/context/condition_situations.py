@@ -63,6 +63,7 @@ from sqlalchemy import text
 #: the field appearing in ONE module and asked how it could be both writer and reader.
 from genios_engine.context.angles.contract import fan_subject_ref
 from genios_engine.context.correlation_timeline import FIELD_REVIEW as REVIEW_FIELD
+from genios_engine.platform.self_identity import SelfIdentity
 
 _REVIEW_ROWS = (
     "select f.subject_node_id as node_id, f.value as value "
@@ -173,14 +174,20 @@ def _normalise_identity(value: str) -> str:
 _MIN_IDENTITY_TOKENS = 2
 
 
-def _is_owner(actor: str, owner: str) -> bool | None:
-    """Whether `actor` is the mailbox owner — `None` when the question cannot be answered safely.
+def _is_owner(actor: str, owner: str, us: SelfIdentity | None = None) -> bool | None:
+    """Whether `actor` is one of us — `None` when the question cannot be answered safely.
 
-    A two-token name that normalises into the owner's address is a match: `"Rohit Swerashi"`
-    becomes `rohitswerashi`, which is inside `mrrohitswerashigmailcom`. A single token is refused
-    whatever it is, because it cannot distinguish two people who share a first name and this
-    mailbox contains exactly that case.
+    AN ADDRESS IS ASKED OF WHO WE ARE (STEP-04). An actor that is a bare address is us exactly
+    when `platform/self_identity` says so: any address of ours, not only the one `owner` names —
+    which is None the moment a second address of ours sends mail.
+
+    A NAME FALLS BACK to the match against the mailbox owner's address. A two-token name that
+    normalises into it is a match: `"Rohit Swerashi"` becomes `rohitswerashi`, which is inside
+    `mrrohitswerashigmailcom`. A single token is refused whatever it is, because it cannot
+    distinguish two people who share a first name and this mailbox contains exactly that case.
     """
+    if us and "@" in actor and len(actor.split()) == 1:
+        return us.is_us(actor)
     if not owner or not actor:
         return None
     tokens = [t for t in actor.replace(".", " ").replace("_", " ").split() if t]
@@ -196,7 +203,8 @@ def _is_owner(actor: str, owner: str) -> bool | None:
 
 def read_conditions_in_review(rows: Mapping[str, object], now: datetime,
                               mailbox_owner: str | None = None,
-                              verdicts: Mapping[str, tuple[str, int]] | None = None) -> list:
+                              verdicts: Mapping[str, tuple[str, int]] | None = None,
+                              *, us: SelfIdentity | None = None) -> list:
     """One finding per unparsed condition. `rows` maps subject node id to the stored review value.
 
     A condition with no actor, no action and no quote yields nothing — there would be nothing for
@@ -260,8 +268,8 @@ def read_conditions_in_review(rows: Mapping[str, object], now: datetime,
             # the owner's address by accident and would mark a counterparty's promise as ours.
             # `_is_owner` returns None for anything that ambiguous, and an absent flag is the
             # honest answer: the queue still surfaces the condition, it just does not claim whose
-            # it is.
-            owned = _is_owner(actor, owner)
+            # it is. An actor that is an address is asked of `us`, who we are (STEP-04).
+            owned = _is_owner(actor, owner, us)
             if owned is not None:
                 facts.append(("condition.actor_is_us", owned, "bool"))
 
@@ -391,7 +399,8 @@ def gather_conditions_satisfied(conn, org_id: str) -> dict[str, object]:
 
 
 def read_conditions_satisfied(rows: Mapping[str, object], now: datetime,
-                              mailbox_owner: str | None = None) -> list:
+                              mailbox_owner: str | None = None,
+                              *, us: SelfIdentity | None = None) -> list:
     """One finding per condition the world has satisfied.
 
     BOTH SPANS OR NOTHING, and that rule is enforced upstream rather than restated here:
@@ -461,7 +470,7 @@ def read_conditions_satisfied(rows: Mapping[str, object], now: datetime,
             if world_key:
                 facts.append(("condition.satisfied_by", world_key, "string"))
 
-            owned = _is_owner(actor, owner)
+            owned = _is_owner(actor, owner, us)
             if owned is not None:
                 facts.append(("condition.actor_is_us", owned, "bool"))
 

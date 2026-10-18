@@ -1,0 +1,4 @@
+full suite · speedrun008 after the merge and the re-pins · 2026-10-05
+
+15669 passed, 1068 skipped, 152 xfailed, 1595 warnings in 818.95s (0:13:38)
+exit=0

@@ -276,7 +276,7 @@ states:
       description: No contact from them for materially longer than their own cadence.
       entered_when:
         - {fn: days_since, path: thread.last_inbound, op: ">=",
-           value: {baseline: reply_cadence, mult: 2.5, floor: 14}}
+           value: {baseline: write_interval, mult: 2.5, floor: 14}}
       implies: >
         Ambiguous by construction — reassignment, leave, or disengagement. Not a signal on its own
         and frequently reported as one.
@@ -304,7 +304,7 @@ states:
       to: quiet
       when:
         - {fn: days_since, path: thread.last_inbound, op: ">=",
-           value: {baseline: reply_cadence, mult: 2.5, floor: 14}}
+           value: {baseline: write_interval, mult: 2.5, floor: 14}}
       trigger: silence beyond their own cadence
       reversible: true
     - from: active
@@ -472,7 +472,7 @@ inference_patterns:
       status: executable
       when:
         - {fn: days_since, path: thread.last_inbound, op: ">=",
-           value: {baseline: reply_cadence, mult: 2.5, floor: 14}}
+           value: {baseline: write_interval, mult: 2.5, floor: 14}}
         - {path: thread.ball_in_court, op: "!=", value: us}
       yields:
         confidence_bp: 6500
@@ -996,7 +996,7 @@ events:
     severity: info
     emitted_when:
       - {fn: days_since, path: thread.last_inbound, op: ">=",
-         value: {baseline: reply_cadence, mult: 2.5, floor: 14}}
+         value: {baseline: write_interval, mult: 2.5, floor: 14}}
     payload: [display_name, last_inbound_at]
     description: >
       `info` on purpose. It is ambiguous — leave, reassignment or disengagement — and raising it

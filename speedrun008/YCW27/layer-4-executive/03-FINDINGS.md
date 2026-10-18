@@ -71,3 +71,210 @@ and the guard. The third walks the AST for `If(Not(Name('live_row')), [..., Cont
 | F3 | channels read `org_channels`; no fourth receipt |
 | F4 | the guard test walks the AST |
 | F5 | nothing rebuilt; three tests added so the properties now fail a build if broken |
+
+---
+---
+
+# 2026-10-01 · RE-CROSSCHECK FINDINGS — F6 to F12
+
+Measured read-only against production on 2026-10-01. Full trace:
+[`05-RECROSSCHECK-why-the-queue-is-empty.md`](05-RECROSSCHECK-why-the-queue-is-empty.md).
+
+## ⛔ F6 · The queue is empty for a reason one layer up, and it is declared
+
+`GENIOS_L4_LLM_DECISION_MAKER = true`, no org allowlist → **on for every org**. The Anthropic
+spend limit has refused every call since 2026-09-25 11:09 UTC.
+`reason/llm_decision_maker.py:20` — *"**Failure is DEFER, never the formula.** ... Falling back to
+the formula would make a test of 'what does the model decide' silently measure the formula."*
+
+    the 8,044 candidates on the 2,681 runs since 2026-09-29:
+      formula_utility  5,469   ✅ the deterministic scorer is HEALTHY
+      llm_utility          0   ⛔ zero on every single one
+      final_utility_bp     0   ⛔ zero on every single one
+      outcome_kind     defer 2,669 · blocked 12 · decision ZERO  ->  0 signals emitted
+
+L4's gate was decomposed join by join: 42 open signals survive joins 1–5 and **join 6 drops them
+to 0** (`core.constraint` completed on the run behind the signal). ⛔ **Not the status filter** —
+all 2,681 `core.constraint` rows are `completed`; the 98 runs behind every open signal have **zero
+reasoner results of any kind**, because reasoner results only began being written on 2026-09-29.
+
+**This is the tenth time in the programme a state would have been called a defect before the
+declaration that created it was read.** It is DECISION #5.
+
+> ⛔ **A deliberate refusal to degrade is still a stop.** Measurement modes must declare that they
+> are measurement modes, or the first budget ceiling takes the product down silently.
+
+## ⛔ F7 · STEP-02's finding is NOT superseded — and it cost 124 escalations
+
+`readiness.py`, run through its own `COUNT_SQL` on all three orgs:
+**seats 1 ✅ · channels 1 ✅ · reporting_line 0 ⛔**. Seats and channels are why 186 executions
+exist at all. The reporting line is zero in **both** of `manager_of`'s sources —
+`org_seats.manager_seat_id` 0 of 3, `seat_responsibilities` 0 rows.
+
+    execution_escalations, 466 rows:
+      day 1 notify   owner    175   127 fired   127 with target   ✅
+      day 2 remind   owner      1     1 fired     1 with target   ✅
+      day 3 remind   owner    165    75 fired    75 with target   ✅
+      day 5 escalate manager    1     1 fired     1 with target   ✅
+      day 7 escalate manager  124     0 fired     0 with target   ⛔⛔
+
+**124 day-7 manager escalations were scheduled and not one ever fired.** The ladder works to day 3
+and stops. Two blocks, two places: F6 stops work entering, F7 caps the ladder inside.
+
+## ⛔ F8 · `seat_responsibilities.reports_to` is not a column — correction to F1 and to the Atlas
+
+F1 above and the Atlas both write it as a column. The table's columns are
+`org_id, seat_id, scope_kind, scope_key, accountability, source, evidence_ref, valid_from,
+valid_until, created_at`. `assignment.REPORTS_TO = "reports_to"` is a **value of
+`accountability`**, and `reports_to` appears in **no migration** — correctly.
+
+**The code is right.** `readiness.py:66` states both paths precisely: *"set
+`org_seats.manager_seat_id` for the standing line, or file a dated `reports_to` responsibility"*.
+Only the prose was imprecise, in two documents, and this is the correction.
+
+## F9 · ⛔⛔ RETRACTED — and the proposed fix would have destroyed correct data
+
+**What I wrote:** *"`source_events.occurred_at` max = 2056-04-20. A date 30 years in the future in
+a production column … It is one row shaped like a parser escape. ⛔ One row is a finding; the
+absence of a bound at ingest is the defect."*
+
+**What is actually true, measured 2026-10-01:**
+
+    future-dated rows        37, not one
+    source / object_type     gcal / calendar_event — every single one
+    the far ones             2051-04-20 · 2052-04-20 · 2053-04-20 · 2054 · 2055 · 2056
+    captured_at              all 2026-09-19 06:15:11, within milliseconds of each other
+    captured_at in future    0
+    outcome                  'emitted' on all 37 — already processed, none stuck
+
+⛔ **An annual recurring calendar event, expanded into yearly instances.** `occurred_at` for a
+calendar event is **when the meeting happens**, so a future value is *correct*. **A bound at ingest
+would have truncated or rejected legitimate calendar data** — precisely what a calendar connector
+must not do.
+
+**Seventeenth time in this programme a state was called a defect before it was understood, and the
+most dangerous one yet: the "fix" was a data-destroying change to correct behaviour.**
+
+⛔ **And every reader is already bounded.** Three of the four reads that order by this column carry
+`occurred_at <= :until` — `capture/esqe/baseline_reader._HISTORY_SQL`,
+`context/correlation_timeline._CLAIMS_SQL`, `context/correlation_dependency._CLAIMS_SQL`. The
+fourth, `capture/landing/unread.py`, filters on `captured_at` (zero future rows) and its queue is
+empty. Receipt #4 *"the tenant is still being fed"* uses `captured_at`, not `occurred_at`, and is
+immune by construction.
+
+## ⛔ F9b · THE REAL DEFECT THE RETRACTION FOUND — three people lost their cold-start
+
+`reason/baselines.build_baselines` was the **one** read over this column with **no bound**.
+
+⛔ **And the cost is not what it looks like.** The obvious worry is magnitude — a 30-year gap
+wrecking a median. **Measured: it does not.** `anisha@vaultex.in` has 697 events of which 30 are
+future, and her median gap is identical either way, because 667 real gaps drown them.
+**Zero of 222 baselines changed value.**
+
+The cost is at the `MIN_SAMPLES` boundary:
+
+    person                 all  past  future   computed(all)  computed(past)
+    aditi@noveum.ai          4     3       1       True          False      ⛔ FLIPS
+    asmit@supymem.com        4     3       1       True          False      ⛔ FLIPS
+    tejas@tryclean.ai        4     3       1       True          False      ⛔ FLIPS
+
+Three real events is below `MIN_SAMPLES` and must be `cold_start` — *"we do not know this person's
+rhythm yet"*. Four crosses it, so each of the three was given a **computed** `reply_cadence` from a
+gap set ending in a future year, and `cold_start` stopped being true about them. Downstream,
+*"this relationship is going cold"* was judged against that number instead of the honest default.
+
+⛔ **My first measurement missed this entirely.** It compared medians and skipped every person
+whose past-only sample fell below `MIN_SAMPLES` — **exactly the affected population**. A comparison
+that skips the cases where the answer changes KIND rather than VALUE reports zero and means
+nothing.
+
+> ⛔ **A statistic can be unchanged while the verdict flips.** 0 of 222 medians moved; 3 of 222
+> people stopped being cold-start.
+
+**Fixed** at the read, not at ingest: `occurred_at <= :until` with `until = eval_time`, which is
+what its three siblings already did. See
+[`STEP-08`](STEP-08-DONE-a-baseline-is-a-statement-about-the-past.md).
+
+## F10 · ⛔⛔ RETRACTED — wrong in the scope, the reasoning AND the conclusion
+
+**What I wrote:** *"Present on 1,973 of 2,681 new outputs. The missing 708 are exactly the
+`legacy.rule` + `legacy.score_gate` run count. Two scoring lanes, one of which cannot say which
+weights it used — so it is not replayable."*
+
+**Measured 2026-10-01, working backwards from the newest row:**
+
+| | What F10 said | What is true |
+|---|---|---|
+| **scope** | 708 of 2,681 | ⛔ **3,512 of 12,170**, and ~27% on **every single day** including the newest — not a time boundary at all |
+| **cause** | inferred from `708 == 708` | ⛔ a coincidence of a narrow window. The real split is a **perfect partition** on the weights **key set** |
+| **conclusion** | *"cannot say which weights it used … not replayable"* | ⛔ **false for all 12,170.** Every lane says which weights it used, exactly |
+
+    expertise   8,658 runs   6 keys  effort,impact,importance,risk,success,urgency  -> @2
+    legacy      3,500 runs   5 keys  effort,impact,risk,success,urgency             -> @1
+    expertise      12 runs   5 keys  effort,impact,risk,success,urgency             -> @1
+    ──────────────────────────────────────────────────────────────────────────────────────
+                12,170 runs — every one resolves, ZERO carry no weights at all
+
+⛔ `CapabilityManifest.ranking_weights_version` is a **property**, derived by
+`require_ranking_weights` from the key set, and **both shapes have one**:
+*"`ranking_weights@1` for the legacy five, `ranking_weights@2` for G-06's six."* The weights are
+persisted per decision in `reasoning_capability_snapshots.manifest`, so the version is recoverable
+**exactly** for every decision ever made.
+
+### ⛔ And F10's proposed fix would have broken replay
+
+The contract says why, at the exact line I would have changed:
+
+> *"Properties, not fields, and that is the whole reason old capabilities still address to the same
+> bytes: a stored `ranking_weights_version` column would have entered `to_semantic_dict`, changed
+> `capability_snapshot_id` for every capability in the tree, and **invalidated the
+> `reasoning_capability_snapshots` rows replay is verified against** — in exchange for a string the
+> key set already determines."*
+
+**Twentieth near-miss in this programme, and the third consecutive one whose fix would have caused
+harm**: F9 would have discarded every future calendar event; F10 would have invalidated the replay
+chain.
+
+### ⛔ Twelve rows prove the design is right
+
+Twelve `expertise.*` runs are on the v1 **five** weights. The obvious shortcut — `legacy.*` means
+`@1`, `expertise.*` means `@2`, which is exactly what the `708 == 708` coincidence pointed at —
+would have labelled those twelve **wrong**. And the two shapes have different divisors (100 vs
+10,000), so a mislabelled version also mis-divides by a factor of 100.
+
+> ⛔ **A lane name is not a version.** `require_ranking_weights` reads the key set *"never by their
+> sum"* and never off an activation table, and twelve production rows need exactly that.
+
+**Nothing was built.** 8 tests pin the derivation so the next reader who measures 3,512 absent keys
+finds the answer rather than the symptom. ⛔ **And deliberately no receipt** — 12,170 of 12,170
+resolve and the contract validates at construction, so it could never go red, and *a receipt that
+cannot fail is not a gate.* See
+[`STEP-09`](STEP-09-DONE-a-weights-version-is-derived-not-stored.md).
+
+## ⛔ F11 · `unreached.py` cites `api/routes.py:1150`; it is at **1195**
+
+True claim, stale address — the exact shape of *"a comment that cites a record reads as a record
+somebody can go and read"*. ⛔ **`tests/test_spec_deferrals_resolve.py` cannot catch it**: it
+resolves document paths, not `file.py:line` citations in prose. That generalises beyond this file.
+
+## F12 · The Atlas got L4 right — 11 claims checked, 1 superseded
+
+Exactly right on *"Units 6 and 8 have no file and three files carry no number"* — numbered are
+1, 2, 2.5, 3, 4, 5, 7, 9, 10; unnumbered "Unit" files are `assignment`, `escalation`,
+`execution_guard`. And `unreached.UNIT_NUMBERING_UNRESOLVED` already records it **better** than the
+Atlas does: *"A declared UNKNOWN, not a finding ... An absent number is not an absent unit."*
+
+Its one superseded claim: *"the queue is empty because no domain is activated"* — true when
+written, no longer the binding constraint, because L4 produced 186 executions and 165 cards.
+
+---
+
+## ⛔ Five load-bearing citations were opened by hand. One in five was wrong.
+
+| | Claim | Checked |
+|---|---|---|
+| 1 | `contracts/execution.py:233` gates autonomy on `requires_approval` | ✅ `return not self.requires_approval and not self.external_effect` |
+| 2 | `deliver/outbox.py:315` imports `build_summary` | ✅ exact |
+| 3 | `escalation.py` + `deliver/` have **no** reference to a blocking step | ✅ zero hits — G1 confirmed |
+| 4 | `deliver/` has **no** reference to preventive anything | ✅ zero hits — G4 confirmed |
+| 5 | `api/routes.py:1150` calls `run_executive` | ⛔ **stale, it is 1195** → F11 |

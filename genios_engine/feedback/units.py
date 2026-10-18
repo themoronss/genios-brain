@@ -181,13 +181,52 @@ def unit_feedback_learning(batch: LearningBatch, policy: LearningPolicy,
 
 def unit_preference_learning(batch: LearningBatch, policy: LearningPolicy,
                              now: datetime) -> list[LearningObject]:
-    """Explicit structured key/value only — never inferred from prose. Empty until the inbox lands."""
+    """Explicit structured key/value only — never inferred from prose.
+
+    ⛔ CORRECTED 2026-10-02. This said *"Empty until the inbox lands."* **The inbox landed.**
+    `learning_event_inbox` (migration 0046) exists, is written in production by
+    `reason/moments/store.record_feedback` (reached from `api/moment_routes.py:746`), and is loaded
+    into **every** weekly batch as `batch.inbox`. What has not landed is an inbox event of the KIND
+    this unit needs: every row written today carries `payload.kind == "moment_feedback"`, a card
+    action, not an explicit first-person instruction with a subject, a scope and exceptions.
+
+    ⛔ SO THE GAP IS A `kind`, NOT A TABLE, and that distinction decides who can close it: a table
+    is a migration, a `kind` is a SURFACE where a founder states a preference. There is none.
+
+    ⛔ AND A MODEL IS NOT THE ANSWER YET — the Atlas is explicit: *"Adding a model directly to
+    empty units would produce eloquent ungrounded preferences. First wire typed evidence; then use
+    a model narrowly where language ambiguity is irreducible."* Its Layer 7 #1 improvement is P1 and
+    names the inboxes, not the parser.
+
+    ⛔ `LearningTarget` HAS NO `PREFERENCE` MEMBER either, so a bounded personal preference would
+    have to arrive as `BEHAVIOR` with a resolved `subject_principal` — `governance.preflight`
+    already refuses a private-scoped proposal whose principal is unset. The sink exists; the input
+    does not.
+    """
     return []
 
 
 def unit_temporary_memory(batch: LearningBatch, policy: LearningPolicy,
                           now: datetime) -> list[LearningObject]:
-    """Explicit directive → a Runtime lease with a mandatory expiry. Empty until the inbox lands."""
+    """Explicit directive → a Runtime lease with a mandatory expiry.
+
+    ⛔ CORRECTED 2026-10-02, for the same reason as `unit_preference_learning` above: *"Empty until
+    the inbox lands"* was stale. The inbox landed; the `kind` did not.
+
+    ⛔ EVERYTHING DOWNSTREAM OF THIS UNIT IS ALREADY BUILT, which is what makes the missing input
+    the whole of the gap. The Atlas's worked example is *"Pause outreach for seven days"* →
+    `L7-18`: *"Create Runtime/temporary entry with mandatory TTL … Pause applies for declared
+    period and has zero influence afterward."* Every piece of that exists —
+    `LearningTarget.RUNTIME`, `govern()` routing Runtime to `TEMPORARY`, `publish_runtime` writing
+    `temporary_memories` with a `NOT NULL expires_at`, `preflight`'s three expiry checks, and
+    `brain_pipeline.expire_leases` retiring them. `learning_event_inbox` even carries a
+    `lease_until` column for exactly this.
+
+    ⛔ AND IT IS NOT `packs/brains/adaptive_lease`'s JOB, THOUGH THE SINK IS THE SAME ONE. That
+    module INFERS a lease from `card_feedback_verdicts`; this unit wants a founder to SAY one.
+    **Same sink, different input**, so neither does the other's work — recorded in
+    `feedback/target_policy.UNIT_TARGETS` so nobody files this as a duplicate.
+    """
     return []
 
 

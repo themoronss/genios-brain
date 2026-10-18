@@ -686,10 +686,13 @@ def _parse_verdicts(response: Any, count: int) -> dict[int, tuple[bool, str | No
 
 
 def _judge_batch(batch: Sequence[RelevanceCandidate], llm: LLMClient,
-                 on_response: Any = None) -> list[RelevanceDecision]:
+                 on_response: Any = None, *, company_brief: str = "") -> list[RelevanceDecision]:
     """One prompt for up to `MAX_BATCH` ambiguous items. `on_response` sees the raw response
-    (for cost accounting) before it is parsed."""
-    prompt = _PROMPT_HEAD + "\n".join(
+    (for cost accounting) before it is parsed. `company_brief` is the tenant's block
+    (STEP-07): the model is asked whether a message is about "this company's own operation",
+    and until now it was never told which company."""
+    from genios_engine.capture.gate.relevance import with_company_brief
+    prompt = with_company_brief(_PROMPT_HEAD, company_brief) + "\n".join(
         _item_block(i, candidate) for i, candidate in enumerate(batch, start=1))
     try:
         response = llm.call(prompt, max_tokens=1024)
@@ -852,8 +855,11 @@ class RelevancePage:
 
     def __init__(self, *, llm: LLMClient | None = None, governor: Any | None = None,
                  max_batch: int = MAX_BATCH, cost_sink: Any | None = None,
-                 org_id: str | None = None) -> None:
+                 org_id: str | None = None, company_brief: str = "") -> None:
         self._llm = llm
+        #: STEP-07 · the tenant's company brief block, read once when the lane was built; ""
+        #: for a tenant with none — and then every prompt is what it was before.
+        self._company_brief = company_brief or ""
         self._governor = governor
         #: `GraphStore.record_cost`-shaped. Without it the page still works; its spend is then
         #: missing from `llm_costs`, and so from the daily ceiling the governor opens from.
@@ -956,7 +962,8 @@ class RelevancePage:
             batch = pending[start:start + self._max_batch]
             if not self._admit(batch):
                 break
-            judged = _judge_batch(batch, self._llm, self._record)
+            judged = _judge_batch(batch, self._llm, company_brief=self._company_brief,
+                                  on_response=self._record)
             with self._lock:
                 for candidate, decision in zip(batch, judged):
                     self._verdicts[candidate.key] = decision
@@ -998,7 +1005,8 @@ class RelevancePage:
         if not self._admit([candidate]):
             return _decide(candidate.event_id, True, RULE_COST_REFUSED, DECIDED_BY_BUDGET_GUARD,
                            self._alert)
-        decision = _judge_batch([candidate], llm, self._record)[0]
+        decision = _judge_batch([candidate], llm, company_brief=self._company_brief,
+                                on_response=self._record)[0]
         with self._lock:
             self._verdicts[candidate.key] = decision
         return decision

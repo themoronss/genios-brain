@@ -1,0 +1,386 @@
+{
+ "case_id": "F04",
+ "title": "The introduced contact replied the same day; the reply is owed",
+ "kind": "must_detect",
+ "label_row": 4,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-06T18:00:00Z",
+  "2026-08-08T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-06T07:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "sofia@brandtlabs.test"
+   ],
+   "subject": "Arjun <> Sofia Brandt (Brandt Labs)",
+   "body": "Arjun, meet Sofia Brandt, who runs operations at Brandt Labs. Sofia, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Sofia Brandt",
+       "entity_type": "person",
+       "quote": "Sofia Brandt"
+      },
+      {
+       "surface_form": "Brandt Labs",
+       "entity_type": "organization",
+       "quote": "Brandt Labs"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Sofia Brandt",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Sofia Brandt"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "reply",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-06T11:40:00Z",
+   "from": "Sofia Brandt <sofia@brandtlabs.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Sofia Brandt (Brandt Labs)",
+   "body": "Hi Arjun,\n\nLovely to meet you over email. Would you have 20 minutes next week to show me the product? Tuesday or Wednesday afternoon works for me.\n\nBest,\nSofia Brandt\nHead of Operations, Brandt Labs",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "product demo"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Sofia Brandt",
+       "entity_type": "person",
+       "quote": "Sofia Brandt"
+      },
+      {
+       "surface_form": "Brandt Labs",
+       "entity_type": "organization",
+       "quote": "Brandt Labs"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Can Arjun show Sofia the product for 20 minutes next week?",
+       "asked_by": "Sofia Brandt",
+       "asked_of": "Arjun Rao",
+       "quote": "Would you have 20 minutes next week to show me the product?"
+      }
+     ],
+     "scheduling_proposals": [
+      {
+       "proposer": "Sofia Brandt",
+       "text": "Tuesday or Wednesday afternoon next week",
+       "evidence_text": "Tuesday or Wednesday afternoon works for me."
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Sofia Brandt",
+       "value": "Head of Operations",
+       "standing": "observed",
+       "quote": "Head of Operations, Brandt Labs"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "see the product next week"
+     },
+     "implied_actions": [
+      "offer Sofia a 20-minute slot next week"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "reply": "emitted"
+  },
+  "memory": {
+   "reply": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Sofia",
+     "Brandt"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "intro — the contact is waiting on the founder"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Reply to Introly",
+   "reply to Introly"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
+ },
+ "blocked_on": null,
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Sofia Brandt"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Sofia Brandt"
+    ],
+    "answer": {
+     "headline": "Offer Sofia Brandt a 20-minute product demo",
+     "situation": "Sofia Brandt asked 2 days ago: \"Would you have 20 minutes next week to show me the product?\"",
+     "artifact": "Hi Sofia, happy to show you the product for 20 minutes next week. Would [day, time] work for you?"
+    }
+   }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<brandtlabs.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly introduced Sofia Brandt, who runs operations at Brandt Labs, to the founder and left the two to take it from there.",
+       "evidence": [
+        "evt_6c884f8bd871b47ff2405481"
+       ],
+       "quote": "runs operations at Brandt Labs. Sofia, meet Arjun Rao, the founder"
+      },
+      {
+       "claim": "Sofia replied the same day asking for twenty minutes next week to see the product, and said Tuesday or Wednesday afternoon works for her.",
+       "evidence": [
+        "evt_e3ca97e0562fb14b8fbaf283"
+       ],
+       "quote": "minutes next week to show me the product? Tuesday or Wednesday afternoon works"
+      },
+      {
+       "claim": "She signs as Head of Operations at Brandt Labs.",
+       "evidence": [
+        "evt_e3ca97e0562fb14b8fbaf283"
+       ],
+       "quote": "Head of Operations, Brandt Labs"
+      },
+      {
+       "claim": "Her question is open in this file and waits on us.",
+       "evidence": [
+        "loop:loop_12ad46461f3201eb0c430403"
+       ]
+      },
+      {
+       "claim": "The file has now been quiet longer than any gap it closed before.",
+       "evidence": [
+        "num:days_quiet",
+        "num:longest_gap"
+       ]
+      },
+      {
+       "claim": "The file sits under an account admin situation, seen for the first time.",
+       "evidence": [
+        "sit:sit_93f8e3114a4bc6e1be54e861",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The ball is in the founder's court: a warm, specific ask with two afternoons offered needs only a yes and a time.",
+       "based_on": [
+        "fact:2",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "An operations head asking to see the product could be a prospective user, and so a design partner of the kind the brief is looking for.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "In this file the other side moves fast: Sofia answered the introduction within hours, and the silence since is ours.",
+       "based_on": [
+        "num:usual_gap",
+        "num:days_quiet"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Brandt Labs may be a fit as a design partner or an early customer.",
+       "needs": "The demo, and what Sofia says she needs from it."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "What Sofia wants to see the product for.",
+       "relevance": "It shapes the demo, and whether this is a design partner, a customer or a contact."
+      },
+      {
+       "question": "Which afternoon next week the founder can give.",
+       "relevance": "A reply that names a slot closes the loop in one message."
+      },
+      {
+       "question": "Whether the founder has written to Sofia since the mailbox was last read.",
+       "relevance": "A reply sent after the last sync would not show here, and the move would already be made."
+      }
+     ],
+     "frames": {
+      "primary": "An introduced contact has asked for a short product demo next week and offered two afternoons; the reply is owed by you.",
+      "rivals": [
+       "A prospective design partner or customer at Brandt Labs, worth more than a courtesy demo.",
+       "A curious contact with no need behind the ask, where the demo is goodwill only."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "intro",
+      "why": "Brandt Labs came to the founder through the connector's introduction, and the work in this file is taking that introduction forward: Sofia has asked to see the product.",
+      "evidence": [
+       "evt_6c884f8bd871b47ff2405481",
+       "evt_e3ca97e0562fb14b8fbaf283"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "With no playbook, from the brief and the file: an introduced contact who replies with a concrete ask gets a prompt answer from the founder, with a time.",
+      "actual": "Sofia asked for a twenty-minute demo next week and named two afternoons; nothing from the founder is in the file, and the question still waits on us."
+     },
+     "scenarios": {
+      "do_nothing": "Sofia's two afternoons pass unanswered; a contact who replied within hours reads the silence as disinterest, and the demo is lost.",
+      "act": "A short reply now offering Tuesday or Wednesday afternoon books the demo while the introduction is warm.",
+      "best": "The demo is booked for next week, and Brandt Labs becomes a design partner or an early customer.",
+      "worst": "No reply goes before next week, or one goes to the connector rather than Sofia, and the contact is lost.",
+      "signals_to_watch": [
+       "Sofia accepting a slot or sending an invite",
+       "A nudge from Sofia or the connector",
+       "Tuesday and Wednesday of next week drawing near with no time agreed"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "high",
+      "reversibility": "reversible",
+      "reasons": [
+       "A direct question from an introduced contact waits on us.",
+       "The silence is already longer than any gap the file closed before.",
+       "Her proposed afternoons fall early next week, so the reply should go before then.",
+       "Landing design partners is a goal now, and a late reply can still recover the demo."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun Rao",
+      "what": "Reply to Sofia Brandt accepting a twenty-minute product demo and proposing Tuesday or Wednesday afternoon next week, then send an invite once she picks",
+      "for_whom": "Sofia Brandt at Brandt Labs",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ],
+      "to": "Sofia",
+      "answers": "loop:loop_12ad46461f3201eb0c430403"
+     },
+     "alternative": "If neither afternoon works, reply anyway with two other slots next week.",
+     "wait_or_stop": "Do not wait: the move is ours. Once a time is set, wait for the demo; if Sofia does not answer your reply within a week, nudge once, then stop.",
+     "done_when": "A twenty-minute demo with Sofia Brandt is on both calendars for next week.",
+     "draft": "Hi Sofia, lovely to meet you too. I'd be glad to show you the product. Would Tuesday afternoon next week work? Wednesday afternoon works for me as well, so pick whichever suits you and I'll send an invite. Best, Arjun"
+    }
+   }
+  ]
+ }
+}

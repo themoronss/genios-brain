@@ -22,6 +22,12 @@ temperature 0, one call per document, no retry loop: this is not on any hot path
 stochastic second opinion about which sentences are rules would make the run irreproducible for
 no gain. A failure returns nothing; `org_rule_ingest` records `extractor_failed` and the document
 stays unread rather than half-read.
+
+THE COMPANY BRIEF IS BACKGROUND, NOT A SOURCE (`speedrun008/YC-II W27/` STEP-07 §8.3). When the
+founder has accepted a brief, it rides between the role and the document — whose company wrote
+this — and it changes nothing the model may answer with: every field is still a closed-set token or
+a span of the DOCUMENT, checked against the document. The sweep reads it once and hands it to the
+factory, so `propose(text, kind, title)` — the protocol every fake implements — stays as it is.
 """
 from __future__ import annotations
 
@@ -41,9 +47,12 @@ MAX_DOCUMENT_CHARS = 24_000
 #: binding rules is a document nobody has read either.
 MAX_RULES = 20
 
+#: `{company_brief}` is the tenant's company brief (STEP-07): its own paragraph after the role and
+#: before the document. Empty when the founder has accepted no line, and the prompt is then byte
+#: for byte what it was.
 PROMPT = """You are reading ONE internal company document and extracting the RULES it states.
 
-DOCUMENT KIND: {kind}
+{company_brief}DOCUMENT KIND: {kind}
 DOCUMENT TITLE: {title}
 DOCUMENT TEXT (character offsets start at 0):
 <<<DOC
@@ -88,11 +97,21 @@ HARD RULES — a candidate that breaks any of them is discarded by a validator, 
 COST_PURPOSE = "org_rule_extract"
 
 
+def build_prompt(*, text: str, kind: str, title: str, company_brief: str = "") -> str:
+    """The T2 prompt for one document. `company_brief` is the tenant's
+    `CompanyBrief.prompt_block()` (STEP-07); "" — no accepted line — leaves the prompt exactly as
+    it was."""
+    brief = (company_brief or "").strip()
+    return PROMPT.format(kind=kind, title=title, text=text[:MAX_DOCUMENT_CHARS],
+                         categories=json.dumps(sorted(ORG_RULE_CATEGORIES)),
+                         max_rules=MAX_RULES, company_brief=f"{brief}\n\n" if brief else "")
+
+
 class LLMOrgRuleExtractor:
     """The production extractor. Wraps the shared `LLMClient` (temp 0, lenient JSON parse)."""
 
     def __init__(self, client: Any, *, cost_sink: Any | None = None,
-                 org_id: str | None = None) -> None:
+                 org_id: str | None = None, company_brief: str = "") -> None:
         self._client = client
         #: `GraphStore.record_cost`-shaped, and optional: without it the extractor still reads
         #: documents, its spend is simply invisible — which is the bug 0175 closed, so the
@@ -100,6 +119,10 @@ class LLMOrgRuleExtractor:
         self._cost_sink = cost_sink
         self._org_id = org_id
         self._event_id: str | None = None
+        #: The tenant's brief block, which every document this extractor reads carries (STEP-07).
+        #: Held here rather than passed to `propose` for the reason `bind_event` gives: the
+        #: protocol call stays `propose(text, kind, title)`.
+        self._company_brief = company_brief
 
     def _record(self, result: Any) -> None:
         """Never raises: accounting must not cost us a document we already paid to read."""
@@ -133,9 +156,8 @@ class LLMOrgRuleExtractor:
         self._event_id = (str(event_id) if event_id else None)
 
     def propose(self, *, text: str, kind: str, title: str) -> Sequence[Mapping[str, Any]]:
-        prompt = PROMPT.format(kind=kind, title=title, text=text[:MAX_DOCUMENT_CHARS],
-                               categories=json.dumps(sorted(ORG_RULE_CATEGORIES)),
-                               max_rules=MAX_RULES)
+        prompt = build_prompt(text=text, kind=kind, title=title,
+                              company_brief=self._company_brief)
         result = self._client.call(prompt, max_tokens=4096)
         # BEFORE the failure branch: a refused or unparseable answer was still bought and still
         # appears on the bill. Recording only successes is how a lane looks cheap while failing.
@@ -152,12 +174,15 @@ class LLMOrgRuleExtractor:
 
 
 def make_org_rule_extractor(client: Any | None = None, *, org_id: str | None = None,
-                            engine: Any | None = None) -> LLMOrgRuleExtractor | None:
+                            engine: Any | None = None,
+                            company_brief: str = "") -> LLMOrgRuleExtractor | None:
     """The wiring seam. Returns None when no model is configured — a skipped run, not a crash.
 
     None is a real answer: on a deployment with no Anthropic key (CI, and every hermetic test
     process — `tests/conftest.py` clears the key deliberately) there is no T2 site, and the honest
     behaviour is that discovery does not run rather than that it runs against a stub.
+
+    `company_brief` is the tenant's brief block, read once by the caller (STEP-07).
     """
     if client is None:
         from genios_engine.platform.wiring import make_llm_client
@@ -168,7 +193,8 @@ def make_org_rule_extractor(client: Any | None = None, *, org_id: str | None = N
     if org_id and engine is not None:
         from genios_engine.context.graph_store import GraphStore
         sink = GraphStore(engine=engine).record_cost
-    return LLMOrgRuleExtractor(client, cost_sink=sink, org_id=org_id)
+    return LLMOrgRuleExtractor(client, cost_sink=sink, org_id=org_id,
+                               company_brief=company_brief)
 
 
 def rule_bearing_kinds() -> tuple[str, ...]:
@@ -177,4 +203,4 @@ def rule_bearing_kinds() -> tuple[str, ...]:
 
 
 __all__ = ["COST_PURPOSE", "LLMOrgRuleExtractor", "MAX_DOCUMENT_CHARS", "MAX_RULES",
-           "PROMPT", "make_org_rule_extractor", "rule_bearing_kinds"]
+           "PROMPT", "build_prompt", "make_org_rule_extractor", "rule_bearing_kinds"]

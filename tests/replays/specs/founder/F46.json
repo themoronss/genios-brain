@@ -1,0 +1,419 @@
+{
+ "case_id": "F46",
+ "title": "An investor answers in the founder's other mailbox - both are read, and the file says so",
+ "kind": "must_detect",
+ "label_row": 46,
+ "labelled_by": "claude",
+ "replays": [
+  "01"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "arjun.rao@gmail.test"
+  ]
+ },
+ "sweeps": [
+  "2026-09-10T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "pitch",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-01T09:00:00Z",
+   "from": "Arjun Rao <arjun.rao@gmail.test>",
+   "to": [
+    "ravi@seedfund.test"
+   ],
+   "subject": "Nimbus Labs - raising our seed round",
+   "body": "Hi Ravi,\n\nNimbus Labs is raising a seed round to bring calendar-aware planning to small teams. Could we find 20 minutes next week?\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-seedfund-personal",
+   "mailbox": "personal",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ravi",
+       "entity_type": "person",
+       "quote": "Ravi"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "reply",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-03T09:00:00Z",
+   "from": "Ravi Iyer <ravi@seedfund.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Nimbus Labs - raising our seed round",
+   "body": "Hi Arjun,\n\nThanks for reaching out. Could you send the deck before we speak?\n\nRavi Iyer\nSeedfund Partners",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-seedfund-work",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ravi Iyer",
+       "entity_type": "person",
+       "quote": "Ravi Iyer"
+      },
+      {
+       "surface_form": "Seedfund Partners",
+       "entity_type": "organization",
+       "quote": "Seedfund Partners"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Send the deck before the call",
+       "asked_by": "Ravi Iyer",
+       "asked_of": "Arjun Rao",
+       "quote": "Could you send the deck before we speak?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "pitch": "emitted",
+   "reply": "emitted"
+  },
+  "memory": {
+   "pitch": true,
+   "reply": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Ravi",
+     "Seedfund"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "deck"
+    ]
+   }
+  ],
+  "workstream": "investor - asked for the deck; our move"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "no reply",
+   "has not replied",
+   "follow up with Ravi"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-11 - the file exists since STEP-09 (`GET /v1/workstreams`) and names both mailboxes since STEP-10, but this line names its stage, and no stage is derived to compare against"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Ravi Iyer"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Ravi Iyer"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "seedfund.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "seedfund.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "seedfund.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "seedfund.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "fifteen_minute_account_brief": 5600
+     },
+     "confidence_bp": 5000,
+     "rationale": "An investor asked us something; know the fund before replying.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Ravi Iyer"
+    ],
+    "answer": {
+     "headline": "Send Ravi Iyer the deck",
+     "situation": "Ravi Iyer at Seedfund Partners asked for the deck before you speak. He answered your company address; the move is ours.",
+     "artifact": "Hi Ravi, here is the deck ahead of our call: [deck link]."
+    }
+   },
+   {
+    "when": [
+     "account_admin",
+     "seedfund.test"
+    ],
+    "answer": {
+     "headline": "Send Seedfund Partners the deck",
+     "situation": "Ravi at seedfund.test asked for the deck before the call. The next move is ours.",
+     "artifact": "Hi Ravi, here is the deck ahead of our call: [deck link]."
+    }
+   }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<seedfund.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "On the first of September Arjun wrote to Ravi that Nimbus Labs is raising a seed round to bring calendar-aware planning to small teams, and asked for twenty minutes the following week.",
+       "evidence": [
+        "evt_97d933041e0609ecbbce82a8"
+       ],
+       "quote": "Ravi, Nimbus Labs is raising a seed round to bring calendar-aware planning to small"
+      },
+      {
+       "claim": "On the third Ravi Iyer of Seedfund Partners answered, thanking him and asking for the deck before they speak.",
+       "evidence": [
+        "evt_fde8a73a37c03df1fe5597c5"
+       ],
+       "quote": "deck before we speak? Ravi Iyer Seedfund Partners"
+      },
+      {
+       "claim": "Ravi's ask is open and waits on us, and the file names the move as ours.",
+       "evidence": [
+        "loop:loop_c02f2f668d1ff1d265d1f708"
+       ]
+      },
+      {
+       "claim": "Since Ravi's mail the file has been quiet for over a week, longer than any gap it closed before.",
+       "evidence": [
+        "num:days_quiet",
+        "num:longest_gap"
+       ]
+      },
+      {
+       "claim": "The brief names no kind of work for Seedfund; the engine filed it as an investor relationship under fundraising.",
+       "evidence": [
+        "sit:sit_b5ff25e5e81c73649d6cab95"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Ravi agreed to talk on one condition, the deck first: the meeting Arjun asked for now waits only on Arjun.",
+       "based_on": [
+        "fact:1",
+        "fact:2",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "The longer the deck waits, the more the investor's interest cools.",
+       "based_on": [
+        "fact:4"
+       ]
+      }
+     ],
+     "patterns": [],
+     "hypotheses": [
+      {
+       "proposition": "Ravi's answer reached a different mailbox from the one the pitch went out of, and the founder has not seen it.",
+       "needs": "The founder's word on whether he saw Ravi's mail of the third."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether the founder has seen Ravi's mail of the third.",
+       "relevance": "If he missed it, the delay is an oversight to fix at once; if he saw it, something is holding the deck back."
+      },
+      {
+       "question": "Whether the deck is ready to share.",
+       "relevance": "Ravi asked for it before the call; without it the meeting waits."
+      },
+      {
+       "question": "Who Ravi is at Seedfund Partners and the size of its seed cheques.",
+       "relevance": "It decides how much of the round this conversation can carry."
+      }
+     ],
+     "frames": {
+      "primary": "An investor agreed to talk and asked for the deck first; the deck has not gone, and the move has been ours for over a week.",
+      "rivals": [
+       "The founder missed Ravi's answer because it reached a different mailbox from the pitch.",
+       "The deck went by another channel the file cannot see."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "Arjun pitched Nimbus Labs' seed round to Ravi, and Ravi answers for Seedfund Partners asking for the deck before a call — an investor conversation, which the engine already files under fundraising.",
+      "evidence": [
+       "evt_97d933041e0609ecbbce82a8",
+       "evt_fde8a73a37c03df1fe5597c5",
+       "sit:sit_b5ff25e5e81c73649d6cab95"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, the thread sets it: Ravi asked for the deck before speaking, so the deck was due promptly, with a time for the call.",
+      "actual": "No deck has gone as far as the file shows, and it has been quiet for over a week since his mail."
+     },
+     "scenarios": {
+      "do_nothing": "Ravi's interest cools, the meeting you asked for is never booked, and Seedfund drops out of the round without saying so.",
+      "act": "The deck reaches Ravi with an apology for the wait and a request for a time, and the call goes in the calendar.",
+      "best": "Ravi reads the deck, the call is booked, and Seedfund moves toward a partner discussion.",
+      "worst": "The delay reads as a founder not raising in earnest, and Ravi does not take the call.",
+      "signals_to_watch": [
+       "Ravi proposing a time once the deck goes.",
+       "Questions from Ravi about the deck.",
+       "Silence after the deck goes."
+      ]
+     },
+     "appraisal": {
+      "stakes": "high",
+      "urgency": "high",
+      "reversibility": "costly_to_reverse",
+      "reasons": [
+       "Raising the seed round is the brief's first goal, and this investor asked to see the deck before a call.",
+       "The move has been ours for over a week, longer than any gap the file closed before.",
+       "Momentum lost with an investor is hard to win back."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Reply to Ravi Iyer with your deck, apologise for the wait, and ask which time suits him for the call.",
+      "for_whom": "Ravi Iyer, Seedfund Partners",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Ravi",
+      "answers": "loop:loop_c02f2f668d1ff1d265d1f708"
+     },
+     "alternative": "If the deck is not ready, reply today saying when it will come, and ask for a time for the call.",
+     "wait_or_stop": "Do not wait — the move is ours. After the deck goes, give Ravi a week to propose a time; if nothing comes, send one short note with something new, then stop.",
+     "done_when": "Ravi has the deck and a call with him is on the calendar.",
+     "draft": "Hi Ravi, thank you for coming back to me, and sorry for the wait. Here is the Nimbus Labs deck. Which time suits you for a call? Arjun"
+    }
+   }
+  ]
+ },
+ "notes": "STEP-10 (06 D40): the golden set had one mailbox. The founder pitched from his personal Gmail; the investor answered his company address. Read from one mailbox, the pitch is unanswered and 'no reply' would be said; read from both, the answer is in the file and the move is ours. The file's receipt names both connections (tests/replays/test_every_number_says_its_n.py). A reply that arrives in another mailbox opens another conversation, so it is not paired with the pitch as a reply time - declared, not hidden."
+}

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
+from .base import InferredInstant
 from .base import RawObject, SourceBatch
 from .composio_base import ComposioExec
 
@@ -25,7 +26,7 @@ def _parse_ts(v: Any) -> datetime:
             return datetime.fromtimestamp(v / 1000 if v > 1e12 else v, tz=timezone.utc)
         except (ValueError, OverflowError, OSError):
             pass
-    return datetime.now(timezone.utc)
+    return InferredInstant.now_utc()      # no readable time: say so (GeniOS-008 L1 A3)
 
 
 #: Fields that mean "this payload carries the deal itself" rather than only a pointer to it.

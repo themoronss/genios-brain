@@ -1,0 +1,656 @@
+{
+ "case_id": "F17",
+ "title": "An accelerator moves the founder's application to interview",
+ "kind": "must_detect",
+ "label_row": 17,
+ "labelled_by": "claude",
+ "replays": [
+  "12"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-26T18:00:00Z",
+  "2026-10-01T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "mine",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-26T08:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "amira@gulflaunchpad.test"
+   ],
+   "subject": "Re: Gulf Launchpad cohort 9",
+   "body": "Hi Amira,\n\nThanks - we've submitted the application form.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-gulf",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "accelerator application"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Amira",
+       "entity_type": "person",
+       "quote": "Amira"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "next",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-10-01T07:30:00Z",
+   "from": "Amira Saleh <amira@gulflaunchpad.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Gulf Launchpad cohort 9 - interview",
+   "body": "Hi Arjun,\n\nYour application has moved to the interview stage. Please book a 30-minute slot using the scheduling link by 10 Oct.\n\nAmira Saleh\nProgramme Manager, Gulf Launchpad",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-gulf",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "accelerator application",
+      "interview"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Amira Saleh",
+       "entity_type": "person",
+       "quote": "Amira Saleh"
+      },
+      {
+       "surface_form": "Gulf Launchpad",
+       "entity_type": "organization",
+       "quote": "Gulf Launchpad"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "Gulf Launchpad cohort 9 application",
+       "state": "pending",
+       "owner": "Gulf Launchpad",
+       "quote": "Your application has moved to the interview stage."
+      }
+     ],
+     "questions": [
+      {
+       "text": "Book a 30-minute interview slot by 10 Oct",
+       "asked_by": "Amira Saleh",
+       "asked_of": "Arjun Rao",
+       "quote": "Please book a 30-minute slot using the scheduling link by 10 Oct."
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "10 Oct",
+       "earliest": "2026-10-10T00:00:00+05:30",
+       "latest": "2026-10-10T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-10-01T07:30:00Z",
+       "quote": "10 Oct"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Amira Saleh",
+       "value": "Programme Manager",
+       "standing": "observed",
+       "quote": "Programme Manager, Gulf Launchpad"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "book the interview"
+     },
+     "implied_actions": [
+      "book an interview slot by 10 Oct"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "next": "emitted"
+  },
+  "memory": {
+   "next": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Gulf Launchpad",
+     "Amira"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "interview"
+    ]
+   }
+  ],
+  "workstream": "application — interview stage",
+  "stage": "interview"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "investor relationship",
+   "term sheet"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against",
+  "stage": "STEP-11 — no stage is derived for a file (STEP-09 built the files, not their stages)"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Amira Saleh"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Amira Saleh"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "gulflaunchpad.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "gulflaunchpad.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "gulflaunchpad.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "gulflaunchpad.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Gulf Launchpad"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Gulf Launchpad"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Gulf Launchpad"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<gulflaunchpad.test>",
+     "your application has moved to the interview stage"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Amira Saleh, Gulf Launchpad's programme manager, wrote that the application has moved to the interview stage and asked Arjun to book a thirty-minute slot through the scheduling link by the tenth of October.",
+       "evidence": [
+        "evt_489f9174cd14a5b32635a246"
+       ],
+       "quote": "slot using the scheduling link by 10 Oct. Amira Saleh Programme Manager, Gulf"
+      },
+      {
+       "claim": "The file holds one open ask from that mail, waiting on us.",
+       "evidence": [
+        "loop:loop_a7971bd8e62872fad4b7cc8d"
+       ]
+      },
+      {
+       "claim": "Her mail came more than a month after Arjun told her the application form was submitted.",
+       "evidence": [
+        "evt_b28cdc0da85d9a12960d5eba",
+        "num:their_reply_time:amira@gulflaunchpad.test"
+       ],
+       "quote": "submitted the application form. Arjun"
+      },
+      {
+       "claim": "The programme playbook, not yet reviewed, says the interview stage is the founders' turn to book, prepare and attend, and that the date an invitation carries is a deadline, not a suggestion.",
+       "evidence": [
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      },
+      {
+       "claim": "Its interview move says to book by the date the invitation gives, write the time on both clocks, know the format, and have what changed since the application ready to say in a sentence.",
+       "evidence": [
+        "pb:founder_office.pb.program_applications.prepare_for_the_interview"
+       ]
+      },
+      {
+       "claim": "The playbook holds that a programme is a selection process with a published calendar, not an investor conversation, even when it invests.",
+       "evidence": [
+        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+       ]
+      },
+      {
+       "claim": "The only situation anchored on this file is typed for an investor in the fundraising domain, and the engine recorded it as a misfiled kind.",
+       "evidence": [
+        "sit:sit_606ef6e360b4eb90cbc6bdb1"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The turn is ours, and the tenth of October is the date that will not move.",
+       "based_on": [
+        "fact:1",
+        "fact:4",
+        "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+       ]
+      },
+      {
+       "claim": "Read as an investor's file, the application would draw an investor's moves, and each would be wrong here; the programme's own calendar governs.",
+       "based_on": [
+        "fact:6",
+        "fact:7"
+       ]
+      },
+      {
+       "claim": "A short interview rewards a crisp account of what changed since the application went in, over a month ago.",
+       "based_on": [
+        "fact:3",
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "At the interview stage quiet typically means the turn is ours, and the invitation's date is a deadline.",
+       "based_on": [
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      },
+      {
+       "kind": "pattern",
+       "claim": "The programme's deadline is the one fixed point; every other date is set back from it, on the programme's clock.",
+       "based_on": [
+        "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+       ]
+      },
+      {
+       "kind": "counter_pattern",
+       "claim": "A programme is not an investor: no chase and no warm introduction; its own calendar and rules decide.",
+       "based_on": [
+        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+       ]
+      },
+      {
+       "kind": "base_rate",
+       "claim": "Interview rounds typically run two to four weeks, from a single short interview to several rounds before a committee.",
+       "based_on": [
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "There will be further rounds after this interview before a decision.",
+       "needs": "What Gulf Launchpad says after the interview about its next round or its decision date."
+      },
+      {
+       "proposition": "Slots remain open well before the tenth of October.",
+       "needs": "Arjun opening the scheduling link."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Which slots remain open, and in which time zone the link shows them.",
+       "relevance": "Booking late can leave only poor times, and the time must be read on both clocks."
+      },
+      {
+       "question": "Who from Nimbus Labs must attend.",
+       "relevance": "It decides whose calendar the slot must fit."
+      },
+      {
+       "question": "The interview's format and what the programme will ask.",
+       "relevance": "Preparation follows the programme's own format, and the file holds none of it."
+      }
+     ],
+     "frames": {
+      "primary": "Gulf Launchpad has moved your application to its interview round and asked you to book a thirty-minute slot by the tenth of October: the turn is ours, and the date is a deadline.",
+      "rivals": [
+       "A first screen among several interview rounds, where booking is only the first of the programme's dates.",
+       "An invitation sent to a wide shortlist, where the interview is a light filter rather than a near-final step."
+      ]
+     },
+     "proposed_kind": null,
+     "expected_vs_actual": {
+      "stage": "interview",
+      "expected": "At the interview stage the founders book by the programme's date, prepare for its format and attend; between rounds the programme's quiet is scheduling.",
+      "actual": "The programme moved the application to interview and asked for a slot to be booked through its link by the tenth of October; the file shows no booking yet."
+     },
+     "scenarios": {
+      "do_nothing": "The slot goes unbooked past the programme's date, and the application is lost on a date rather than on merit.",
+      "act": "Booking now secures a good slot well before the deadline and leaves time to prepare.",
+      "best": "The interview is held with the right people present, the change since the application is clear, and the programme moves Nimbus Labs to a decision or an offer.",
+      "worst": "The booking slips past the tenth of October, or the interview is held unprepared, and the application ends there.",
+      "signals_to_watch": [
+       "A booking confirmation from the scheduling link",
+       "A note from Amira on the format or on who should attend",
+       "The programme's date for a decision after the interview"
+      ]
+     },
+     "appraisal": {
+      "stakes": "high",
+      "urgency": "high",
+      "reversibility": "irreversible",
+      "reasons": [
+       "Getting into accelerator programmes is one of the brief's goals, and this application has reached interview.",
+       "The invitation carries a date, and the playbook treats the programme's date as a deadline that will not move.",
+       "A slot missed past the programme's date loses the application for this intake."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Book a thirty-minute interview slot through Gulf Launchpad's scheduling link, and put the time on both clocks",
+      "for_whom": "Gulf Launchpad's selection team, through Amira Saleh",
+      "by_when": "2026-10-10",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "answers": "loop:loop_a7971bd8e62872fad4b7cc8d"
+     },
+     "alternative": "If no slot fits, write to Amira before the tenth of October asking for another time, rather than letting the date pass.",
+     "wait_or_stop": "Do not wait to book. After booking, the programme's quiet until the interview is scheduling; after the interview, wait for its decision date and ask once, through its own channel, only once that date has passed.",
+     "done_when": "A slot is booked before the tenth of October, its time is on both clocks, and the interview is held with the right people present.",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<gulflaunchpad.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun wrote to Amira at Gulf Launchpad, on the application thread, that the application form was submitted.",
+       "evidence": [
+        "evt_b28cdc0da85d9a12960d5eba"
+       ]
+      },
+      {
+       "claim": "The programme playbook, not yet reviewed, says the applied stage owes nothing and that the one thing to check is the receipt: a confirmation mail or the portal's submitted status.",
+       "evidence": [
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      },
+      {
+       "claim": "The playbook's deadline move says to file the application's receipt, because without it the application may not have gone in.",
+       "evidence": [
+        "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+       ]
+      },
+      {
+       "claim": "The playbook holds that a programme reading applications as a batch answers on its own published calendar, and its quiet before that date is not a no.",
+       "evidence": [
+        "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+       ]
+      },
+      {
+       "claim": "The playbook holds that a programme is a selection process with a published calendar, not an investor conversation.",
+       "evidence": [
+        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+       ]
+      },
+      {
+       "claim": "The only situation anchored on this file is typed for an investor, in the fundraising domain.",
+       "evidence": [
+        "sit:sit_606ef6e360b4eb90cbc6bdb1"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The founder's part is done for now; the programme moves next, on its own calendar.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Nothing in the file confirms the programme received the application: Arjun's own word is the only record.",
+       "based_on": [
+        "fact:1",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "Read as an investor's file, the application would draw a chase it should never get.",
+       "based_on": [
+        "fact:5",
+        "fact:6"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "A batch programme is silent until it decides; quiet before its published date carries no information.",
+       "based_on": [
+        "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+       ]
+      },
+      {
+       "kind": "counter_pattern",
+       "claim": "A programme is not an investor: no chase and no warm introduction; its calendar and rules decide.",
+       "based_on": [
+        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Gulf Launchpad will invite Nimbus Labs to interview once its window closes.",
+       "needs": "An invitation from the programme."
+      },
+      {
+       "proposition": "The application went in and its confirmation sits outside this file, from a portal address.",
+       "needs": "The confirmation mail or the portal's submitted status."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "The programme's deadline and decision date for this cohort.",
+       "relevance": "They set when quiet starts to mean anything; the file holds neither."
+      },
+      {
+       "question": "Whether a confirmation of the application exists.",
+       "relevance": "Without it the application may not have gone in, and the wait would be on nothing."
+      },
+      {
+       "question": "What Amira's earlier mail on this thread said.",
+       "relevance": "Arjun's mail answers it, and it may carry a date or a next step; the file does not hold it."
+      }
+     ],
+     "frames": {
+      "primary": "An accelerator application that has just gone in: your part is done, and the programme decides on its own calendar.",
+      "rivals": [
+       "An application that never reached the programme, where the quiet would hide a failed submission.",
+       "A rolling programme that reads applications as they arrive, where an answer could come any day."
+      ]
+     },
+     "proposed_kind": null,
+     "expected_vs_actual": {
+      "stage": "applied",
+      "expected": "At the applied stage nothing is owed; the one thing to check is the receipt, and the stage ends when the programme's deadline passes or it shows the application is being read.",
+      "actual": "Arjun told Amira the application form was submitted; the file holds no confirmation of receipt and no word from the programme since."
+     },
+     "scenarios": {
+      "do_nothing": "The application waits on the programme's calendar; nothing decays, unless it never went in.",
+      "act": "Filing the confirmation of receipt now settles whether the application went in, at almost no cost.",
+      "best": "The programme reads the application and invites Nimbus Labs to interview.",
+      "worst": "The application never went in, and the quiet is read as the programme's process until the cohort is chosen.",
+      "signals_to_watch": [
+       "A confirmation of receipt from the programme or its portal",
+       "A status change, an eligibility check or a request for a document",
+       "An invitation to interview"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "Getting into accelerator programmes is one of the brief's goals, and this application is live.",
+       "Nothing is owed while the programme reads, and its quiet carries no information yet.",
+       "A missing receipt is cheap to check, and fixable while the programme is still reading."
+      ]
+     },
+     "mode": "wait",
+     "next_move": null,
+     "alternative": "If no confirmation of receipt is on file, check the programme's portal or confirmation mail once, so the wait rests on an application that went in.",
+     "wait_or_stop": "Wait for the programme's own next word — a confirmation, an invitation, a request or a decision — on its published calendar; stop waiting only on the programme's own date, never on the clock.",
+     "done_when": "The application's receipt is on file, and the programme's next word has arrived.",
+     "draft": null
+    }
+   }
+  ]
+ },
+ "notes": "Production's AI filter called the real 1 Oct mail junk."
+}

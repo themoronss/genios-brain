@@ -1,0 +1,23 @@
+# STUB — declared by the domain root (STEP-11 M30.C1.L-contract.V0.U01) and filled by its content unit.
+# A stub is skipped by the resolver: nothing compiles through it until it is authored and admitted.
+identity:
+  id: founder_office.hiring.offers_and_joining
+  name: Offers & Joining
+  domain: founder_office
+  subdomain: hiring
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  A hire from the offer to the first day: acceptance, documents, the ESOP dependency. Filled by STEP-11 M31.
+
+question: "Is this candidate moving from offer to their first day?"
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental

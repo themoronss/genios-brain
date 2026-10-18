@@ -89,15 +89,21 @@ def test_what_each_writer_declares_matches_the_column_list_it_actually_has():
     assert sb.binding_drift(columns) == ()
 
 
-def test_exactly_one_of_the_five_writers_binds_a_situation_today():
+def test_two_of_the_six_writers_bind_a_situation_today():
     """⛔ THE NUMBER, PINNED, so the gap is a measurement rather than an impression. When the
-    decision in `situation_binding`'s docstring is made this goes to 4 of 5 — never 5, because
-    the team lane's 'situation' is a different word that happens to match."""
-    assert sb.bound_fraction() == (1, 5)
+    decision in `situation_binding`'s docstring is made this goes to 5 of 6 — never 6, because
+    the team lane's 'situation' is a different word that happens to match.
+
+    STEP-13 (`yc2_w27_s13` M36.C2.L-integration.V2.U03) added the sixth writer, and it binds: the
+    question a held file asks is the compiled lane's decision on that file, filed under the
+    situation the file was decided at — the same provenance, never co-location."""
+    assert sb.bound_fraction() == (2, 6)
     binder = [w for w in sb.SIGNAL_WRITERS if w.binds]
-    assert [w.module for w in binder] == ["genios_engine.reason.domain_shadow"], (
-        "the compiled lane is the only writer that reasons OVER the situation, and therefore the "
-        "only one whose situation_id is provenance rather than co-location")
+    assert [w.module for w in binder] == ["genios_engine.reason.domain_shadow",
+                                          "genios_engine.reason.expert.asks"], (
+        "the compiled lane — its decisions and the questions its files ask — is the only writer "
+        "that reasons OVER the situation, and therefore the only one whose situation_id is "
+        "provenance rather than co-location")
 
 
 # =================================================================================================

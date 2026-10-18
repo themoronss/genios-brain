@@ -566,6 +566,7 @@ def resolve_approver_node(conn, *, org_id: str, name: str) -> str | None:
     from genios_engine.context.identity import (ALIAS_CANON, ALIAS_EMAIL, resolve_alias,
                                                 resolve_person_name)
     from genios_engine.platform.identity import norm_email
+    from genios_engine.platform.self_identity import identity_for
 
     from sqlalchemy import text as _text
 
@@ -596,10 +597,11 @@ def resolve_approver_node(conn, *, org_id: str, name: str) -> str | None:
         unreadable directory is a deployment problem; granting an approval right on the
         strength of one is not a recoverable one.
 
-        THE THREE SOURCES ARE `context/runner._internal_emails`', restated here as one query
-        rather than imported: that helper takes a `GraphStore` and opens its own connection,
-        and this module is given a `conn` precisely so it holds no store. The shapes must not
-        drift — `tests/packs/brains/test_org_discovery.py` pins them against each other.
+        WHO IS US is the one answer every caller asks (STEP-04): `platform/self_identity.
+        identity_for`, read on this `conn` — the active seats, the org's own address, the
+        connected accounts and what the tenant declared, an address at a declared domain
+        included. This module is given a `conn` precisely so it holds no store, and
+        `identity_for` takes one.
         """
         try:
             key = c.execute(_text(
@@ -608,13 +610,7 @@ def resolve_approver_node(conn, *, org_id: str, name: str) -> str | None:
                 {"o": org, "n": node_id}).scalar()
             if not key:
                 return False
-            return bool(c.execute(_text(
-                "select 1 from org_seats "
-                "where org_id=:o and active and lower(email) = :k "
-                "union select 1 from orgs where id=:o and lower(email) = :k "
-                "union select 1 from connections "
-                "where org_id=:o and lower(external_account_id) = :k limit 1"),
-                {"o": org, "k": str(key).strip().lower()}).first())
+            return identity_for(c, org).is_us(key)
         except Exception:      # noqa: BLE001 — see FAILS CLOSED above
             return False
 

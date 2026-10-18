@@ -31,10 +31,12 @@ from genios_engine.contracts.moments import (KINDS, DeviceMoment, EvaluateReques
                                              FeedbackRequest, FollowupResolveRequest,
                                              FollowupSnoozeRequest)
 from genios_engine.platform import capture_policy as P
+from genios_engine.platform import company_brief as CB
 from genios_engine.platform import devices as D
 from genios_engine.platform.auth import check_org_kill, jwt_decode, verify_bearer
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
+from genios_engine.platform.self_identity import identity_for
 from genios_engine.reason.moments import guards as G
 from genios_engine.reason.moments import recall as R
 from genios_engine.reason.moments import slice as S
@@ -118,12 +120,6 @@ def _stored(c, *, moment_id: str, org_id: str, seat_id: str) -> dict | None:
     return {k: out[k] for k in keys}
 
 
-def _seat_emails(c, org_id: str) -> frozenset[str]:
-    return frozenset(r.e for r in c.execute(text(
-        "select lower(email) as e from org_seats where org_id = :o and email is not null"),
-        {"o": org_id}))
-
-
 @router.post("/v1/moments/evaluate")
 def evaluate(body: EvaluateRequest, request: Request):
     started = time.perf_counter()
@@ -169,7 +165,7 @@ def evaluate(body: EvaluateRequest, request: Request):
                                  entities=body.features.entities, seat_email=p.email)
         if not subjects:
             return Response(status_code=_NO_CONTENT)
-        seat_emails = _seat_emails(c, p.org_id)
+        us = identity_for(c, p.org_id)            # who is us, once (STEP-04)
         for subj in subjects[:3]:
             version = R.subject_version(c, org_id=p.org_id, node_ids=[subj.node_id])
             # "last touch N d ago" changes daily, so the day is part of the trigger.
@@ -180,7 +176,7 @@ def evaluate(body: EvaluateRequest, request: Request):
             if hit is not None and hit.get("displayed"):      # only a SHOWN twin is a duplicate
                 return {**M._public(hit), "display": False, "reason": G.DUPLICATE}
             content = R.compose(R.read(c, org_id=p.org_id, subject=subj, me=me, viewer=viewer,
-                                       seat_emails=seat_emails, now=now), now=now)
+                                       us=us, now=now), now=now)
             if content is not None:
                 chosen = (subj, key, content)
                 break
@@ -226,6 +222,20 @@ def _meeting_prep(body: EvaluateRequest, p: Principal, engine, now: datetime, st
     return out
 
 
+def _draft_key(seat_id: str, subject_ids, draft: str, brief_version: str = "") -> str:
+    """The key a draft's notes are deduplicated under: the same draft about the same subjects is
+    one moment. Only the draft's hash is in it, never its text.
+
+    STEP-07 (`speedrun008/YC-II W27/` §8.3): the company brief's version is part of it. The notes
+    the model writes under a changed brief are new notes, not duplicates of the old brief's to be
+    suppressed. A tenant with no brief has no version, and its keys are exactly what they were."""
+    from genios_engine.reason.moments import draft_review as DR
+    return M.cache_key(seat_id=seat_id, capability_id=DR.CAPABILITY_ID, subject_ids=subject_ids,
+                       trigger=M.trigger_digest(DR.CAPABILITY_ID, DR.draft_digest(draft),
+                                                *((brief_version,) if brief_version else ())),
+                       subject_version="draft")
+
+
 def _draft_review(body: EvaluateRequest, p: Principal, engine, now: datetime, started: float):
     """≤ 2 notes about the draft, or 204 (nothing to say / the 2.8 s budget ran out). The draft
     text is never stored: only its hash is in the dedupe key and the evidence."""
@@ -235,16 +245,15 @@ def _draft_review(body: EvaluateRequest, p: Principal, engine, now: datetime, st
         prior = _stored(c, moment_id=moment_id, org_id=p.org_id, seat_id=p.seat_id)
     if prior is not None:
         return prior
+    # STEP-07: the tenant's company brief, read once for this draft — its block goes to the one
+    # model call, its version into the draft's dedupe key.
+    brief = CB.current(engine, p.org_id)
     res = DR.review(engine, org_id=p.org_id, email=p.email, participants=body.participants,
                     entities=body.features.entities, draft=body.draft_text or "", now=now,
-                    seat_id=p.seat_id)
+                    seat_id=p.seat_id, company_brief=brief.prompt_block())
     if res is None:
         return Response(status_code=_NO_CONTENT)
-    key = M.cache_key(seat_id=p.seat_id, capability_id=DR.CAPABILITY_ID,
-                      subject_ids=res["subject_ids"],
-                      trigger=M.trigger_digest(DR.CAPABILITY_ID,
-                                               DR.draft_digest(body.draft_text or "")),
-                      subject_version="draft")
+    key = _draft_key(p.seat_id, res["subject_ids"], body.draft_text or "", brief.version)
     try:
         out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
                         origin="server", moment={"moment_id": moment_id, **res["content"]},
@@ -308,6 +317,21 @@ def _meetings_soon(engine, p: Principal, now: datetime) -> list[dict]:
     return hit[1] if hit is not None else []
 
 
+def _screen_key(seat_id: str, digest: str, brief_version: str = "") -> str:
+    """The key "this exact screen was already judged" is read and written under — by the model's
+    lane and by the rules' lane alike, so an answer from either one is the screen's answer.
+
+    STEP-07 (`speedrun008/YC-II W27/` §8.3): the company brief's version is part of it. A screen is
+    judged under the brief in force at the time, so a changed brief judges it once more instead of
+    serving the answer the old brief produced. A tenant with no brief has no version, and its keys
+    are exactly what they were before the brief existed."""
+    from genios_engine.reason.moments import screen_insight as SI
+    return M.cache_key(seat_id=seat_id, capability_id=SI.CAPABILITY_ID, subject_ids=[],
+                       trigger=M.trigger_digest(SI.CAPABILITY_ID, digest,
+                                                *((brief_version,) if brief_version else ())),
+                       subject_version="screen")
+
+
 def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, started: float):
     """P-20 · the ONE judge (docs/screen-intelligence/index.html phase 1): 204 unless the screen ADDS
     something the manager cannot see on it. Every judged item is saved either way.
@@ -348,8 +372,11 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     thread = (body.surface.thread_key or "").strip() or None
     vkey = F.verdict_key(thread)
     app = (body.surface.app or "").strip().lower() or None
-    key = M.cache_key(seat_id=p.seat_id, capability_id=SI.CAPABILITY_ID, subject_ids=[],
-                      trigger=M.trigger_digest(SI.CAPABILITY_ID, digest), subject_version="screen")
+    # STEP-07: the tenant's company brief, read once for this screen (a minute's process cache, and
+    # the empty brief if it cannot be read) — its block goes to the one judge, its version into the
+    # screen's key.
+    brief = CB.current(engine, p.org_id)
+    key = _screen_key(p.seat_id, digest, brief.version)
     with engine.connect() as c:
         prior = _stored(c, moment_id=moment_id, org_id=p.org_id, seat_id=p.seat_id)
         if prior is not None:
@@ -440,7 +467,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                          and RU.answered_after(body.visible_messages, it["quote"], me))]
         judged_before = site is not None or verdict is not None
         if RU.enough(ruled, verdict_known=judged_before):
-            return _rule_items(ruled, body, p, engine, thread, app, tz, now, started)
+            return _rule_items(ruled, body, p, engine, thread, app, tz, now, started, key=key)
         # ROUTER CHECK 6: no rule could read it — but is there anything here to read? A screen
         # with no question, no request word, no date and no amount is not ambiguous, it is empty,
         # and the model answers nothing for it. That answer is free here.
@@ -470,7 +497,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                      useful=kept, said=RU.said(fresh, me), me=me,
                      open_items=context, meetings=meetings,
                      thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date(),
-                     summary=summary, profile=profile)
+                     summary=summary, profile=profile, company_brief=brief.prompt_block())
     if res is not None and vkey and res["work"] is not None:
         F.set_verdict(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=vkey,
                       work=res["work"], memory=res.get("memory"), now=now)
@@ -552,11 +579,14 @@ def _looks_like_work(body: EvaluateRequest, tz: str | None, *, me, now: datetime
 
 
 def _rule_items(items: list[dict], body: EvaluateRequest, p: Principal, engine, thread, app, tz,
-                now: datetime, started: float):
+                now: datetime, started: float, *, key: str):
     """Router check 5's answer: the screen said it outright, so nothing was asked and nothing was
     paid for. From here on it is the ordinary path — the same follow-up rows, the same topic
     keys, the same nudge ladder, and a popup only through the same gate the model's answers pass.
-    The manager cannot tell which lane produced a card, and should not be able to."""
+    The manager cannot tell which lane produced a card, and should not be able to.
+
+    `key` is the screen's key `_screen_insight` already read (`_screen_key`), passed rather than
+    rebuilt: one formula, so the two lanes cannot disagree about whether a screen was judged."""
     from genios_engine.reason.moments import followups as F
     from genios_engine.reason.moments import screen_insight as SI
     from genios_engine.reason.moments import screen_rules as RU
@@ -597,8 +627,6 @@ def _rule_items(items: list[dict], body: EvaluateRequest, p: Principal, engine, 
     content = SI.moment_content({"items": items}, digest=digest, adds=adds, note=note,
                                 topic_key=topic, thread_key=thread, followup_id=first_followup)
     moment_id = M.server_moment_id(p.seat_id, body.moment_request_id)
-    key = M.cache_key(seat_id=p.seat_id, capability_id=SI.CAPABILITY_ID, subject_ids=[],
-                      trigger=M.trigger_digest(SI.CAPABILITY_ID, digest), subject_version="screen")
     try:
         out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
                         origin="server", moment={"moment_id": moment_id, **content},

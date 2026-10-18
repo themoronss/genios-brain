@@ -102,16 +102,25 @@ def should_consult(step: Step) -> bool:
     return step is not Step.UNKNOWN
 
 
-def consult_seed(*, situation_id: str, slice_digest: str) -> Mapping[str, str]:
+def consult_seed(*, situation_id: str, slice_digest: str,
+                 company_brief_version: str = "") -> Mapping[str, str]:
     """What the GATE keys its cache on. U4: *"the reasoner supplies a slice digest and the gate
     does the rest."*
 
     The slice digest and not the situation id alone: two sweeps over an unchanged slice must not
     pay twice, and a situation whose facts moved must not read yesterday's answer. R-1 is keyed on
     a fact digest for the same reason and has no decision at all.
+
+    The company brief's version joins the seed when the tenant has one (STEP-07 §8.2): the cache
+    keys on this seed and not on the prompt, so a changed brief would otherwise be answered with
+    the reading made under the old one. Without a brief the seed is exactly what it was, and
+    nothing already cached is invalidated.
     """
-    return {"situation": str(situation_id), "slice": str(slice_digest),
+    seed = {"situation": str(situation_id), "slice": str(slice_digest),
             "prompt": PROMPT_VERSION}
+    if company_brief_version:
+        seed["company_brief"] = str(company_brief_version)
+    return seed
 
 
 def slice_digest(context_slice: Any) -> str:
@@ -175,21 +184,28 @@ def weigh_before_sending(slice_json: str) -> WeighedSlice:
     return WeighedSlice(payload=slice_json, tokens=weight.tokens, over=over_budget(weight))
 
 
-def build_prompt(*, situation_type: str, slice_json: str, feedback: str | None = None) -> str:
+def build_prompt(*, situation_type: str, slice_json: str, feedback: str | None = None,
+                 company_brief: str = "") -> str:
     """One situation, the fields it may propose, and nothing else.
 
     The field list comes from `claim_state.model_writable_fields()` rather than from a string here,
     because L2-2 built it for this caller: *"deriving it by hand at the call site is how the list
     and the rule stop agreeing."* A prompt that offers a field the validator refuses is a prompt
     that buys a refusal.
+
+    The one addition is the company brief (STEP-07, `speedrun008/YC-II W27/` §8.3), when the tenant
+    has one: who "we" are, as its own paragraph after the opening line and before the CONTEXT.
+    Without a brief the prompt is byte for byte what it was.
     """
     from genios_engine.contracts.claim_state import model_writable_fields
 
     allowed = ", ".join(sorted(model_writable_fields()))
     correction = f"\n\nYour previous answer was refused: {feedback}" if feedback else ""
+    company_brief_paragraph = company_brief.rstrip("\n") + "\n\n" if company_brief else ""
     return (
         f"You are reading ONE business situation of type `{situation_type}` and proposing an "
         f"interpretation of it.\n\n"
+        f"{company_brief_paragraph}"
         f"CONTEXT (the only thing you may reason from):\n{slice_json}\n\n"
         f"Return a JSON object whose keys are drawn ONLY from: {allowed}\n\n"
         f"RULES:\n"
@@ -207,7 +223,7 @@ def reason_over_situation(*, org_id: str, situation_id: str, situation_type: str
                           confidence_bp: int | None, importance_bp: int | None,
                           resolve_refs, held_facts=None, coverage_ready: bool | None = True,
                           expected_facts=(), gate=None, cache=None,
-                          on_over_budget=None) -> tuple[Step, Any]:
+                          on_over_budget=None, company_brief=None) -> tuple[Step, Any]:
     """Decide, then — only if it is worth deciding with a model — consult one.
 
     Returns `(step, payload)`. `payload` is `None` when nothing was asked, which is different from
@@ -217,6 +233,10 @@ def reason_over_situation(*, org_id: str, situation_id: str, situation_type: str
     `on_over_budget` is called with the sentence when the slice exceeds `SLICE_TOKEN_BUDGET` —
     **handed in**, so the caller decides what to do with it and this module still holds no I/O.
     Nothing is truncated either way.
+
+    `company_brief` is the tenant's `CompanyBrief` (STEP-07), read once per sweep by the caller and
+    **handed in** like the gate, for the same reason: its block goes into the prompt and its version
+    into the seed. `None`, or an empty brief, changes neither.
     """
     from genios_engine.context.proposal_gate import as_gate_validator
     from genios_engine.platform.l4_activation import FEATURE_SITUATION_REASONER
@@ -244,13 +264,17 @@ def reason_over_situation(*, org_id: str, situation_id: str, situation_type: str
     if weighed.over is not None and on_over_budget is not None:
         on_over_budget(weighed.over)
 
+    block = company_brief.prompt_block() if company_brief is not None else ""
+    version = company_brief.version if company_brief is not None else ""
     result = run_site(
         site=SITE_SITUATION, org_id=org_id,
         seed=dict(consult_seed(situation_id=situation_id,
-                               slice_digest=slice_digest(context_slice))),
+                               slice_digest=slice_digest(context_slice),
+                               company_brief_version=version)),
         precondition=True,
         build_prompt=lambda feedback: build_prompt(
-            situation_type=situation_type, slice_json=slice_json, feedback=feedback),
+            situation_type=situation_type, slice_json=slice_json, feedback=feedback,
+            company_brief=block),
         parse=_parse, fallback=FALLBACK, gate=gate, cache=cache,
         feature=FEATURE_SITUATION_REASONER, subject_ref=situation_id)
     return step, result

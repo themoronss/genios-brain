@@ -1,0 +1,480 @@
+{
+ "case_id": "F52",
+ "title": "A fund's not-yet from April whose condition is now met",
+ "kind": "must_detect",
+ "label_row": 52,
+ "labelled_by": "claude",
+ "replays": [
+  "01",
+  "06"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "arjun.rao@gmail.test"
+  ]
+ },
+ "sweeps": [
+  "2026-04-03T12:00:00Z",
+  "2026-09-20T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "notyet",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-04-02T09:00:00Z",
+   "from": "Gautam Varma <gautam@ridgelinecap.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Nimbus Labs - pre-seed",
+   "body": "Thanks Arjun - we like the team, but it is slightly early for us to come in. Let's re-engage once you have ten paying customers; send me a note then.\n\nGautam\nRidgeline Capital",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-ridgeline",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "cautious",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Gautam Varma",
+       "entity_type": "person",
+       "quote": "Gautam"
+      },
+      {
+       "surface_form": "Ridgeline Capital",
+       "entity_type": "organization",
+       "quote": "Ridgeline Capital"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "investment in Nimbus Labs",
+       "state": "deferred",
+       "owner": "Gautam Varma",
+       "quote": "it is slightly early for us to come in"
+      }
+     ],
+     "commitments": [
+      {
+       "actor": "Gautam Varma",
+       "action": "re-engage",
+       "beneficiary": "Arjun Rao",
+       "is_conditional": true,
+       "condition_text": "once you have ten paying customers",
+       "quote": "Let's re-engage once you have ten paying customers"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "medium",
+      "motive": "not yet, with a condition"
+     }
+    }
+   }
+  },
+  {
+   "id": "update",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-12T08:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "Nandini Iyer <nandini@vertexangels.test>"
+   ],
+   "subject": "Nimbus Labs - September update",
+   "body": "Hi Nandini,\n\nA quick update: we crossed 12 paying customers this month, and onboarding is down to two days.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-vertex-update",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Nandini Iyer",
+       "entity_type": "person",
+       "quote": "Nandini"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "thread.objective",
+       "subject": "thread",
+       "value": "a monthly investor update",
+       "standing": "judgement",
+       "quote": "we crossed 12 paying customers this month"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "medium",
+      "motive": "the monthly update"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "notyet": "emitted",
+   "update": "emitted"
+  },
+  "memory": {
+   "notyet": true,
+   "update": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Gautam",
+     "Ridgeline"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "ten paying customers"
+    ]
+   }
+  ],
+  "workstream": "investor - the not-yet of 2 Apr; its condition met on 12 Sep"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "ARR",
+   "MRR",
+   "lakh",
+   "crore",
+   "revenue of",
+   "pilot users"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "no line joins a condition to the fact that meets it"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Gautam Varma"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Gautam asked us to come back once we have ten paying customers, and nothing shown says we have them; a note before then repeats the pitch he deferred.",
+     "missing": [
+      "whether we now have ten paying customers"
+     ]
+    }
+   }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<ridgelinecap.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Gautam Varma of Ridgeline Capital wrote that they like the team but that it is slightly early for the fund to come in.",
+       "evidence": [
+        "evt_c4712b6b8ec4802296eb9578"
+       ],
+       "quote": "like the team, but it is slightly early for us to come"
+      },
+      {
+       "claim": "He set the bar himself: re-engage once Nimbus Labs has ten paying customers, and send him a note then.",
+       "evidence": [
+        "evt_c4712b6b8ec4802296eb9578"
+       ],
+       "quote": "re-engage once you have ten paying customers; send me a note"
+      },
+      {
+       "claim": "His mail answers a thread about the Nimbus Labs pre-seed whose earlier mail is not in the file.",
+       "evidence": [
+        "evt_c4712b6b8ec4802296eb9578"
+       ],
+       "quote": "Nimbus Labs - pre-seed"
+      },
+      {
+       "claim": "The file holds only Gautam's mail: the dossier says we have not written in it, and no reply time is measured either way.",
+       "evidence": [
+        "num:your_reply_time:gautam@ridgelinecap.test",
+        "num:their_reply_time:gautam@ridgelinecap.test"
+       ]
+      },
+      {
+       "claim": "The engine holds the file as an investor relationship, and the brief names no kind of work for it.",
+       "evidence": [
+        "sit:sit_099f4cdf7e3ddf8cd2965611"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "This is a deferral with a stated bar, not a pass: the next move is ours, and it opens when Nimbus Labs has ten paying customers.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "Nothing in this file says whether the bar has been met: no customer count appears in it.",
+       "based_on": [
+        "fact:2",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "A note sent before the bar is met repeats the pitch Gautam deferred; a note sent once it is met is exactly what he asked for.",
+       "based_on": [
+        "fact:2"
+       ]
+      }
+     ],
+     "patterns": [],
+     "hypotheses": [
+      {
+       "proposition": "Nimbus Labs already has ten paying customers or more, and the note to Gautam simply has not gone.",
+       "needs": "The current count of paying customers, from Arjun or the company's own records."
+      },
+      {
+       "proposition": "The bar was a polite pass, and a note at ten customers will meet another not-yet.",
+       "needs": "Gautam's answer to the note once the bar is met."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "How many paying customers Nimbus Labs has today.",
+       "relevance": "It is the whole question: at ten or more the note is due now; below ten the file waits."
+      },
+      {
+       "question": "When the count reached ten, if it has.",
+       "relevance": "Gautam asked for a note then; a note sent long after the bar was met reads as less keen than one sent at once."
+      },
+      {
+       "question": "Whether Ridgeline is still putting money into companies at this stage.",
+       "relevance": "If it has moved on, the note is a courtesy, not an opening."
+      }
+     ],
+     "frames": {
+      "primary": "A fund's conditional not-yet: Gautam at Ridgeline Capital likes the team, found it slightly early, and asked you to come back with a note once you have ten paying customers; whether that bar is met is not in this file.",
+      "rivals": [
+       "A soft pass dressed as a condition: the note at ten customers may meet another not-yet.",
+       "An opening already due: the bar may have been met, and the note Gautam asked for is simply late."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "Gautam signs for Ridgeline Capital and answers a pre-seed thread about when the fund would come in, an investor's file, which the brief does not yet name.",
+      "evidence": [
+       "evt_c4712b6b8ec4802296eb9578"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the file: a deferral with a condition expects nothing until the condition is met, then a short note from the founder showing that it is.",
+      "actual": "The file holds only Gautam's deferral: no note from Arjun, and nothing in it says whether the count has reached ten."
+     },
+     "scenarios": {
+      "do_nothing": "If the bar is not met, nothing is lost. If it is met and no note goes, Gautam has no reason to come back, and a fund that liked the team drifts away from the round.",
+      "act": "Checking the count settles it: at ten or more, a short note with the count reopens Ridgeline exactly as Gautam asked; below ten, the note waits for the day it is true.",
+      "best": "The count is past ten, Arjun writes, and Gautam re-engages in time for the seed round.",
+      "worst": "The bar was met long ago, the note never went, and Ridgeline commits its money elsewhere before hearing from Arjun.",
+      "signals_to_watch": [
+       "The paying-customer count reaching ten",
+       "A note from Arjun to Gautam with the count",
+       "Any mail from Gautam or Ridgeline Capital",
+       "Updates Arjun sends other investors that report the customer count"
+      ]
+     },
+     "appraisal": {
+      "stakes": "high",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "Raising the seed round is the brief's first goal, and Gautam wrote that they like the team.",
+       "He named the bar and asked for a note when it is met, so the next move is ours.",
+       "The customer count is not in the file, so whether the note is due now cannot be told from here.",
+       "Checking the count costs nothing; a note sent before the bar is met costs some of the opening."
+      ]
+     },
+     "mode": "find_out",
+     "next_move": {
+      "who": "Arjun Rao",
+      "what": "Check the current count of paying customers against Gautam's bar of ten; if it is met, send Gautam the short note he asked for with the count, and if not, set the note for the day it is",
+      "for_whom": "Gautam Varma at Ridgeline Capital",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
+     },
+     "alternative": "If the count is close but short of ten, write nothing yet and send the note the week the tenth customer pays.",
+     "wait_or_stop": "Wait only while the count is below ten. Once it is met, write within days; if Gautam is silent, one nudge, then stop until there is a bigger step to report.",
+     "done_when": "Gautam has the note with the count he asked for, and Ridgeline has said whether it re-engages.",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<vertexangels.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun sent Nandini a September update: Nimbus Labs crossed twelve paying customers this month, and onboarding is down to two days.",
+       "evidence": [
+        "evt_3c1234356532126c2b8f6d25"
+       ]
+      },
+      {
+       "claim": "The update asks nothing of Nandini.",
+       "evidence": [
+        "evt_3c1234356532126c2b8f6d25"
+       ]
+      },
+      {
+       "claim": "Nandini has not written since the update went out over a week ago; the dossier says no reply since then may be said.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The engine files the update as a support case, and the brief names no kind of work for the file.",
+       "evidence": [
+        "sit:sit_7b5a121aaab94d2ddce72956"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "This is an investor update, not a support matter: it reports customers and onboarding to an address whose name reads Vertex Angels, and asks for nothing.",
+       "based_on": [
+        "fact:1",
+        "fact:2",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Quiet after an update that asks nothing is not a signal; nothing is owed either way.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "Crossing twelve paying customers is news the seed round can use beyond this one reader.",
+       "based_on": [
+        "fact:1"
+       ]
+      }
+     ],
+     "patterns": [],
+     "hypotheses": [
+      {
+       "proposition": "Vertex Angels already backs Nimbus Labs and gets its updates as a matter of course.",
+       "needs": "The brief, or Arjun, naming what Vertex Angels is to the company."
+      },
+      {
+       "proposition": "Nandini is a prospect for the seed round, kept warm with updates.",
+       "needs": "Earlier mail with Vertex Angels, which the file does not hold."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "What Vertex Angels is to Nimbus Labs: an existing backer, or a prospect for the seed round.",
+       "relevance": "A backer needs nothing more; a prospect may need an ask in the next note."
+      },
+      {
+       "question": "Whether the same news went to the other investors the founder is talking to.",
+       "relevance": "A milestone like this may be exactly what one of them asked to hear before coming back."
+      }
+     ],
+     "frames": {
+      "primary": "An investor update that needs nothing: you told Nandini you crossed twelve paying customers this month and cut onboarding to two days; it asks nothing, and nothing is owed.",
+      "rivals": [
+       "An opening with a prospect: if Vertex Angels is weighing the seed round, the update deserves a follow-up ask.",
+       "A support case, as the engine files it; nothing in the mail supports that."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "Arjun's September update, paying customers and onboarding time, sent to Nandini at an address whose name reads Vertex Angels, is how a founder keeps an investor informed; the engine files it as a support case and the brief names no kind for it.",
+      "evidence": [
+       "evt_3c1234356532126c2b8f6d25"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the file: an update that asks nothing expects nothing back, at most a word of thanks.",
+      "actual": "The update went out over a week ago and Nandini has not written since, which asks nothing of Arjun."
+     },
+     "scenarios": {
+      "do_nothing": "Nothing is lost: the update has done its work of keeping Vertex Angels informed.",
+      "act": "Writing again now adds noise to an update that asked for nothing.",
+      "best": "Nandini reads the progress and comes back with interest in the round or an offer of help.",
+      "worst": "If Vertex Angels is a live prospect, an update with no ask lets the moment pass unused.",
+      "signals_to_watch": [
+       "A reply from Nandini",
+       "Nandini asking about the seed round",
+       "The next update going out"
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The update asks nothing, and nothing is owed on either side.",
+       "Quiet after an update is no signal on its own.",
+       "The file holds one mail and nothing pending."
+      ]
+     },
+     "mode": "nothing",
+     "next_move": null,
+     "alternative": "If Vertex Angels is a prospect for the seed round, put a one-line ask in the next update rather than chasing this one.",
+     "wait_or_stop": "Nothing to wait for; reopen the file only if Nandini writes or the next update goes.",
+     "done_when": "The update is sent and needs nothing more; the file stays quiet until Nandini writes.",
+     "draft": null
+    }
+   }
+  ]
+ },
+ "notes": "09 G1, the benchmark's 2 Apr deferral: the card quotes the condition verbatim, with its date, and the fact that meets it - in the founder's own mail of 12 Sep, to someone else. A traction number that is not in the evidence is forbidden: one model invented one in the benchmark."
+}

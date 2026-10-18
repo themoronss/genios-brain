@@ -38,6 +38,7 @@ speaker above the floor.
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from time import perf_counter
 from typing import Any
@@ -67,7 +68,9 @@ from genios_engine.context.situations import (
     _TERMINAL_DEAL_STAGES,
     decide_lifecycle,
     normalize_stage,
+    quiet_days_for_situation,
 )
+from genios_engine.platform import company_brief as brief_mod
 from genios_engine.platform.logging import get_logger
 
 __all__ = ["MAX_OUTPUT_TOKENS", "detect_resolutions"]
@@ -170,6 +173,17 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
                  "back to terminal_by_fact only", org_id, len(messages))
         notes.append("no_model")
 
+    # STEP-07 (`speedrun008/YC-II W27/` §8.3): the tenant's company brief, read ONCE per sweep and
+    # only when a model will be asked. Every prompt below carries its block, and every audit row
+    # names its version beside the prompt's (`m4.1.0+cb-…`), so a reading can be traced to the brief
+    # it was made under. No accepted line: the prompts and `PROMPT_VERSION` are exactly as before.
+    company_brief, prompt_version = "", PROMPT_VERSION
+    if llm is not None and messages:
+        brief = brief_mod.current(store.engine, org_id)
+        company_brief = brief.prompt_block()
+        if brief.version:
+            prompt_version = f"{PROMPT_VERSION}+{brief.version}"
+
     for row in messages:
         situation = by_situation.get(row["situation_id"])
         if situation is None:                     # a situation that left the set mid-sweep
@@ -210,7 +224,7 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
         prior = gate_mod.candidate_prior(
             (extractions.get(row["event_id"]) or {}).get("decision_states"), subject)
         prompt = build_prompt(subject=subject, obligations=obligations, message=message,
-                              prior=prior)
+                              prior=prior, company_brief=company_brief)
 
         calls += 1
         org_calls += 1
@@ -221,7 +235,7 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
         record_model_run(
             store.engine, org_id=org_id, site="resolution",
             subject_ref=_subject_ref(situation.situation_id, row["event_id"]),
-            prompt_version=PROMPT_VERSION, prompt=prompt, result=result, called_at=now,
+            prompt_version=prompt_version, prompt=prompt, result=result, called_at=now,
             max_tokens=MAX_OUTPUT_TOKENS,
             latency_ms=max(0, int((perf_counter() - started) * 1000)))
         if not getattr(result, "ok", False):
@@ -240,6 +254,9 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
         claim = judge(description, situation_id=situation.situation_id, message=message,
                       obligations=obligations, internal_emails=internal,
                       model=getattr(llm, "model", "") or "")
+        # The claim names the brief it was made under, as its audit row does (`03` F83, STEP-13
+        # `yc2_w27_s13` M35.C5.L-data.V0.U01): `judge` knows only its own `PROMPT_VERSION`.
+        claim = replace(claim, prompt_version=prompt_version)
         review_state = "pending" if claim.decision == DECISION_REVIEW else None
         with store.engine.begin() as conn:
             store_mod.write_claim(conn, org_id, claim, review_state=review_state)
@@ -259,11 +276,16 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
             # Nothing to say, and nothing of ours to undo. `refresh_situations` owns this row's
             # ordinary lifecycle and this pass does not touch it.
             continue
+        # The file's own quiet window (`06` D33), as `refresh_situations` reads it — or this pass
+        # and that one would disagree about a fund's dormancy between 45 and 90 days, and flap it.
+        with store.engine.connect() as conn:
+            quiet = quiet_days_for_situation(conn, org_id, situation.anchor_node_id,
+                                             domain_days=None)
         lifecycle = decide_lifecycle(
             current_status=situation.status, resolved_by=situation.resolved_by,
             last_seen_at=situation.last_seen_at, resolved_at=situation.resolved_at,
             terminal_by_fact=_terminal_by_fact(situation.deal_stage), now=now,
-            stated_resolution=state.state)
+            stated_resolution=state.state, dormant_after_days=quiet)
         if (lifecycle.status == situation.status
                 and lifecycle.resolved_by == situation.resolved_by):
             continue

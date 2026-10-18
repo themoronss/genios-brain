@@ -1,0 +1,276 @@
+{
+ "case_id": "F40",
+ "title": "A meeting nobody confirmed took place is never recapped",
+ "kind": "must_abstain",
+ "label_row": 40,
+ "labelled_by": "claude",
+ "replays": [
+  "05"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-12T18:00:00Z",
+  "2026-08-15T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "call",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-08-05T06:00:00Z",
+   "summary": "Tallgrass x Nimbus Labs",
+   "start": "2026-08-13T10:00:00Z",
+   "end": "2026-08-13T10:30:00Z",
+   "organizer": "arjun@nimbuslabs.test",
+   "attendees": [
+    "arjun@nimbuslabs.test",
+    "meera@tallgrass.test"
+   ]
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Meera",
+     "Tallgrass",
+     "meera@tallgrass.test"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "recap",
+   "Recap",
+   "happened"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "call"
+  ]
+ },
+ "not_expressible": {},
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "admin contact",
+     "meera@tallgrass.test",
+     "evaluated at: 2026-08-12"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "meera@tallgrass.test",
+     "evaluated at: 2026-08-15"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "meera@tallgrass.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "meera@tallgrass.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "admin_contact",
+     "meera@tallgrass.test"
+    ],
+    "answer": {
+     "headline": "Meeting with meera@tallgrass.test is clear",
+     "situation": "Nothing open is on record with meera@tallgrass.test.",
+     "artifact": "Nothing is missing on record; confirm the agenda."
+    }
+   },
+   {
+    "when": [
+     "meeting_follow_through",
+     "meera@tallgrass.test"
+    ],
+    "answer": {
+     "headline": "Meeting with meera@tallgrass.test, 2 days ago",
+     "situation": "The meeting with meera@tallgrass.test happened 2 days ago. No follow-through is visible.",
+     "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+    }
+   }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<meera@tallgrass.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.",
+       "evidence": [
+        "evt_547adcf31568fedadb1f9552"
+       ]
+      },
+      {
+       "claim": "No words go with the booking — no title, agenda or note.",
+       "evidence": [
+        "evt_547adcf31568fedadb1f9552"
+       ]
+      },
+      {
+       "claim": "Neither side's reply time is measured, and the file holds no mail at all.",
+       "evidence": [
+        "num:their_reply_time:meera@tallgrass.test",
+        "num:your_reply_time:meera@tallgrass.test"
+       ]
+      },
+      {
+       "claim": "Nothing on record shows the meeting taking place, nor anything agreed at it.",
+       "evidence": [
+        "evt_547adcf31568fedadb1f9552"
+       ]
+      },
+      {
+       "claim": "The brief names no kind of work for this contact; the engine opened an admin situation on the booking.",
+       "evidence": [
+        "sit:sit_435d409034319684f09efa26"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The only thing known is a booking: whether the meeting took place, and what came of it, cannot be read from this file.",
+       "based_on": [
+        "fact:1",
+        "fact:2",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "No follow-through can be owed on a meeting nobody has confirmed took place.",
+       "based_on": [
+        "fact:4"
+       ]
+      }
+     ],
+     "patterns": [],
+     "hypotheses": [
+      {
+       "proposition": "The meeting went ahead as booked.",
+       "needs": "A mail from either side after the booked time, or the founder's own word."
+      },
+      {
+       "proposition": "The meeting was moved or dropped.",
+       "needs": "A changed or cancelled calendar entry, or a mail saying so."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether the meeting took place at all.",
+       "relevance": "Only a meeting that took place can leave anything owed; until one is confirmed, nothing can be asked of the founder."
+      },
+      {
+       "question": "What the meeting is for, and who this contact at Tallgrass is to Nimbus Labs.",
+       "relevance": "The brief names no kind of work for the contact, so neither preparation nor any later step can be judged."
+      },
+      {
+       "question": "Whether any mailbox has read this contact's mail.",
+       "relevance": "No mailbox is shown to have read it, so the absence of mail says nothing either way."
+      }
+     ],
+     "frames": {
+      "primary": "A calendar booking with no words around it: a meeting with meera@tallgrass.test sits on the calendar and the file holds nothing else. Nothing is owed until a signal shows what, if anything, came of it.",
+      "rivals": [
+       "A meeting that went ahead and left a step owed — nothing on record shows either.",
+       "A booking that was moved or dropped without the calendar saying so."
+      ]
+     },
+     "proposed_kind": null,
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook or any mail, nothing is expected beyond the booking itself.",
+      "actual": "A booking for the thirteenth of August is all the file holds: no mail, no words, and no confirmation that the meeting took place."
+     },
+     "scenarios": {
+      "do_nothing": "If the meeting matters, mail from one side will show it; the file loses nothing by waiting.",
+      "act": "Acting now would mean guessing at a meeting nobody has described — a note about what was agreed would rest on nothing.",
+      "best": "A mail from either side shows what the meeting was for and what, if anything, comes next.",
+      "worst": "Something agreed at the meeting is never written down — and the file cannot know it without a signal.",
+      "signals_to_watch": [
+       "A mail from meera@tallgrass.test or from the founder after the booked time.",
+       "The calendar entry moving or being cancelled.",
+       "The founder's own note on what was agreed."
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The file holds only a booking, with no words, mail or promise.",
+       "The brief names no kind of work for this contact.",
+       "Nothing on record shows anything owed by the founder."
+      ]
+     },
+     "mode": "wait",
+     "next_move": null,
+     "alternative": "If you want a record, note what was agreed yourself; nothing should be presumed for you.",
+     "wait_or_stop": "Wait for a signal — a mail from either side, or your own note. Stop if the booked time passes and the file stays quiet with nothing written.",
+     "done_when": "A mail or your note shows what the meeting was for and what follows — or the file stays quiet and is let go.",
+     "draft": null
+    }
+   }
+  ]
+ }
+}

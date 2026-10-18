@@ -1382,7 +1382,7 @@ inference_patterns:
       path: thread.last_inbound
       op: '>'
       value:
-        baseline: reply_cadence
+        baseline: write_interval
         mult: 2
         floor: 48
     yields:
@@ -1576,7 +1576,7 @@ inference_patterns:
       path: thread.last_inbound
       op: <=
       value:
-        baseline: reply_cadence
+        baseline: write_interval
         mult: 0.25
         floor: 2
     yields:
@@ -2341,7 +2341,7 @@ business_rules:
     path: thread.last_inbound
     op: <=
     value:
-      baseline: reply_cadence
+      baseline: write_interval
       mult: 2
       floor: 48
   then: block_auto_close
@@ -2861,7 +2861,7 @@ actions:
     path: thread.last_inbound
     op: '>'
     value:
-      baseline: reply_cadence
+      baseline: write_interval
       mult: 2
       floor: 48
   effect: >

@@ -1,0 +1,277 @@
+{
+ "case_id": "F51",
+ "source": "ideal_reader",
+ "recorded_at": "417c10fb",
+ "answers": {
+  "2a51ba1f9e7002412c62474857db644d3fc0c276c0d9f2c41af48ec99488a93e": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Sana Qureshi of Brightloop offered Arjun two times for a call: Tuesday the fourth of August at three in the afternoon, or Wednesday the fifth at eleven in the morning, IST.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Brightloop Hi Arjun, Happy to chat. Does Tuesday 4 Aug at 3pm or Wednesday"
+     },
+     {
+      "claim": "Sana said she would send an invite once Arjun confirms one of them.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "send an invite once you confirm. Sana"
+     },
+     {
+      "claim": "Her mail answers a thread titled Nimbus Labs x Brightloop, whose earlier mail is not in the file, and opens with happy to chat.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Nimbus Labs x Brightloop Hi Arjun, Happy to chat."
+     },
+     {
+      "claim": "Her mail is the file's only touch, over three days ago; the dossier says we have not written in the file and marks the move as ours.",
+      "evidence": [
+       "sit:sit_#1",
+       "num:days_quiet"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The move is Arjun's: no invite comes until he picks a time.",
+      "based_on": [
+       "fact:2",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "The first slot is Tuesday afternoon, so a confirmation is needed by Monday for Sana to send the invite in time; after Tuesday only Wednesday's slot is left, and after Wednesday morning neither.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Sana proposed the times herself, so Brightloop is willing to talk; leaving her offer unanswered past the first slot spends that goodwill.",
+      "based_on": [
+       "fact:1",
+       "fact:3"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Arjun already settled a time outside this mailbox, by phone, chat or another address.",
+      "needs": "Arjun's word, or Sana's invite arriving."
+     },
+     {
+      "proposition": "Neither slot suits Arjun.",
+      "needs": "Arjun's calendar for Tuesday afternoon and Wednesday morning."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether either slot is free on Arjun's calendar.",
+      "relevance": "It decides whether to take one of them or offer other times."
+     },
+     {
+      "question": "What Brightloop is to Nimbus Labs, a design partner, a customer or a channel, since the thread's earlier mail is not in the file.",
+      "relevance": "It sets what the call is for and what Arjun should bring to it."
+     }
+    ],
+    "frames": {
+     "primary": "A call offered and waiting on us: Sana proposed Tuesday afternoon or Wednesday morning and will send the invite once you pick one; nothing is set yet, and the first slot is close.",
+     "rivals": [
+      "The time was settled outside this mailbox and the file only looks open.",
+      "Brightloop's interest is light, and an offer left unanswered will be read as Arjun's lack of interest."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "partner",
+     "why": "The thread pairs Nimbus Labs and Brightloop as two companies looking to talk, the shape partner talks take, and the brief sets landing design partners as a goal while naming no kind of work for this file. Proposed for the founder to confirm.",
+     "evidence": [
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, from the file: an offer of two times expects an answer before the first of them, so the invite can go out.",
+     "actual": "Over three days on, the file holds only Sana's offer: no answer from Arjun and no invite."
+    },
+    "scenarios": {
+     "do_nothing": "Tuesday's slot passes, then Wednesday's; no invite comes, and the call has to be asked for again, by us, with the goodwill spent.",
+     "act": "One line taking a slot today lets Sana send the invite, and the call happens this week.",
+     "best": "Arjun takes Tuesday, the invite arrives, and the call opens real partner talks with Brightloop.",
+     "worst": "Both slots pass unanswered, Sana reads it as no interest, and Brightloop goes quiet.",
+     "signals_to_watch": [
+      "Sana's invite arriving after Arjun answers",
+      "Sana proposing new times or asking again",
+      "Tuesday afternoon arriving with no time agreed"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "reversible",
+     "reasons": [
+      "The first slot is Tuesday afternoon, with only Monday between now and then.",
+      "Sana waits on Arjun's answer before she sends the invite.",
+      "A missed slot can be asked for again, but at the cost of the warmth Sana showed by proposing times."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun Rao",
+     "what": "Take one of Sana's two times — Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST — and tell her so she can send the invite",
+     "for_whom": "Sana Qureshi at Brightloop",
+     "by_when": "2026-08-03",
+     "rests_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "to": "Sana"
+    },
+    "alternative": "If neither time suits, answer with two or three other times this week.",
+    "wait_or_stop": "Do not wait: answer before Tuesday afternoon. Once a time is agreed, wait for Sana's invite; if none has come by the evening before the call, ask her once for it.",
+    "done_when": "You have picked a time, Sana's invite is in the calendar, and the call is set.",
+    "draft": "Hi Sana, thanks for the two options. Tuesday 4 Aug at 3pm works for me; please send the invite when you can. Looking forward to talking. Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Sana Qureshi of Brightloop offered Arjun two times for a call: Tuesday the fourth of August at three in the afternoon, or Wednesday the fifth at eleven in the morning, IST.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Brightloop Hi Arjun, Happy to chat. Does Tuesday 4 Aug at 3pm or Wednesday\"}, {\"claim\": \"Sana said she would send an invite once Arjun confirms one of them.\", \"evidence\": [\"evt_#1\"], \"quote\": \"send an invite once you confirm. Sana\"}, {\"claim\": \"Her mail answers a thread titled Nimbus Labs x Brightloop, whose earlier mail is not in the file, and opens with happy to chat.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Nimbus Labs x Brightloop Hi Arjun, Happy to chat.\"}, {\"claim\": \"Her mail is the file's only touch, over three days ago; the dossier says we have not written in the file and marks the move as ours.\", \"evidence\": [\"sit:sit_#1\", \"num:days_quiet\"]}], \"inferences\": [{\"claim\": \"The move is Arjun's: no invite comes until he picks a time.\", \"based_on\": [\"fact:2\", \"fact:4\"]}, {\"claim\": \"The first slot is Tuesday afternoon, so a confirmation is needed by Monday for Sana to send the invite in time; after Tuesday only Wednesday's slot is left, and after Wednesday morning neither.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Sana proposed the times herself, so Brightloop is willing to talk; leaving her offer unanswered past the first slot spends that goodwill.\", \"based_on\": [\"fact:1\", \"fact:3\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Arjun already settled a time outside this mailbox, by phone, chat or another address.\", \"needs\": \"Arjun's word, or Sana's invite arriving.\"}, {\"proposition\": \"Neither slot suits Arjun.\", \"needs\": \"Arjun's calendar for Tuesday afternoon and Wednesday morning.\"}], \"unknowns\": [{\"question\": \"Whether either slot is free on Arjun's calendar.\", \"relevance\": \"It decides whether to take one of them or offer other times.\"}, {\"question\": \"What Brightloop is to Nimbus Labs, a design partner, a customer or a channel, since the thread's earlier mail is not in the file.\", \"relevance\": \"It sets what the call is for and what Arjun should bring to it.\"}], \"frames\": {\"primary\": \"A call offered and waiting on us: Sana proposed Tuesday afternoon or Wednesday morning and will send the invite once you pick one; nothing is set yet, and the first slot is close.\", \"rivals\": [\"The time was settled outside this mailbox and the file only looks open.\", \"Brightloop's interest is light, and an offer left unanswered will be read as Arjun's lack of interest.\"]}, \"proposed_kind\": {\"kind\": \"partner\", \"why\": \"The thread pairs Nimbus Labs and Brightloop as two companies looking to talk, the shape partner talks take, and the brief sets landing design partners as a goal while naming no kind of work for this file. Proposed for the founder to confirm.\", \"evidence\": [\"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the file: an offer of two times expects an answer before the first of them, so the invite can go out.\", \"actual\": \"Over three days on, the file holds only Sana's offer: no answer from Arjun and no invite.\"}, \"scenarios\": {\"do_nothing\": \"Tuesday's slot passes, then Wednesday's; no invite comes, and the call has to be asked for again, by us, with the goodwill spent.\", \"act\": \"One line taking a slot today lets Sana send the invite, and the call happens this week.\", \"best\": \"Arjun takes Tuesday, the invite arrives, and the call opens real partner talks with Brightloop.\", \"worst\": \"Both slots pass unanswered, Sana reads it as no interest, and Brightloop goes quiet.\", \"signals_to_watch\": [\"Sana's invite arriving after Arjun answers\", \"Sana proposing new times or asking again\", \"Tuesday afternoon arriving with no time agreed\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"The first slot is Tuesday afternoon, with only Monday between now and then.\", \"Sana waits on Arjun's answer before she sends the invite.\", \"A missed slot can be asked for again, but at the cost of the warmth Sana showed by proposing times.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Take one of Sana's two times — Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST — and tell her so she can send the invite\", \"for_whom\": \"Sana Qureshi at Brightloop\", \"by_when\": \"2026-08-03\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Sana\"}, \"alternative\": \"If neither time suits, answer with two or three other times this week.\", \"wait_or_stop\": \"Do not wait: answer before Tuesday afternoon. Once a time is agreed, wait for Sana's invite; if none has come by the evening before the call, ask her once for it.\", \"done_when\": \"You have picked a time, Sana's invite is in the calendar, and the call is set.\", \"draft\": \"Hi Sana, thanks for the two options. Tuesday 4 Aug at 3pm works for me; please send the invite when you can. Looking forward to talking. Arjun\"}",
+   "framed": true,
+   "input_tokens": 3417,
+   "output_tokens": 1259,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "84a34a0bc3b52ead4908abdcda0758375e429b372913ae9daf575584d06860b7": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Nimbus Labs x Brightloop",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs x Brightloop\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1180,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8ccf43958fc0e958df872b57cff6775c97d1d84796c29c0e76dc20231b07381c": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Does Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST work?",
+    "start_offset": 56,
+    "end_offset": 118,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Does Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST work?\", \"start_offset\": 56, \"end_offset\": 118, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1527,
+   "output_tokens": 53,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "bb7ba8e28e45ec5f2ce9e54514d18eb9c62d828cfab4d4d68876a5f904193adc": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1049,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dd17ab988d5295442057bd4d01529cf1a9137d979994b74609691cd3c17386df": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "schedule",
+    "stance": "positive",
+    "topics": [
+     "partnership"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Sana Qureshi",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Sana",
+        "start_offset": 160,
+        "end_offset": 164
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Sana Qureshi",
+      "text": "Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST",
+      "evidence_text": "Does Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST work?"
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "Tuesday 4 Aug at 3pm",
+      "earliest": "2026-08-04T09:30:00Z",
+      "latest": "2026-08-04T09:30:00Z",
+      "certainty": "exact",
+      "resolved_against": "2026-07-30T06:00:00Z",
+      "evidence": [
+       {
+        "quote": "Tuesday 4 Aug at 3pm",
+        "start_offset": 61,
+        "end_offset": 81
+       }
+      ]
+     },
+     {
+      "as_written": "Wednesday 5 Aug at 11am IST",
+      "earliest": "2026-08-05T05:30:00Z",
+      "latest": "2026-08-05T05:30:00Z",
+      "certainty": "exact",
+      "resolved_against": "2026-07-30T06:00:00Z",
+      "evidence": [
+       {
+        "quote": "Wednesday 5 Aug at 11am IST",
+        "start_offset": 85,
+        "end_offset": 112
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "a time for a call"
+    }
+   },
+   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Sana Qureshi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sana\", \"start_offset\": 160, \"end_offset\": 164}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Sana Qureshi\", \"text\": \"Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST\", \"evidence_text\": \"Does Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST work?\"}], \"dates_mentioned\": [{\"as_written\": \"Tuesday 4 Aug at 3pm\", \"earliest\": \"2026-08-04T09:30:00Z\", \"latest\": \"2026-08-04T09:30:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-07-30T06:00:00Z\", \"evidence\": [{\"quote\": \"Tuesday 4 Aug at 3pm\", \"start_offset\": 61, \"end_offset\": 81}]}, {\"as_written\": \"Wednesday 5 Aug at 11am IST\", \"earliest\": \"2026-08-05T05:30:00Z\", \"latest\": \"2026-08-05T05:30:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-07-30T06:00:00Z\", \"evidence\": [{\"quote\": \"Wednesday 5 Aug at 11am IST\", \"start_offset\": 85, \"end_offset\": 112}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a time for a call\"}}",
+   "framed": true,
+   "input_tokens": 5521,
+   "output_tokens": 307,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

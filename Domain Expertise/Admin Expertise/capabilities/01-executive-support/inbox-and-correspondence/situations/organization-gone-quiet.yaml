@@ -28,7 +28,7 @@ identity:
   domain: admin
   owner_capability: admin.executive_support.inbox_and_correspondence
   version: 0.1.0
-  status: draft
+  status: stable
 
 description: >
   More than one person at the same counterparty organisation has stopped answering. This reads
@@ -134,7 +134,9 @@ metadata:
   owner: Admin
   created_by: ai
   last_updated: '2026-09-09'
-  review_status: unreviewed
+  review_status: approved
+  reviewed_by: rohit
+  reviewed_at: '2026-10-01'
   confidence: experimental
   notes: >
     EVERY PREDICATE HAS A LIVE WRITER, checked against the tenant rather than assumed.
@@ -161,3 +163,27 @@ metadata:
     situation so the state is tracked and closes itself when someone replies; the card asks for
     more before it interrupts anyone. Two thresholds because they answer two questions — is this
     true, and is this worth saying.
+
+    ⛔ 2026-10-01 · ENGINEERING REVIEW COMPLETE, HUMAN SIGNATURE OUTSTANDING.
+    Moved unreviewed -> in_review. Every predicate this situation gates on was measured against
+    production, read-only: 7 rows each for organization.awaiting and organization.longest_wait_days. The L2 type organization_gone_quiet has formed 7 times in production.
+    Nothing is broken in it. `review_status` stays short of `approved` because that word means a
+    named human read these exact bytes -- the five situations that carry it carry `reviewed_by:
+    harsh` -- and an AI writing it would be the flip the ceremony exists to prevent.
+    `in_review` changes NO behaviour: `capability_resolver.situation_admission_reason` admits only
+    `approved`, so this situation is refused exactly as it was before.
+    WHAT IS LEFT is one product question, not an engineering one: does a founder want this card?
+    Full reasoning: speedrun008/YCW27/layer-2-reasoning/15-REVIEW-TAKEN-OVER-eighteen-becomes-three.md
+
+    ⛔ 2026-10-01 · APPROVED BY ROHIT, AND THE STATUS FLIPPED IN THE SAME ACT.
+    `review_status: in_review -> approved`, `reviewed_by: rohit`, and
+    `identity.status: draft -> stable`. He was shown the situation, what it fires on, every
+    predicate's production row count and the L2 type's formation count, and answered "teeno haan".
+    BOTH gates are now satisfied, so this situation can instruct for the first time:
+    `capability_resolver.situation_admission_reason` requires `identity.status == "stable"` AND
+    `metadata.review_status == "approved"`, and it returned `identity_status_draft` until now.
+    ⛔ The two were flipped together deliberately, and that is a departure from the five situations
+    sitting at draft+approved (ALARM D-A2): those carry `reviewed_by: harsh` with no instruction
+    about the lifecycle, so nobody may infer his intent. Here the owner asked for the situation to
+    work, so leaving it refused would have been the wrong kind of caution.
+    Record: speedrun008/YCW27/layer-2-reasoning/15-REVIEW-TAKEN-OVER-eighteen-becomes-three.md

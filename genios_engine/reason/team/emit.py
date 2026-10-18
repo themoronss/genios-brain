@@ -24,20 +24,35 @@ rate caps — `reason/moments/guards.py`) decide `display`; a suppressed toast i
 the card is written either way. `realtime_events(moment.new)` rides the same transaction.
 
 NEVER CREDIT-CHARGED: nothing here touches billing.
+
+THE CARD CONTRACT FIRST (STEP-14, `yc2_w27_s14` M43.C4.L-integration.V1.U03; s14-F10). This writer runs no renderer and
+no validator — production's *"Which is right? Maria Exconde: party.role"* was one of its cards. Before anything is
+written, the words the card AND its moment show pass `contracts/card_contract` against the situation's own evidence:
+no internal field name or unfilled slot, no money unless its evidence holds money, no quote that is not its
+evidence's words (a clipped quote is still its words), no number or date its evidence does not hold. Refused: no
+card, no moment, no situation row — `None`, counted per rule in `counts` (`refused_contract:<rule>`) and logged.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Iterable
 
 from sqlalchemy import text
 
+from genios_engine.contracts import card_contract
+from genios_engine.platform import card_lifecycle
+from genios_engine.platform import card_refusals
 from genios_engine.platform import realtime
 from genios_engine.platform.ids import new_id
+from genios_engine.platform.logging import get_logger
+from genios_engine.platform.self_identity import SelfIdentity
 from genios_engine.reason.moments import guards as G
 from genios_engine.reason.moments.common import iso
+from genios_engine.contracts.reasoning import DecisionOutcome, OutputLane
+from genios_engine.reason.output_lane import LaneChoice, route
 
 KINDS = ("team", "verify")
 PRIORITIES = ("low", "normal", "high", "critical")
@@ -49,6 +64,13 @@ MOMENT_HEADLINE_MAX, MOMENT_BODY_MAX = 300, 2000
 _BAND = {"low": "standard", "normal": "standard", "high": "high", "critical": "critical"}
 _SCORE = {"low": 40, "normal": 55, "high": 75, "critical": 90}
 _REFRESHABLE = ("built", "queued", "surfaced")
+#: The lane of what a post-pass observed (`signals.output_lane`, 0189; STEP-13 `yc2_w27_s13`
+#: M36.C1.L-data.V0.U05, `03` F186) — no decision was made, so none is routed from one. A `verify`
+#: situation is a discrepancy between two sources the owner settles (accept, keep): the router's own
+#: conflict, a ruling and not more evidence. A `team` situation is something to watch.
+_LANE = {"verify": route(outcome=DecisionOutcome.NO_ACTION, confidence_bp=0, conflict_open=True),
+         "team": LaneChoice(OutputLane.MONITOR, "a situation of the team a post-pass observed; no "
+                                                "decision was made, so it is shown to watch")}
 
 
 def _h(*parts) -> str:
@@ -76,13 +98,52 @@ def _with_open_card(actions: Iterable[dict] | None, card_id: str) -> list[dict]:
                        "payload": {"card_id": card_id, "url": card_url(card_id)}}]
 
 
+_log = get_logger("genios.reason.team.emit")
+
+#: Evidence that holds money: a key naming an amount, or a value carrying a currency.
+_MONEY_KEYS = ("amount", "price", "invoice", "payment", "fee", "revenue", "budget", "cost")
+#: A clipped text ends in an ellipsis (`clip`) — the quote before it is still the evidence's words.
+_CLIPPED = re.compile(r"\s*(?:…|\.\.\.)\s*(?=”|\"|$)")
+
+
+def _money_in(evidence) -> bool:
+    flat = json.dumps(evidence, default=str, ensure_ascii=False).lower()
+    return any(f'"{k}' in flat for k in _MONEY_KEYS) or any(s in flat for s in ("₹", "$", "€", "£"))
+
+
+def refusals(*, headline: str, body: str | None, evidence, corpus: Iterable[str] = ()) -> tuple:
+    """What `contracts/card_contract` refuses in a situation's card and moment, against its own evidence and what its
+    writer composed its words from (`corpus`: the facts' values and the counts code computed — never the words)."""
+    texts = [_CLIPPED.sub("", t) for t in (headline, body or "") if t]
+    card = card_contract.CardText(headline=texts[0] if texts else "", situation=texts[-1] if texts else "",
+                                  draft=None)
+    return card_contract.check(card, us=SelfIdentity(),
+                               corpus=[json.dumps(evidence, default=str, ensure_ascii=False),
+                                       *(str(c) for c in corpus or () if c is not None)],
+                               money_evidence=_money_in(evidence))
+
+
+def _keep_refusals(engine, org_id: str, *, ref: str, refused, counts: dict | None) -> None:
+    """Keep what the contract refused where `scripts/pipeline_health` reads it (`platform/card_refusals`, 0222).
+    ⛔ Keeping it may never cost the emitter: unkept, it is counted `refusals_unkept` and logged."""
+    try:
+        with engine.begin() as c:
+            card_refusals.record(c, org_id=org_id, writer=card_refusals.TEAM, ref=ref, refusals=refused)
+    except Exception as exc:      # noqa: BLE001 — see the docstring
+        if counts is not None:
+            counts["refusals_unkept"] = counts.get("refusals_unkept", 0) + 1
+        _log.warning("could not keep the card contract's refusal org=%s key=%s: %s", org_id, ref, exc)
+
+
 def emit_situation(engine, card_store, org_id: str, *, kind: str, key: str, seat_id: str,
                    subject_node_ids, headline: str, body: str | None, actions, evidence,
                    priority: str = "high", ttl_seconds: int, digest: str,
                    capability_id: str | None = None, now: datetime | None = None,
-                   expires_at: datetime | None = None) -> tuple[str, str] | None:
+                   expires_at: datetime | None = None, counts: dict | None = None,
+                   corpus: Iterable[str] = ()) -> tuple[str, str] | None:
     """See the module docstring. `capability_id`, `now` and `expires_at` are optional extensions
-    (defaults: `<kind>.situation`, the wall clock, now + 7 d for the card)."""
+    (defaults: `<kind>.situation`, the wall clock, now + 7 d for the card); `counts` gathers what the
+    card contract refused; `corpus` is what the words were composed from beyond the evidence (`refusals`)."""
     if kind not in KINDS:
         raise ValueError(f"kind must be one of {KINDS}")
     if priority not in PRIORITIES:
@@ -93,6 +154,15 @@ def emit_situation(engine, card_store, org_id: str, *, kind: str, key: str, seat
     capability = capability_id or f"{kind}.situation"
     subjects = sorted({str(s) for s in (subject_node_ids or ()) if s})
     evidence = [dict(e) for e in (evidence or ()) if isinstance(e, dict)][:20]
+    refused = refusals(headline=headline, body=body, evidence=evidence, corpus=corpus)
+    if refused:
+        for r in refused:
+            if counts is not None:
+                counts[f"refused_contract:{r.rule}"] = counts.get(f"refused_contract:{r.rule}", 0) + 1
+        _log.warning("team card refused by the card contract org=%s key=%s: %s", org_id, key,
+                     "; ".join(f"{r.rule}: {r.found}" for r in refused))
+        _keep_refusals(engine, org_id, ref=f"{kind}:{key}", refused=refused, counts=counts)
+        return None
     card_exp = expires_at or now + timedelta(days=CARD_TTL_DAYS)
     ttl = max(60, min(int(ttl_seconds or 900), 86400))
     shown = False
@@ -150,12 +220,11 @@ def close_stale(engine, org_id: str, *, kind: str, prefixes: tuple[str, ...],
                            "where org_id = :o and kind = :k and key = :key"),
                       {"o": org_id, "k": kind, "key": r.key, "now": now})
             closed += 1
-            if r.card_id and c.execute(text(
-                    "update cards set state = 'resolved', resolved_at = :now where card_id = :c "
-                    "and org_id = :o and state in ('built', 'queued', 'surfaced', 'snoozed') "
-                    "returning 1"), {"c": r.card_id, "o": org_id, "now": now}).first():
-                _log_card_event(c, r.card_id, org_id, "card.resolved", "situation_cleared",
-                                {"situation_key": r.key})
+            if r.card_id:
+                # STEP-16 (`yc2_w27_s16` M47.C1.L-data.V0.U01): through the one writer of `resolved`.
+                card_lifecycle.resolve_cards(c, org_id=org_id, cause=card_lifecycle.SITUATION_CLEARED,
+                                             card_ids=[r.card_id], evidence={"situation_key": r.key}, at=now,
+                                             states=("built", "queued", "surfaced", "snoozed"))
     return closed
 
 
@@ -181,10 +250,14 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
             "update cards set assignee = :seat, urgency_band = :band, headline = :head, "
             "situation = :sit, score = :score, actions = cast(:act as jsonb), "
             "why = cast(:why as jsonb), expires_at = greatest(expires_at, :exp), "
+            # The lane rides on the card the surface reads (M36.C1.L-data.V0.U07): a lane that
+            # stops at `signals` reached nobody (0190).
+            "output_lane = :lane, lane_reason = :lane_reason, "
             "builder_version = :bver where card_id = :id and org_id = :o "
             "and state = any(:refreshable) and resolved_at is null returning signal_id"),
             {"seat": seat_id, "band": band, "head": head, "sit": sit, "score": score,
              "act": card_actions, "why": why, "exp": expires_at, "bver": BUILDER_VERSION,
+             "lane": _LANE[kind].lane.value, "lane_reason": _LANE[kind].reason,
              "id": held_card_id, "o": org_id, "refreshable": list(_REFRESHABLE)}).first()
         if refreshed is not None:
             c.execute(text(
@@ -194,46 +267,48 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
             # the words ride on the event: a card refreshed in place otherwise loses what it said
             _log_card_event(c, held_card_id, org_id, "card.rebuilt", capability,
                             {"digest": digest, "builder_version": BUILDER_VERSION,
-                             "headline": head, "situation": sit})
+                             "headline": head, "situation": sit,
+                             # STEP-14 fix (the crosscheck's finding 9): its words as every card's events keep them.
+                             "words": {"headline": head, "situation": sit}})
             return held_card_id
         # The user SNOOZED the previous card: its words stay as answered, but it must not wake
         # later beside the new generation saying something no longer true — resolve it.
-        if c.execute(text(
-                "update cards set state = 'resolved', resolved_at = :now where card_id = :id "
-                "and org_id = :o and state = 'snoozed' returning 1"),
-                {"id": held_card_id, "o": org_id, "now": now}).first():
-            _log_card_event(c, held_card_id, org_id, "card.resolved", "superseded",
-                            {"digest": digest})
+        card_lifecycle.resolve_cards(c, org_id=org_id, cause=card_lifecycle.SUPERSEDED, card_ids=[held_card_id],
+                                     evidence={"digest": digest}, at=now, states=("snoozed",))
     # First emission, or the user already decided the previous card: a new generation.
     signal_id = "sig_team_" + _h(org_id, kind, key, digest)[:28]
     c.execute(text(
         "insert into signals (signal_id, org_id, rule_id, rule_version, level, subject_node_id, "
         "score, score_inputs, reason_code, evidence, status, eval_time, capability_id, "
-        "capability_version) values (:sig, :o, :rule, 1, 'observation', :subj, :score, "
-        "'{}'::jsonb, :reason, cast(:ev as jsonb), 'open', :now, :rule, '1') "
+        "capability_version, output_lane, lane_reason) values (:sig, :o, :rule, 1, 'observation', "
+        ":subj, :score, '{}'::jsonb, :reason, cast(:ev as jsonb), 'open', :now, :rule, '1', "
+        ":lane, :lane_reason) "
         "on conflict (signal_id) do nothing"),
         {"sig": signal_id, "o": org_id, "rule": capability,
          "subj": subjects[0] if subjects else key, "score": score, "reason": kind, "ev": why,
-         "now": now})
+         "now": now, "lane": _LANE[kind].lane.value, "lane_reason": _LANE[kind].reason})
     card_id = new_id("card")
     row = c.execute(text(
         "insert into cards (card_id, signal_id, org_id, assignee, domain, level, urgency_band, "
         "headline, situation, score, score_block, actions, why, context_tags, render_mode, "
-        "template_version, capability_key, capability_version, builder_version, state, "
-        "expires_at) values (:id, :sig, :o, :seat, :dom, 'observation', :band, :head, :sit, "
-        ":score, '{}'::jsonb, cast(:act as jsonb), cast(:why as jsonb), '{}', 'template', "
-        ":tv, :cap, '1', :bver, 'queued', :exp) on conflict (signal_id) do nothing "
+        "template_version, capability_key, capability_version, builder_version, output_lane, "
+        "lane_reason, state, expires_at) values (:id, :sig, :o, :seat, :dom, 'observation', :band, "
+        ":head, :sit, :score, '{}'::jsonb, cast(:act as jsonb), cast(:why as jsonb), '{}', "
+        "'template', :tv, :cap, '1', :bver, :lane, :lane_reason, 'queued', :exp) "
+        "on conflict (signal_id) do nothing "
         "returning card_id"),
         {"id": card_id, "sig": signal_id, "o": org_id, "seat": seat_id, "dom": kind,
          "band": band, "head": head, "sit": sit, "score": score, "act": card_actions,
          "why": why, "tv": f"{capability}@1", "cap": capability, "bver": BUILDER_VERSION,
+         "lane": _LANE[kind].lane.value, "lane_reason": _LANE[kind].reason,
          "exp": expires_at}).first()
     if row is None:        # the same generation already carded (a retried emit)
         return c.execute(text("select card_id from cards where signal_id = :s and org_id = :o"),
                          {"s": signal_id, "o": org_id}).scalar()
     _log_card_event(c, card_id, org_id, "card.created", capability,
                     {"band": band, "render_mode": "template", "situation_key": key,
-                     "digest": digest, "headline": head, "situation": sit})
+                     "digest": digest, "headline": head, "situation": sit,
+                     "words": {"headline": head, "situation": sit}})
     return card_id
 
 

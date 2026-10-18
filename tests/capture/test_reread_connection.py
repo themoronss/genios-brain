@@ -64,7 +64,11 @@ def test_no_connection_for_the_source_is_a_skip(store):
 
 
 def test_the_re_read_publishes_in_batches_and_restores_each_one(store, monkeypatch):
-    """60 unread emails → three batches, each set aside, captured, published, then restored."""
+    """60 unread emails → three batches, each set aside, captured, published, then restored.
+
+    RESTATED (STEP-05, `yc2_w27_s05 · M23.C4.L-integration.V3.U03`): the 60 now come from the one
+    ladder (`find_parked_extractions`, after `queue_unread` filed them) instead of `find_unread`,
+    which is gone; the batching claim is unchanged."""
     from genios_engine.capture.landing import unread
 
     rows = [SimpleNamespace(event_id=f"evt_{i}", connection_id="con_bc00df", source="gmail")
@@ -75,7 +79,10 @@ def test_the_re_read_publishes_in_batches_and_restores_each_one(store, monkeypat
     monkeypatch.setattr(R, "_push_wiring_for", lambda conn: "wiring")
     monkeypatch.setattr(R, "_l1_stores", lambda: None)
     monkeypatch.setattr(unread, "recover_orphans", lambda e, o: 0)
-    monkeypatch.setattr(unread, "find_unread", lambda e, o, limit: rows)
+    monkeypatch.setattr(unread, "give_up_parked_extractions", lambda e, o: 0)
+    monkeypatch.setattr(unread, "queue_unread", lambda e, o: len(rows))
+    monkeypatch.setattr(unread, "find_parked_extractions", lambda e, o, limit: rows)
+    monkeypatch.setattr(unread, "settle_parked_extractions", lambda e, o, ids: {})
     monkeypatch.setattr(unread, "to_raw_object", lambda row, key: row.event_id)
     monkeypatch.setattr(unread, "set_aside", lambda e, o, ids: calls.append(("aside", len(ids))))
     monkeypatch.setattr(unread, "restore", lambda e, o, ids: calls.append(("restore", len(ids))))
@@ -87,3 +94,42 @@ def test_the_re_read_publishes_in_batches_and_restores_each_one(store, monkeypat
     assert R._reread_unread(ORG) == 60
     assert calls == [step for n in (25, 25, 10)
                      for step in (("aside", n), ("ingest", n), ("publish", n), ("restore", n))]
+
+
+def test_a_parked_extraction_is_read_again_through_the_same_door_and_settled(store, monkeypatch):
+    """STEP-18 B18. Mail whose extraction parked rides the unread re-read: set aside, captured,
+    published, restored — and THEN settled, so each park ends superseded, retried later, or given
+    up. The give-up runs first, so a message past its ladder is never offered again.
+
+    RESTATED (STEP-05, `yc2_w27_s05 · M23.C4.L-integration.V3.U03`): between the give-up and the
+    ladder's read, every kept mail nothing read joins the ladder (`queue_unread`); the ladder is
+    the one door, so it is read with the pass's own bound instead of a second, smaller one."""
+    from genios_engine.capture.landing import unread
+
+    parked = [SimpleNamespace(event_id=f"evt_parked_{i}", connection_id="con_bc00df",
+                              source="gmail") for i in range(2)]
+    calls: list = []
+    monkeypatch.setattr(R, "_graph", SimpleNamespace(engine=object()))
+    monkeypatch.setattr(R, "_llm_over_daily_cap", lambda org: False)
+    monkeypatch.setattr(R, "_push_wiring_for", lambda conn: "wiring")
+    monkeypatch.setattr(R, "_l1_stores", lambda: None)
+    monkeypatch.setattr(unread, "recover_orphans", lambda e, o: 0)
+    monkeypatch.setattr(unread, "give_up_parked_extractions",
+                        lambda e, o: calls.append(("give_up",)) or 0)
+    monkeypatch.setattr(unread, "queue_unread", lambda e, o: calls.append(("queue",)) or 0)
+    monkeypatch.setattr(unread, "find_parked_extractions",
+                        lambda e, o, limit: calls.append(("find_parked", limit)) or parked)
+    monkeypatch.setattr(unread, "to_raw_object", lambda row, key: row.event_id)
+    monkeypatch.setattr(unread, "set_aside", lambda e, o, ids: calls.append(("aside", tuple(ids))))
+    monkeypatch.setattr(unread, "restore", lambda e, o, ids: calls.append(("restore", tuple(ids))))
+    monkeypatch.setattr(unread, "settle_parked_extractions",
+                        lambda e, o, ids: calls.append(("settle", tuple(ids))) or {})
+    monkeypatch.setattr(R, "ingest_pushed_objects", lambda objs, **kw: (
+        calls.append(("ingest", tuple(objs))) or SimpleNamespace(
+            results=[SimpleNamespace(outcome="emitted")] * len(objs))))
+    monkeypatch.setattr(R, "finalize_l1", lambda sweep, **kw: calls.append(("publish", sweep.scanned)))
+
+    assert R._reread_unread(ORG) == 2
+    ids = ("evt_parked_0", "evt_parked_1")
+    assert calls == [("give_up",), ("queue",), ("find_parked", 200), ("aside", ids),
+                     ("ingest", ids), ("publish", 2), ("restore", ids), ("settle", ids)], calls

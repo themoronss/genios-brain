@@ -144,6 +144,13 @@ NODE_TYPES: dict[str, str] = {
     "document":           "anchored by content address. See `context.documents.DOCUMENT_NODE_TYPE`.",
     "product_usage_event": "anchored by the source system's event id — the EVENT, not the account; "
                            "its facts describe the usage. See `PRODUCT_USAGE_NODE_TYPE`.",
+    # ⛔ THE THIRD MINTED THROUGH A VARIABLE, found by STEP-10 (`yc2_w27_s10 · M29.C3`):
+    # `context.pipeline._person` has typed a machine address `service` since L3-0A, through a
+    # variable the guard's literal scan cannot see, so the vocabulary never listed it. Its readers
+    # were already many (`backfill`, `outreach_situations`, `platform/self_identity`); the first
+    # LITERAL spelling, `context.delivery`, is what made the omission visible.
+    "service":            "anchored by email address — a machine sender (a mail daemon, a no-reply "
+                          "or platform address): plumbing, never a person, never a file's anchor.",
 }
 
 
@@ -165,7 +172,7 @@ NODE_TYPES: dict[str, str] = {
 # with a totality guard in both directions — `LAYERS`, `PRECEDENCE`, `ANCHOR_FAMILIES`,
 # `SYNC_HEALTHS` — and that is what this is.
 
-#: Every relation the graph may assert, with what it means. A seventh entry is a decision: it means
+#: Every relation the graph may assert, with what it means. A new entry is a decision: it means
 #: something new is claimable about how two entities relate, and every reader that walks edges has
 #: to be asked whether it should see it.
 EDGE_TYPES: dict[str, str] = {
@@ -175,6 +182,26 @@ EDGE_TYPES: dict[str, str] = {
     "concerns":           "deal|situation -> subject. What a thing is ABOUT, deliberately weak.",
     "raised_in":          "commitment|topic -> thread. Where something was first said.",
     "corresponded_with":  "person -> person. They exchanged mail. NOT a relationship strength.",
+    # ⛔ THE FOUR THAT WERE WRITTEN ALL ALONG. When the set was closed (L3-09) the guard read only
+    # `edge_type="…"` literals, and these four reach `write_edge` another way — a loop over literal
+    # tuples, a module constant, a structured `RelationMap`. So they were never declared, and from
+    # that day `write_edge` raised on every one of them: every deal-shaped fact, every document
+    # edit, every assignee and every product-usage user rolled its whole event back. Found on
+    # 2026-10-05, when the database suite first ran on this branch (27 of its 50 failures).
+    "involves":           "deal -> person. Someone on the deal: a CRM deal's contact, or the "
+                          "counterparty whose mail made it a deal. The CRM lane writes it "
+                          "person -> deal, so readers walk it both ways. NOT a role, decision "
+                          "power or a seat on a buying committee.",
+    "edited":             "person -> document. The file store's last editor. NOT the owner, the "
+                          "author or an approver — the accountable person is `owns`.",
+    "assigned":           "person -> task. The assignee a work tracker reports. NOT who will do "
+                          "the work, nor who is accountable for it.",
+    "used":               "person -> product_usage_event. The tenant's own instrumentation saw this "
+                          "person do it. NOT a seat, a licence or a buyer.",
+    # STEP-09 · written by `context/pipeline.process_event` for a connector the company brief names.
+    "introduced":         "person -> person. A connector the founder's company brief names "
+                          "introduced this person to us, in the thread its evidence names. NOT an "
+                          "endorsement, a relationship strength, or anything the person did.",
 }
 
 #: ⛔ RELATIONS THIS GRAPH MAY NOT ASSERT, AND WHY. Each of these is a conclusion wearing an edge's

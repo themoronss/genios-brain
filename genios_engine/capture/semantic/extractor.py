@@ -429,9 +429,11 @@ class ExtractionRequest:
     deterministic counts S1 produced. They are carried rather than computed here so that the one
     module allowed to call a model is not also the module that decides how much that call costs.
 
-    `eval_time` is the instant every relative date resolves against, and it is a parameter for
-    the reason the whole layer keeps saying: a March event's "next week" has to keep resolving to
-    March, and a clock read inside the pipeline makes a replay a different extraction.
+    `eval_time` is the request's clock, and it is a parameter for the reason the whole layer keeps
+    saying: a clock read inside the pipeline makes a replay a different extraction. A March
+    event's "next week" has to keep resolving to March, and that is `written_at`'s job (`03`
+    F148): the sweep's clock is when the mail was READ, which on a first connect or a re-sync of
+    history is months after it was written.
     """
 
     org_id: str
@@ -457,6 +459,17 @@ class ExtractionRequest:
     #: whole event rather than of an offset: an upload chunk IS one section, and a message has
     #: none. `None` is the ordinary case.
     section: str | None = None
+    #: STEP-07 · the tenant's company brief, as its block (`CompanyBrief.prompt_block()`), or
+    #: "" for a tenant with none. It rides in the envelope — the one slot above the fence and
+    #: after the cached prefix — so an extraction made under one brief is never served as the
+    #: answer to a prompt carrying another, and a tenant without a brief is asked as before.
+    company_brief: str = ""
+    #: `03` F148 · WHEN THE WORDS WERE WRITTEN — the message's own `occurred_at`, the instant ALG-09
+    #: resolves its relative dates against: "by Friday" in a mail of Thursday 16 Jul is 17 Jul
+    #: however late a sync reads it. `None` (a message with no time of its own) resolves against
+    #: `eval_time`, as every date did before. Only the dates read it: the prompt, the cache key and
+    #: a park row's `created_at` keep the request's clock.
+    written_at: datetime | None = None
 
     def __post_init__(self) -> None:
         require_text(self.org_id, "org_id")
@@ -465,6 +478,8 @@ class ExtractionRequest:
         require_text(self.profile_id, "profile_id")
         require_text(self.timezone, "timezone")
         require_aware(self.eval_time, "eval_time")
+        if self.written_at is not None:
+            require_aware(self.written_at, "written_at")
         if self.tier not in TIERS:
             raise ValueError(f"tier must be one of {TIERS}, got {self.tier!r} — the tier is "
                              "L1.4.10's answer and the model never picks its own")
@@ -483,6 +498,12 @@ class ExtractionRequest:
     def content(self) -> str:
         """The text the model is shown, and the text every offset is measured against."""
         return self.prepared.clean_text
+
+    @property
+    def date_frame(self) -> datetime:
+        """The instant this message's relative dates resolve against: when it was written, else
+        the request's clock."""
+        return self.written_at if self.written_at is not None else self.eval_time
 
     @property
     def source_ref(self) -> str:
@@ -816,8 +837,11 @@ def assemble_call(request: ExtractionRequest, *, nonce: str | None = None) -> As
         "absent answer only means we do not filter on it, and a wrong one deletes somebody's "
         "mail. Do not return any score, probability or number anywhere in this object."
     )
-    envelope = (f"{_envelope_block(request.envelope)}\n\n{offset_frame_block(len(content))}"
-                f"\n\n{business}\n\n{intent}")
+    # STEP-07 · the company brief first, when the tenant has one: who this company is, its
+    # goals and work in motion, frame every reading below it (`speedrun008/YC-II W27/` STEP-07).
+    brief = f"{request.company_brief.rstrip()}\n\n" if request.company_brief else ""
+    envelope = (f"{brief}{_envelope_block(request.envelope)}\n\n"
+                f"{offset_frame_block(len(content))}\n\n{business}\n\n{intent}")
     rendered = render_prompt(profile.profile_id, schema=generate_schema_block(),
                              vocab=vocabulary_block(), envelope=envelope, content=fenced.text)
     fenced.check_placement(rendered.text)
@@ -993,10 +1017,23 @@ def _has_fraction(value: Any) -> bool:
     return False
 
 
-def _open_lane_entries(value: Any, tally: _Tally) -> list[dict[str, Any]]:
-    """`roles` / `relationships` / `scheduling_proposals` — untyped by design, fraction-free."""
+def _squash(text: str) -> str:
+    """Case- and whitespace-blind form of a text, for asking "is this quote in that content"."""
+    return " ".join(text.casefold().split())
+
+
+def _open_lane_entries(value: Any, tally: _Tally, content: str | None = None) -> list[dict[str, Any]]:
+    """`roles` / `relationships` / `scheduling_proposals` — untyped by design, fraction-free.
+
+    GeniOS-008 L1 C3 · an `evidence_text` the content does not contain is CLEARED, never kept.
+    These lanes carry no span, so their quote is the only receipt they have — and L3 stores it as
+    the fact's evidence (`context/pipeline.py`, `relationship.nature`). A quote the model wrote
+    rather than read would be filed as something the counterparty said. The entry itself stays:
+    its judgement is ranked lowest already, and losing it would change what L3 knows.
+    """
     if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
         return []
+    haystack = _squash(content) if content else None
     kept: list[dict[str, Any]] = []
     for entry in value:
         if not isinstance(entry, Mapping):
@@ -1006,7 +1043,13 @@ def _open_lane_entries(value: Any, tally: _Tally) -> list[dict[str, Any]]:
             tally.fractional_rejects += 1
             log.warning("dropping an open-lane entry containing a float: %r", entry)
             continue
-        kept.append({str(key): item for key, item in entry.items()})
+        out = {str(key): item for key, item in entry.items()}
+        quote = out.get("evidence_text")
+        if haystack is not None and isinstance(quote, str) and quote.strip():
+            if _squash(quote.strip().strip('"\'“”')) not in haystack:
+                log.warning("clearing an open-lane quote the content does not contain: %r", quote)
+                out["evidence_text"] = None
+        kept.append(out)
     return kept
 
 
@@ -1211,13 +1254,14 @@ def _resolved_date(entry: Mapping[str, Any], evidence: Sequence[EvidenceSpan],
                    request: ExtractionRequest, tally: _Tally) -> ResolvedDate | None:
     """One date claim: the model's words, this machine's window.
 
-    ALG-09 (`capture/validate/dates.py`) resolves `as_written` against the caller's `eval_time`
-    in the org's timezone, and the model's own `earliest` / `latest` / `certainty` are read and
-    DISCARDED. Three reasons, in order of how much they cost when ignored: a window a model
-    computed is not reproducible across replays or machines; the doc's own worked example expects
-    "pretty soon" to come back RELATIVE with a derived window, which is row 9 of the cascade and
-    not a thing a model was asked; and `ResolvedDate` refuses an incoherent band-and-window pair
-    at construction, so a model that says RELATIVE with no window would cost the whole claim.
+    ALG-09 (`capture/validate/dates.py`) resolves `as_written` against the request's
+    `date_frame` — when the message was written (`03` F148) — in the org's timezone, and the
+    model's own `earliest` / `latest` / `certainty` are read and DISCARDED. Three reasons, in
+    order of how much they cost when ignored: a window a model computed is not reproducible across
+    replays or machines; the doc's own worked example expects "pretty soon" to come back RELATIVE
+    with a derived window, which is row 9 of the cascade and not a thing a model was asked; and
+    `ResolvedDate` refuses an incoherent band-and-window pair at construction, so a model that
+    says RELATIVE with no window would cost the whole claim.
 
     A phrase the cascade cannot resolve is still kept — UNRESOLVED with no window is an honest
     "somebody wrote a date-ish thing and we will not guess which day", and it is counted.
@@ -1226,7 +1270,7 @@ def _resolved_date(entry: Mapping[str, Any], evidence: Sequence[EvidenceSpan],
     if as_written is None or not evidence:
         return None
     try:
-        resolved = resolve_date(as_written, eval_time=request.eval_time, tz=request.timezone,
+        resolved = resolve_date(as_written, eval_time=request.date_frame, tz=request.timezone,
                                 evidence=list(evidence), locale=request.locale)
     except (TypeError, ValueError) as exc:
         tally.contract_rejects += 1
@@ -1601,8 +1645,10 @@ def parse_response(payload: Any, *, request: ExtractionRequest, call: AssembledC
         "implied_actions": _string_list(payload.get("implied_actions")),
         "questions": claims["questions"],
         "roles": claims["roles"],
-        "relationships": _open_lane_entries(payload.get("relationships"), tally),
-        "scheduling_proposals": _open_lane_entries(payload.get("scheduling_proposals"), tally),
+        "relationships": _open_lane_entries(payload.get("relationships"), tally,
+                                          request.content),
+        "scheduling_proposals": _open_lane_entries(payload.get("scheduling_proposals"), tally,
+                                          request.content),
         "availability": claims["availability"],
         "unclassified_observations": claims["unclassified_observations"],
         "field_confidence": _field_confidence(payload.get("field_confidence"), tally),

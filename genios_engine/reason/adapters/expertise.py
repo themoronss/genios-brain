@@ -32,6 +32,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
+from decimal import Decimal
 from typing import Any
 
 from genios_engine.contracts.domain_expertise import (
@@ -70,7 +71,16 @@ ADAPTER_ID = "expertise_to_capability"
 # 2.0.0 — the typed consumers (doc 03, wave Y1). Every artifact class the corpus carries now has
 # a reader at this seam, so a manifest built by 1.0.0 and one built by this version are different
 # objects even from identical knowledge: the version says which is which.
-ADAPTER_VERSION = "2.0.0"
+# 2.1.0 — STEP-11 (M30.C2.L-logic.V1.U02): a play is labelled by its playbook's NAME, carries the
+# playbook's authored success signal and outcome window, and the manifest reads the situation's own
+# do-nothing sentence; every fallback is named in `metadata.runtime_sources`.
+ADAPTER_VERSION = "2.1.0"
+
+#: STEP-11 · THE TWO FALLBACKS THE CORPUS CAN NOW REPLACE, named so a manifest built on one says so.
+#: `PlayDefinition.window_days`'s own default — a number no expert chose for any play.
+DEFAULT_WINDOW_DAYS = 7
+#: What every compiled decision said doing nothing would cost before a situation could say it.
+TEMPLATE_CONSEQUENCE = "The {situation_type} situation is left unaddressed while its evidence compounds."
 
 #: The weld's own schema name, carried in `manifest.metadata["weld"]` so a downstream reader can
 #: tell a manifest that carries compiled doctrine from one that predates the typed consumers.
@@ -1016,6 +1026,41 @@ def _authored_play_priority(definition: Mapping[str, Any]) -> int | None:
     return raw
 
 
+def _play_label(definition: Mapping[str, Any], play_id: str) -> str:
+    """The playbook's NAME — `identity.name`, where every playbook keeps it.
+
+    ⛔ `definition.get("name")` read a key no playbook has, so every compiled play was labelled by
+    its id and the decider was shown `admin.pb.x.y` where the author wrote a sentence (`03` F121).
+    The top-level key stays second for a hand-built definition that uses it; the id stays last.
+    """
+    identity = definition.get("identity") if isinstance(definition, Mapping) else None
+    name = (identity or {}).get("name") if isinstance(identity, Mapping) else None
+    return str(name or definition.get("name") or play_id)[:200]
+
+
+def _authored_window(definition: Mapping[str, Any]) -> tuple[int, str]:
+    """The playbook's `outcome_window_days`, or the 7-day default — and which it is.
+
+    `out_of_range` is its own answer: the schema says only "at least a day", `PlayDefinition` holds
+    at most 365, and a play lost to a typo would be worse than a play that waits the default and
+    says why.
+    """
+    raw = definition.get("outcome_window_days") if isinstance(definition, Mapping) else None
+    if raw is None:
+        return DEFAULT_WINDOW_DAYS, "default"
+    if isinstance(raw, bool) or not isinstance(raw, int) or not 1 <= raw <= 365:
+        return DEFAULT_WINDOW_DAYS, "out_of_range"
+    return raw, "authored"
+
+
+def _authored_success(definition: Mapping[str, Any]) -> tuple[tuple[str, ...], str]:
+    """The playbook's `success_signal` as the play's one success event, or none — and which."""
+    raw = definition.get("success_signal") if isinstance(definition, Mapping) else None
+    if isinstance(raw, str) and raw.strip():
+        return (raw.strip(),), "authored"
+    return (), "none_authored"
+
+
 def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict,
                                                dict[str, Mapping[str, Any]]]:
     """Playbook `expert_rules` (definitions carrying steps) become read-only review plays —
@@ -1068,6 +1113,11 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict,
     # config maps, the receipt, the candidate rows — addresses a play by.
     priors_by_play: dict[str, Any] = {}
     definitions_by_play: dict[str, Mapping[str, Any]] = {}
+    # STEP-11 (D3) · WHICH PLAYBOOKS NO NAMED HUMAN REVIEWED — the builder's own count, read here and
+    # never re-derived, so the manifest and its package cannot disagree. A package that carries no list
+    # predates the count, and silence about a review is not a review: every play then reads unreviewed.
+    listed = package.metadata.get("unreviewed_artifact_ids")
+    unreviewed = None if listed is None else frozenset(str(item) for item in listed)
     for position, rule in enumerate(package.expert_rules):
         if not isinstance(rule, Mapping):
             skipped[f"unmapped_{position}"] = "not_a_mapping"
@@ -1136,8 +1186,12 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict,
         priors = derive_play_priors(definition, situation_fit=fit)
         priors_by_play[play_id] = priors
         definitions_by_play[play_id] = definition
+        # STEP-11 · WHAT THE AUTHOR SAID SUCCESS IS AND HOW LONG TO WAIT FOR IT. Read where a
+        # playbook declares them; the old values remain where it does not, and the play says which.
+        window_days, window_source = _authored_window(definition)
+        success_events, success_signal_source = _authored_success(definition)
         candidates.append((rank, play_id, PlayDefinition(
-            play_id, "1.0.0", str(definition.get("name") or play_id)[:200],
+            play_id, "1.0.0", _play_label(definition, play_id),
             steps=steps,
             read_only=True,
             impact_bp=priors.impact_bp,
@@ -1149,7 +1203,13 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict,
             # i.e. every play on day one, which is exactly when ranking has to work.
             success_probability_bp=learned[0] if learned else priors.success_bp,
             tags=("human_approval", "playbook"),
+            success_events=success_events,
+            window_days=window_days,
             metadata={"source": "expert_playbook", "external_recipient_required": False,
+                      "window_source": window_source,
+                      "success_signal_source": success_signal_source,
+                      "review_state": ("unreviewed" if unreviewed is None or rule_id in unreviewed
+                                       else "accepted"),
                       # Provenance on the play itself, so an auditor reading a candidate can see
                       # WHICH learned entry moved it rather than inferring it from a score.
                       **({"learned_success_from": learned[1]} if learned else {}),
@@ -1389,6 +1449,25 @@ def _situation_importance(situation: BusinessSituationObject | None) -> dict[str
     }}
 
 
+def with_file_baselines(context: SituationContextSlice | None,
+                        baselines: Mapping[str, Any] | None) -> SituationContextSlice | None:
+    """The slice `ContextAdapter` binds with, carrying the file's measured normals (`03` F104).
+
+    The corpus writes its silences against a person's own rhythm — `{baseline: write_interval, mult:
+    2}` — and `ContextAdapter` reads that baseline from `metadata["baselines"]`, which only the legacy
+    lane wrote: on the compiled lane every such threshold answered UNKNOWN. `baselines` are the file's
+    numbers (`contracts.measured.Measured`, each with its n), and only a NORMAL is handed on — measured
+    here, on `NORMAL_AT` observations or more (`06` D37): a sparse number is never a habit and a prior
+    is no measurement of this file, so either still answers UNKNOWN. A slice that carries baselines of
+    its own keeps them, and nothing to hand returns the same slice — a slice is content-addressed."""
+    # A Decimal, as every number in a semantic artifact is: floats are refused (`platform/canonical`).
+    normals = {str(name): Decimal(str(measured.value)) for name, measured in (baselines or {}).items()
+               if getattr(measured, "normal", False)}
+    if context is None or not normals or (context.metadata or {}).get("baselines"):
+        return context
+    return replace(context, metadata={**dict(context.metadata or {}), "baselines": normals})
+
+
 def expertise_capability_manifest(
     package: ExpertisePackage, *, root_entity_type: str,
     live_delivery_enabled: bool = False,
@@ -1397,6 +1476,7 @@ def expertise_capability_manifest(
     roster_v2: bool = False,
     ranking_v2: bool = False,
     projection: SituationProjection | None = None,
+    baselines: Mapping[str, Any] | None = None,
 ) -> CapabilityManifest:
     """One ExpertisePackage -> one CapabilityManifest driving Layer 4's reasoning.
 
@@ -1444,14 +1524,21 @@ def expertise_capability_manifest(
     so declaring it there would change an unactivated tenant's snapshot — and therefore its
     decision hashes — for facts nothing reads. That is refused loudly instead of ignored quietly.
 
+    ``baselines`` — STEP-12 M33.C1.L-logic.V0.U04, `03` F104: the file's measured normals, handed to
+    the adapter the weld binds with (`with_file_baselines`), so a corpus `{baseline: …}` threshold
+    answers on the compiled lane instead of UNKNOWN. Only the adapter's slice carries them; the package
+    and the slice the compiler addressed are untouched.
+
     ``live_delivery_enabled`` defaults to False — the measurement pass must stay advisory. It is
     True only on the cutover path, because the delivery authority predicate reads it directly
     (``rcap.manifest->'live_delivery_enabled' = 'true'``): a signal whose capability snapshot says
     False can never become a card, however complete the rest of its audit bundle is.
     """
     situation_type = str(package.metadata.get("situation_type") or "situation")
+    consequence = str(package.metadata.get("do_nothing_consequence") or "").strip()
     plays, play_receipt, play_definitions = _plays(package)
-    adapter = ContextAdapter(situation, context) if situation is not None else None
+    adapter = (ContextAdapter(situation, with_file_baselines(context, baselines))
+               if situation is not None else None)
     weld = weld_package(package, declared_play_ids=frozenset(play.play_id for play in plays),
                         play_receipt=play_receipt, adapter=adapter)
     # TWO SOURCES, ONE BLOCK LIST. The organisation brain's permission entries and the corpus's
@@ -1527,9 +1614,10 @@ def expertise_capability_manifest(
         **({"ranking_weights": dict(RANKING_WEIGHTS_V2)} if ranking_v2 else {}),
         policies=("read_only", "human_approval_required", "evidence_required"),
         live_delivery_enabled=live_delivery_enabled,   # advisory by default; True only on cutover
+        # STEP-11 · the situation's own sentence when it wrote one (carried on the package by the
+        # route plan); the template only when none did — and `runtime_sources` says which.
         do_nothing_consequence=(
-            f"The {situation_type} situation is left unaddressed while its evidence compounds."
-        ),
+            consequence or TEMPLATE_CONSEQUENCE.format(situation_type=situation_type)),
         metadata={
             "adapter": ADAPTER_ID,
             "adapter_version": ADAPTER_VERSION,
@@ -1547,6 +1635,19 @@ def expertise_capability_manifest(
             # content-addressed version, must not move.
             **(_situation_importance(situation) if ranking_v2 else {}),
             "play_receipt": play_receipt,
+            # STEP-11 · WHERE EACH RUNTIME VALUE CAME FROM. The template sentence, the 7-day window
+            # and the empty success signal were indistinguishable from authored values on a stored
+            # manifest; now a reader can tell an expert's number from the adapter's fallback.
+            "runtime_sources": {
+                "do_nothing_consequence": "situation" if consequence else "template",
+                "do_nothing_situation_id": (package.metadata.get("do_nothing_situation_id")
+                                            if consequence else None),
+                "plays_with_authored_window": sorted(
+                    play.play_id for play in plays if play.metadata.get("window_source") == "authored"),
+                "plays_with_authored_success": sorted(
+                    play.play_id for play in plays
+                    if play.metadata.get("success_signal_source") == "authored"),
+            },
             # THE WELD (doc 03). Compiled constraints, quoted citations, framing blocks, the
             # per-rule verdicts the Decision Maker turns into `constraints_applied` once candidate
             # ids exist, and the receipt that says what every artifact class contributed or why it
@@ -1618,6 +1719,6 @@ def expertise_capability_manifest(
     return replace(manifest, version=f"exp.{knowledge_hash[:12]}.{content[:12]}")
 
 
-__all__ = ["ADAPTER_ID", "ADAPTER_VERSION", "MAX_PLAYS", "ROSTER_LATENCY_CEILING_MS",
-           "ROSTER_SCHEMA", "WELD_SCHEMA", "Weld",
+__all__ = ["ADAPTER_ID", "ADAPTER_VERSION", "DEFAULT_WINDOW_DAYS", "MAX_PLAYS",
+           "ROSTER_LATENCY_CEILING_MS", "ROSTER_SCHEMA", "TEMPLATE_CONSEQUENCE", "WELD_SCHEMA", "Weld",
            "expertise_capability_manifest", "weld_package"]

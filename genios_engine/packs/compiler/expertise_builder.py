@@ -219,6 +219,11 @@ class ExpertiseBuilder:
             metadata["pattern_route_state"] = plan.pattern_route_state
         if plan.pattern_route_id is not None:
             metadata["pattern_route_id"] = plan.pattern_route_id
+        # STEP-11 · the situation's own do-nothing sentence, WRITTEN ONLY WHEN ONE WAS AUTHORED — this
+        # block's omit-when-empty rule, for its reason: every package compiled today keeps its id.
+        if plan.do_nothing_consequence:
+            metadata["do_nothing_consequence"] = plan.do_nothing_consequence
+            metadata["do_nothing_situation_id"] = plan.do_nothing_situation_id
         body = {
             "org_id": situation.org_id,
             "schema_version": "expertise-package.v1",

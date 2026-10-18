@@ -1,0 +1,576 @@
+{
+ "case_id": "F28",
+ "title": "A partner asks for the security questionnaire before a booked call",
+ "kind": "must_detect",
+ "label_row": 28,
+ "labelled_by": "claude",
+ "replays": [
+  "03"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-29T18:00:00Z",
+  "2026-10-06T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "ask",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-29T09:00:00Z",
+   "from": "Ishita Rao <ishita@novacore.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Before our call on 8 Oct",
+   "body": "Hi Arjun,\n\nLooking forward to 8 Oct. Could you send your security questionnaire answers before then? Our IT team needs them first.\n\nIshita Rao\nHead of Partnerships, Novacore",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-novacore",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "security questionnaire",
+      "partnership"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ishita Rao",
+       "entity_type": "person",
+       "quote": "Ishita Rao"
+      },
+      {
+       "surface_form": "Novacore",
+       "entity_type": "organization",
+       "quote": "Novacore"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Send the security questionnaire answers before 8 Oct",
+       "asked_by": "Ishita Rao",
+       "asked_of": "Arjun Rao",
+       "quote": "Could you send your security questionnaire answers before then?"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "8 Oct",
+       "earliest": "2026-10-08T00:00:00+05:30",
+       "latest": "2026-10-08T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-29T09:00:00Z",
+       "quote": "8 Oct"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Ishita Rao",
+       "value": "Head of Partnerships",
+       "standing": "observed",
+       "quote": "Head of Partnerships, Novacore"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "security review before the call"
+     },
+     "implied_actions": [
+      "send the security questionnaire answers before 8 Oct"
+     ]
+    }
+   }
+  },
+  {
+   "id": "call",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-09-29T09:05:00Z",
+   "summary": "Novacore x Nimbus Labs",
+   "start": "2026-10-08T08:30:00Z",
+   "end": "2026-10-08T09:15:00Z",
+   "organizer": "ishita@novacore.test",
+   "attendees": [
+    "ishita@novacore.test",
+    "arjun@nimbuslabs.test"
+   ]
+  }
+ ],
+ "expected": {
+  "gate": {
+   "ask": "emitted",
+   "call": "emitted"
+  },
+  "memory": {
+   "ask": true,
+   "call": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Ishita",
+     "Novacore"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "security questionnaire"
+    ]
+   }
+  ],
+  "workstream": "partner — prep before the call"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "already sent",
+   "after the call"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Ishita Rao"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Ishita Rao"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "novacore.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "novacore.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "novacore.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "novacore.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Novacore"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Novacore"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Novacore"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "ishita@novacore.test",
+     "evaluated at: 2026-09-29"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "ishita@novacore.test",
+     "evaluated at: 2026-10-06"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "ishita@novacore.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "ishita@novacore.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "Ishita Rao",
+     "evaluated at: 2026-09-29"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "Ishita Rao",
+     "evaluated at: 2026-10-06"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "Ishita Rao"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "Ishita Rao"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "account_admin",
+     "Novacore"
+    ],
+    "answer": {
+     "headline": "Send Novacore your security questionnaire answers",
+     "situation": "Ishita at Novacore asked for your security questionnaire answers before a date not on record. Next move: ours.",
+     "artifact": "Hi Ishita, attaching our security questionnaire answers. Thanks, Arjun"
+    }
+   },
+   {
+    "when": [
+     "unanswered_email",
+     "Ishita Rao"
+    ],
+    "answer": {
+     "headline": "Send Ishita Rao your security questionnaire answers",
+     "situation": "Ishita Rao is waiting on your security questionnaire answers.",
+     "artifact": "Hi Ishita, attaching our security questionnaire answers. Thanks, Arjun"
+    }
+   },
+   {
+    "when": [
+     "admin_contact",
+     "ishita@novacore.test"
+    ],
+    "answer": {
+     "headline": "Before meeting ishita@novacore.test: her open request",
+     "situation": "Ishita asked for your security questionnaire answers before the meeting; it is still open.",
+     "artifact": "Send the security questionnaire answers before the meeting."
+    }
+   }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<novacore.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "proposed_kind": null,
+     "draft": "Hi Ishita, looking forward to the eighth. Attached are our security questionnaire answers for your IT team — happy to take any questions before we speak. Arjun",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Ishita our security questionnaire answers before the call — or, if Novacore has its own form, ask her for it at once.",
+      "for_whom": "Ishita Rao and Novacore's IT team",
+      "by_when": "2026-10-08",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Ishita",
+      "answers": "loop:loop_5700b577391b57bf0b3634f7"
+     },
+     "facts": [
+      {
+       "claim": "Ishita Rao, Head of Partnerships at Novacore, asked Arjun to send our security questionnaire answers before their call on the eighth of October, because Novacore's IT team needs them first.",
+       "evidence": [
+        "evt_5185bef9bcda76b11f2c93a0",
+        "evt_0e547359e31864611d4d4363"
+       ],
+       "quote": "security questionnaire answers before then? Our IT team needs them first. Ishita Rao Head"
+      },
+      {
+       "claim": "A call with Ishita is on the calendar for the eighth of October.",
+       "evidence": [
+        "evt_0e547359e31864611d4d4363"
+       ]
+      },
+      {
+       "claim": "Her ask is open and waits on us.",
+       "evidence": [
+        "loop:loop_5700b577391b57bf0b3634f7"
+       ]
+      },
+      {
+       "claim": "No answer of ours to Ishita is measured in the file.",
+       "evidence": [
+        "num:your_reply_time:ishita@novacore.test"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Novacore's IT review is a gate in front of the partnership: without the answers, the call may not be able to move to next steps.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "Security questionnaire answers are a document to prepare, not a one-line reply, so they need time before the eighth.",
+       "based_on": [
+        "fact:1"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "The file is new — seen once, with no earlier card or outcome — so there is no record of how Novacore's IT team takes a late answer.",
+       "based_on": [
+        "hist:derived.history.times_seen@admin",
+        "hist:derived.history.prior_outcome@admin"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Novacore may have a questionnaire of its own for us to fill in, rather than wanting our standard answers.",
+       "needs": "Ishita's form, or a one-line question to her."
+      },
+      {
+       "proposition": "Our side may have security answers written down from an earlier review.",
+       "needs": "Arjun's word on what is ready."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Which questionnaire does Novacore want — its own form, or our standard answers?",
+       "relevance": "If it is their form and we do not have it, the first move is to ask for it at once."
+      },
+      {
+       "question": "Are our security answers written down anywhere yet?",
+       "relevance": "If not, preparing them takes days, and the eighth is close."
+      },
+      {
+       "question": "How long does Novacore's IT team need with the answers before the call?",
+       "relevance": "It sets how early the answers must go."
+      }
+     ],
+     "frames": {
+      "primary": "A design partner whose IT team must clear us before the booked call: the security questionnaire answers are ours to send, and they are due before the eighth.",
+      "rivals": [
+       "A courtesy request that could wait for the call itself without harm.",
+       "A procurement gate that will take more than one round, where the first answers open a longer review."
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "From Ishita's own words and the brief's goal of landing design partners: the questionnaire answers with Novacore's IT team before the call on the eighth.",
+      "actual": "Nothing from us is in the file; the ask is open and the call is booked."
+     },
+     "scenarios": {
+      "do_nothing": "The eighth arrives without the answers; Novacore's IT team has not cleared us and the call cannot move to next steps.",
+      "act": "Sending the answers in good time lets the IT review run before the call, so the call can turn to the partnership itself.",
+      "best": "The answers go out early, IT clears them, and the call ends with a design-partner next step.",
+      "worst": "The answers are missing at the call, the review starts late, and a partner the brief wants stalls in its own procurement.",
+      "signals_to_watch": [
+       "The answers sent to Ishita before the eighth",
+       "Ishita or her IT team writing with questions",
+       "The call staying booked or being moved"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "high",
+      "reversibility": "reversible",
+      "reasons": [
+       "Landing design partners is a goal the brief names, and Novacore is one of the brief's design partner talks.",
+       "Ishita tied the answers to a call booked on a fixed date, with her IT team needing them first.",
+       "Late answers delay the review but can still be sent, so a slip costs time rather than the partner."
+      ]
+     },
+     "mode": "act",
+     "alternative": "If the answers cannot be ready in time, tell Ishita now when they will come, so her IT team can plan and the call can still go ahead.",
+     "wait_or_stop": "No waiting on our side — the move is ours; once the answers are sent, wait for IT's questions and the call.",
+     "done_when": "Novacore's IT team has our security questionnaire answers before the call on the eighth."
+    }
+   }
+  ]
+ }
+}

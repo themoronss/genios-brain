@@ -1,0 +1,500 @@
+{
+ "case_id": "F31",
+ "title": "A cohort session of fifty founders: no recap, only the assignment",
+ "kind": "must_abstain",
+ "label_row": 31,
+ "labelled_by": "claude",
+ "replays": [
+  "05"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-09T18:00:00Z",
+  "2026-09-11T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "session",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-09-02T06:00:00Z",
+   "summary": "Lakshya Cohort 7 - Session 4: Pricing",
+   "start": "2026-09-10T09:00:00Z",
+   "end": "2026-09-10T11:00:00Z",
+   "organizer": "divya@lakshya.test",
+   "attendees": [
+    "divya@lakshya.test",
+    "arjun@nimbuslabs.test",
+    "founder01@cohort7.test",
+    "founder02@cohort7.test",
+    "founder03@cohort7.test",
+    "founder04@cohort7.test",
+    "founder05@cohort7.test",
+    "founder06@cohort7.test",
+    "founder07@cohort7.test",
+    "founder08@cohort7.test",
+    "founder09@cohort7.test",
+    "founder10@cohort7.test",
+    "founder11@cohort7.test",
+    "founder12@cohort7.test",
+    "founder13@cohort7.test",
+    "founder14@cohort7.test",
+    "founder15@cohort7.test",
+    "founder16@cohort7.test",
+    "founder17@cohort7.test",
+    "founder18@cohort7.test",
+    "founder19@cohort7.test",
+    "founder20@cohort7.test",
+    "founder21@cohort7.test",
+    "founder22@cohort7.test",
+    "founder23@cohort7.test",
+    "founder24@cohort7.test",
+    "founder25@cohort7.test",
+    "founder26@cohort7.test",
+    "founder27@cohort7.test",
+    "founder28@cohort7.test",
+    "founder29@cohort7.test",
+    "founder30@cohort7.test",
+    "founder31@cohort7.test",
+    "founder32@cohort7.test",
+    "founder33@cohort7.test",
+    "founder34@cohort7.test",
+    "founder35@cohort7.test",
+    "founder36@cohort7.test",
+    "founder37@cohort7.test",
+    "founder38@cohort7.test",
+    "founder39@cohort7.test",
+    "founder40@cohort7.test",
+    "founder41@cohort7.test",
+    "founder42@cohort7.test",
+    "founder43@cohort7.test",
+    "founder44@cohort7.test",
+    "founder45@cohort7.test",
+    "founder46@cohort7.test",
+    "founder47@cohort7.test",
+    "founder48@cohort7.test"
+   ],
+   "recurringEventId": "lakshya-cohort7-weekly"
+  },
+  {
+   "id": "homework",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-09T06:00:00Z",
+   "from": "Divya Raman <divya@lakshya.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Assignment 4: pricing page teardown",
+   "body": "Hi Arjun,\n\nAssignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\n\nDivya Raman\nProgramme Lead, Lakshya Accelerator",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-lakshya-a4",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "assignment"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Divya Raman",
+       "entity_type": "person",
+       "quote": "Divya Raman"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Submit Assignment 4, the pricing page teardown, by 17 Sep",
+       "asked_by": "Divya Raman",
+       "asked_of": "Arjun Rao",
+       "quote": "Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST."
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "17 Sep, 11:59 pm IST",
+       "earliest": "2026-09-17T18:29:00Z",
+       "latest": "2026-09-17T18:29:00Z",
+       "certainty": "exact",
+       "resolved_against": "2026-09-09T06:00:00Z",
+       "quote": "17 Sep, 11:59 pm IST"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "assignment deadline"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Session 4",
+     "Cohort 7"
+    ],
+    "min": 0,
+    "max": 0
+   },
+   {
+    "about": [
+     "Assignment 4"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "recap",
+   "Recap"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "session"
+  ]
+ },
+ "not_expressible": {},
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Divya Raman"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Divya Raman"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "divya@lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A fifty-person cohort session needs no brief and no recap.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "divya@lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A fifty-person cohort session owes no follow-through; only the assignment matters.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "divya@lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A cohort session is not a sales touch.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Divya Raman"
+    ],
+    "answer": {
+     "headline": "Send Divya Raman Assignment 4, the pricing-page teardown",
+     "situation": "Divya Raman wrote 2 days ago: \"Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\"",
+     "artifact": "Hi Divya, attaching Assignment 4, the teardown of our pricing page. Thanks"
+    }
+   }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<lakshya.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "proposed_kind": null,
+     "draft": null,
+     "next_move": {
+      "who": "Arjun",
+      "what": "Block time this week to write Assignment 4, the pricing page teardown, and submit it to the programme before 17 Sep, 11:59 pm IST.",
+      "for_whom": "Divya Raman and the Lakshya programme",
+      "by_when": "2026-09-17",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "answers": "loop:loop_a0a5a60c5f2a32c0b4eb999a"
+     },
+     "facts": [
+      {
+       "claim": "Divya Raman, Programme Lead at Lakshya Accelerator, wrote that the fourth assignment — a teardown of our pricing page — is due on the seventeenth of September, just before midnight IST.",
+       "evidence": [
+        "evt_76937e6d81ba18909fb2fed5"
+       ],
+       "quote": "due on 17 Sep, 11:59 pm IST. Divya Raman Programme Lead, Lakshya Accelerator"
+      },
+      {
+       "claim": "The ask is open and waits on us.",
+       "evidence": [
+        "loop:loop_a0a5a60c5f2a32c0b4eb999a"
+       ]
+      },
+      {
+       "claim": "The engine files this programme under the fundraising domain, as an investor relationship.",
+       "evidence": [
+        "sit:sit_c3fd649aa730962e644c4b74"
+       ]
+      },
+      {
+       "claim": "The programme playbook, not yet reviewed, says that once in a programme the file holds the programme's own deadlines — assignments, reviews, demo day — fixed for the whole cohort.",
+       "evidence": [
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The assignment's date is set for the cohort and will not move for Nimbus Labs, so it is the one fixed point to plan back from.",
+       "based_on": [
+        "fact:1",
+        "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+       ]
+      },
+      {
+       "claim": "What Divya waits on is the submission itself, not a reply.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "A programme publishes its deadlines once, for every member of the cohort, and keeps them — a prior from the playbook, not yet reviewed.",
+       "based_on": [
+        "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+       ]
+      },
+      {
+       "kind": "counter_pattern",
+       "claim": "A programme is not an investor: read as an investor relationship, as the engine files it, this file would get an investor's moves, which are wrong for a cohort assignment.",
+       "based_on": [
+        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+        "sit:sit_c3fd649aa730962e644c4b74"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The teardown may be under way.",
+       "needs": "Arjun's word on where it stands."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "How does the programme want the teardown submitted — by mail, or through a portal?",
+       "relevance": "A portal upload and a mail reply are different moves, and the wrong channel can miss the deadline."
+      },
+      {
+       "question": "How much of the teardown is done?",
+       "relevance": "It decides how much time to block before the seventeenth."
+      }
+     ],
+     "frames": {
+      "primary": "A programme deadline that will not move: the fourth assignment, a teardown of our pricing page, is due on the seventeenth, and it is ours to write and submit.",
+      "rivals": [
+       "An investor relationship, as the engine files it — which would call for moves the programme does not want.",
+       "A routine cohort chore that can be done the night before."
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": "in_programme",
+      "expected": "In the programme, the file follows the programme's own calendar — its assignments, reviews and demo day — each done by the cohort's date.",
+      "actual": "The assignment and its date are on file; nothing from us is in the file yet, and the date is still ahead."
+     },
+     "scenarios": {
+      "do_nothing": "The seventeenth passes without a submission, and you miss a cohort deadline in the programme you are in.",
+      "act": "Blocking time this week for the teardown and submitting it before the seventeenth keeps Nimbus Labs in good standing with the programme.",
+      "best": "The teardown goes in early and doubles as a real review of our own pricing page.",
+      "worst": "It is left to the last night and goes in rushed, or late, in front of the programme's lead.",
+      "signals_to_watch": [
+       "Time blocked for the teardown",
+       "The submission going in before the seventeenth",
+       "Divya writing with a reminder or a change of date"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "costly_to_reverse",
+      "reasons": [
+       "Lakshya is the programme the founder is in, and getting into programmes is a goal the brief names.",
+       "The date is the cohort's and will not move, and it is about a week away.",
+       "A missed cohort deadline cannot be taken back, though one late assignment is rarely final."
+      ]
+     },
+     "mode": "act",
+     "alternative": "If the week cannot hold it, ask Divya before the deadline what the programme's rule is for a late submission, rather than missing it in silence.",
+     "wait_or_stop": "Nothing to wait for before the work; once it is submitted, the file waits for the programme's next date.",
+     "done_when": "Assignment 4 is submitted before 17 Sep, with the programme's receipt on file."
+    }
+   }
+  ]
+ },
+ "blocked_on": null
+}

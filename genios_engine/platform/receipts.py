@@ -25,6 +25,7 @@ from sqlalchemy import text
 from genios_engine.platform.org_readiness_sql import COUNT_SQL as _RD_SQL
 from genios_engine.platform.org_readiness_sql import COUNT_SQL_FLEET as _RD_SQL_FLEET
 from genios_engine.platform import org_readiness_sql as _RD
+from genios_engine.platform.self_identity import identity_sql
 
 @dataclass(frozen=True)
 class Receipt:
@@ -46,6 +47,138 @@ class Receipt:
     #: only members are questions whose answer cannot differ per tenant because the thing asked
     #: about is shared: the schema itself.
     fleet_wide: bool = False
+
+
+#: ⛔⛔ **EVERY STATUS `evaluate()` CAN RETURN, AND WHETHER IT COUNTS AS READY** —
+#: `{status: (ready?, one-line meaning)}`.
+#:
+#: ⛔ WHY THIS IS A CONSTANT AND NOT A CONVENTION. Two consumers read these strings — `/readiness`
+#: in `api/routes.py` and the release-gate CLI `scripts/runtime_receipts.py` — and the endpoint's
+#: own docstring promises *"the same list the release-gate CLI runs, so the operator surface and the
+#: release gate cannot drift apart about what 'ready' means."*
+#:
+#: ⛔⛔ THEY HAD ALREADY DRIFTED IN SHAPE. The endpoint computed `status != "PASS"` and the CLI held
+#: a literal `{"PASS": …, "FAIL": …, "ERROR": …}[status]` — ⛔ **which raises `KeyError` on a status
+#: it has not met.** Adding `NOT_EXERCISED` would have CRASHED the release gate, not merely
+#: disagreed with it. *Two implementations of one question will disagree on the day one of them is
+#: right* — and here one of them would have stopped running.
+#:
+#: ⛔ `ready` IS PART OF THE TABLE, not of each caller. A `NOT_EXERCISED` receipt is **not** ready,
+#: because `/readiness` exists to stop *"a skip reading as a pass"* and an unexercised correctness
+#: receipt is that skip.
+RECEIPT_STATUSES: dict[str, tuple[bool, str]] = {
+    "PASS": (True, "the claim held and something exercised it"),
+    "FAIL": (False, "the claim did not hold"),
+    "ERROR": (False, "the query could not run, or its witness could not — an unrunnable receipt "
+                     "is a finding, never a skip"),
+    "NOT_EXERCISED": (False, "⛔ the claim held and NOTHING exercised it: the table this receipt "
+                             "reads has no rows in scope, so 0 means 'nothing happened' rather "
+                             "than 'nothing went wrong'. Condition `P2` unmet, and visibly so"),
+}
+
+
+#: ⛔⛔ **RECEIPTS WHOSE WITNESS CANNOT BE DERIVED FROM THEIR OWN OUTER `from`** —
+#: `{claim: (witness sql or None, why)}`.
+#:
+#: ⛔ WHY A WITNESS EXISTS AT ALL. A **correctness** receipt asks *"did the wrong thing happen"* and
+#: answers 0 when it did not. ⛔ Over an EMPTY table it also answers 0 — and passes having proved
+#: nothing. That is condition `P2` of this programme's definition of production level (*the receipt
+#: can fail*), and before this it was unmet and invisible: the readiness surface reported a pass.
+#:
+#: ✅ A **presence** receipt needs none. It asks *"did anything happen"* and FAILS on an empty
+#: table, so it witnesses itself. Measured 2026-10-04: 32 of the 48 receipts are correctness and 16
+#: are presence, and the distinction is already in the data (`expect(0)`) rather than in a list
+#: anybody maintains.
+#:
+#: ✅ FOR 45 OF 48 THE WITNESS IS DERIVED, not written: the outer `from <table>` of the receipt's own
+#: SQL, counted with the same `:org` filter the receipt carries. ⛔ Only the outer one — a table
+#: named in a join or a subquery is not the subject of the claim, and taking it would witness the
+#: wrong thing.
+#:
+#: ⛔⛔ **A WITNESS IS A PRESENCE RECEIPT, AND THREE OF THEM ALREADY EXIST EXPLICITLY.** Measured
+#: 2026-10-04: the derived witness for a correctness receipt over `expertise_packages`,
+#: `delivery_outbox` and `learning_runs` is **byte-identical** to the SQL of the presence receipts
+#: *"compiled expertise packages exist"*, *"the delivery control plane has run"* and *"the learning
+#: engine has executed"*. ✅ That is a coherence check on the design rather than a duplication to
+#: remove: the question *"was this claim exercised"* and the question *"has this layer ever run"*
+#: are the same question, and 28 more of them are now derived instead of waiting to be written.
+#:
+#: ⛔ It also made a test unanswerable for three attempts — attributing a shared SQL string to the
+#: receipt that asked it is not possible, so `test_the_witness_is_asked_only_on_a_pass` uses a
+#: fixture of two.
+#:
+#: Three do not derive, each for a different reason, and `None` means *"needs no witness"*:
+WITNESS_EXCEPTIONS: dict[str, tuple[str | None, str]] = {
+    "every reasoning unit that says nothing is one we declared": (
+        "select count(*) from reasoning_reasoner_results where 1=1",
+        "⛔ A DERIVED-TABLE OUTER `from`: the query opens on `jsonb_each(...)`, so the outer name is "
+        "a function and not a table. ✅ The real source was ALREADY declared, in "
+        "`receipt_coverage`'s own entry for this claim — *'Derived-table outer `from`; the real "
+        "source is `reasoning_reasoner_results`'* — so this witness is that declaration's sibling "
+        "rather than a new judgement"),
+    "a deleted tenant leaves nothing behind": (
+        None,
+        "⛔ NEEDS NO WITNESS. A `with recursive` over `information_schema`: the claim is about the "
+        "SCHEMA's foreign keys, not about any tenant's rows, and the schema always has rows. A "
+        "witness here would be noise that always passed, which is the thing this table exists to "
+        "stop"),
+    "every verified card names what closed it": (
+        # `platform/card_lifecycle.RESOLVED` and `VERIFIED`, as words: this table is read at import, before the
+        # lifecycle may be (`tests/platform/test_a_verified_card_names_what_closed_it.py` holds the two equal).
+        "select count(*) from card_events where kind = 'card.resolved' and cause = 'verified'",
+        "⛔ THE POPULATION IS THE VERIFIED RESOLUTIONS, NOT EVERY CARD EVENT. The derived witness would count every "
+        "`card_events` row of the tenant — a tenant with a thousand expiries and no verified end would read as "
+        "exercised. Witnessed by the verified resolutions in scope: none, and the claim judged nothing "
+        "(STEP-16 `yc2_w27_s16` M47.C3.L-integration.V2.U03)"),
+    "the counterfactual ledger joins end to end": (
+        None,
+        "⛔⛔ ITS OUTER NAME IS A VIEW, NOT A TABLE — `create or replace view counterfactual_ledger` "
+        "in `0072`, which is why `table_coverage._known_tables()` cannot see it. ✅ And it is a "
+        "PRESENCE receipt, so it fails on an empty ledger and needs no witness regardless. The "
+        "view blindness is declared in `platform/table_coverage.SCHEMA_OBJECTS_NOT_SEEN`"),
+}
+
+
+def witness_sql(receipt: "Receipt", org: str | None) -> str | None:
+    """The query whose NON-ZERO result means this receipt's `PASS` meant something.
+
+    `None` means no witness is wanted — either the receipt is a presence receipt (self-witnessing)
+    or `WITNESS_EXCEPTIONS` says so with a reason.
+
+    ⛔ ONE IMPLEMENTATION, AND THAT IS DELIBERATE. `3.1b` closed a hole where a guard re-derived a
+    metric's logic beside it and the two drifted the day one of them was right. Both `evaluate()`
+    and the guard call this.
+    """
+    # ⛔ THE FILTER IS THE RECEIPT'S, NOT THE CALLER'S. A first version appended
+    # `_org_filter(org)` unconditionally, which was right for all 48 receipts TODAY and wrong as a
+    # rule: a FLEET-WIDE correctness receipt asks about the schema, its table may carry no `org_id`
+    # column at all, and the witness would then raise instead of answering. Measured before the
+    # change: 0 of 48 disagreed — ⛔ a coincidence of the current set, not a reason.
+    scoped = _org_filter(org) if ":org" in receipt.sql else ""
+    if receipt.claim in WITNESS_EXCEPTIONS:
+        declared, _why = WITNESS_EXCEPTIONS[receipt.claim]
+        return None if declared is None else declared + scoped
+    if receipt.expect(0) is not True:
+        return None                                # presence: it fails on an empty table already
+    match = _OUTER_FROM.match(" ".join(receipt.sql.split()))
+    if match is None:                              # pragma: no cover - the exceptions cover these
+        return None
+    # ⛔⛔ THE DERIVED NAME MUST BE A TABLE, AND THE FIRST VERSION OF THIS DID NOT CHECK. An outer
+    # `from` can name a function (`jsonb_each`), a CTE, or a VIEW — `counterfactual_ledger` is one
+    # — and a witness over a non-existent relation does not report "unexercised", it raises. ⛔ So
+    # it refuses, and the refusal is what makes `WITNESS_EXCEPTIONS` necessary rather than
+    # incidental: a receipt whose outer name is not a table has to be declared.
+    from genios_engine.platform.table_coverage import _known_tables
+
+    table = match.group(1)
+    if table not in _known_tables():
+        return None
+    return f"select count(*) from {table} where 1=1{scoped}"
+
+
+#: The outer `from` of a receipt's own SQL — ⛔ the FIRST one, non-greedily, because a join or a
+#: subquery names tables the claim is not about.
+_OUTER_FROM = re.compile(r"^\s*select\s+.*?\bfrom\s+([a-z_][a-z_0-9]*)", re.IGNORECASE | re.DOTALL)
 
 
 def _org_filter(org: str | None, alias: str = "") -> str:
@@ -115,6 +248,136 @@ def _PLACEHOLDER_COMPONENTS_SQL(org: str | None) -> str:
         "score_components->>'impact' = '5000' and score_components->>'risk' = '5000' "
         f"and score_components->>'effort' = '5000' and created_at >= '{boundary}'"
         + _org_filter(org)
+    )
+
+
+def _UNATTRIBUTED_APPROVALS_SQL(org: str | None) -> str:
+    r"""Actions that announce a sign-off requirement while nothing can name who signs.
+
+    ⛔ THE MEASURED GAP. 2026-10-01: `execution_actions` holds 794 rows and **410 of them carry
+    `requires_approval`** — 52% of every action this layer has ever planned. `authority_rules`
+    holds **zero** rows, so `AuthorityView.resolve` answers `no_authority_rule` for every subject
+    and `assignment.resolve_approver_seat` correctly returns `None` for every call. Per org:
+    182, 121 and 107 actions each saying *this needs sign-off* and none able to say whose.
+
+    `resolve_approver_seat`'s own docstring states the cost: *"a card that says 'this needs
+    sign-off' and cannot say whose is less useful than one that can, and far better than one that
+    quietly drops the requirement."* ⛔ **This receipt is what stops the "less useful" state from
+    being silent.** Nothing today counts it.
+
+    ⛔ A CONJUNCTION, NOT A COUNT — the same shape as the era receipt next door, for the same
+    reason. `requires_approval` on its own is **healthy**: it is the autonomy gate
+    (`contracts/execution.py:233` — `not requires_approval and not external_effect`) doing its
+    job, and 410 gated actions is the layer being careful. The defect is a gated action **in an
+    org that holds no rule capable of naming an approver**.
+
+    ⛔ AN IN-FORCE RULE, NOT ANY ROW. Three conditions, and each one is a way to hold a rule and
+    still name nobody:
+      · `approver_node_id is not null`  — a threshold with no approver names nobody
+      · `valid_from <= now()`           — a rule that starts next quarter is not in force
+      · `valid_until is null or > now()` — an expired rule is not an enforceable one
+    Counting rows alone would go green for a tenant whose only rule lapsed last year.
+
+    ⛔ WHY `now()` IS CORRECT HERE AND NOWHERE ELSE. The doctrine is `eval_time` as a parameter,
+    never a clock read — because a unit must replay at its original instant. A receipt is the
+    opposite question: *is the DEPLOYMENT in the state the code implies, right now.* `evaluate()`
+    binds exactly one parameter, and receipt #1 (`watermark > now()`) set this precedent.
+
+    ⛔ AND ZERO IS A TRUE PASS HERE, UNLIKE THE ERA RECEIPT. `_ERA_SELECTS_NOTHING_SQL` returns
+    `-1` for an empty window because an era that produced nothing is a dead pipeline. This one is
+    different: no gated actions genuinely means no requirement is unattributed. The two receipts
+    make opposite choices about emptiness on purpose, because emptiness means opposite things.
+
+    ⛔ WHAT IT DOES *NOT* CLAIM. It does not say every gated action resolves an approver — a
+    tenant may hold a rule for one subject type and not another, and that is a finer question with
+    a different query. It says the tenant holds **no** way to name one, which is the state that
+    makes all 410 unattributable at once. The wiring that would consume an answer is **not built**:
+    neither `execution_actions` nor `executions` has an approver column, so it needs a contract
+    field and a migration, and `0186`-`0190` have never run. See
+    `speedrun008/YCW27/layer-4-executive/02-PLAN.md` U2.
+    """
+    return (
+        "select count(*) from execution_actions a"
+        " where a.requires_approval"
+        "   and not exists ("
+        "         select 1 from authority_rules r"
+        "          where r.org_id = a.org_id"
+        "            and r.approver_node_id is not null"
+        "            and r.valid_from <= now()"
+        "            and (r.valid_until is null or r.valid_until > now()))"
+        + _org_filter(org, "a")
+    )
+
+
+def _ERA_SELECTS_NOTHING_SQL(org: str | None) -> str:
+    r"""Runs in the current reasoning era that produced candidates and selected none of them.
+
+    ⛔ THE DEFECT THIS EXISTS FOR, AND WHY THIRTY RECEIPTS MISSED IT. Measured 2026-10-01: the
+    product had produced no card for six days. `reasoning_candidates` held 8,044 candidates on
+    2,681 runs, every one `disposition='eligible'`, and `selected_candidate_id` was NULL on all
+    2,681 — so no signal was emitted, `executive/`'s gate matched nothing, and the existing cards
+    aged out. **Every receipt that could plausibly have caught it was green**, and four of them
+    were green for reasons worth stating:
+
+        #19 more than one candidate is ever considered   = 11      candidates ARE produced
+        #21 the system has abstained at least once       = 1,772   ⛔ green BECAUSE of the defect
+        #22 decisions become tracked commitments         = 75      green on append-only history
+        #14 the live pass has actually run               = 2,376   the pass runs, and emits nothing
+
+    `#21` is the one to read twice: abstention is healthy and this receipt measures that it
+    happens, so a system abstaining **100% of the time** satisfies it perfectly.
+
+    ⛔ A CONJUNCTION, NOT A COUNT — and this is the whole design. A high defer rate is healthy: the
+    previous era deferred 8,208 times and still produced 1,157 decisions. The defect is a
+    selection rate of **exactly zero** over runs that had something to select from. Audit D's rule
+    one layer down: *a count without its dimension is not a measurement*.
+
+    ⛔ AND IT MUST NOT PASS VACUOUSLY. `count(*) > 0 and count(selected) = 0` expressed as a
+    `having` clause returns no rows when the era produced no runs at all — which reads as "no
+    violation" and would make this receipt **green on a completely dead pipeline**, the exact
+    failure it exists to prevent. So an empty era returns `-1` and fails. The three answers are
+    distinct on purpose:
+
+        -1   the era produced no runs with candidates   -> FAIL, and it is a different sentence
+         N   N runs had candidates and selected NONE     -> FAIL, and N says how many
+         0   at least one selection happened             -> PASS
+
+    ⛔ THE ERA BOUNDARY IS IMPORTED, NEVER RESTATED. `reason/unit_health.current_reasoning_era()`
+    owns it together with the measurement that establishes it — the same rule
+    `neutral_default_boundary` established, for the same reason: a receipt carrying its own copy
+    of a date drifts from the declaration silently.
+
+    ⛔ WHY THE ERA BOUND IS NOT A WEAKENING. Without it this question averages a live
+    implementation with a retired one: 9,489 runs predate per-unit results and answer about a
+    pipeline that no longer exists. With it, the receipt is about what the deployed code does now.
+    **A receipt over append-only history needs a lower bound, or it is not a gate but a monument.**
+
+    ⛔ WHAT IT DOES *NOT* CLAIM. It does not say the cause. The cause on 2026-10-01 was
+    `GENIOS_L4_LLM_DECISION_MAKER = true` with the Anthropic spend limit refusing every call and
+    `reason/llm_decision_maker.py:20`'s declared *"Failure is DEFER, never the formula"* — a
+    deliberate design, not a bug. A receipt reports a state; the reason lives in
+    `speedrun008/YCW27/layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md` and the choice
+    in `02-DECISIONS.md` decision #5.
+
+    The date is inlined as a literal because `evaluate()` binds exactly one parameter; the ISO
+    shape is asserted before interpolation, as the frozen-formula receipt does.
+    """
+    from genios_engine.reason.unit_health import current_reasoning_era
+
+    boundary = current_reasoning_era().boundary
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", boundary):
+        raise ValueError(f"reasoning era boundary must be an ISO date, got {boundary!r}")
+    return (
+        "select case"
+        "         when count(*) = 0 then -1"
+        "         when count(ro.selected_candidate_id) = 0 then count(*)"
+        "         else 0"
+        "       end"
+        "  from reasoning_run_outputs ro"
+        f" where ro.created_at >= '{boundary}'"
+        "   and exists (select 1 from reasoning_candidates rc"
+        "                where rc.org_id = ro.org_id and rc.run_id = ro.run_id)"
+        + _org_filter(org, "ro")
     )
 
 
@@ -200,13 +463,657 @@ def _UNDECLARED_SILENT_UNITS_SQL(org: str | None) -> str:
     )
 
 
+#: ⛔ L5 · AN ATTEMPT THAT STARTED AND NEVER SETTLED IS AN AMBIGUITY, AND IT MUST NOT BE SILENT.
+#:
+#: `deliver/spine.recover_expired_claims` exists to mark exactly these `unknown` before anyone
+#: reclaims the row: *"An expired worker may have POSTed to a provider before dying; we must never
+#: silently retry over that ambiguity."* Measured 2026-10-01: **nothing calls it, and nothing calls
+#: `claim_due` either** — the v2 control plane is un-cut-over, so this reads 0 today. That is the
+#: point. It is the receipt that starts answering the moment the cutover is taken.
+#:
+#: ⛔ DELIBERATELY FENCE-INDEPENDENT, AND THIS IS THE DESIGN DECISION WORTH READING. The recovery
+#: joins on `a.claim_token = d.fence_token`, and `claim_due` writes a NEW fence when it reclaims a
+#: row — so the orphans that matter MOST, the ones whose row was already handed to a fresh worker,
+#: can never match the recovery's own predicate again. A receipt built on that join would miss
+#: precisely the permanently-unrecoverable cases. **A guard must not inherit the blind spot of the
+#: thing it guards.**
+#:
+#: ⛔ AND THE WINDOW IS JUSTIFIED, NOT PICKED. One hour is twelve default leases
+#: (`claim_due(lease_seconds=300)`) and nine hundred provider timeouts (`push._TIMEOUT_S = 4.0`), so
+#: a merely slow attempt cannot be reported as an ambiguous one. A tighter window would turn
+#: latency into an alarm, and the fix for a false alarm is always to loosen the check.
+_UNSETTLED_ATTEMPT_SQL = (
+    "select count(*) from delivery_attempts a"
+    " where a.outcome = 'started'"
+    "   and a.settled_at is null"
+    "   and a.started_at < now() - interval '1 hour'")
+
+
+#: ⛔ L5 · A CARD MUST NOT OUTLIVE ITS OWN WINDOW IN A LIVE STATE.
+#:
+#: `CardStore.sweep_lifecycle` expires non-terminal cards past `expires_at` and logs
+#: `window.lapsed`, which feeds L6's ignore-rate — so a card still `queued` long after its window
+#: closed is BOTH a card a founder may still act on and a row L6 will never count. The sweep is
+#: wired: `api/routes.py:951` calls it "every tick: expire + snooze-wake + claim-release".
+#:
+#: ⛔ THE TWELVE HOURS ARE MEASURED, NOT PICKED. That tick is `run_maintenance_sweep`'s HEAVY
+#: pass, whose interval is `config.sync_interval_hours` — measured at **6.0** — and one sweep is
+#: bounded by `scheduler._SWEEP_TIMEOUT_S = 1200`. A one-hour grace (my first instinct) would have
+#: fired on every card that expired in the normal six-hour gap between ticks: latency reported as an
+#: alarm, and *the fix for a false alarm is always to loosen the check.* Twelve hours is TWO full
+#: maintenance cycles, so a card must survive two of them before it counts.
+_CARD_OUTLIVED_ITS_WINDOW_SQL = (
+    "select count(*) from cards"
+    " where state in ('queued', 'surfaced', 'snoozed')"
+    "   and expires_at < now() - interval '12 hours'")
+
+
+#: ⛔ L5 · A CARD PARKED FOR WANT OF A CHANNEL MUST NOT STAY PARKED ONCE ONE EXISTS.
+#:
+#: `outbox.revive_undeliverable` is "the answer to 'a card must become deliverable the moment a
+#: channel exists'", and until 2026-10-01 nothing called it — so a tenant who registered Slack on
+#: Tuesday kept every card parked before Tuesday. `api/channel_routes.set_slack` now revives on
+#: registration (STEP-15); this is the production question that says whether it worked.
+#:
+#: ⛔ THE CHANNEL SET IS INJECTED, NOT HARD-CODED. `deliverable_channels` intersects
+#: `org_channels` with the channels that HAVE AN ADAPTER, and that half lives in a Python registry
+#: (`channels/base.get_channel`) which SQL cannot see. Naming 'slack' in the query would rot the
+#: day a second adapter lands; building the literal from `_implemented_channels()` keeps the two
+#: halves of that judgement in one place — the same injection receipt #31 uses for its era
+#: boundary.
+#:
+#: ⛔ AND IT MATCHES THE ROW'S OWN CHANNEL. The park is per-channel: a row parked for `teams` is
+#: not revived because `slack` appeared. `c.channel = d.channel` is what keeps this a question about
+#: THIS row rather than about the org.
+def _CONSTRAINED_BRAIN_VALUE_SQL(org: str | None) -> str:
+    r"""Active brain values narrower than the surface that renders them.
+
+    ⛔ WHY THE CODE GUARD IS NOT ENOUGH. `feedback/target_policy` proves statically that no
+    PRODUCER proposes a constrained durable value — every delegated producer constructs
+    `Visibility(scope=ORGANIZATION)`, and the one PRIVATE `LearningObject` in the engine targets
+    `METRICS`, which lands in `learning_metrics`. But the human APPROVAL path
+    (`api/learning_routes`) rehydrates a persisted proposal and its visibility is a value read back
+    from `learning_objects.visibility`. ⛔ **No amount of AST reading can know what is in that
+    column**, so the only honest check of the second half is this one, against the data.
+
+    ⛔ WHAT A NON-ZERO COUNT MEANS. `api/brain_routes` selects the VALUE out of both sinks filtered
+    only on `org_id` / `active` / `brain`, behind `Depends(get_current_org)` — which admits any
+    credential of the tenant, including a `member` seat whose own definition in `platform/auth.py`
+    is *"reads and acts on the cards routed to their own seat, **and nothing org-wide**."* So one
+    constrained row in either sink is a learned value rendered to people its own visibility
+    excludes — Atlas `L7`'s *"prohibited evidence never reaches active brain or rendered
+    rationale"*.
+
+    ⛔ THE OPEN SET IS DERIVED FROM THE CONTRACT, NEVER SPELLED. `target_policy.OPEN_SCOPES` holds
+    ENUM MEMBER NAMES because it is read off the AST; the column holds enum VALUES. Translating
+    through `VisibilityScope[...]` is what keeps a renamed member from widening what this accepts,
+    which is the rule `_ILLEGAL_TRANSITION_SQL` follows for lifecycle edges.
+    """
+    from genios_engine.contracts.learning import VisibilityScope
+    from genios_engine.feedback.target_policy import BRAIN_SINKS, OPEN_SCOPES
+
+    open_values = sorted(VisibilityScope[name].value for name in OPEN_SCOPES)
+    for v in open_values:                     # SQL text from an Enum: assert the shape, never assume
+        assert re.fullmatch(r"[a-z_]+", v), v
+    literal = ", ".join(f"'{v}'" for v in open_values)
+    # Both sinks, one scalar. `visibility_scope is null` counts: an unrecorded scope is not an open
+    # one, which is the same fail-closed reading `contracts/learned_state._visible` takes.
+    parts = [f"(select count(*) from {sink} where active "
+             f"and (visibility_scope is null or visibility_scope not in ({literal}))"
+             f"{_org_filter(org)})"
+             for sink in BRAIN_SINKS]
+    return "select " + " + ".join(parts)
+
+
+def _ABSORBED_NODE_REFERENCE_SQL(org: str | None) -> str:
+    r"""Live rows still pointing at a node a merge absorbed.
+
+    ⛔ THE MODULE'S OWN WORDS ARE THE CLAIM. `context/merge.py` introduces its node-reference list
+    with *"Every table that names a node. **Missing one leaves rows pointing at a closed node —
+    invisible in the UI, still returned by any query that joins on node_id.**"* That is a failure
+    nothing checked: entity merge is the one operation that rewrites identity across the graph, and
+    `context/` had two receipts over 50,877 lines, neither about merge.
+
+    ⛔ THE PAIRS ARE DERIVED FROM THE THREE DECLARED CONSTANTS, NEVER COPIED — `_NODE_REFERENCES`,
+    `_CORRELATION_HANDLED_SEPARATELY` and `_EDGE_NODE_COLUMNS`. A sixth table entering the merge
+    loop enters this receipt without an edit, which is the `QUARANTINABLE_SEAMS` pattern; a copy
+    here would silently stop covering whatever was added last.
+
+    ⛔ `reversed` MERGES ARE EXCLUDED. `reverse_merge` repoints the rows back and reopens exactly
+    the edges it closed, so a reversed row legitimately names the formerly-merged node again.
+    Counting those would make this red on every tenant that has ever undone a merge — *a gate that
+    is always red is a gate nobody reads.*
+    """
+    from genios_engine.context.merge import (_CORRELATION_HANDLED_SEPARATELY,
+                                             _EDGE_NODE_COLUMNS, _NODE_REFERENCES)
+
+    pairs = [*_NODE_REFERENCES, _CORRELATION_HANDLED_SEPARATELY,
+             *(("graph_edges", column) for column in _EDGE_NODE_COLUMNS)]
+    # SQL text built from Python constants: the shape is asserted, never assumed.
+    for table, column in pairs:
+        assert re.fullmatch(r"[a-z_][a-z_0-9]*", table), table
+        assert re.fullmatch(r"[a-z_][a-z_0-9]*", column), column
+    parts = [
+        f"(select count(*) from {table} t join merge_history m "
+        f"on m.org_id = t.org_id and m.merged_node_id = t.{column} "
+        f"where not m.reversed{_org_filter(org, 't')})"
+        for table, column in pairs]
+    return "select " + " + ".join(parts)
+
+
+def _PARKED_WARM_LANE_SQL(org: str | None) -> str:
+    r"""Warm-lane rows parked for a human that no human can see.
+
+    ⛔ THE SCHEMA STATES THE CLAIM. `migrations/0136_warm_lane.sql` comments the column itself:
+    *"attempts ran out: parked for a human, never retried, never blocking a re-enqueue."*
+
+    ⛔⛔ AND EVERY READER USES IT ONLY AS AN EXCLUSION. `warm_lane._OPEN` is
+    `"done_at is null and parked_at is null"`; `api/routes.py`'s backlog count uses the same
+    predicate, and `warm_lane.housekeep` warns on the age of the OPEN backlog and prunes only
+    `done_at` rows. So a row whose attempts ran out is removed from every count, never pruned, and
+    **selected by nothing** — the tenant's events stop being processed silently and permanently,
+    while the health signal reports zero open rows and looks fine.
+
+    ⛔ *A refusal nobody can see is a silent stop* — and this is the worst version of it in the
+    product, because the health check does not merely miss the parked rows, it **excludes them by
+    construction**.
+
+    ⛔ THE PREDICATE IS DERIVED FROM `warm_lane._OPEN`, NEVER RESPELLED. This receipt must cover
+    exactly what that predicate excludes; a copy here would stop matching the day the lane's own
+    definition of "open" changes, which is the rule `_ILLEGAL_TRANSITION_SQL` follows for the
+    learning lifecycle edges.
+
+    ⛔ L1 ALREADY HAS THIS RECEIPT FOR THE OTHER PARKED TABLE — *"the parked queue is not a black
+    hole"*, over `parked_events`. This is the same claim applied to the table that lacked it, so it
+    is a precedent rather than an invention.
+    """
+    from genios_engine.platform.warm_lane import _OPEN
+
+    # The lane's own "open" is `done_at is null and parked_at is null`. The half this receipt is
+    # about is the second clause, taken from that string rather than written again.
+    clauses = [c.strip() for c in _OPEN.split(" and ")]
+    parked = next((c for c in clauses if c.startswith("parked_at")), None)
+    assert parked == "parked_at is null", (
+        f"warm_lane._OPEN no longer excludes parked rows the way this receipt assumes: {_OPEN!r}. "
+        "⛔ If the lane has started counting parked rows as open, they are visible and this "
+        "receipt is redundant — delete it deliberately rather than leaving it asking the wrong "
+        "question")
+    return ("select count(*) from l2_work_queue where parked_at is not null"
+            f"{_org_filter(org)}")
+
+
+def _UNEXPLAINED_EVENT_SQL(org: str | None) -> str:
+    r"""Captured events that never reached a signal and say nowhere why.
+
+    ⛔ THE CLAIM IS `capture/journey.py`'s OPENING SENTENCE, quoted from `qualification.py`:
+
+        a system that discards 92% of what a founder was sent has to be able to answer
+        "why did I never see X?" in one query
+
+    ⛔⛔ AND THE SAME MODULE RECORDS WHAT IT COST TO NOT HAVE THIS. *"Every layer kept its half of
+    that bargain and wrote its refusal down. **Nothing ever joined them.** Measured on the pilot
+    org: `event_trace` holds 10,840 rows and had NO read surface at all … Of 138 events one support
+    question was really about, 103 stopped at `s4_esqe short_circuit bulk_headers` and 33 at
+    `llm5_not_business`; **a founder reading `/qualification/drops` would have found nothing and
+    concluded the events were lost.**"* `journey.event_journey` is the join that answers it — and
+    nothing checks that every event HAS an answer.
+
+    ⛔ EVERYTHING HERE IS DERIVED, NOTHING SPELLED:
+      * the stopping actions come from `journey.TRACE_STOPPING`;
+      * the event-keyed ledgers come from `journey._LEDGERS` minus `journey._PER_SIGNAL_LEDGERS`,
+        because a per-SIGNAL refusal cannot name an event that never produced a signal — the module
+        declares that distinction itself, and a fifth event-keyed ledger joins this check without
+        an edit;
+      * `qualified_signals` is that tuple's success member and becomes the "did reach a signal"
+        test rather than a refusal;
+      * and the horizon is `4 x platform/config.sync_interval_hours`, the declared sweep tick —
+        four ticks, so an event still mid-flight is never counted. ⛔ **The multiplier is the one
+        judgement in this query and it is stated here rather than buried in the SQL.**
+
+    ⛔ A NON-ZERO COUNT IS A FOUNDER'S QUESTION WITH NO ANSWER. The event was captured, four sweeps
+    have passed, it produced no signal, and no layer wrote down what stopped it — which is the one
+    outcome `journey.py` exists to make impossible.
+    """
+    from genios_engine.capture.journey import _LEDGERS, _PER_SIGNAL_LEDGERS, TRACE_STOPPING
+    from genios_engine.platform.config import get_settings
+
+    actions = sorted(TRACE_STOPPING)
+    for action in actions:                      # SQL text from a frozenset: assert, never assume
+        assert re.fullmatch(r"[a-z_]+", action), action
+    event_keyed = [name for name, _column in _LEDGERS if name not in _PER_SIGNAL_LEDGERS]
+    assert "qualified_signals" in event_keyed, (
+        "`journey._LEDGERS` no longer carries the success ledger; this receipt's 'did it reach a "
+        f"signal' test came from it. Event-keyed members today: {event_keyed}")
+    refusals = [name for name in event_keyed if name != "qualified_signals"]
+    assert refusals, (
+        "no event-keyed refusal ledger is left in `journey._LEDGERS` — every refusal is now "
+        "per-signal, and an event that produced no signal has nowhere to be recorded. That is a "
+        "bigger finding than this receipt and should be read before it is deleted")
+    for name in event_keyed:
+        assert re.fullmatch(r"[a-z_]+", name), name
+
+    hours = 4 * float(get_settings().sync_interval_hours or 6.0)
+    clauses = [f"se.captured_at < now() - make_interval(hours => {hours:g})"]
+    clauses.append("not exists (select 1 from qualified_signals qs "
+                   "where qs.org_id = se.org_id and qs.event_id = se.event_id)")
+    clauses.append("not exists (select 1 from event_trace t where t.org_id = se.org_id "
+                   f"and t.event_id = se.event_id and t.action in "
+                   f"({', '.join(repr(a) for a in actions)}))")
+    for name in refusals:
+        clauses.append(f"not exists (select 1 from {name} l "
+                       "where l.org_id = se.org_id and l.event_id = se.event_id)")
+    return ("select count(*) from source_events se where " + " and ".join(clauses)
+            + _org_filter(org, "se"))
+
+
+def _MIXED_AUTHORITY_SCALE_SQL(org: str | None) -> str:
+    r"""Active `(node, field)` pairs holding BOTH an on-ladder and an off-ladder authority rank.
+
+    ⛔⛔ ATLAS L2-01, LOCATED. The claim is *"incorrect authority configuration would still be
+    applied consistently"*, and `graph_facts.authority_rank` is where it lives: a plain integer
+    column carrying two scales that were never reconciled.
+
+    * `capture/validate/authority.AUTHORITY_RANK` is a dense ladder, `0..MAX_AUTHORITY_RANK`,
+      seven classes, no ties — `inferred` at the bottom and `signed_document` at the top.
+    * `context/analytic/publish.DEFAULT_AUTHORITY_RANK` is **100**, and writes the same column of
+      the same table (`FACT_TABLE = "graph_facts"`).
+
+    ⛔ AND THE TWO NUMBERS ARE COMPARED WITH NOTHING ELSE. `context/graph_store.fact_write_action`::
+
+        if held_rank is not None and new_rank < held_rank:
+            return "discrepancy"       # lower authority disagrees -> flag, keep held
+        return "supersede"
+
+    So a held row at 100 can never be superseded, and a `signed_document` arriving against one
+    comes back a `discrepancy` and is discarded in favour of the derived value. The ladder's own
+    module says why stretching the scale breaks more than this: ALG-12's gap of `>= 2` *"only means
+    anything because the ranks here are a dense, evenly-spaced ladder rather than scores."*
+
+    ⛔ WHAT THIS RECEIPT DOES **NOT** ASSERT, because it was measured instead of assumed. No live
+    corruption is claimed. `publish_derived_fact` scopes its own lookup by `version_prefix` and so
+    never supersedes an observed row, and the observed and derived writers share no literal field
+    name anywhere in the engine. ⛔ But `write_fact`'s lookup is NOT prefix-scoped — it takes the
+    first active row for `(org, node, field)` whoever wrote it — so the separation rests on two
+    field vocabularies never meeting, which nothing enforces, and 31 call sites pass a `field=`
+    that could not be resolved statically. **This receipt is the thing that notices the first
+    meeting**, which is the moment the hazard becomes a corruption.
+
+    ⛔ THE PREDICATE IS THE READER'S, NOT A FRESH ONE. `valid_to is null and status = 'active'` is
+    exactly what `graph_store.write_fact` selects `held` with; asking a different question here
+    would measure rows the comparison never sees.
+
+    DERIVED: the ladder's top from `MAX_AUTHORITY_RANK`, and the existence of an off-ladder writer
+    from `UNINTERPRETABLE_RANKS`. ⛔ If nothing wrote off-ladder ranks any more this receipt could
+    never go red, so that is a refusal rather than a silent pass.
+    """
+    from genios_engine.capture.validate.authority import (MAX_AUTHORITY_RANK,
+                                                          UNINTERPRETABLE_RANKS)
+
+    top = int(MAX_AUTHORITY_RANK)
+    off_ladder = sorted(r for r in UNINTERPRETABLE_RANKS if r > top)
+    assert off_ladder, (
+        "no rank above the ladder's top is declared in `UNINTERPRETABLE_RANKS` any more, so this "
+        f"receipt's `authority_rank > {top}` half can never match and it would pass for ever. If "
+        "the derived scale folded into the ladder, retire this receipt deliberately")
+    return ("select count(*) from (select subject_node_id, field from graph_facts "
+            f"where valid_to is null and status = 'active'{_org_filter(org)} "
+            "group by subject_node_id, field "
+            f"having bool_or(authority_rank <= {top}) and bool_or(authority_rank > {top})) x")
+
+
+def _CONNECTED_TO_NOTHING_SQL(org: str | None) -> str:
+    r"""Live connections to a source that satisfies no coverage capability.
+
+    ⛔ ATLAS L1-01: *"only eight canonical source IDs are buildable… catalogued is not connected."*
+    The counting is still true and the registry is honest about it — `BUILDABLE_SOURCES` is a
+    DERIVED view over one descriptor per source, `tests/test_source_registry.py` enforces the
+    invariants, and `L1.1-U2` exists so the UI renders one answer. ⛔ But measuring it properly
+    turned up something the registry does NOT say.
+
+    **`database` and `mysql` are buildable with `capability = None` and `object_types = 0`.** A
+    tenant can connect one and it satisfies no pack's coverage and maps no objects — so it
+    contributes to nothing, while the connection screen reports a success. That is the exact
+    INVERSE of the drift this registry was built to close: its docstring lists sources that
+    *"carried a coverage capability but NO family"*, and nobody asked the other direction.
+
+    ⛔ AND THE REGISTRY'S OWN EXAMPLE HAS EXPIRED. It says *"`hubspot` advertises the `crm`
+    capability that the `sales` pack REQUIRES, while no connector can be built for it"* — and
+    `hubspot` is buildable now. The sentence is still TRUE of eleven other sources (`salesforce`
+    is also `crm`), so its shape survived and its subject did not, which is the worst kind of
+    stale comment: it reads as a current measurement.
+
+    ⛔ THE LIST IS DERIVED, NEVER SPELLED. A source that gains a capability leaves this query with
+    no edit, and one added without a capability enters it the same way. Two refusals, because
+    either would make the receipt always-green:
+
+    1. the capability-less set must be NON-EMPTY -- otherwise `in ()` is a query that cannot match;
+    2. every member must be `buildable` -- a catalogued-but-unbuildable source with no capability
+       is not a finding, because nobody can connect it in the first place.
+    """
+    from genios_engine.capture.source_registry import BUILDABLE_SOURCES, descriptor_of
+
+    canonical = {descriptor_of(s).source for s in BUILDABLE_SOURCES}
+    orphans = sorted(s for s in canonical if descriptor_of(s).capability is None)
+    assert orphans, (
+        "every buildable source now advertises a coverage capability, so this query would read "
+        "`in ()` and pass for ever. ✅ That is the better world -- retire the receipt deliberately")
+    for name in orphans:
+        d = descriptor_of(name)
+        assert d.buildable, (
+            f"{name!r} has no capability and is not buildable either, so no tenant can connect it "
+            "and it is not what this receipt is about. Re-derive the set")
+        assert re.fullmatch(r"[a-z_0-9]+", name), name
+    listed = ", ".join(f"'{name}'" for name in orphans)
+    return ("select count(*) from connections c "
+            f"where c.status = 'connected' and c.source_type in ({listed})"
+            f"{_org_filter(org, 'c')}")
+
+
+def _UNSCOPED_COVERAGE_VERDICT_SQL(org: str | None) -> str:
+    r"""Recently qualified signals carrying no coverage verdict at all.
+
+    ⛔ ATLAS L1-09: *"the coverage snapshot is not mandatory on each emitted signal."* True --
+    `GatedEvent.coverage_ready` is `bool | None = None` and `qualified_signals.coverage_ready` is a
+    nullable boolean. ⛔ But the shape is not the finding; the CONTRACT'S OWN PROMISE is, because
+    it says this about the field one along and nothing checks it:
+
+        `None` means no tagger ran (a pre-S4 row); A FRESHLY GATED EVENT ALWAYS CARRIES A REAL BOOL.
+
+    and about `coverage_ready` itself:
+
+        A dead field on a contract is worse than a missing one: it invites a consumer to trust a
+        seam that carries nothing, and `None` READS AS "UNKNOWN" EXACTLY WHERE A CALLER MOST WANTS
+        A YES.
+
+    So this receipt asks the promise as a question. ⛔ THE HORIZON IS THE WHOLE DESIGN: the comment
+    is explicit that an OLD row is legitimately null (*"a pre-S4 row"*), so counting every null
+    would make this red for ever and tell nobody anything. The window is **4 sweep ticks**, derived
+    from `sync_interval_hours` exactly as the unexplained-event receipt derives its own -- the one
+    judgement is the multiplier, and four ticks is long enough that a signal written during a
+    deploy or a paused sweep is not reported as a defect.
+
+    ⛔ THE ALWAYS-GREEN FAILURE, GUARDED. If `coverage_ready` ever became NOT NULL in the schema or
+    required on the contract, this query could not return a row and would pass while measuring
+    nothing. The contract side is asserted here; the schema side is asserted by the guard suite,
+    which reads the migration.
+    """
+    from genios_engine.contracts.gated_event import GatedEvent
+    from genios_engine.platform.config import get_settings
+
+    field = GatedEvent.model_fields.get("coverage_ready")
+    assert field is not None, (
+        "`GatedEvent.coverage_ready` is gone, and this receipt measures the column it feeds. "
+        "Find out what replaced it before trusting the query")
+    assert field.is_required() is False, (
+        "`GatedEvent.coverage_ready` is now REQUIRED, so a gated event cannot be built without a "
+        "verdict and this receipt can only ever return 0. ✅ That is the better world -- retire the "
+        "receipt deliberately rather than letting it go green by itself")
+    hours = 4 * float(get_settings().sync_interval_hours or 6.0)
+    return ("select count(*) from qualified_signals qs where qs.coverage_ready is null "
+            f"and qs.created_at > now() - make_interval(hours => {hours:g})"
+            f"{_org_filter(org, 'qs')}")
+
+
+def _MULTI_DOMAIN_ROUTED_PACKAGE_SQL(org: str | None) -> str:
+    r"""Published expertise packages whose route selected SEVERAL business domains.
+
+    ⛔ WHY THIS IS NOT A STYLE COMPLAINT ABOUT AN INDEX. `reason/adapters/expertise.py` reaches into
+    the package's own metadata and takes the first entry::
+
+        domain_ids = package.metadata.get("domain_ids") or ()
+        domain = str(domain_ids[0]) if domain_ids else "general"
+
+    That value becomes `CapabilityManifest.domain`, and `reason/domain_shadow.py` uses that field to
+    SELECT THE TENANT PACK the reasoning then reads::
+
+        if manifest.domain not in packs:
+            packs[manifest.domain] = _tenant_pack(registry, store, org_id, manifest.domain)
+
+    `reason/runner.py` gates on the same field (`capability.domain == effective["pack_id"]`). So the
+    index does not pick a label — it picks the knowledge.
+
+    ⛔⛔ AND THE LIST IS SORTED, WHICH MAKES `[0]` THE ALPHABETICALLY FIRST DOMAIN. `RoutePlan` is
+    sealed with `domain_ids=tuple(sorted(selected_domains))` over a `set`, and a situation carrying
+    no usable hint resolves against `sorted(self.catalog.domains.keys())` — every authored domain.
+    A multi-domain route therefore reasons against whichever pack sorts first alphabetically, and
+    **no line anywhere records that a choice was made**. This is Atlas L2-11, *"wrong first domain
+    … can still enter the wrong view"*, with its mechanism traced rather than suspected.
+
+    ✅ THE CONTRACT ALREADY OWNS THE ACCESSOR THAT DOES NOT DO THIS. `ExpertisePackage.domain_hints`
+    returns every entry, sorted and unique, and `packs/compiler/runtime_brains` consumes it that
+    way. The routing site reaches past it into the raw bag.
+
+    ⛔ TWO REFUSALS, BECAUSE EITHER WOULD MAKE THIS RECEIPT ALWAYS-GREEN RATHER THAN CORRECT:
+
+    1. the metadata key is read off `RoutePlan`'s own field names, so a rename is a refusal here
+       instead of a query that quietly counts a key nobody writes;
+    2. `OBSERVATION_METADATA_KEYS` must NOT contain it. `addressable_metadata` strips that set
+       inside `ExpertisePackage.to_semantic_dict`, which is what the publisher stores, so adding
+       the key to it would empty this query's column while every test still passed — the
+       always-green failure this programme has now hit twice.
+
+    ⛔ RETRACTION, KEPT WHERE THE CLAIM WAS MADE. The first draft of this receipt asserted against
+    `ExpertisePackage._NON_CONTENT_METADATA`. **There is no such attribute on this class.**
+    `_NON_CONTENT_METADATA` and `address_free_metadata` belong to `SituationCandidate`, several
+    hundred lines earlier in the same file, and that object is NOT what the publisher stores. The
+    conclusion held — `domain_ids` does survive into the payload — but it held through a different
+    filter, and the measurement that nearly went in was of the wrong class. Two `to_semantic_dict`
+    methods in one module is enough to make the right-looking name the wrong object.
+
+    DECLARED LIMIT, not an oversight: a `domain_ids` stored as a bare STRING is not counted.
+    `domain_hints` tolerates that shape and normalises it to one entry, so it is a single-domain
+    route by construction and has nothing to pick between.
+    """
+    from dataclasses import fields as _fields
+    from dataclasses import is_dataclass as _is_dataclass
+
+    from genios_engine.contracts.domain_expertise import OBSERVATION_METADATA_KEYS
+    from genios_engine.packs.compiler.models import RoutePlan
+
+    # ⛔ ASKED, NOT ASSUMED. `fields()` raises `TypeError` on a non-dataclass, and a receipt
+    # builder that dies with "must be called with a dataclass type or instance" tells the reader
+    # nothing about which claim just stopped being checkable.
+    assert _is_dataclass(RoutePlan), (
+        "`packs.compiler.models.RoutePlan` is no longer a dataclass, so this receipt cannot read "
+        "the metadata key off its fields. Re-derive the key before trusting the query")
+    plan_fields = {f.name for f in _fields(RoutePlan)}
+    key = "domain_ids"
+    assert key in plan_fields, (
+        f"`RoutePlan` no longer carries a {key!r} field, and `packs/compiler/expertise_builder` "
+        f"writes this receipt's metadata key straight from it. Fields today: {sorted(plan_fields)}")
+    assert key not in OBSERVATION_METADATA_KEYS, (
+        f"{key!r} has joined `OBSERVATION_METADATA_KEYS`, so `addressable_metadata` now strips it "
+        "from the payload `ExpertisePackage.to_semantic_dict` hands the publisher. This receipt "
+        "would then read an absent column and pass for ever. Either the key moved or the receipt "
+        "is obsolete -- decide, do not let it go green by itself")
+    path = f"p.payload->'metadata'->'{key}'"
+    return ("select count(*) from expertise_packages p "
+            f"where p.payload->'metadata' ? '{key}' "
+            f"and jsonb_typeof({path}) = 'array' "
+            f"and jsonb_array_length({path}) > 1"
+            f"{_org_filter(org, 'p')}")
+
+
+def _PARKED_WITH_A_CHANNEL_SQL() -> str:
+    from genios_engine.deliver.routing import AGENT_TRANSPORTS
+    from genios_engine.deliver.units import _implemented_channels
+    usable = sorted(_implemented_channels() - AGENT_TRANSPORTS)
+    literal = ", ".join(f"'{ch}'" for ch in usable) or "''"
+    return (
+        "select count(*) from delivery_outbox d"
+        " where d.status = 'undeliverable'"
+        "   and exists (select 1 from org_channels c"
+        "                where c.org_id = d.org_id and c.active"
+        f"                  and c.channel = d.channel and c.channel in ({literal}))")
+
+
+def _QUARANTINED_SEAM_SQL(org: str | None) -> str:
+    r"""Inputs the learning layer deliberately threw away — its isolation ledger, finally read.
+
+    ⛔ `feedback/store._read_optional_seam` catches a read that raises, records it in
+    `learning_input_rejections` and returns `()`. Its own comment states the defect it half-fixed:
+    *"`learning_input_rejections` exists (migration 0046) and its own comment calls it 'sanitized
+    isolation of a malformed/lineage-less input' — and **nothing in the codebase ever wrote to
+    it**. So the layer's isolation ledger recorded nothing, and an input the system deliberately
+    quarantined was indistinguishable from one that never arrived. **That is the no-silent-drop
+    contract failing in the one place built to uphold it.**"*
+
+    ⛔ The WRITE was then built and the READ never was. This is the read.
+
+    ⛔ THE SEAM FILTER IS NOT OPTIONAL AND IT IS DERIVED. `org_rule_ingest.record_refusal` writes to
+    the same table under `seam = "brains.org_discovery"` for every candidate the discovery gate
+    turns down — which is **routine, not an alarm**, and is already counted per run in
+    `org_rule_discovery_runs.counters` (`candidates`, `admitted`, `refused`, `refused_<reason>`).
+    Counting those here would make this receipt red on healthy tenants. The two batch seams come
+    from `store.QUARANTINABLE_SEAMS` rather than being spelled again, so a third optional seam
+    enters this query without an edit.
+    """
+    from genios_engine.feedback.store import QUARANTINABLE_SEAMS
+
+    for seam in QUARANTINABLE_SEAMS:
+        assert re.fullmatch(r"[a-z_]+", seam), seam
+    seams = ", ".join(f"'{s}'" for s in QUARANTINABLE_SEAMS)
+    return ("select count(*) from learning_input_rejections j "
+            f"where j.seam in ({seams}){_org_filter(org, 'j')}")
+
+
+def _ILLEGAL_TRANSITION_SQL(org: str | None) -> str:
+    r"""Lifecycle edges `learning_transitions` holds that `ALLOWED_LEARNING_TRANSITIONS` forbids.
+
+    ⛔ THE LEGAL SET IS DERIVED FROM THE CONTRACT, NEVER COPIED. A hand-written pair list would
+    drift the first time a state is added, and the drift would widen what this receipt accepts —
+    the same rule `_UNDECLARED_UNWRITTEN_FACTS_SQL` follows for `expertise._ROSTER`.
+
+    ⛔ `from_state is null` IS EXCLUDED. `publisher.persist` writes the first edge of an object's
+    life with no predecessor, and `ALLOWED_LEARNING_TRANSITIONS` has no `None` key by design.
+
+    ⛔ WHAT A NON-ZERO COUNT MEANS TODAY. Until 2026-10-02 `publisher.publish` wrote
+    `governed → published` on every brain publish, and `GOVERNED` may only go to
+    `(temporary, human_review, promoted, rejected)`. The publisher now logs the missing `promoted`
+    hop and `log_transition` refuses an illegal edge — so **new** rows cannot be illegal. Rows
+    written before that fix can be, and this receipt does not hide them: it names them. The
+    read-only query that settles whether any exist is
+    `select from_state, to_state, count(*) from learning_transitions group by 1, 2`, and it answers
+    a second question at the same time — whether any brain value has ever been published at all,
+    which is what `L7-27` asks.
+    """
+    from genios_engine.contracts.learning import ALLOWED_LEARNING_TRANSITIONS
+
+    pairs = [(cur.value, nxt.value)
+             for cur, nxts in ALLOWED_LEARNING_TRANSITIONS.items() for nxt in nxts]
+    # The values come from an Enum, but this builds SQL text, so the shape is asserted rather than
+    # assumed — a state named with a quote would otherwise be an injection in a receipt.
+    for a, b in pairs:
+        assert re.fullmatch(r"[a-z_]+", a) and re.fullmatch(r"[a-z_]+", b), (a, b)
+    literal = ", ".join(f"('{a}','{b}')" for a, b in pairs)
+    return ("select count(*) from learning_transitions t where t.from_state is not null "
+            f"and (t.from_state, t.to_state) not in ({literal})"
+            f"{_org_filter(org, 't')}")
+
+
+#: ⛔ STEP-04 · AN OPEN CARD WHOSE SUBJECT IS THE TENANT ITSELF. Production carried *"Send Mr Rohit
+#: Swerashi your traction metrics"* and an offer card naming `ceo@thegenios.com` and the founder as
+#: "waiting longest" (`speedrun008/YC-II W27/` STEP-04 §8.2). Who "us" is comes from the same four
+#: sources `platform/self_identity.identity_for` reads — the founder's full name and the company's
+#: name on `orgs`, its address, the active seats, and what the tenant declared — in SQL, because a
+#: receipt is one scalar. A first name alone is not us: another Rohit is somebody else.
+_CARD_ABOUT_US_SQL = (
+    "select count(*) from cards c where c.state in "
+    "('queued', 'surfaced', 'snoozed', 'claimed', 'delivered') "
+    "and c.business_subject is not null and ("
+    "  exists (select 1 from orgs o "
+    # `orgs.name` is the person's FULL name at signup, with or without a title ("Mr Rohit
+    # Swerashi"): a subject that holds it, untitled, is about us — "Send Rohit Swerashi your
+    # traction metrics". A one-word name only exactly (`platform/self_identity.names_us`).
+    "    cross join lateral (select regexp_replace(lower(btrim(coalesce(o.name, ''))), "
+    "        '^(mr|mrs|ms|miss|dr|prof|shri|smt)[.]? +', '') as full_name) n "
+    "   where o.id = c.org_id and ("
+    "      lower(c.business_subject) = lower(o.name) "
+    "   or (position(' ' in n.full_name) > 0 "
+    "       and lower(c.business_subject) like '%' || n.full_name || '%') "
+    "   or (o.first_name is not null and o.last_name is not null "
+    "       and lower(c.business_subject) like '%' || lower(o.first_name || ' ' || o.last_name) || '%'))) "
+    # Every address and declared domain of ours, from the identity's own SQL correlated per card
+    # (`platform/self_identity.identity_sql`) — one list of sources, not a second copy of it that
+    # forgot the connected account.
+    "  or exists (select 1 from (" + identity_sql("c.org_id") + ") us "
+    "      where lower(c.business_subject) like '%' || us.value || '%'))")
+
+
+def _KEPT_OUTSIDE_MEMORY_SQL() -> str:
+    """Kept events a day old with no settled L2 run — the outcomes and the screen's source name are
+    `context/memory_lanes`'s own, inlined because `evaluate()` binds one parameter. A screen item is
+    not owed: it enters memory only on a signal (`06` D22)."""
+    from genios_engine.context.memory_lanes import KEPT_OUTCOMES, SCREEN_SOURCE
+
+    kept = ", ".join(f"'{outcome}'" for outcome in KEPT_OUTCOMES)
+    return ("select count(*) from source_events se "
+            f"where se.outcome in ({kept}) and se.captured_at < now() - interval '1 day' "
+            f"and not (se.source = '{SCREEN_SOURCE}' and not exists ("
+            "    select 1 from qualified_signals q where q.org_id = se.org_id "
+            "       and q.event_id = se.event_id and q.state = 'active')) "
+            "and not exists (select 1 from l2_processing_runs r where r.org_id = se.org_id "
+            "                and r.event_id = se.event_id and r.status = 'done')")
+
+
+#: STEP-06's deploy, as the schema records it: the migration that shipped with it. Cards that expired
+#: before it carry no reason and are not backfilled (`06` D24); every card created since leaves with
+#: one, and admissions since then have their end recorded.
+_STEP_06_APPLIED = ("(select coalesce(min(applied_at), now()) from schema_migrations "
+                    " where filename = '0194_situation_outcomes.sql')")
+
+
+def _EXPIRED_WITHOUT_A_REASON_SQL() -> str:
+    """Cards created since STEP-06 that left the queue `expired` with no event saying why.
+
+    The kinds are `platform/card_lifecycle.KINDS` — the one writer of `expired` writes exactly these —
+    inlined because `evaluate()` binds one parameter.
+    """
+    from genios_engine.platform.card_lifecycle import KINDS
+
+    kinds = ", ".join(f"'{kind}'" for kind in sorted(KINDS))
+    return ("select count(*) from cards c "
+            "where c.state = 'expired' "
+            f"and c.created_at >= {_STEP_06_APPLIED} "
+            "and not exists (select 1 from card_events e where e.org_id = c.org_id "
+            f"                and e.card_id = c.card_id and e.kind in ({kinds}))")
+
+
+def _VERIFIED_WITHOUT_WHAT_CLOSED_IT_SQL() -> str:
+    """Cards resolved `verified` whose resolution names no event that closed the ask (STEP-16 `yc2_w27_s16`
+    M47.C3.L-integration.V2.U03). `platform/card_lifecycle.resolve_cards` refuses a verified resolution with no
+    `event_id`, so every row here was written past it. The event kind and cause are `card_lifecycle.RESOLVED` and
+    `VERIFIED`, written as words: `evaluate()` binds one parameter, and a word formatted in at run time is a statement
+    the census cannot read whole (the run-time ratchet, 272). `tests/platform/test_a_verified_card_names_what_closed_it.py`
+    holds the words equal to the lifecycle's."""
+    return ("select count(*) from card_events e "
+            "where e.kind = 'card.resolved' and e.cause = 'verified' "
+            "and coalesce(btrim(e.detail ->> 'event_id'), '') = ''")
+
+
+def _ADMITTED_WITHOUT_AN_END_SQL() -> str:
+    """Active situations whose latest admission, a day old and made since STEP-06, is `admit` — and
+    nothing recorded what came of it (`situation_outcomes`, 0194). Admission is recorded on the live
+    lane only, so every row here was live."""
+    return ("select count(*) from situation_admission_decisions d "
+            "where d.outcome = 'admit' and d.decided_at < now() - interval '1 day' "
+            f"and d.decided_at >= {_STEP_06_APPLIED} "
+            "and d.decision_id = (select x.decision_id from situation_admission_decisions x "
+            "     where x.org_id = d.org_id and x.situation_id = d.situation_id "
+            "     order by x.decided_at desc, x.decision_id desc limit 1) "
+            "and exists (select 1 from context_situations s where s.org_id = d.org_id "
+            "     and s.situation_id = d.situation_id and s.status in ('active', 'partial')) "
+            "and not exists (select 1 from situation_outcomes o where o.org_id = d.org_id "
+            "     and o.decision_id = d.decision_id)")
+
+
 def receipts(org: str | None) -> list[Receipt]:
     # THE DORMANCY WINDOW IS THE THRESHOLD, and it is imported rather than restated. L2 decides a
     # situation has ended after `DORMANT_AFTER_DAYS` of silence, so a tenant that has been fed
     # nothing for that long has, provably, no working set left — whatever the other receipts say.
     # Picking any other number here would invent a second opinion about when quiet becomes empty.
     # Imported inside the function, the way `platform/wiring.py` already reaches into `context`.
-    from genios_engine.capture.pipeline import (JUDGED_DROP_CODES,
+    from genios_engine.capture.pipeline import (ARCHIVED_PAYLOAD_TTL_DAYS, JUDGED_DROP_CODES,
                                                 JUDGED_DROP_PAYLOAD_TTL_DAYS)
     from genios_engine.api.account_routes import RETAINED_AFTER_ERASURE
     from genios_engine.context.runner import MAX_PASSES
@@ -228,10 +1135,36 @@ def receipts(org: str | None) -> list[Receipt]:
                 lambda n: n == 0,
                 "a future watermark asks the provider for changes since a date that has not "
                 "happened; the connector goes silent while still reporting success"),
+        # ⛔⛔ THE WORST SHAPE OF SILENT STOP IN THE PRODUCT: the health check does not merely
+        # miss these rows, `warm_lane._OPEN` excludes them by construction, so a lane with a
+        # hundred parked rows and none open reports a clean backlog.
+        Receipt("L1", "no warm-lane row is parked where nothing can see it",
+                _PARKED_WARM_LANE_SQL(org), lambda n: n == 0,
+                "⛔ `migrations/0136_warm_lane.sql` comments the column: *\"attempts ran out: "
+                "parked for a human, never retried.\"* Nothing selects a parked row — "
+                "`warm_lane._OPEN`, `api/routes`'s backlog count and `housekeep`'s staleness "
+                "warning all exclude it, and the hourly prune removes only finished rows. A "
+                "non-zero count is a tenant whose events stopped being processed, permanently and "
+                "invisibly. ⛔ The predicate is DERIVED from `warm_lane._OPEN`, so it cannot drift "
+                "from the lane's own definition of open. Same claim L1 already makes for "
+                "`parked_events` — *\"the parked queue is not a black hole\"*"),
         Receipt("L1", "the parked queue is not a black hole",
                 f"select count(*) from parked_events where status='pending'{o}",
                 lambda n: n == 0,
                 "pending forever means a park is a slower delete"),
+        # ⛔⛔ `capture/journey.py` EXISTS FOR THIS SENTENCE — *"a system that discards 92% of
+        # what a founder was sent has to be able to answer 'why did I never see X?' in one query"* —
+        # and the module records that the join was missing while every layer wrote its own refusal
+        # down. This checks that every event HAS an answer, which `journey` can then render.
+        Receipt("L1", "every captured event that reached no signal says where it stopped",
+                _UNEXPLAINED_EVENT_SQL(org), lambda n: n == 0,
+                "⛔ A non-zero count is a founder's question with no answer: captured, four sweeps "
+                "past, no signal produced, and no layer recorded what stopped it. ⛔ The stopping "
+                "actions come from `journey.TRACE_STOPPING` and the event-keyed ledgers from "
+                "`journey._LEDGERS` minus `_PER_SIGNAL_LEDGERS` — a per-signal refusal cannot name "
+                "an event that never produced a signal. The horizon is four ticks of "
+                "`config.sync_interval_hours`, so an event mid-flight is never counted. Walk one "
+                "with `journey.event_journey(engine, org_id=..., event_id=...)`"),
         Receipt("L1", "every drop we might be wrong about can still be reviewed",
                 # SCOPED TO THE JUDGED DROPS, and that is a correction rather than a narrowing.
                 # Asked of EVERY drop this counted 2,818 deterministic refusals that by documented
@@ -255,7 +1188,29 @@ def receipts(org: str | None) -> list[Receipt]:
                 lambda n: n == 0,
                 "a provider's SPAM label is a fact and needs no second look; a model saying "
                 "\"this looks like junk\" is a JUDGMENT, and judgments improve. Without the body "
-                "\"we improved the filter\" is an assertion about mail that no longer exists"),
+                "\"we improved the filter\" is an assertion about mail that no longer exists. "
+                "⛔ Since STEP-03 the gate no longer drops on judgment — it archives — so this asks "
+                "only about drops written before the deploy, and clears itself as they age out; "
+                "the archive has its own receipt below"),
+        # ⛔⛔ STEP-03 · THE GATE'S PROMISE, HELD. The gate ARCHIVES what a noise rule or the AI
+        # filter calls noise — 258 of the design partner's 395 mails were deleted before it — and
+        # an archive is worth exactly as much as its body: Boardy's introduction to an angel, a
+        # government portal's update, read the day they turn out to matter. An archived row with
+        # no body is a deletion that says it is not one. EVERY archived mail is asked about,
+        # whichever rule or judgment stopped it — unlike the judged-drop receipt above, there is
+        # no class of archive that is designed to keep nothing — inside the archive's own window,
+        # so one past `ARCHIVED_PAYLOAD_TTL_DAYS` is expected to have none.
+        Receipt("L1", "every archived mail can still be read",
+                "select count(*) from source_events se where se.outcome = 'archived' "
+                f"and se.captured_at > now() - interval '{ARCHIVED_PAYLOAD_TTL_DAYS} days' "
+                "and not exists (select 1 from raw_payloads rp where rp.event_id=se.event_id "
+                "                and rp.org_id=se.org_id)"
+                + _org_filter(org, "se"),
+                lambda n: n == 0,
+                "the gate keeps what it used to delete — encrypted, read by no model — so the mail "
+                "can be read when it turns out to matter. A non-zero count is archived mail whose "
+                "body is gone inside its window: a capture door with no payload store, or a purge "
+                "that ignored the archive's clock. Walk one with `journey.event_journey`"),
         Receipt("L1", "the tenant is still being fed",
                 # `captured_at`, not `occurred_at`: this asks whether OUR pipeline is receiving,
                 # and a backfill of last quarter's mail is healthy ingestion of old messages.
@@ -328,6 +1283,17 @@ def receipts(org: str | None) -> list[Receipt]:
                 lambda n: n == 0,
                 "one last-write-wins row per person collapses every conversation into the newest"),
 
+        # ⛔⛔ `context/`'s THIRD receipt, and the first about the operation that rewrites
+        # identity. 50,877 lines and 124 files had two receipts, neither covering entity merge —
+        # the one place where a missed table leaves live rows naming a node that no longer exists.
+        Receipt("L2", "no live row points at a node a merge absorbed",
+                _ABSORBED_NODE_REFERENCE_SQL(org), lambda n: n == 0,
+                "⛔ `context/merge.py` says it itself: *\"Missing one leaves rows pointing at a "
+                "closed node — invisible in the UI, still returned by any query that joins on "
+                "node_id.\"* The table/column pairs are DERIVED from `_NODE_REFERENCES`, "
+                "`_CORRELATION_HANDLED_SEPARATELY` and `_EDGE_NODE_COLUMNS`, so a sixth table "
+                "entering the merge loop enters this check without an edit. Reversed merges are "
+                "excluded — `reverse_merge` legitimately repoints those rows back"),
         Receipt("L2", "the sweep settles instead of chasing itself",
                 # `_record_convergence` re-hashes the graph after a pass and counts how many it
                 # took to stop moving; at `MAX_PASSES` it stamps `exceeded_at` and raises
@@ -344,6 +1310,38 @@ def receipts(org: str | None) -> list[Receipt]:
                 f"a sweep that never settles re-derives the same situations up to {MAX_PASSES} "
                 "times and then gives up mid-pass, so the tenant's picture is whatever the last "
                 "partial pass left — and `detail` names the situations that were still moving"),
+
+        # ⛔ STEP-05 · EVERY KEPT EVENT HAS ENTERED MEMORY. Memory held ~27 of the design partner's
+        # 395 mails and 2 of its 34 meetings, and no reader could see it: an event no drain ever
+        # took leaves no row behind. STEP-05 gives every kept event a road (`context/memory_lanes`);
+        # this counts the ones a day old with no settled run.
+        Receipt("L2", "every kept event has entered memory",
+                _KEPT_OUTSIDE_MEMORY_SQL() + _org_filter(org, "se"),
+                lambda n: n == 0,
+                "a kept mail, archive or calendar event a day old that never entered memory: one no "
+                "drain took (it has no road — waiting for its re-read, or given up by the ladder), "
+                "or one whose run is held, failed or parked. `scripts/pipeline_health` splits them; "
+                "walk one with `journey.event_journey`"),
+
+        # ── STEP-06 · nothing is lost silently ─────────────────────────────────────────
+        Receipt("L4", "every admitted situation has a recorded end",
+                _ADMITTED_WITHOUT_AN_END_SQL() + _org_filter(org, "d"),
+                lambda n: n == 0,
+                "an admitted live situation a day old with no `situation_outcomes` row: the compiled "
+                "pass stopped somewhere it does not note, or its write failed (`outcome_write_failed` "
+                "in the pass's log line). `scripts/situation_ends.py` names every situation's end"),
+        Receipt("L5", "every expired card says why",
+                _EXPIRED_WITHOUT_A_REASON_SQL() + _org_filter(org, "c"),
+                lambda n: n == 0,
+                "a card created since STEP-06 left the queue `expired` with no event saying why: "
+                "something set the state without `platform/card_lifecycle` "
+                "(`tests/platform/test_one_way_to_expire_a_card.py` should have refused it)"),
+        Receipt("L5", "every verified card names what closed it",
+                _VERIFIED_WITHOUT_WHAT_CLOSED_IT_SQL() + _org_filter(org, "e"),
+                lambda n: n == 0,
+                "STEP-16: a card resolved `verified` says which event closed the ask its move answered "
+                "(`card.resolved`'s `event_id`) — a verified end with nothing named is a claim nobody can check. "
+                "`platform/card_lifecycle.resolve_cards` refuses one; a row here was written past it"),
 
         # ── L3 domain expertise ───────────────────────────────────────────────────────
         Receipt("L3", "compiled expertise packages exist",
@@ -453,12 +1451,86 @@ def receipts(org: str | None) -> list[Receipt]:
         # ⛔ THE CLAIM IS NOT "no bound path is empty", for the reason the sibling receipt states:
         # `ready = not failed`, and 14 of 22 are empty for a reason this layer cannot clear. This one
         # passes today and fails when a FIFTEENTH goes quiet — which produces no error anywhere else.
+        Receipt("L4", "every action that needs sign-off can name who signs",
+                _UNATTRIBUTED_APPROVALS_SQL(org),
+                lambda n: n == 0,
+                "an action carrying requires_approval in an org that holds no in-force authority "
+                "rule announces a requirement it can never attribute \u2014 the card says \"this needs "
+                "sign-off\" and cannot say whose, and nothing counts how often. Measured "
+                "2026-10-01: 410 of 794 actions, against zero authority rules"),
+        Receipt("L2", "the current reasoning era selects, not only defers",
+                _ERA_SELECTS_NOTHING_SQL(org),
+                lambda n: n == 0,
+                "a selection rate of exactly zero over runs that had candidates means no signal "
+                "is emitted, so no commitment is planned and no card is built \u2014 while the pass "
+                "itself keeps running and every other receipt stays green. -1 means the era "
+                "produced no runs at all, which is a different sentence and also a failure"),
         Receipt("L2", "every fact path a reasoning unit binds is written or declared unwritten",
                 _UNDECLARED_UNWRITTEN_FACTS_SQL(org),
                 lambda n: n == 0,
                 "a bound fact path with no writer means a unit role that can never bind -- declare "
                 "it in reason/unit_health with a reason and a mover, or find out what stopped "
                 "writing it"),
+
+        # ⛔⛔ L2 · TWO AUTHORITY SCALES SHARE ONE COLUMN, AND THE COLUMN DECIDES WHO WINS.
+        #
+        # Atlas L2-01, located. The ladder is 0..6 and `context/analytic/publish` stamps 100 into
+        # the same `graph_facts.authority_rank`. `fact_write_action` compares the raw integers, so
+        # a row at 100 is unsupersedable and a signed document arriving against one is returned a
+        # `discrepancy` and dropped. ⛔ Measured as NOT firing today — the two writers share no
+        # literal field name and the derived writer is prefix-scoped — so this receipt is the
+        # thing that notices the first time they meet.
+        Receipt("L2", "no fact holds two authority scales at once",
+                _MIXED_AUTHORITY_SCALE_SQL(org),
+                lambda n: n == 0,
+                "a (node, field) carrying both an on-ladder rank and the off-ladder derived rank "
+                "is one where fact_write_action compares incomparable numbers -- fold the derived "
+                "scale into the ladder, or prefix-scope write_fact's lookup the way "
+                "publish_derived_fact's already is"),
+
+        # ⛔ L1 · NOBODY IS CONNECTED TO A SOURCE THAT FEEDS NOTHING.
+        #
+        # Atlas L1-01, measured properly. `database` and `mysql` are BUILDABLE with no coverage
+        # capability and no object mappings, so a tenant can connect one, see a success, and
+        # contribute to no pack's readiness. The set is derived from the registry.
+        Receipt("L1", "no live connection feeds a source that satisfies no capability",
+                _CONNECTED_TO_NOTHING_SQL(org),
+                lambda n: n == 0,
+                "a connected source with no coverage capability and no object mappings reports "
+                "success on the connect screen and feeds nothing -- give it a capability, or stop "
+                "offering it as buildable"),
+
+        # ⛔ L1 · A FRESHLY QUALIFIED SIGNAL SAYS WHETHER ITS DOMAINS WERE COVERED.
+        #
+        # Atlas L1-09. The contract promises it in writing -- "a freshly gated event always carries
+        # a real bool" -- and nothing checked it. ⛔ The horizon is four sweep ticks because the
+        # same comment says an OLD row is legitimately null, so counting every null would make
+        # this red for ever.
+        Receipt("L1", "every recently qualified signal carries a coverage verdict",
+                _UNSCOPED_COVERAGE_VERDICT_SQL(org),
+                lambda n: n == 0,
+                "a signal with coverage_ready null inside the sweep window means the domain "
+                "tagger did not run for it -- and None reads as 'unknown' exactly where L3 most "
+                "wants a yes, so it compiles full expertise over domains nobody vouched for"),
+
+        # ⛔⛔ L2 · A MULTI-DOMAIN ROUTE PICKS ONE PACK ALPHABETICALLY AND SAYS SO NOWHERE.
+        #
+        # Atlas L2-11, located. `reason/adapters/expertise.py` takes `domain_ids[0]` out of the
+        # package metadata; that becomes `CapabilityManifest.domain`; and `domain_shadow.py` uses
+        # that field to pick which TENANT PACK the reasoning reads. The list arrives
+        # `tuple(sorted(...))` out of a set, so the index selects the alphabetically first domain
+        # and nothing records that several were available.
+        #
+        # ⛔ The receipt is labelled L2 and the table is L3's (`0047_l3_domain_compiler.sql`). The
+        # CLAIM is about the pick, which is Layer 2's; the storage is where the evidence happens to
+        # live. Said out loud because this programme has already paid once for two vocabularies
+        # sharing one field.
+        Receipt("L2", "no published reasoning package was routed by picking one of several domains",
+                _MULTI_DOMAIN_ROUTED_PACKAGE_SQL(org),
+                lambda n: n == 0,
+                "a package whose route selected several domains reasoned against whichever pack "
+                "sorts first alphabetically -- use ExpertisePackage.domain_hints, which returns "
+                "them all, or record the choice where a reader can see it"),
 
         # ⛔ L5 · EVERY DELIVERED CARD SAYS WHICH KIND OF OUTPUT IT IS, OR SAYS IT WAS NEVER ROUTED.
         #
@@ -473,6 +1545,38 @@ def receipts(org: str | None) -> list[Receipt]:
                 lambda n: n == 0,
                 "a card with no lane at all was written by a path that never read the signal's "
                 "routing -- the founder cannot tell a decision from a thing to watch"),
+
+        Receipt("L5", "no open card's subject is one of us",
+                _CARD_ABOUT_US_SQL + _org_filter(org, "c"),
+                lambda n: n == 0,
+                "a card's subject is the counterparty, always — one about the tenant tells the "
+                "founder to act on himself (\"Send Mr Rohit Swerashi your traction metrics\"). A "
+                "non-zero count after STEP-04's repair is a card built by a path that does not ask "
+                "`platform/self_identity`; read its `business_subject` and its signal's subject node"),
+
+        Receipt("L5", "no card outlives its own window in a live state",
+                _CARD_OUTLIVED_ITS_WINDOW_SQL + _org_filter(org),
+                lambda n: n == 0,
+                "a card still queued twelve hours past `expires_at` is one a founder may act on and "
+                "one L6 will never count -- `CardStore.sweep_lifecycle` expires them and logs "
+                "`window.lapsed`, so a non-zero here means that sweep is not reaching this org"),
+
+        Receipt("L5", "a card parked for want of a channel is revived when one appears",
+                _PARKED_WITH_A_CHANNEL_SQL() + _org_filter(org, alias="d"),
+                lambda n: n == 0,
+                "this org has an active, adapter-backed channel AND rows still parked as "
+                "undeliverable on that same channel -- `outbox.revive_undeliverable` exists to "
+                "re-open exactly these, and `api/channel_routes.set_slack` calls it on "
+                "registration, so a non-zero here is a backlog that predates that wiring"),
+
+        Receipt("L5", "no delivery attempt is left unsettled long enough to be ambiguous",
+                _UNSETTLED_ATTEMPT_SQL + _org_filter(org, alias="a"),
+                lambda n: n == 0,
+                "an attempt that said `started` an hour ago and never settled may already have "
+                "reached a provider -- retrying over it sends the same thing twice, and "
+                "`spine.recover_expired_claims` is the function that exists to mark it `unknown` "
+                "first. Nothing calls it, because the v2 control plane is not cut over; this goes "
+                "non-zero the first time it is"),
 
         # ⛔ NO CHANNEL RECEIPT HERE, DELIBERATELY. One already exists further down — *"there is a
         # channel this tenant can be reached on"*, over the same `org_channels` table. Adding a second
@@ -586,6 +1690,125 @@ def receipts(org: str | None) -> list[Receipt]:
         Receipt("L7", "the learning engine has executed",
                 f"select count(*) from learning_runs where 1=1{o}",
                 lambda n: n > 0),
+        # ⛔ `feedback/`'s FIRST CORRECTNESS RECEIPT. Measured 2026-10-02: the layer had four
+        # receipts and all four were PRESENCE checks — "has the learning engine executed", "has
+        # calibration executed" — every one satisfied by a single successful tick. A loop that runs
+        # weekly and writes four append-only ledgers could be entirely wrong and pass all four.
+        #
+        # ⛔ WHY THIS CLAIM AND NOT "THE LOOP DROPPED NOTHING". `learning_event_inbox` (0046) is
+        # written in production by `reason/moments/store.record_feedback` (reached from
+        # `api/moment_routes.py:746`), loaded into every weekly batch by `feedback/store`, and
+        # **no unit consumes it** — `orchestrator.run_learning` counts the rows it is about to drop
+        # as `inbox_unconsumed`. So `inbox_unconsumed > 0` is the KNOWN state of a declared gap,
+        # and this file's own rule applies: *a gate that is always red is a gate nobody reads; the
+        # claim is the one that is true today and false when it gets worse.*
+        #
+        # ⛔ SO THE CLAIM GUARDS THE VISIBILITY. The counter is the only thing that will make the
+        # arrival of a consumer — or the arrival of a second writer — discoverable, and until now
+        # it was written into `learning_runs.counts` and read by nothing. Delete the counter, or
+        # complete a run without it, and this goes red. **The reader is half the unit.**
+        Receipt("L7", "no completed learning run hides whether it dropped inbox rows",
+                "select count(*) from learning_runs where status = 'completed' "
+                f"and counts->>'inbox_unconsumed' is null{o}",
+                lambda n: n == 0,
+                "⛔ `learning_event_inbox` rows are written, loaded into every batch and consumed "
+                "by nothing: `unit_preference_learning` and `unit_temporary_memory` both return "
+                "`[]`. `inbox_unconsumed` in `learning_runs.counts` is how many were dropped, and "
+                "this receipt is its first reader. A non-zero count is the DECLARED gap (Atlas "
+                "Layer 7 #1); a MISSING count is a regression in the only thing that makes the gap "
+                "visible"),
+        # ⛔⛔ THE NO-SILENT-DROP CONTRACT, which the Atlas states in full: *"Every rejected or
+        # deferred candidate must retain run_id, tenant, unit, evidence IDs, REASON CODE, failed
+        # gate, policy version, timestamp, and recovery status … A weekly sweep that returns zero
+        # objects without this accounting is operationally indistinguishable from broken wiring."*
+        #
+        # ⛔ Until 2026-10-02 `run_learning` discarded all three refusal reasons — `ok, _ =
+        # validate_learning(...)`, and only `.ok` / `.rejected` read off the gate and the decision
+        # — so a refused proposal was COUNTED and never NAMED, and
+        # `learning_object_evaluations` recorded only the successes. `migrations/0046` describes
+        # that ledger as *"every actual per-run decision (new or HELD object)"*: the held case is
+        # named in the schema's own comment and was never written.
+        #
+        # ⛔ WHY IT IS GATED ON `counts->>'evaluations'`. A run completed before that change has
+        # `held`/`refused` above zero and no evaluation rows, so an ungated claim would be red for
+        # history it could not have recorded — *a gate that is always red is a gate nobody reads.*
+        # The key's PRESENCE is the marker that the run executed under the contract.
+        #
+        # ⛔ AND THE PRECEDENT IS IN `run_learning` ITSELF: its `published` counter once disagreed
+        # with this ledger inside one transaction, and the comment there records why that mattered
+        # — *"the one number that says 'learning is working' has never been true."* This receipt is
+        # the same reconciliation, for the refusals.
+        Receipt("L7", "every proposal a completed learning run made is recorded as a decision",
+                "select count(*) from learning_runs r where r.status = 'completed' "
+                "and r.counts->>'evaluations' is not null "
+                "and (r.counts->>'proposals')::int <> "
+                "(select count(*) from learning_object_evaluations e "
+                f"where e.org_id = r.org_id and e.run_id = r.run_id){_org_filter(org, 'r')}",
+                lambda n: n == 0,
+                "⛔ One evaluation row per proposal, held and refused included. A non-zero count "
+                "means a decision path returned without recording its reason — the Atlas's "
+                "no-silent-drop contract — and it also gives `learning_object_evaluations` its "
+                "first reader and its `_by_run` index its first query"),
+        # ⛔⛔ `learning_transitions` IS THE LEDGER THAT WOULD HAVE SHOWN ITS OWN DEFECT. It is
+        # append-only, written by five call sites, and read by NOTHING — and
+        # `publisher.publish` wrote `governed → published` on every brain publish while
+        # `ALLOWED_LEARNING_TRANSITIONS[GOVERNED]` is `(temporary, human_review, promoted,
+        # rejected)`. The map's own docstring states the intended two hops, *"| Promoted→Published
+        # | Rejected}"*, and the publisher collapsed them, skipping PROMOTED — which is the state
+        # that distinguishes *"promoted, publisher not yet done"* from *"published"*, exactly the
+        # ambiguity the Atlas's `L7-30` is about.
+        #
+        # ⛔ Fixed at the source in the same step — the hop is logged and `log_transition` now
+        # REFUSES an illegal edge — so this receipt cannot go red on new rows. It is here because
+        # a guard at the writer protects the future and says nothing about the past.
+        Receipt("L7", "no learning transition takes an edge the contract forbids",
+                _ILLEGAL_TRANSITION_SQL(org), lambda n: n == 0,
+                "⛔ The legal pairs are derived from `contracts.learning"
+                ".ALLOWED_LEARNING_TRANSITIONS`, never copied. A non-zero count is a row written "
+                "before 2026-10-02, when `publisher.publish` logged `governed → published` and "
+                "nothing validated it. Settle it with `select from_state, to_state, count(*) from "
+                "learning_transitions group by 1, 2` — which also answers whether any brain value "
+                "has ever been published at all (`L7-27`)"),
+        # ⛔⛔ THE ISOLATION LEDGER, FINALLY READ. `learning_input_rejections` had its WRITE built
+        # with a comment naming the contract it was upholding — and no reader, so a quarantined
+        # input stayed indistinguishable from one that never arrived. `L7-29` requires the **empty
+        # reason** to be exposed, and the no-silent-drop contract requires a quarantine to be an
+        # observable state.
+        Receipt("L7", "no learning input has been quarantined",
+                _QUARANTINED_SEAM_SQL(org), lambda n: n == 0,
+                "⛔ A read of `card_feedback_verdicts` or `learning_event_inbox` that RAISED and "
+                "was isolated — not a seam that returned nothing. Routine discovery refusals "
+                "(`seam = brains.org_discovery`) are excluded: those are counted per run in "
+                "`org_rule_discovery_runs.counters` and are healthy. A non-zero count means the "
+                "verdict or inbox seam is failing to read, which `L7-29` calls a breach of the "
+                "declared health SLO"),
+        # ⛔⛔ THE HALF THE CODE CANNOT GUARD. `target_policy` proves no producer makes a
+        # constrained durable proposal; the approval path rehydrates visibility from the DATABASE,
+        # so only this query can close the loop. *A guard that stops at the source boundary
+        # catches nothing past it.*
+        Receipt("L7", "no active brain value is narrower than the surface that renders it",
+                _CONSTRAINED_BRAIN_VALUE_SQL(org), lambda n: n == 0,
+                "⛔ `api/brain_routes` renders the VALUE from `learned_brain_entries` and "
+                "`temporary_memories` with no principal check, behind an org-only dependency that "
+                "admits a `member` seat. A non-zero count is a learned value shown to people its "
+                "own visibility excludes. ⛔ The open set is derived from "
+                "`contracts.learning.VisibilityScope` via `target_policy.OPEN_SCOPES`, and a NULL "
+                "scope counts — an unrecorded scope is not an open one. Settle it with `select "
+                "brain, visibility_scope, count(*) from learned_brain_entries where active group "
+                "by 1, 2`"),
+        # ⛔ And the run must SAY which seam it lost. Gated on `evaluations` — `S6`'s marker — so a
+        # run that completed before either field existed is not judged against a contract it
+        # predates. *A gate that is always red is a gate nobody reads.*
+        Receipt("L7", "a completed learning run says which seams it lost, not only which were empty",
+                "select count(*) from learning_runs where status = 'completed' "
+                "and counts->>'evaluations' is not null "
+                f"and counts->>'quarantined_seams' is null{o}",
+                lambda n: n == 0,
+                "⛔ `degraded_seams` says WHICH seams were empty; `quarantined_seams` says which "
+                "were LOST. Until 2026-10-02 an isolated read arrived at the run identical to an "
+                "empty one — and the same block reported the delivery seam degraded on every run "
+                "forever, because it read `getattr(batch, \"deliveries\", ())` and the field is "
+                "`delivery`"),
         Receipt("L7", "calibration has executed",
                 f"select count(*) from calibration_runs where 1=1{o}",
                 lambda n: n > 0,
@@ -599,7 +1822,9 @@ def receipts(org: str | None) -> list[Receipt]:
         Receipt("L7", "a human verdict has reached the loop",
                 f"select count(*) from card_feedback_verdicts where 1=1{o}",
                 lambda n: n > 0,
-                "no verdicts ⇒ nothing to learn from, whatever the engine is capable of"),
+                "no verdicts ⇒ nothing to learn from, whatever the engine is capable of. ⛔ STEP-16: the ONE "
+                "ledger both doors write — the dashboard's (`deliver/actions` → `deliver/verdicts.record`) and "
+                "the extension's (`api/intelligence_routes`) — so a verdict pressed on either is counted here"),
     ]
 
 
@@ -607,6 +1832,17 @@ def receipts(org: str | None) -> list[Receipt]:
 
 def evaluate(engine, org: str | None) -> list[dict]:
     """Run every receipt; an unrunnable one is a finding (ERROR), never a skip.
+
+    ⛔⛔ FOUR STATUSES, AND THE FOURTH IS `3.2`'s WHOLE POINT. `PASS` · `FAIL` · `ERROR` ·
+    **`NOT_EXERCISED`** — a correctness receipt whose claim held while **nothing exercised it**,
+    because the table it reads has no rows in scope. Its 0 means *"nothing happened"*, not
+    *"nothing went wrong"*.
+
+    ⛔ A WITNESS THAT RAISES MAKES THE RECEIPT AN `ERROR`, NOT A PASS. An unverifiable pass is not
+    a pass, and the detail says which half broke — the same reasoning as the sentence above it: a
+    receipt that cannot be run is a finding, never a skip. ⛔ The instrument failing is a finding
+    about the instrument, and hiding it behind the receipt's own green is how a measurement stops
+    being one.
 
     ⛔ AND ONE UNRUNNABLE RECEIPT MUST NOT TAKE EVERY RECEIPT AFTER IT. Measured against production
     2026-10-01: migration `0190` is unapplied, so the L5 lane receipt raised `UndefinedColumn` —
@@ -635,8 +1871,25 @@ def evaluate(engine, org: str | None) -> list[dict]:
             try:
                 value = c.execute(text(r.sql), params).scalar()
                 ok = bool(r.expect(value))
+                status, detail = ("PASS" if ok else "FAIL"), r.detail
+                # ⛔⛔ A PASS OVER AN EMPTY TABLE IS NOT A PASS. The witness is asked only on a
+                # PASS: a FAIL already found a bad row, so the table demonstrably has rows and
+                # asking would be noise.
+                #
+                # ⛔ This is condition `P2` — *the receipt can fail* — and before this it was unmet
+                # AND INVISIBLE: `/readiness` reported a pass. The endpoint's own docstring says
+                # what it exists to prevent — *"an empty sweep looked healthy, A SKIP READ AS A
+                # PASS"* — and an unexercised correctness receipt is that skip.
+                if ok:
+                    probe = witness_sql(r, org)
+                    if probe is not None:
+                        if not c.execute(text(probe), params).scalar():
+                            status = "NOT_EXERCISED"
+                            detail = ("⛔ the claim held and nothing exercised it: the table this "
+                                      "receipt reads has no rows in scope, so 0 means 'nothing "
+                                      "happened', not 'nothing went wrong'. " + r.detail)
                 rows.append({"layer": r.layer, "claim": r.claim, "value": value,
-                             "status": "PASS" if ok else "FAIL", "detail": r.detail})
+                             "status": status, "detail": detail})
             except Exception as exc:                       # noqa: BLE001 — evidence, not control flow
                 rows.append({"layer": r.layer, "claim": r.claim, "value": None,
                              "status": "ERROR", "detail": f"{type(exc).__name__}: {exc}"[:160]})

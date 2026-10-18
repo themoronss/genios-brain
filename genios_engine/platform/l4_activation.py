@@ -89,15 +89,37 @@ FEATURE_SITUATION_REASONER = "situation_reasoner"
 #: until L2-7's criterion 5 comparison has been run. What was unreachable was the SWITCH, which the
 #: routing step would have discovered under deadline rather than now.
 FEATURE_CARDS_FROM_SITUATIONS = "cards_from_situations"
+#: ⛔ STEP-18 B1 · the weekly calibration may APPLY what it measured. Off — the default, and the
+#: only default — it runs in SHADOW: it scores every rule and records what it would mute, recover
+#: or nudge, and changes nothing. It lives here because what it changes is Layer 4's: the rules
+#: `reason/runner` skips and the gate thresholds `legacy_pack` reads. Arming it is decision D13
+#: (speedrun008/YC-II W27/06-DECISIONS.md), and not before STEP-18 B22-B24 are fixed: once
+#: armed, any applied mute or nudge bumps the pack's authority revision and hides every open
+#: card of that pack.
+FEATURE_CALIBRATION_APPLY = "calibration_apply"
+#: ⛔ STEP-12 · the expert reviews this tenant's files (R-7, `reason/bundle/sites.SITE_EXPERT`). The
+#: feature lands WITH the site, the R-6 lesson above: a site no tenant can switch on is built and
+#: never on. Off — the default, and armed per tenant only after the live golden pass on the D7
+#: model (`06` D50) — no file is reviewed and nothing is spent.
+FEATURE_EXPERT_REVIEW = "expert_review"
+#: ⛔ STEP-15 · the morning brief's WRITER (R-8, Haiku-class; R-8E, Sonnet-class — never Opus, s15-D1)
+#: writes the brief from the day's checked material, line by line checked against it. Off — the
+#: default, and armed per tenant only after the live look on the golden set's briefs (58, under $1
+#: `[MODELLED]`) — the brief is `executive/morning_template`'s own words and nothing is spent. The
+#: site lands separately (`reason/bundle/sites.py`, M45.C1.L-contract.V0.U01, waiting on the Claude 5
+#: thinking fix's merge, which gives every R-site its own thinking mode); this is the switch alone,
+#: and `require_feature` refuses the name until the site registers it too — the R-6 lesson again.
+FEATURE_MORNING_BRIEF = "morning_brief"
 
-#: The five features doc 07 names, in WAVE order rather than alphabetical order — the order is the
-#: only safe order to switch them on in, and a list that read `bundle, brief, critique, ranking_v2,
-#: roster_v2` would put the narrative first. A caller naming anything else is REFUSED by
+#: The features doc 07 and later steps name, in WAVE order rather than alphabetical order — the
+#: order is the only safe order to switch them on in, and a list that read `bundle, brief, critique,
+#: ranking_v2, roster_v2` would put the narrative first. A caller naming anything else is REFUSED by
 #: `require_feature` rather than silently writing a row nothing will ever read, which is the failure
 #: mode a free-text column invites and which looks exactly like an activated tenant right up until
 #: nothing happens.
 L4_FEATURES = (FEATURE_ROSTER_V2, FEATURE_RANKING_V2, FEATURE_BUNDLE, FEATURE_CRITIQUE,
-               FEATURE_BRIEF, FEATURE_SITUATION_REASONER, FEATURE_CARDS_FROM_SITUATIONS)
+               FEATURE_BRIEF, FEATURE_SITUATION_REASONER, FEATURE_CARDS_FROM_SITUATIONS,
+               FEATURE_CALIBRATION_APPLY, FEATURE_EXPERT_REVIEW, FEATURE_MORNING_BRIEF)
 
 #: Which wave builds each feature. Carried in code rather than in a doc because it is what makes
 #: `PRECONDITIONS` checkable by eye: a feature is safe to switch on when the features its wave
@@ -110,6 +132,20 @@ FEATURE_WAVES = {
     FEATURE_CRITIQUE: "Z6",
     FEATURE_BRIEF: "Z6",
     FEATURE_CARDS_FROM_SITUATIONS: "L2-7",
+    FEATURE_CALIBRATION_APPLY: "B1",
+    FEATURE_EXPERT_REVIEW: "STEP-12",
+    FEATURE_MORNING_BRIEF: "STEP-15",
+}
+
+#: ⛔ FEATURES THAT ARE RETIRED — named, kept in `L4_FEATURES` so a row written before reads as what
+#: it was, and NEVER live: `activate` refuses them and the reads leave them out. `situation_reasoner`
+#: (R-6) retired 2026-10-11 by `06` D51 (STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02): it ran ahead of
+#: the change gate writing a row per situation per pass (`03` F141), it never ran in production, and
+#: the expert pass reviews the file instead. Switching it on would be a switch with no meaning.
+RETIRED_FEATURES: dict[str, str] = {
+    FEATURE_SITUATION_REASONER:
+        "retired by 06 D51 (STEP-12): the sweep no longer consults R-6 — the expert pass reviews the "
+        "file instead — so switching it on would turn nothing on",
 }
 
 #: The features that should already be live on a tenant before this one is switched on. NOT
@@ -135,6 +171,16 @@ PRECONDITIONS = {
     # Its real precondition is cross-layer and is declared below: something has to be writing
     # `signals.situation_id`, and only the compiled lane does.
     FEATURE_CARDS_FROM_SITUATIONS: (),
+    # ⛔ NONE AT THE SWITCH. Its real preconditions are not features: STEP-18 B22-B24 fixed, and
+    # Rohit's answer to D13. Neither is a row an operator can flip, so neither is listed here.
+    FEATURE_CALIBRATION_APPLY: (),
+    # ⛔ NONE. The expert reads a FILE (STEP-09) and its dossier; it consults no Layer 4 formula,
+    # and in shadow (M32) nothing reads its review for a decision. A file whose playbook is not live
+    # is reviewed with the playbook labelled, which is the dossier's business, not the switch's.
+    FEATURE_EXPERT_REVIEW: (),
+    # ⛔ NONE. The writer reads the day `executive/morning_day.read_day` already assembled — code's
+    # own selection, order and numbers — and consults no Layer 4 formula; it only chooses the WORDS.
+    FEATURE_MORNING_BRIEF: (),
 }
 
 #: THE PRECONDITIONS THAT ARE NOT LAYER 4's. `PRECONDITIONS` above orders the five switches against
@@ -191,14 +237,10 @@ CROSS_LAYER_EFFECTS = {
 #: will assume it turned on everything.
 EFFECTS = {
     FEATURE_SITUATION_REASONER: (
-        "Layer 2 asks a model to INTERPRET each admitted situation — one call per situation, "
-        "never per event — and the reading is validated by `context/proposal_gate` before it is "
-        "recorded. It can propose only the fourteen fields `claim_state.model_writable_fields()` "
-        "names, it may LOWER a confidence and never raise one, and a situation whose own numbers "
-        "are low on both confidence and importance is answered `unknown` WITHOUT a call. "
-        "Nothing it proposes is committed to the graph: the reading lands in "
-        "`situation_interpretations` with the slice it was made from, so it can be replayed. "
-        "Off, the sweep runs exactly as it does today"),
+        "RETIRED (06 D51, STEP-12): it would have asked a model to interpret each admitted "
+        "situation, writing a `situation_interpretations` row per situation per pass ahead of the "
+        "change gate (03 F141). The sweep no longer consults it, the switch is refused, and a row "
+        "written before reads as off: the expert pass reviews each changed FILE instead"),
     FEATURE_ROSTER_V2: (
         "the reasoning orchestrator plans the STAGED UNIT ROSTER through the Unit Selector for this "
         "tenant instead of the six units the compiled lane hardcodes; it changes which units run "
@@ -229,6 +271,28 @@ EFFECTS = {
         "it and both are counted on the same sweep (COMPARISON_KEYS) before either is retired. "
         "\u26d4 On a tenant with no L3 domain live, nothing writes signals.situation_id and EVERY "
         "card lands in the uninterpreted bucket — see CROSS_LAYER_PRECONDITIONS"),
+    FEATURE_CALIBRATION_APPLY: (
+        "the weekly calibration APPLIES what it measured for this tenant — it mutes a rule whose "
+        "precision fell below the floor and moves gate thresholds by up to 5 points a week — "
+        "instead of only recording what it would do. \u26d4 Arm it only after STEP-18 B22-B24: "
+        "an applied mute or nudge bumps the pack's authority revision, which hides every open "
+        "card of that pack, and a mute has no way to lift"),
+    FEATURE_EXPERT_REVIEW: (
+        "a strong model (Sonnet-class, `06` D7) REVIEWS each of this tenant's files whose "
+        "fingerprint moved — once per fingerprint, nearest deadline or meeting first, capped per "
+        "pass and per day — and each review is validated against the dossier it was shown and kept "
+        "in `expert_reviews`, a refusal with its reason. A VALID review DECIDES its file (STEP-12 "
+        "M33, `06` D1): the file gets one audited decision from it, and everything the review "
+        "explains stands down — the compiled lane's situations on the file and its people, the "
+        "packs' rules on them — no decider, no R-1. The file keeps ONE decision, and its card speaks "
+        "the review's own words. Off, no file is reviewed, nothing is spent, and every situation "
+        "and rule is decided as before"),
+    FEATURE_MORNING_BRIEF: (
+        "a model writes this tenant's morning brief from the day's CHECKED material instead of "
+        "`executive/morning_template`'s words: Haiku-class (R-8) first, checked line by line "
+        "against what its item holds, and Sonnet-class (R-8E) once only when the cheap draft fails "
+        "the check — never Opus. A line the check cannot hold is given its template words back, "
+        "said. Off, the brief is the template's own words throughout and nothing is spent"),
 }
 
 #: Every column the record carries, in one place, so the reads below cannot select different shapes
@@ -303,7 +367,7 @@ def is_l4_activated(engine, org_id: str, feature: str) -> bool:
     watched.
     """
     require_feature(feature)
-    if engine is None:
+    if engine is None or feature in RETIRED_FEATURES:       # a retired feature is never live
         return False
     from sqlalchemy import text
     try:
@@ -356,8 +420,10 @@ def activated_features(engine, org_id: str) -> frozenset[str]:
                 {"o": org_id})
             # A row whose feature is not in `L4_FEATURES` is filtered rather than returned: the
             # column is free text by design (see the migration), and an engine handed a feature it
-            # has no code for would fail at the call site instead of here.
-            return frozenset(row[0] for row in rows if row[0] in L4_FEATURES)
+            # has no code for would fail at the call site instead of here. A RETIRED feature's row
+            # is filtered too: it is never live (`RETIRED_FEATURES`).
+            return frozenset(row[0] for row in rows
+                             if row[0] in L4_FEATURES and row[0] not in RETIRED_FEATURES)
     except Exception as exc:      # noqa: BLE001
         _log.warning("could not read %s for org=%s, treating every feature as not activated: %s",
                      L4_ACTIVATION_TABLE, org_id, exc)
@@ -466,8 +532,12 @@ def activate(engine, org_id: str, *, feature: str, by: str, notes: str | None = 
     Writes nothing else, and starts nothing. In particular it triggers no reasoning run and no
     backfill: the next ordinary run reads the switch. An activation that kicked off a sweep would
     make "activate twice" mean "reason over the tenant twice".
+
+    A RETIRED feature (`RETIRED_FEATURES`) is refused: its switch would turn nothing on.
     """
     require_feature(feature)
+    if feature in RETIRED_FEATURES:
+        raise ValueError(f"{feature} is retired — {RETIRED_FEATURES[feature]}")
     from sqlalchemy import text
     at = at or datetime.now(timezone.utc)
     table = L4_ACTIVATION_TABLE
@@ -520,6 +590,7 @@ def deactivate(engine, org_id: str, *, feature: str, by: str = "unrecorded",
 __all__ = ["CROSS_LAYER_EFFECTS", "CROSS_LAYER_PRECONDITIONS", "EFFECTS", "FEATURE_BRIEF",
            "FEATURE_BUNDLE", "FEATURE_CRITIQUE", "FEATURE_RANKING_V2", "FEATURE_ROSTER_V2",
            "FEATURE_WAVES", "L4Activation", "L4_ACTIVATION_TABLE", "L4_FEATURES", "PRECONDITIONS",
+           "RETIRED_FEATURES",
            "activate", "activated_features", "deactivate", "get_l4_activation", "is_l4_activated",
            "l4_activated_orgs", "list_l4_activations", "missing_cross_layer_preconditions",
            "missing_preconditions", "require_feature"]

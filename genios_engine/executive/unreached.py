@@ -53,6 +53,78 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "MOVES WHEN a commitment surface shows next-actionable steps rather than all steps. It is "
         "the natural reader and it does not exist yet."),
 
+    # -----------------------------------------------------------------------------------------
+    # ⛔ FIVE ENTRIES ADDED 2026-10-01, EVERY ONE INVISIBLE UNTIL THE RESOLVER WAS FIXED.
+    #
+    # `called_names` counts by NAME ALONE, so each of these looked reached because some other
+    # object in the engine has a method of the same name — `read` had 11 apparent callers, `is_live`
+    # 3, `supersede` 2, `propose` 1. `qualified_call_counts` keys on `(module, name)` and resolves
+    # aliases, and all five come back ZERO. Engine-wide the same measurement found 28 such
+    # functions, which is `STEP-17` in the YCW27 programme.
+    #
+    # ⛔ The declaration was never WRONG. It was answering a question the tool could not ask.
+    # -----------------------------------------------------------------------------------------
+
+    "readiness.read": (
+        "⛔ THE WHOLE MODULE IS UNREACHED, NOT JUST THIS FUNCTION. `read` -> `assess` -> `_verdict` "
+        "is the entire public chain of `executive/readiness.py`, and `assess`'s single caller is "
+        "`read` itself at `readiness.py:172`. Nothing calls `read`, and **no route exposes it**. "
+        "⛔ Production still answers the question: `platform/receipts.py` reads the same three "
+        "counts through `platform/org_readiness_sql.COUNT_SQL` — the module this file also imports, "
+        "extracted precisely so *'duplicating them would let one drift from'* the other. So the "
+        "extraction worked, the receipt works, and the executive-layer READER of it has no surface. "
+        "What is missing is not logic; it is an API that asks for org readiness.",
+        "MOVES WHEN a surface asks for organisation readiness per tenant. ⛔ Its docstring states "
+        "what that surface would gain over re-reading the SQL: *'Every failed read becomes "
+        "`unknown`, never `missing`. Each count is caught on its own, so one unreadable table does "
+        "not turn the other two into `unknown`'* — a per-row seam a caller doing three reads would "
+        "have to reimplement."),
+
+    "execution_store.supersede": (
+        "⛔ A RACE-FREE REPLACEMENT PATH WITH NO CALLER. *'Close a commitment because a newer plan "
+        "replaces it. A changed plan is a changed commitment, so it gets its own row and its own "
+        "identity rather than mutating the old one in place. Closing the predecessor frees the "
+        "partial unique key, which is how the replacement lands without a race.'* Measured: zero "
+        "qualified callers. So **a revised plan never closes the commitment it replaces** — and the "
+        "partial unique key this function exists to free is the thing a replacement would collide "
+        "with. It has not bitten because no decision has produced a second plan in production "
+        "since the API spend limit began refusing calls on 2026-09-25.",
+        "MOVES WHEN re-planning an open commitment is a path anyone takes. ⛔ Whether a revision "
+        "should supersede or branch is a product question, and the function answers only one of "
+        "the two."),
+
+    "delegation.propose": (
+        "⛔ SUPERSEDED IN PLACE BY TWO BETTER-NAMED SIBLINGS. *'The engine proposes handing one "
+        "action to one agent. Nothing is sent.'* Measured against the live call sites: "
+        "`propose_action` has 2 qualified callers and `create_proposal` 1, both reached through "
+        "`from genios_engine.executive import delegation as DLG`; `DLG.propose` appears nowhere. "
+        "Three entry points to one idea and the plainest name is the unused one, which is exactly "
+        "the shape that makes a reader wire the wrong one.",
+        "MOVES WHEN it is deleted, or when the three entry points are collapsed into one. ⛔ Listed "
+        "rather than deleted here because deleting a public function is a boundary change nobody "
+        "asked for -- see UNIT_NUMBERING_UNRESOLVED for the same restraint."),
+
+    "execution_guard.is_live": (
+        "⛔ NO DOCSTRING, AND THE THIRD SPELLING OF A SET THIS LAYER ALREADY FOUND. A bare state "
+        "predicate over `ExecutionState`, sitting beside `lifecycle.is_terminal` — which this "
+        "programme found untested in L4-STEP-10 and guarded in "
+        "`tests/executive/test_a_closed_set_with_two_spellings.py`. `is_live`, `is_open` and "
+        "`is_terminal` are three partitions of one closed table, written in three files, and **not "
+        "one of them has a production caller.** ⛔ A guard written for one member of a closed table "
+        "is half of that -- and this is the half that was invisible, because `is_live` is a name "
+        "three other objects in the engine also use.",
+        "MOVES WHEN all three spellings move together -- `lifecycle.is_open` and "
+        "`lifecycle.is_terminal` with it, or none of them. ⛔ The open product question is L4's U6c, "
+        "whether `CREATED` belongs in a state set, and answering it for one spelling while two "
+        "others disagree is how the set drifts."),
+
+    "lifecycle.is_open": (
+        "⛔ NO DOCSTRING. The second of the three spellings above, in the module that also holds "
+        "`is_terminal`. Two predicates over one closed table, in one file, neither called by "
+        "production, and `is_terminal` got its first tests only on 2026-10-01.",
+        "MOVES WHEN the three spellings move together -- see `execution_guard.is_live`. ⛔ Moving one "
+        "alone is what produced three spellings in the first place."),
+
     "assignment.resolve_approver_seat": (
         "⛔ THE SECOND REAL PRODUCT GAP, AND ITS OWN DOCSTRING PREDICTS THE SYMPTOM: *'a card that "
         "says \"this needs sign-off\" and cannot say whose is less useful than one that can'*. "
@@ -65,7 +137,17 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "'anyone may approve'. Eight tests cover that distinction and no live path uses it.",
         "MOVES WHEN a commitment carrying `requires_approval` routes to an approver. That needs "
         "the org to have published authority rules at all — until it has, the honest answer is "
-        "None and the card is right to say only that sign-off is needed."),
+        "None and the card is right to say only that sign-off is needed. "
+        "⛔ NOW COUNTED, 2026-10-01: `execution_actions` holds 794 rows and **410 carry "
+        "`requires_approval`** — 52% of every action this layer has planned (182, 121, 107 across "
+        "the three orgs) — against **zero** rows in `authority_rules`. A mover without a number "
+        "is a wish, so receipt #32 `every action that needs sign-off can name who signs` now "
+        "counts it and is RED at 410. "
+        "⛔ AND THE WIRING IS BLOCKED TWICE, which is why this entry is not being deleted: "
+        "neither `execution_actions` nor `executions` has an approver column, so consuming an "
+        "answer needs a contract field and a migration — and `0186`-`0190` have never run. "
+        "Wiring it today would add a column that `None` fills on every row while deleting the "
+        "only place this reason is written down."),
 
     "execution.build_from_decision": (
         "AN ALTERNATIVE ENTRY SHAPE, NOT A BYPASSED GATE — and the distinction took a measurement. "
@@ -88,24 +170,49 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "predicate over it is where a future reader will look. Deleting it would push the next "
         "caller to re-inline the membership test, which is how a closed set acquires a second "
         "spelling. ⛔ It carries NO tests, which is the weaker state — same as `blocking_action`.",
-        "MOVES WHEN a caller wants the predicate rather than the set — or it is deleted, which is "
-        "an equally acceptable resolution and would simply remove this entry."),
+        "⛔ MEASURED 2026-10-01, AND THE ANSWER IS THAT IT CANNOT MOVE WHERE IT WOULD BE WANTED. "
+        "The prediction above came true: `execution_guard.py:126` re-inlines "
+        "`state.state in TERMINAL_STATES` as its very first branch — a second spelling of the "
+        "closed set already exists, in the one place that most wants the predicate. "
+        "⛔ AND IT CANNOT HAVE IT: `lifecycle.py:39` imports `GuardAction` and `GuardVerdict` "
+        "FROM `execution_guard`, so the dependency runs lifecycle -> guard and importing "
+        "`is_terminal` back would be a circular import. The caller that wants it is the one "
+        "caller that may not have it. "
+        "MOVES WHEN either the predicate moves to `contracts/execution`, beside the "
+        "`TERMINAL_STATES` it reads — which adds no dependency, since the set is already there — "
+        "or a caller outside that cycle wants it. ⛔ IT NOW CARRIES TESTS "
+        "(`tests/executive/test_a_closed_set_with_two_spellings.py`), so it is no longer in the "
+        "weaker of the two states; `blocking_action` was the other and is now wired."),
 
-    "monitor.blocking_action": (
-        "⛔ THE ONE WORTH READING TWICE, AND THE ONLY ONE HERE THAT IS A REAL PRODUCT GAP. Its own "
-        "docstring states the case: *'What a stalled-commitment escalation should actually name. "
-        "\"Your Acme follow-up is stuck on getting it approved\" is a message somebody can act on; "
-        "\"your Acme follow-up is stalled\" is a message somebody can only feel bad about.'* "
-        "Measured: `executive/escalation.py` and `deliver/` contain no reference to a blocking "
-        "step, so every stalled-commitment escalation today is the second sentence. ⛔ AND IT IS "
-        "THE ONLY ENTRY IN THIS TABLE WITH NO TESTS EITHER — unreached and unexercised, which is "
-        "the weaker of the two states.",
-        "MOVES WHEN the escalation ladder's `remind` and `escalate` rungs name the step they are "
-        "waiting on. That is a change to escalation copy, not to the ladder's timing, so it does "
-        "not touch policy — but it needs the rung to carry a field it does not carry today."),
+    # STEP-15 built the morning brief bottom-up (tree `yc2_w27_s15`): `morning_prompt.build_prompt`,
+    # `morning_check.check_answer` and `morning_writer.write_brief` each sat here in turn, waiting on
+    # the caller one level up, and each left when that caller landed — `morning.compose` now calls
+    # `write_brief` (M45.C3.L-integration.V0.U01), so the chain is fully wired and nothing of STEP-15's
+    # own build order remains declared here. `STEP_15_BUILDING` in
+    # `tests/test_the_executive_says_what_it_does_not_call.py` is empty for the same reason, said there.
+
 }
 
 #: ⛔ Built, reachable, and only ever PULLED — `{surface: (route, why it is not pushed)}`.
+#:
+#: ⛔ `summary.build_summary` WAS HERE AND IS NOT ANY MORE, 2026-10-01. Its entry said the ladder
+#: *"is still only composed where a caller asks for a summary, never as a scheduled digest"*, and
+#: that had stopped being true: `deliver/outbox._current_digest_payload` composes a `one_minute`
+#: summary and `_drain_claimed` sends it on the very next line (`outbox.py:1073`, inside `drain`).
+#: It has a route AND a producer, so it is not pull-only — it is simply shipped.
+#:
+#: ⛔ AND IT IS BACK, 16 Oct (STEP-15 `yc2_w27_s15` M45.C3.L-integration.V0.U03; `03` s15-F4): the digest is no longer
+#: that summary. `_current_digest_payload` reads the morning brief the account owner's seat KEPT
+#: (`executive/morning.kept_brief`) — one line and today's five — so the ladder has a route and, once more, no producer:
+#: the entry below. It left on 1 Oct because outbox sent it; it returns because outbox does not.
+#:
+#: ⛔ AND THE ONLY REASON THAT SURVIVED is that this table had no both-directions guard. `UNREACHED`
+#: has one, and `modes.load_preventive` had a BESPOKE one
+#: (`test_the_preventive_surface_records_that_no_card_is_built`) that was never generalised — so
+#: four of the five surfaces were never asked whether they had acquired a producer.
+#: `test_no_pull_only_surface_has_quietly_acquired_a_producer` is the general form.
+#: **One direction alone is half a guard, and a guard written for one member of a closed table is
+#: half of that.**
 #:
 #: These are not unreached: each has a live HTTP route and a caller. What none of them has is a
 #: producer — nothing in the sweep composes them, so they exist only for a client that asks. That
@@ -129,17 +236,20 @@ PULL_ONLY: dict[str, tuple[str, str]] = {
         "per finding' would spend the daily card budget on warnings. It needs a threshold, and "
         "the threshold is a product decision about how many warnings a founder should see a day."),
 
-    "summary.build_summary": (
-        "GET /summary",
-        "The one_line / one_minute / five_minute ladder. `deliver/outbox.py:315` does import it, "
-        "so this one is closer to pushed than the others — it is listed because the ladder itself "
-        "is still only composed where a caller asks for a summary, never as a scheduled digest."),
-
     "memory": (
         "GET /memory",
         "Executive memory is WORKING CONTEXT — what was recently decided — not storage. Nothing "
         "carries it into a later decision automatically; a client reads it. Making it push would "
         "mean deciding what 'recently' means per tenant, which nobody has."),
+
+    "summary.build_summary": (
+        "GET /summary",
+        "⛔ BACK SINCE 16 Oct (STEP-15, M45.C3.L-integration.V0.U03; see the note above `PULL_ONLY`). The ladder counts "
+        "signals, and the Slack digest used to send it — which is why this entry left on 1 Oct. The digest is now the "
+        "morning brief the seat kept (`morning.kept_brief`): the morning has ONE surface, whose pull side is "
+        "`GET /v1/executive/morning`. The ladder is asked for, never volunteered; whether it should exist beside the brief "
+        "is a product question — it said *'Nothing needs you right now.'* while a wait rule held and a question was open "
+        "(`03` s15-F2)."),
 
     "explain.why_not": (
         "GET /why-not",
@@ -164,84 +274,29 @@ UNIT_NUMBERING_UNRESOLVED: str = (
     "L5 spec. MOVES WHEN somebody supplies it; until then this is an open question, not a gap.")
 
 
-def public_functions(module_path: Path) -> tuple[str, ...]:
-    """Every module-level public function in `module_path`, read from the AST.
-
-    ⛔ THE AST, NOT THE TEXT, and module scope only — so a nested helper, a method, or a name that
-    appears in a docstring cannot enter the inventory. Ten assertions on this branch went green or
-    red on a word that lived only in prose; a structural read cannot.
-    """
-    try:
-        tree = ast.parse(module_path.read_text(encoding="utf-8"))
-    except (OSError, SyntaxError):                            # pragma: no cover - unreadable file
-        return ()
-    return tuple(node.name for node in tree.body
-                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-                 and not node.name.startswith("_"))
-
-
-def call_sites(name: str, sources: dict[str, str]) -> int:
-    """How many times `name` is CALLED across `sources`, ignoring its own definition.
-
-    Counts `ast.Call` nodes whose callee resolves to `name`, whether called bare (`f()`) or
-    through an attribute (`mod.f()`). A definition, an `__all__` entry and a mention in prose are
-    none of them calls — which is the distinction the hand-written grep that preceded this could
-    not make, and it reported two functions as dead that are called on live paths.
-    """
-    total = 0
-    for source in sources.values():
-        try:
-            tree = ast.parse(source)
-        except SyntaxError:                                   # pragma: no cover
-            continue
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Call):
-                continue
-            func = node.func
-            if isinstance(func, ast.Name) and func.id == name:
-                total += 1
-            elif isinstance(func, ast.Attribute) and func.attr == name:
-                total += 1
-    return total
-
-
-def called_names(sources: dict[str, str]) -> dict[str, int]:
-    """Every name CALLED anywhere in `sources`, counted — in ONE pass over each file.
-
-    ⛔ WHY THIS EXISTS BESIDE `call_sites`. The first version of this guard asked `call_sites` once
-    per candidate function, so it re-parsed all ~600 engine modules for each of ~80 public
-    functions — roughly 48,000 AST parses, and the test ran for minutes instead of seconds. A
-    correctness guard that is too slow to run is a guard people start skipping, which is a worse
-    failure than the one it catches. Same answer, one pass.
-    """
-    counts: dict[str, int] = {}
-    for source in sources.values():
-        try:
-            tree = ast.parse(source)
-        except SyntaxError:                                   # pragma: no cover
-            continue
-        # ⛔ ALIASES FIRST, AND THIS IS NOT OPTIONAL. `deliver/actions.py` does
-        # `from genios_engine.executive.execution_store import link_card as _link_execution_card`
-        # and then calls the ALIAS. Counting only the bare name reported `link_card` — a function
-        # on the live card-completion path — as dead, which is precisely the false verdict this
-        # guard exists to prevent. Every renamed import is resolved back to its original name.
-        aliases: dict[str, str] = {}
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                for alias in node.names:
-                    if alias.asname:
-                        aliases[alias.asname] = alias.name.rsplit(".", 1)[-1]
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Call):
-                continue
-            func = node.func
-            name = (func.id if isinstance(func, ast.Name)
-                    else func.attr if isinstance(func, ast.Attribute) else None)
-            if name is None:
-                continue
-            name = aliases.get(name, name)
-            counts[name] = counts.get(name, 0) + 1
-    return counts
+# ---------------------------------------------------------------------------------------------
+# ⛔ THE MACHINERY MOVED TO `platform/reachability.py` — 2026-10-01, STEP-17
+# ---------------------------------------------------------------------------------------------
+#
+# This module wrote the AST walk and the two resolvers, and `deliver/delivery_health.py` imported
+# them from here, which was correct while there were two users: `deliver/` is PRODUCT layer 6 and
+# `executive/` is 5, so that import is DOWNWARD and legal.
+#
+# ⛔ `capture/` IS LAYER 1. `capture/ -> executive/` is an UPWARD import that
+# `tests/test_layer_topology.py` fails the build over, so the eleventh package could not have used
+# this. **Two users is an import; eleven is an extraction**, and the only place every layer may
+# import from is `CROSS_CUTTING`.
+#
+# They are RE-EXPORTED here, not merely moved, because L4's own tests import them from this module
+# and a public surface is not changed as a side effect of an extraction. Every docstring, every
+# recorded mistake and the asymmetry between the two resolvers travelled with them.
+from genios_engine.platform.reachability import (  # noqa: E402  (deliberate: after the tables)
+    call_sites,
+    called_names,
+    public_functions,
+    qualified_call_counts,
+    qualified_call_sites,
+)
 
 
 def undeclared(unreached: frozenset[str]) -> tuple[str, ...]:
@@ -255,5 +310,5 @@ def missing(unreached: frozenset[str]) -> tuple[str, ...]:
 
 
 __all__ = ["PULL_ONLY", "UNIT_NUMBERING_UNRESOLVED", "UNREACHED", "call_sites",
-           "called_names", "missing",
-           "public_functions", "undeclared"]
+           "called_names", "missing", "public_functions", "qualified_call_counts",
+           "qualified_call_sites", "undeclared"]

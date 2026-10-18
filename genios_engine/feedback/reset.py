@@ -10,6 +10,26 @@ Runtime brain — and touches `learned_brain_entries` for no brain at all, Adapt
 re-version yet, and `unit_behavior_evolution` (feedback/units.py) is presently an unwired stub
 that always returns `[]` — there is no live Behavior Brain content to decay. Wiring those in is
 follow-up work, not something to fake here.
+
+⛔ CORRECTED 2026-10-02 — THE BEHAVIOUR HALF OF THAT PARAGRAPH IS NO LONGER TRUE, AND IT WAS THE
+JUSTIFICATION FOR A GAP. `unit_behavior_evolution` does still return `[]`, but **the work it names
+is built and wired one package down**: `packs/brains/behavior_distill.distill` (776 lines) reads
+L2.4's published trend facts, gates them against the tenant's own policy floors and proposes
+`LearningTarget.BEHAVIOR`, and `feedback/brain_pipeline.brain_pipeline_proposals` appends its output
+to the same weekly run. The stub predates that implementation by a month (`365cf7a6` 2026-08-08 vs
+`ed1b10c3` 2026-09-07) and was never removed, which is what made the sentence above look safe.
+
+⛔ SO A PIVOT CAN NOW LEAVE LIVE BEHAVIOUR CONTENT IN PLACE, and this module's stated reason for
+leaving it no longer holds. That is the Atlas's `L7-20` / `L7-40` concern — *"reset expires Runtime
+leases, while Organization, Behavior and durable Adaptive require explicit governed
+supersession/deactivation plus snapshot invalidation"* — and it is **not repaired here**, because
+superseding a durable brain entry is a governed decision, not a narrowing of this function.
+⛔ `tests/feedback/test_a_quarantined_seam_is_not_an_empty_one.py` ties the two packages together so
+this paragraph cannot go stale again in the same direction: the day `behavior_distill` stops being
+wired, the guard fails and this text is re-read deliberately.
+
+⛔ *A stale comment reads as a measurement* — and the most expensive place for one is the sentence
+that explains why something was left undone.
 """
 from __future__ import annotations
 

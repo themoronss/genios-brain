@@ -70,12 +70,20 @@ SWITCHES: dict[str, Switch] = {
     # --- the four L2-0…L2-7 each left, deliberately ----------------------------------------------
     "fundraising_route": Switch(
         owner="L2-4",
-        flips="`_L2_TO_L3_DOMAIN['fundraising'] = 'sales'` — one line, reversible",
+        flips="`_L2_TO_L3_DOMAIN['fundraising'] = 'founder_office'` — one line, reversible "
+              "(L2-4 proposed `'sales'`; investor relations moved to the Founder Office instead)",
         precondition="the pilot's fundraising situation count (Harsh 26). Arming it makes every "
-                     "fundraising situation activatable at once",
-        alone="⛔ **Nothing breaks, and that is why it is easy to forget.** The doctrine exists — "
-              "`sales.sit.live_investor_relationship`, stable and approved — and the pilot's "
-              "dominant domain simply keeps not reaching it"),
+                     "fundraising situation activatable at once. ⛔ ARMED 2026-10-09 by STEP-11 on "
+                     "Rohit's `06` D2 (M30.C1.L-logic.V1.U02): the line makes the founder's work "
+                     "ACTIVATABLE, and nothing live by itself — the Founder Office is `default_on: "
+                     "false`, switched on per tenant (the pilot org alone), and the live compile "
+                     "still admits only what a named reviewer accepted (D45), so until then a pilot "
+                     "fundraising situation is refused as `unreviewed`, counted. The pilot's count "
+                     "(Harsh 26) is still owed — before the activation row, not before this line",
+        alone="Nothing reaches a card: a tenant that has not activated the Founder Office measures "
+              "fundraising against it in shadow, and one that has is refused `unreviewed` until "
+              "the founder's review stamps the capability",
+        armed=True),
     "observing_laws": Switch(
         owner="L2-2",
         flips="`LAW_ACTIONS[L2Law.V9]` and `[V10]` from `OBSERVE` to `REJECT` — one line each",
@@ -90,11 +98,10 @@ SWITCHES: dict[str, Switch] = {
                      "the whole plan, and one nothing has ever printed",
         alone="the founder keeps seeing one card per SIGNAL: three rules on one situation stay "
               "three cards that can never merge"),
-    "situation_reasoner": Switch(
-        owner="L2-5",
-        flips="an `l4_activations` row for `situation_reasoner`, per tenant",
-        precondition="migration 0183. ~$15.64/month at Haiku on the measured shape (Harsh 28)",
-        alone="Layer 2 never interprets anything; the sweep runs exactly as it does today"),
+    # ⛔ `situation_reasoner` (L2-5's R-6) LEFT THIS TABLE ON 2026-10-11: RETIRED, not armed (`06`
+    # D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02). The sweep no longer consults it at all — it
+    # ran ahead of the change gate and wrote a row per situation per pass (`03` F141) — so there is
+    # nothing left to cut over to; the expert pass reviews the file instead.
 }
 
 #: ⛔ ORDER MATTERS, AND ONE ALONE IS THE FAILURE. Admission before publication, publication before
@@ -102,7 +109,7 @@ SWITCHES: dict[str, Switch] = {
 #: in any order after the first three.
 CUTOVER_ORDER: tuple[str, ...] = (
     "require_admission", "publisher", "execution_mode",
-    "fundraising_route", "observing_laws", "cards_from_situations", "situation_reasoner",
+    "fundraising_route", "observing_laws", "cards_from_situations",
 )
 
 
@@ -164,10 +171,10 @@ PARITY_GATE: dict[str, ParityRule] = {
         reading="reasoned", threshold=100, direction="at_least",
         why="compiled-but-not-reasoned is a package nobody read. The two numbers moving together "
             "is what makes 'it works' mean something"),
-    "no_reading_crashed": ParityRule(
-        reading="reasoner_failed", threshold=0, direction="at_most",
-        why="L2-5's consult cannot kill the compile by design, so a non-zero here is silent and "
-            "would stay silent — the exact shape L2-0 spent a step ending"),
+    # ⛔ `no_reading_crashed` (it read `reasoner_failed`) LEFT WITH R-6, 2026-10-11 (`06` D51): the
+    # sweep no longer consults R-6, so nothing writes that tally, and a gate reading a tally nothing
+    # writes passes forever — this table's own rule. Removed before any measurement was taken
+    # (`PARITY_MEASURED_AT` is still None), so no threshold moved to fit a number.
 }
 
 #: ⛔ Stays `None` until somebody reads the shadow tallies. A test asserts it, so the gate above is

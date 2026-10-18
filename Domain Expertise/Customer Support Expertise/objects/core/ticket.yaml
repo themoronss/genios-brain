@@ -1156,7 +1156,7 @@ inference_patterns:
       path: thread.last_inbound
       op: '>='
       value:
-        baseline: reply_cadence
+        baseline: write_interval
         mult: 2
         floor: 1
     yields:
@@ -1806,7 +1806,7 @@ actions:
     path: thread.last_inbound
     op: '>='
     value:
-      baseline: reply_cadence
+      baseline: write_interval
       mult: 3
       floor: 5
   effect: One chase before any close. The step auto-close is designed to skip, and the reason auto-closed

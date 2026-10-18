@@ -31,8 +31,20 @@ URL = os.environ.get("GENIOS_TEST_DATABASE_URL")
 pytestmark = [pytest.mark.pg,
               pytest.mark.skipif(not URL, reason="GENIOS_TEST_DATABASE_URL not set")]
 
-NOW = datetime.now(timezone.utc).replace(microsecond=0)
-T0 = NOW - timedelta(days=3)
+#: ⛔ Read when each test runs, never when this module is imported (`yc2_w27_s17`
+#: M41.C1.L-integration.V1.U02, `YC-II W27/03` F142): an instant taken at import is hours old by the
+#: time a long run — a sleeping laptop, a slow CI runner — reaches the test. Set by `_clock` when
+#: the module's first test starts: its module-scoped fixtures seed rows with these instants.
+NOW = T0 = None  # type: ignore[assignment]
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _clock():
+    global NOW, T0
+    NOW = datetime.now(timezone.utc).replace(microsecond=0)
+    T0 = NOW - timedelta(days=3)
+
+
 QUOTE = "we have decided to go with another vendor for this rollout"
 BODY = (f"Hi Rohit, thank you for the proposal. After discussing internally {QUOTE}, so we won't "
         "be proceeding at this stage.")
@@ -311,6 +323,13 @@ def test_duplicate_outreach_fires_for_org_visible_touches_only(client, store):
     team = _team(client)
     org = team["org"]
     o_mail, m_mail = team["owner"]["email"].lower(), team["member"]["email"].lower()
+    # THE TEAM DECLARED ITS DOMAIN (STEP-04). Our domains are the declared ones only
+    # (`platform/self_identity`); they used to be inferred from the seats' addresses, which made
+    # gmail.com "ours" for a Gmail founder. Undeclared, the team's own company is a counterparty
+    # here and fires a duplicate-outreach moment about itself.
+    with _engine().begin() as c:
+        c.execute(text("insert into org_self_identities (org_id, kind, value, declared_by) "
+                       "values (:o, 'domain', :d, 'test')"), {"o": org, "d": o_mail.split("@", 1)[1]})
     _touch(store, team, f"evt_o_{uuid.uuid4().hex[:8]}", seat_mail=o_mail,
            at=NOW - timedelta(days=2))
     _touch(store, team, f"evt_m_{uuid.uuid4().hex[:8]}", seat_mail=m_mail,

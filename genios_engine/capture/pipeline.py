@@ -8,6 +8,7 @@ from dataclasses import dataclass, field, replace as _dc_replace
 from datetime import datetime, timedelta
 from typing import Any, Mapping, Sequence
 
+from genios_engine.capture.attention import ARCHIVED, attention_for
 from genios_engine.capture.connectors.base import RawObject
 from genios_engine.capture.connectors.thread_position import reference_ids
 from genios_engine.capture.documents.native import extract_native_text
@@ -28,7 +29,7 @@ from genios_engine.capture.esqe.relevance import (MAX_ITEM_CHARS, RelevanceCandi
                                                   refused_without_extraction)
 from genios_engine.capture.esqe.source_analyzer import SourceAttribution, analyze_source
 from genios_engine.capture.gate.context import GateContext, GateResult
-from genios_engine.capture.gate.gate import run_gate
+from genios_engine.capture.gate.gate import ARCHIVE, run_gate
 from genios_engine.capture.gate.rules import availability_marker
 from genios_engine.capture.gate.relevance import RelevanceClassifier
 from genios_engine.capture.documents.store import DocumentJobStore
@@ -116,7 +117,7 @@ def land_raw_object(raw: RawObject, *, org_id: str, connection_id: str,
 class CaptureResult:
     event: SourceEvent
     trace: EventTrace
-    outcome: str                    # emitted | duplicate | dropped | park
+    outcome: str                    # emitted | duplicate | dropped | parked | archived
     gated: GatedEvent | None
     #: S2's answer for this event, when a `SemanticLane` was supplied and the event took the
     #: unstructured route. `None` covers three different states on purpose — no lane wired, the
@@ -173,27 +174,47 @@ class CaptureResult:
 _FREE_MAIL = ("gmail.com", "googlemail.com", "outlook.com", "hotmail.com",
               "yahoo.com", "yahoo.co.in", "icloud.com", "proton.me")
 
-# Raw-payload retention (days). L2 drains EMITTED events quickly; a PARKED event waits in the
-# human-review queue for potentially weeks and must keep its body long enough to be /recover-ed —
-# else recovery after the default 30 days re-emits an EMPTY event (the black hole this guards against).
-_EMITTED_PAYLOAD_TTL_DAYS = 30
+# Raw-payload retention (days). A PARKED event waits in the human-review queue for potentially
+# weeks and must keep its body long enough to be /recover-ed — else recovery after the default 30
+# days re-emits an EMPTY event (the black hole this guards against).
+#
+# EMITTED: 180, was 30 (STEP-03 §3.3). L2 reads an emitted event's body through `_pull`, which
+# INNER-joins `raw_payloads` (`context/runner.py`): once the body was purged the row stayed
+# `emitted`, was never drained, and `_pending_count` counted it forever — so a 30-day body
+# quietly stranded every event not drained within a month. 180 days is the archive's clock (06
+# D4) and the prepared text's (`prepared_store.PREPARED_TTL_DAYS`), so no tier of kept mail
+# loses its body before its masked text.
+_EMITTED_PAYLOAD_TTL_DAYS = 180
 _PARKED_PAYLOAD_TTL_DAYS = 365
-#: How long a JUDGED drop stays recoverable. A deterministic drop (a provider SPAM label, a
-#: Gmail PROMOTIONS category) is a fact and needs no second look. An LLM saying "this looks like
-#: junk" is a JUDGMENT, and judgments improve — the gate that deleted 109 of this org's emails is
-#: not the gate we will be running next month. Keeping the body long enough to re-adjudicate is
-#: what makes "we improved the filter" a statement anyone can act on rather than an assertion
-#: about mail that no longer exists.
+#: How long an ARCHIVED mail keeps its encrypted body (STEP-03, 06 D4 — Rohit's go on the plan
+#: that said 180 days, 2026-10-06). The gate archives what a noise rule or the model's confident
+#: junk verdict would once have deleted; it is kept and read by no model, so a mail that turns out
+#: to matter — Boardy's introduction to an angel, a government portal's update — can still be read.
+#: PUBLIC because `platform/receipts.py` asks whether every archived mail is still reviewable.
+ARCHIVED_PAYLOAD_TTL_DAYS = 180
+#: How long a JUDGED drop written BEFORE STEP-03 stays recoverable. The gate no longer drops on
+#: judgment — `llm_junk` is archived, on the clock above — but the rows it dropped before the
+#: deploy keep their 90-day bodies, and `platform/receipts.py` and `capture/parked/drain.py` still
+#: read them until they age out. A deterministic drop (a provider SPAM label) was a fact; an LLM
+#: saying "this looks like junk" is a JUDGMENT, and judgments improve — the gate that deleted 109 of
+#: this org's emails is not the gate we will be running next month.
 JUDGED_DROP_PAYLOAD_TTL_DAYS = 90
 
-#: Reason codes whose drop was a model's opinion rather than a provider's fact.
+#: Reason codes whose stop was a model's opinion rather than a provider's fact — dropped before
+#: STEP-03, archived since.
 #:
-#: PUBLIC because `platform/receipts.py` asks whether every drop we might be WRONG about is
-#: still reviewable, and that question is only answerable against this set and the TTL above.
-#: A receipt that restated either would be a second opinion about which deletions are
-#: judgments — and the first time one moved, the readiness page would be answering about a
-#: policy the pipeline no longer has.
+#: PUBLIC because `platform/receipts.py` asks whether every stop we might be WRONG about is
+#: still reviewable, and `capture/parked/drain.py` re-admits it; both questions are only
+#: answerable against this set. A receipt that restated it would be a second opinion about
+#: which stops are judgments — and the first time one moved, the readiness page would be
+#: answering about a policy the pipeline no longer has.
 JUDGED_DROP_CODES = frozenset({"llm_junk", "low_relevance"})
+
+#: The gate's verb → the event's outcome. CLOSED: a verb the pipeline does not know raises. Every
+#: verb it did not know used to become `emitted` — found building STEP-03, when the gate's new
+#: `archive` would have published a Boardy nudge as founder mail until this table learned the word.
+_OUTCOME_OF_VERB = {"route": "emitted", "short_circuit": "emitted", "park": "parked",
+                    ARCHIVE: ARCHIVED, "drop": "dropped"}
 
 
 def _linkage_hints(event: SourceEvent) -> list[dict]:
@@ -375,6 +396,9 @@ class SemanticLane:
     #: it, a Gmail/Outlook message whose fingerprint the seat's screen claimed first is not
     #: extracted again (`skipped="seen_on_screen"`) and gets one `same_message:` source ref.
     fingerprint_engine: Any | None = None
+    #: STEP-07 · the tenant's company brief, as its block — read once when the lane is built,
+    #: so every extraction of one sweep reads the same brief. "" for a tenant with none.
+    company_brief: str = ""
 
 
 #: `llm_costs.purpose` for S2's extraction calls (S4's relevance page files `l1_relevance`).
@@ -802,7 +826,13 @@ def run_semantic_lane(event: SourceEvent, prepared: PreparedContent | None,
         org_id=event.org_id, event_id=event.event_id, source=event.source,
         profile_id=choice.profile_id, tier=decision.tier, prepared=prepared, envelope=envelope,
         eval_time=lane.eval_time, timezone=lane.timezone, locale=lane.locale,
-        page_map=page_map, section=section)
+        page_map=page_map, section=section,
+        company_brief=getattr(lane, "company_brief", "") or "",
+        # `03` F148 · the lane's clock is the SYNC's; a message's "by Friday" is its writer's. A
+        # first connect or a re-sync reads mail months late, and resolved against the read every
+        # relative date in it moved by that gap. A time without a zone is no frame at all: such a
+        # message resolves against the lane's clock, as every message did before.
+        written_at=event.occurred_at if event.occurred_at.tzinfo is not None else None)
     outcome = extract(request, llm=lane.llm, store=lane.cache, open_lane=lane.open_lane)
     _record_extraction_cost(lane, event, outcome)
     outcome, counters = _grade_spans(outcome, prepared.clean_text, locale=lane.locale,
@@ -1336,6 +1366,19 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
                        intent=folded, intent_disagreements=disagreements)
 
 
+def _routes_structured(source: str, object_type: str) -> bool:
+    """Does capture route this object STRUCTURED — typed fields, no prose, no model?
+
+    A registry mapping makes an object typed (a calendar event, a CRM row); an enterprise-system
+    source (CRM, billing, the client's own database) is structured even with no mapping yet — its
+    rows carry no prose `body`, and marking it structured routes it to the gate's `mapping_missing`
+    PARK instead of an N-10 drop. ONE question, asked by `capture_event` and by the page pass's
+    candidate alike (STEP-18 B25): two spellings of it are how the page came to judge, and pay for,
+    objects capture never asks it about.
+    """
+    return has_mapping(source, object_type) or family_of(source) == "enterprise_system"
+
+
 def page_relevance_candidate(raw, *, sender_known: bool) -> RelevanceCandidate:
     """One pushed object as a relevance candidate, from what the RAW object already carries.
 
@@ -1350,9 +1393,29 @@ def page_relevance_candidate(raw, *, sender_known: bool) -> RelevanceCandidate:
         page_key=raw.source_object_id,
         sender=raw.actor_email or "",
         sender_known=sender_known,
+        # ⛔ STEP-18 B25 (`03` F42, `yc2_w27_s18` M49.C1.L-logic.V0.U01). Routed as `capture_event`
+        # routes it: a calendar event is structured there, settled by `RULE_STRUCTURED_SOURCE`
+        # before the page's verdict is read — so a page that pre-judged it as ambiguous paid a model
+        # call ("(no readable text)": it has a `summary`, no `subject`) that no capture ever read.
+        is_structured=_routes_structured(raw.source, raw.object_type),
         headers=_esqe_headers(raw.raw),
         subject=str(raw.raw.get("subject") or ""),
         snippet=body[:MAX_ITEM_CHARS])
+
+
+def named_in_brief(sender_resolver, raw) -> str | None:
+    """Why the founder's company brief names this object's sender — `connector:…`, `person:…`,
+    `watchlist:…` — or None (STEP-07). Asked of the same resolver that says whether the sender is
+    known (`api/routes._sender_resolver_for`, its `.named`); a resolver without one, or one that
+    fails, names nobody — the gate then behaves exactly as it did before the brief existed."""
+    named = getattr(sender_resolver, "named", None)
+    if named is None:
+        return None
+    try:
+        return named(raw) or None
+    except Exception:      # noqa: BLE001 — a brief that cannot be read names nobody
+        _log.warning("company brief: could not ask who it names", exc_info=True)
+        return None
 
 
 def prime_relevance_page(objects, semantic, sender_resolver=None) -> None:
@@ -1370,6 +1433,9 @@ def prime_relevance_page(objects, semantic, sender_resolver=None) -> None:
     `capture_event`, which falls back to the per-event path.
     """
     page = getattr(semantic, "relevance_page", None)
+    # A re-read never reaches S2 (STEP-05: the gate does not judge a kept mail again), so it is no
+    # candidate: priming it would buy a model call nothing reads.
+    objects = [raw for raw in (objects or ()) if not getattr(raw, "rereading", None)]
     if page is None or not objects:
         return
     try:
@@ -1476,6 +1542,9 @@ def _finish(event: SourceEvent, trace: EventTrace, outcome: str,
 def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
                   repo: SourceEventRepository,
                   sender_known: bool = False, is_structured: bool = False,
+                  # Why the founder's company brief names the sender, or None (STEP-07,
+                  # `named_in_brief`): the gate whitelists it as W-07 and does not judge it.
+                  named_in_brief: str | None = None,
                   structured_fields: dict | None = None, in_scope: bool = True,
                   mask_phone: bool = False,
                   relevance: RelevanceClassifier | None = None,
@@ -1534,8 +1603,7 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     # would read "" and the noise gate would N-10 DROP the whole table as empty. Marking it
     # structured routes it to the gate's mapping_missing PARK (recoverable, human-review)
     # instead of silently losing it — store-don't-delete. (gcal etc. always have a mapping.)
-    if not is_structured and (has_mapping(event.source, event.object_type)
-                              or family_of(event.source) == "enterprise_system"):
+    if not is_structured and _routes_structured(event.source, event.object_type):
         is_structured = True
 
     # preprocess (unstructured text only; structured events carry typed fields).
@@ -1558,20 +1626,26 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     ctx = GateContext(event=event, prepared=prepared, raw=raw.raw,
                       content_version=raw.content_version,
                       is_structured=is_structured, structured_fields=structured_fields,
-                      sender_known=sender_known, in_scope=in_scope)
+                      sender_known=sender_known, in_scope=in_scope, rereading=raw.rereading,
+                      named_in_brief=named_in_brief)
     gate = run_gate(ctx, trace, relevance=relevance)
 
     # Decision-first ledger: write the lightweight source_events row (metadata + the
     # decision) AFTER the gate, for every new object — this is the dedup + audit ledger
     # ("already fetched?" check reads it).
-    outcome = {"drop": "dropped", "park": "parked"}.get(gate.action, "emitted")
-    kept = outcome in ("emitted", "parked")
+    if gate.action not in _OUTCOME_OF_VERB:
+        raise ValueError(f"the gate returned {gate.action!r}, a verb with no outcome — "
+                         f"refused rather than emitted")
+    outcome = _OUTCOME_OF_VERB[gate.action]
+    # KEPT = everything but a scope drop: emitted, parked, and — since STEP-03 — archived.
+    kept = outcome in ("emitted", "parked", ARCHIVED)
+    attention, attention_reason = attention_for(outcome, gate)
 
-    # The seam, computed ONCE for kept events (dropped noise gets only the ledger row):
+    # The seam, computed ONCE for kept events (a scope drop gets only the ledger row):
     # deterministic hints persisted WITH the decision so L2 and any replay read them
     # instead of recomputing. The triage lane is the L2 DRAIN order, so it exists only
-    # for emitted events — a parked event's terminal trace record stays the gate's
-    # park decision (recovery re-emits and the drain treats lane-less as P3).
+    # for emitted events — a parked or archived event's terminal trace record stays the
+    # gate's decision (recovery re-emits and the drain treats lane-less as P3).
     hints: list[dict] = []
     links: list[dict] = []
     lane: str | None = None
@@ -1583,43 +1657,56 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
         # never spoke. A keyword table only knows language somebody wrote down; most mail is
         # ordinary sentences.
         #
-        # EMITTED ONLY. A parked event is awaiting human review and a dropped one was refused;
-        # filing either under a domain would be a decision about something we have not accepted.
-        # The hint carries `source="fallback"`, so no reader can mistake it for a pattern match.
-        emitted = gate.action not in ("drop", "park")
+        # EMITTED ONLY. A parked event is awaiting human review and an archived one was judged
+        # noise; filing either under a domain would be a decision about something we have not
+        # accepted. The hint carries `source="fallback"`, so no reader can mistake it for a
+        # pattern match.
+        emitted = outcome == "emitted"
         hints = domain_hints(event.source, text,
                              fallback=FALLBACK_DOMAIN if emitted else None)
         links = _linkage_hints(event)
-    if gate.action not in ("drop", "park"):
+    if outcome == "emitted":
         # An availability notice (N-05) is drained AFTER real mail: its one useful claim is
         # rarely urgent, and an auto-reply storm must never preempt a customer's message.
         lane = "P3" if gate.availability else triage_lane(ctx, prepared)
         trace.record("triage", "pass", lane=lane)
 
-    # KEPT content: stash the raw body (encrypted, short TTL) for EMITTED and PARKED events.
+    # KEPT content: stash the raw body (encrypted) for EMITTED, PARKED and ARCHIVED events.
     # Parked = a human-review queue (grey-zone), so it MUST keep content to be recoverable — was
     # a bug: parked stored no payload, dedup blocked re-fetch, /recover was a no-op → black hole.
-    # Dropped noise still gets NO content — only the ledger row (L1 stays a filter, not a warehouse).
-    # A judged drop keeps its body. Not because L1 should become a warehouse — a deterministic
-    # drop still stores nothing — but because a model's verdict is the one kind of deletion we
-    # might be wrong about, and 657 dropped events with zero payloads made "did we lose anything
-    # real?" permanently unanswerable. Absence of evidence became evidence of absence.
-    judged_drop = (outcome == "dropped"
-                   and str(gate.reason_code or "") in JUDGED_DROP_CODES)
-    if (kept or judged_drop) and payload_store is not None:
+    # ARCHIVED (STEP-03) = what a noise rule or the model's confident junk verdict once DELETED:
+    # 258 of 395 mails on the design partner's account went with no body, so "did we lose anything
+    # real?" was permanently unanswerable — and the answer was yes (Boardy's introductions, a
+    # government portal's updates). It keeps its encrypted body, and no model reads it. Only a
+    # scope drop (S0) stores nothing. What the body is, is what the connector fetched: for
+    # list-time junk (N-09/N-06/N-07/N-03) and confident `llm_junk` that is the list snippet and
+    # headers (`connectors/composio.py`'s fast path); the message id re-fetches the rest.
+    if kept and payload_store is not None:
         event.payload_ref = new_id("pay")
     repo.add(event, outcome=outcome, route=gate.route, triage_lane=lane,
-             domain_hints=hints or None, linkage_hints=links or None)
-    if (kept or judged_drop) and payload_store is not None:
+             domain_hints=hints or None, linkage_hints=links or None,
+             attention=attention, attention_reason=attention_reason)
+    if kept and payload_store is not None:
         # full raw object → L2 reads body (unstructured) or maps fields (structured); a recovered
         # parked event flips to 'emitted' and L2 reads this same payload. Parked items sit for weeks,
         # so their body gets a long TTL — a 30-day expiry made /recover a no-op after a month.
         payload_store.put(payload_id=event.payload_ref, org_id=org_id,
                           event_id=event.event_id, content=json.dumps(raw.raw, default=str),
                           ttl_days=(_PARKED_PAYLOAD_TTL_DAYS if outcome == "parked"
-                                    else JUDGED_DROP_PAYLOAD_TTL_DAYS if judged_drop
+                                    else ARCHIVED_PAYLOAD_TTL_DAYS if outcome == ARCHIVED
                                     else _EMITTED_PAYLOAD_TTL_DAYS))
-    if kept and prepared is not None and prepared_store is not None:
+    # ⛔ NOT FOR AN ARCHIVED MAIL — corrected by measurement, STEP-03's golden acceptance
+    # (2026-10-06). The prepared text is what every reader of a message's words selects:
+    # `context/lifecycle/store.unexamined_messages` (the resolution model), `situation_bso`,
+    # `deliver/card_builder`, `support_situations`, `document_register`. They select by
+    # CORRELATION MEMBERSHIP, and a reading makes every event of a thread a member whatever its
+    # outcome — the gate's dropped mail was a member too. A dropped mail had no prepared text, so it
+    # was skipped by ABSENCE. Stored for an archived mail, it was read: on founder case F37 the
+    # resolution model was handed Introly's archived introduction as a third message. So an
+    # archive keeps its encrypted payload and nothing a reader of words can reach; the prepared
+    # text is re-derived from the payload — `preprocess`, no model — when a mail is promoted
+    # (STEP-05).
+    if outcome in ("emitted", "parked") and prepared is not None and prepared_store is not None:
         # the PII-masked, replayable form + offset map — retained longer than the raw payload
         # `direction` PASSED, NOT RE-DERIVED. `_envelope_direction` is the one place that decides
         # inbound/outbound/internal, and it REFUSES with None when no rule can name it — a second
@@ -1636,7 +1723,9 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
         document_job_store.put(org_id=org_id, event_id=event.event_id, doc=doc,
                                fmt=raw.raw.get("mime"))
 
-    if gate.action in ("drop", "park"):
+    # Parked, archived and dropped stop here: nothing past this line — the structured lane, the
+    # semantic lane's model, S4 — runs for an event that was not emitted.
+    if outcome != "emitted":
         return _finish(event, trace, outcome, None, trace_repo)
 
     # structured route: derive fields from the mapping registry (data-driven, no LLM)

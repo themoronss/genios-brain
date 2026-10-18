@@ -36,6 +36,7 @@ from typing import Any
 from sqlalchemy import text
 
 from genios_engine.contracts.reasoning import DecisionOutcome
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
 
 from .authority import projected_score
@@ -126,6 +127,10 @@ class NativePublication:
     reasoning_decision_hash: str
     authority_expires_at: datetime
     cooldown_hours: int
+    # The lane its decision was routed to, and why (`reason/output_lane`; STEP-13 `yc2_w27_s13`
+    # M36.C1.L-data.V0.U03, `03` F186): a native signal reached its card with a NULL lane.
+    output_lane: str | None
+    lane_reason: str | None
 
 
 def _rule_version(capability_version: str) -> int:
@@ -241,6 +246,9 @@ def build_native_publication(*, execution: Any,
         # The predicate requires this to equal the decision's own expiry to the microsecond.
         authority_expires_at=execution.decision.expires_at,
         cooldown_hours=_cooldown_hours(capability),
+        output_lane=(execution.decision.output_lane.value
+                     if execution.decision.output_lane is not None else None),
+        lane_reason=execution.decision.lane_reason,
     )
 
 
@@ -269,24 +277,24 @@ def publish_native_signal(store, *, org_id: str, publication: NativePublication,
             {"o": org_id, "r": publication.rule_id, "n": publication.subject_node_id,
              "p": pack_id, "pv": pack_version}).fetchall()
         if retired:
-            conn.execute(text(
-                "update cards set state='expired' where org_id=:o and signal_id=any(:ids) "
-                "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-                {"o": org_id, "ids": [item.signal_id for item in retired]})
+            # STEP-06: a newer claim replaces this subject's last one — its cards say so.
+            card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                        signal_ids=[item.signal_id for item in retired])
         row = conn.execute(text(
             "insert into signals (signal_id, org_id, pack_id, pack_version, rule_id, "
             "rule_version, level, "
             "subject_node_id, score, score_inputs, reason_code, evidence, play, eval_time, "
             "config_snapshot_id, reasoning_run_id, reasoning_candidate_id, "
             "reasoning_decision_hash, authority_expires_at, authority_pack_revision, "
-            "authority_binding_version) "
+            "authority_binding_version, output_lane, lane_reason) "
             "values (:id,:o,:pack,:packv,:r,:v,:lv,:n,:s,cast(:si as jsonb),:rc,"
             "cast(:ev as jsonb),:play,:et,"
-            ":cs,:rr,:candidate,:decision_hash,:expires,:pack_revision,1) "
+            ":cs,:rr,:candidate,:decision_hash,:expires,:pack_revision,1,:lane,:lane_reason) "
             "on conflict (org_id,pack_id,pack_version,rule_id,subject_node_id) "
             "where status='open' do nothing "
             "returning signal_id"),
             {"id": signal_id, "o": org_id, "pack": pack_id, "packv": pack_version,
+             "lane": publication.output_lane, "lane_reason": publication.lane_reason,
              "r": publication.rule_id, "v": publication.rule_version,
              "lv": publication.level, "n": publication.subject_node_id,
              "s": publication.score,

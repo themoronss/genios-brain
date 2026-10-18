@@ -1,0 +1,13 @@
+{
+  "_about": "Workstream groups for org_e97e86f858ad48b2bbf64b8a, by sender address. A measurement grouping for scripts/workstream_funnel.py, written from the 2026-10-05 analysis - not a product classification. First match wins; anything unmatched is counted as 'other'.",
+  "groups": [
+    {"name": "investors", "patterns": ["titancapital", "afore\\.vc", "peakxv", "3one4", "neon\\.fund", "together\\.fund", "@zfellows", "247vc", "insightpartners", "saka\\.vc", "alystventures", "a16z\\.com", "theresa\\.hoffmann@antler", "ihubgujarat", "variance\\.house", "pear\\.vc", "iimaventures", "surgeahead"]},
+    {"name": "programs_incubators_grants", "patterns": ["nsrcel", "accubate", "sineiitb", "iiitdic", "fitt-iitd", "iiml\\.ac", "gusec", "hub71", "startinup", "joinef", "intellecap", "startupgrantsindia", "gsfindia", "iimb\\.ac", "vandebharatam", "socialalpha", "marico", "headstart", "aicisb", "ecell\\.in", "techstars", "hf0", "f6s", "mucker", "joinodf", "southparkcommons", "speedrunalpha", "bharatkesuperfounders", "antler\\.co", "ycombinator", "aspireleaders", "brevosend"]},
+    {"name": "government", "patterns": ["\\.gov\\.in$"]},
+    {"name": "networking_boardy", "patterns": ["boardy"]},
+    {"name": "partners_peers_intros", "patterns": ["evokoa", "engramme", "supymem", "tryclean", "noveum", "reticle", "nexlayer", "devdashlabs", "eclipta", "tryeverguide", "sanchiconnect", "lalithaar", "nautisapp", "zyner", "princeton", "rotational", "spotlightstrategic"]},
+    {"name": "jobs_learning", "patterns": ["ibm\\.com", "pmlproduct", "topmate"]},
+    {"name": "bounces", "patterns": ["mailer-daemon"]},
+    {"name": "vendors_newsletters_accounts", "patterns": ["stripe", "composio", "cal\\.com", "notion", "google", "apple", "tldv", "wispr", "substack", "zoom", "airtable", "youtube", "sonyliv", "dezerv", "intelligence\\.com", "smallest", "beehiiv", "luma-mail"]}
+  ]
+}

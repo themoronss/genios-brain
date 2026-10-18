@@ -638,3 +638,19 @@ def test_a_headline_that_only_repeats_the_screen_is_not_a_headline():
     assert SI._is_paste("Ok send the signed MSA by Friday", "send the signed MSA by Friday")
     # One more word than the band allows means it is saying something — left alone.
     assert not SI._is_paste("send the signed MSA by Friday now", "send the signed MSA by Friday")
+
+
+def test_a_headline_that_names_who_is_not_a_paste():
+    """Merging `harsh/mvp` into `speedrun008` (2026-10-09, `YC-II W27/03` F137): containment alone
+    rejected a headline LONGER than its quote that adds who acted — "Priya will share the signed PO
+    by Thursday" over "share the signed PO by Thursday" — which is the description the prompt asks
+    for, and `tests/test_screen_followups.py` keeps it. A paste is near the whole of its quote on
+    both sides; the measured defect, an identical string, is still refused."""
+    quote = "share the signed PO by Thursday"
+    assert not SI._is_paste("Priya will share the signed PO by Thursday", quote)
+    assert SI.reject({"kind": "their_promise", "text": "Priya will share the signed PO by Thursday",
+                      "who": "Priya Shah", "quote": quote}) is None
+    # …and the paste itself, or the paste with a word of punctuation changed, is still refused.
+    assert SI._is_paste("Share the signed PO by Thursday.", quote)
+    assert SI.reject({"kind": "their_promise", "text": quote, "who": "Priya Shah",
+                      "quote": quote}) == "pasted_quote"

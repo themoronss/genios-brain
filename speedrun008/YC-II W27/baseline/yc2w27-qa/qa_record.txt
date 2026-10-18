@@ -1,0 +1,44 @@
+yc2_w27 QA record · deterministic-qa · speedrun008 @ 83dd87f3 (clean tree) · 2026-10-06 01:49–02:52 UTC
+scratch Postgres 17.11 in Docker, the database recreated EMPTY before every check that uses it;
+GENIOS_TEST_DATABASE_URL=postgresql+psycopg://…  Exit codes only; every command verbatim from
+tree.yaml (block yc2_w27) and .github/workflows/ci.yml.
+
+1 · the tree, and every unit's own verify — 53 units                          exit 1
+      55 pass / 1 fail / 0 skip          (4 tree checks + 51 units; 1 retired, not run)
+      FAIL  unit   M17.C3.L-integration.V2.U04        exit=4 | no tests ran in 0.01s  0.1s
+            blocked since 2026-10-05: pinning the Composio toolkits needs the SDK the
+            production image runs (Harsh). Its test is not written, so pytest has nothing to run.
+      RETIRED M17.C3.L-contract.V0.U01 — replaced by U05 in build (a manual production call
+            to record the response shape; U05 makes the connector name the shape itself).
+      M16.C6 — the whole suite, twice, 2010.5 s:
+            WITH the database      exit 0 (the && below starts only on a 0)
+            WITHOUT the database   16018 passed, 1141 skipped, 72 xfailed in 794.85s
+            The harness keeps a verify's last line, so the first run's counts are not here;
+            QA run 1 (below) printed them: 17122 passed, 4 skipped, 102 xfailed, 2 failed.
+
+2 · the golden-pg lane, as CI runs it (GENIOS_GOLDEN_REQUIRED=1)              exit 0
+      pytest -q tests/replays tests/test_golden_labels_sheet.py
+      357 passed, 100 xfailed in 97.77s — 0 skipped
+
+3 · the board, held to 03-FINDINGS.md §F.1                                     exit 0
+      python scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+      founder golden set   must-detect  4/30 (8 not expressible)   must-abstain  5/10 (2 not exercised)   forbidden outputs  4
+      atlas replays 01–07  passing  0/80   blocked  7/80   not expressible  73
+      must-detect cases lost at:  gate 5  memory 9  reasoning 3
+      model answers:  ideal_reader (06-DECISIONS D12c)
+      matches the board recorded in speedrun008/YC-II W27/03-FINDINGS.md
+      golden tenants left in the database afterwards: 0
+
+4 · the hermetic job, as CI runs it                                            exit 0
+      pytest -q -m "not golden"
+      16018 passed, 1094 skipped, 47 deselected, 72 xfailed in 730.07s
+      The 1094 skips are the database tests; tier 1 ran them on Postgres (M16.C6).
+
+Against QA run 1, the same night (00:30 UTC, before 5c853577): the database suite had 2 failures —
+tests/test_l1_pilot_activation.py:200 and tests/test_l2_pilot_activation.py:313, "Left contains 42
+more items, first extra item: 'org_golden_f40'": golden runs left their tenants switched on in the
+shared database, and every live tenant is auto-activated. Fixed in 5c853577 — a golden run removes
+its tenant on every exit, and the tests that keep one remove it themselves. This run is the whole
+tier again, not the one check.
+
+The one red line is the blocked unit. Nothing else is red, and nothing was skipped.

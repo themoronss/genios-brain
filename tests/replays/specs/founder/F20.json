@@ -1,0 +1,416 @@
+{
+ "case_id": "F20",
+ "title": "A foundation sends its newsletter and a meetup invite",
+ "kind": "must_detect",
+ "label_row": 20,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-13T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "note",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-13T06:00:00Z",
+   "from": "Sameer Rana <sameer@techbridge.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "TechBridge founders meetup, 27 Sep",
+   "body": "Hello Arjun,\n\nSharing our accelerator's newsletter and an invite to the TechBridge founders meetup on 27 Sep. Do drop in if you are around.\n\nSameer Rana\nTechBridge Foundation",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "newsletter",
+      "meetup"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Sameer Rana",
+       "entity_type": "person",
+       "quote": "Sameer Rana"
+      },
+      {
+       "surface_form": "TechBridge Foundation",
+       "entity_type": "organization",
+       "quote": "TechBridge Foundation"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "27 Sep",
+       "earliest": "2026-09-27T00:00:00+05:30",
+       "latest": "2026-09-27T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-13T06:00:00Z",
+       "quote": "27 Sep"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "low"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "TechBridge",
+     "Sameer"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": {
+   "says": "one line: a meetup on 27 Sep",
+   "lines": [
+    {
+     "section": "today",
+     "about": [
+      "TechBridge"
+     ],
+     "mentions": [
+      "27 Sep"
+     ]
+    }
+   ]
+  }
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "RSVP",
+   "registration deadline"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "account admin",
+     "techbridge.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "techbridge.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "techbridge.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "techbridge.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "TechBridge Foundation"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "TechBridge Foundation"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "TechBridge Foundation"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "TechBridge Foundation"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Sameer Rana"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Sameer Rana"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "Sameer Rana"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Sameer Rana"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<techbridge.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Sameer Rana of TechBridge Foundation sent the accelerator's newsletter and an invitation to the TechBridge founders meetup on the twenty-seventh of September.",
+       "evidence": [
+        "evt_597f2a0e12ec13c67c77487f"
+       ],
+       "quote": "accelerator's newsletter and an invite to the TechBridge founders meetup"
+      },
+      {
+       "claim": "The invitation asks for nothing — do drop in if you are around.",
+       "evidence": [
+        "evt_597f2a0e12ec13c67c77487f"
+       ],
+       "quote": "drop in if you are around."
+      },
+      {
+       "claim": "The engine filed the file's situation as an investor relationship and recorded it as unsupported, a misfiled kind, though it still shows as active.",
+       "evidence": [
+        "sit:sit_ae17a79bb2702ac636d98c3d"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds TechBridge.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The mail needs no reply; the only decision is whether to go on the twenty-seventh.",
+       "based_on": [
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "The meetup is an open invitation, not a step in an application: nothing in the mail ties it to one.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "A programme decides by its calendar and its rules, not by how warm the last mail was — so a meetup is a chance to meet its people, not a shortcut.",
+       "based_on": [
+        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+       ]
+      },
+      {
+       "kind": "counter_pattern",
+       "claim": "A programme's quiet about an application carries no news before its own date, and a newsletter is not that news either.",
+       "based_on": [
+        "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The newsletter and invitation went to every founder on TechBridge's list.",
+       "needs": "Whether the meetup is listed as open to all founders."
+      },
+      {
+       "proposition": "People who read TechBridge's applications will be at the meetup.",
+       "needs": "TechBridge saying who attends."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Where and at what time the meetup is.",
+       "relevance": "It decides whether it fits the founder's day."
+      },
+      {
+       "question": "Whether Nimbus Labs' application to TechBridge, which the brief lists, is still open.",
+       "relevance": "Meeting the team matters more while an application is being read."
+      },
+      {
+       "question": "What else is on the founder's calendar that day.",
+       "relevance": "An evening at a meetup competes with the seed round."
+      }
+     ],
+     "frames": {
+      "primary": "A programme the brief says you applied to has sent its newsletter with an open invitation to a founders meetup on the twenty-seventh — an optional chance to be in the room.",
+      "rivals": [
+       "A mass mailing to the foundation's whole list, worth no more than a glance at the calendar.",
+       "A personal nudge from Sameer to get to know Nimbus Labs, since the mail greets Arjun by name."
+      ]
+     },
+     "proposed_kind": null,
+     "expected_vs_actual": {
+      "stage": "applied",
+      "expected": "Nothing is owed while an application waits for its window to close; the one thing to check is the receipt.",
+      "actual": "The foundation wrote with its newsletter and a meetup invitation; nothing in the file speaks of the application or its receipt."
+     },
+     "scenarios": {
+      "do_nothing": "The meetup passes; nothing about the application changes, and only a chance to meet the team is lost.",
+      "act": "The founder decides now and, if going, holds the time — a face the programme's people have met.",
+      "best": "The founder meets the people behind the programme and learns its calendar.",
+      "worst": "An evening spent at a mass event with no one from the programme's selection, in the middle of a seed round.",
+      "signals_to_watch": [
+       "A follow-up from Sameer with the place and time.",
+       "Any news on the application's status or decision date.",
+       "Whether the meetup is open to all founders."
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The mail asks nothing and needs no reply.",
+       "The meetup is on the twenty-seventh, with time to decide.",
+       "The brief lists TechBridge as a programme the founder applied to, so meeting its people has some value."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Decide whether to drop in at the TechBridge founders meetup on the twenty-seventh and, if so, hold the time on the calendar.",
+      "for_whom": "Sameer Rana and TechBridge Foundation",
+      "by_when": "2026-09-27",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     "alternative": "Let it pass and keep an eye on the application's own dates instead.",
+     "wait_or_stop": "Nothing to wait for; the decision is yours. Once the twenty-seventh has passed, the invitation is done.",
+     "done_when": "You have decided, and the meetup is on the calendar or set aside.",
+     "draft": null
+    }
+   }
+  ]
+ }
+}

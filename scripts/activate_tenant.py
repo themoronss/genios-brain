@@ -66,15 +66,34 @@ EFFECT = {
     ("L1", "semantic"): "prose is extracted by a model; claims start carrying verified spans (SPENDS)",
     ("L2", "analytic"): "situations are admitted and scored; the L3/L4 lane starts receiving supply",
     ("L2", "patterns"): "pattern matching replaces anchor-based detection",
-    ("L3", "admin"): "the Admin corpus compiles for this tenant",
-    ("L3", "sales"): "the Sales corpus compiles for this tenant",
-    ("L3", "customer_support"): "the Customer Support corpus compiles for this tenant",
     ("L4", "roster_v2"): "the staged unit roster replaces the six hardcoded units",
     ("L4", "ranking_v2"): "the six-component utility formula ranks candidates",
     ("L4", "bundle"): "published decisions get their narrative (SPENDS)",
     ("L4", "critique"): "the critique seam scores an external agent's proposed action",
     ("L4", "brief"): "the daily book-level re-rank",
 }
+
+
+def effect_of(layer: str, name: str) -> str:
+    """The line an operator reads beside a switch before `--apply` — never blank for a real one.
+
+    ⛔ `03` F135 (STEP-18; `yc2_w27_s18` M49.C2.L-interface.V0.U06). The dry run lists EVERY Layer 3
+    domain and EVERY Layer 4 feature (`_state`) and read each one's effect from `EFFECT` alone, which
+    had no `founder_office` line and none for four features (`situation_reasoner`,
+    `cards_from_situations`, `calibration_apply` — the switch that arms unattended muting, `06` D13
+    — and `expert_review`): blank, on the one column read before flipping. A Layer 3 domain's line is
+    `platform/l3_activation.EFFECTS`'s own (this script keeps none of its own to drift); a Layer 4
+    feature's is this script's operator wording where it has one (`SPENDS` is said there), else
+    `platform/l4_activation.EFFECTS`'s. An unknown switch has no effect to name.
+    """
+    if layer == "L3":
+        from genios_engine.platform.l3_activation import EFFECTS as L3_EFFECTS
+        return L3_EFFECTS.get(name, "")
+    own = EFFECT.get((layer, name), "")
+    if own or layer != "L4":
+        return own
+    from genios_engine.platform.l4_activation import EFFECTS as L4_EFFECTS
+    return L4_EFFECTS.get(name, "")
 
 
 def _state(engine, org: str) -> dict[tuple[str, str], bool]:
@@ -186,7 +205,7 @@ def main() -> int:
     print(f"{'switch':22} {'now':>8}   effect")
     for (layer, name), on in live.items():
         print(f"  {layer} {name:18} {'LIVE' if on else 'off':>6}   "
-              f"{EFFECT.get((layer, name), '')}")
+              f"{effect_of(layer, name)}")
     if args.status:
         return 0
 
@@ -201,7 +220,7 @@ def main() -> int:
 
     print(f"\n{'WILL FLIP' if args.apply else 'WOULD FLIP'}, in this order:")
     for index, (layer, _kind, name) in enumerate(todo, 1):
-        print(f"  {index}. {layer} {name:18} {EFFECT.get((layer, name), '')}")
+        print(f"  {index}. {layer} {name:18} {effect_of(layer, name)}")
 
     if not args.apply:
         print("\nDRY RUN — nothing written. Re-run with --apply.")

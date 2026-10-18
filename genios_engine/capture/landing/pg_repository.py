@@ -14,7 +14,8 @@ _INSERT = text(
        source_object_id, parent_object_id, dedup_key, actor, occurred_at, captured_at,
        sync_mode, payload_ref, capture_confidence, schema_version, outcome,
        route, triage_lane, domain_hints, linkage_hints, internal_kind, recipients,
-       visibility_scope, visibility_principals, visibility_derived_from)
+       visibility_scope, visibility_principals, visibility_derived_from,
+       attention, attention_reason)
     values
       (:event_id, :org_id, :connection_id, :source, :source_family, :object_type,
        :source_object_id, :parent_object_id, :dedup_key, cast(:actor as jsonb),
@@ -22,7 +23,8 @@ _INSERT = text(
        :schema_version, :outcome,
        :route, :triage_lane, cast(:domain_hints as jsonb), cast(:linkage_hints as jsonb),
        :internal_kind, :recipients,
-       :visibility_scope, :visibility_principals, :visibility_derived_from)
+       :visibility_scope, :visibility_principals, :visibility_derived_from,
+       :attention, :attention_reason)
     on conflict (org_id, dedup_key) do nothing
     """
 )
@@ -42,6 +44,11 @@ def _dump_list(items: list | None) -> str | None:
 
 
 _EXISTS = text("select 1 from source_events where org_id=:o and dedup_key=:d limit 1")
+#: STEP-08 · a re-read Gmail attachment carries a new key on every read, so it is known by its
+#: message: has an attachment of this message landed KEPT (`repository.KEPT_OUTCOMES`)?
+_KEPT_CHILD = text(
+    "select 1 from source_events where org_id = :o and source = :s and object_type = :t "
+    "   and parent_object_id = :p and outcome in ('emitted', 'parked', 'archived') limit 1")
 
 
 class PostgresSourceEventRepository:
@@ -59,9 +66,16 @@ class PostgresSourceEventRepository:
         with self._engine.connect() as conn:
             return conn.execute(_EXISTS, {"o": org_id, "d": dedup_key}).first() is not None
 
+    def kept_child_exists(self, org_id: str, source: str, object_type: str,
+                          parent_object_id: str) -> bool:
+        with self._engine.connect() as conn:
+            return conn.execute(_KEPT_CHILD, {"o": org_id, "s": source, "t": object_type,
+                                              "p": parent_object_id}).first() is not None
+
     def add(self, event: SourceEvent, outcome: str | None = None, *,
             route: str | None = None, triage_lane: str | None = None,
-            domain_hints: list | None = None, linkage_hints: list | None = None) -> None:
+            domain_hints: list | None = None, linkage_hints: list | None = None,
+            attention: str | None = None, attention_reason: str | None = None) -> None:
         with self._engine.begin() as conn:
             conn.execute(_INSERT, {
                 "event_id": event.event_id, "org_id": event.org_id,
@@ -88,4 +102,7 @@ class PostgresSourceEventRepository:
                                           if event.visibility else None),
                 "visibility_derived_from": (event.visibility.derived_from
                                             if event.visibility else None),
+                # The mail's tier and why (STEP-03). The vocabulary is closed by 0192's check, so
+                # a typo is a refused write, never a fourth tier nobody reads.
+                "attention": attention, "attention_reason": attention_reason,
             })

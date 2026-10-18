@@ -1,0 +1,195 @@
+# CORE — the organisation on the other side of founder work. Loaded today by investor relations only
+# (so `validate.py` warns that one capability references it — expected); programmes, introductions and
+# hiring will load it too. Written for a founder's office, not copied from Sales: what matters here is
+# what KIND of organisation it is and how it decides, not firmographics for targeting.
+identity:
+  id: founder_office.obj.core.company
+  scope: core
+  name: Company
+  domain: founder_office
+  subdomain: fundraising
+  owner_capability: founder_office.fundraising.investor_relations
+  version: 1.0.0
+  status: draft
+  aliases: ["Organisation", "Firm", "Fund"]
+
+purpose:
+  statement: >-
+    The organisation on the other side of a piece of founder work — a fund, an angel network, a
+    syndicate, an accelerator, a government programme, a firm that introduces — held as an entity with
+    its kind, its people and how it decides, apart from any one conversation with it.
+  discriminator: >-
+    A company is who they are; a conversation, an application or an introduction is where we stand with
+    them — and the company does not change when the conversation does.
+  answers:
+    - What kind of organisation is this, and which clock does it run on?
+    - Who there can decide, and how does it decide?
+    - Is it on our side of the table at all?
+  not:
+    - Where a raise stands with it — the investor conversation's.
+    - Any one person there — the contact's.
+
+attributes:
+  - name: identity
+    purpose: What durably names the organisation.
+    type: composite
+    contains: [legal_name, trading_name, primary_domain, country]
+  - name: profile
+    purpose: What kind of organisation it is and how it decides — the half that picks the playbook.
+    type: composite
+    contains: [organisation_kind, relationship_nature, decision_process, stage_focus, thesis]
+  - name: legal_name
+    purpose: The registered name, where known; programmes and funds often trade under another.
+    type: value
+    data_type: string
+  - name: trading_name
+    purpose: The name it uses in mail and on its site.
+    type: value
+    data_type: string
+  - name: primary_domain
+    purpose: >-
+      The mail domain its people write from. The cheapest key there is, and the one that catches the
+      company's own domain and its service providers before they are filed as counterparties.
+    type: value
+    data_type: string
+    required: true
+  - name: country
+    purpose: >-
+      Where it is based. A founder raising in India and abroad meets different paperwork: money from a
+      foreign investor into an Indian company runs on the RBI's clock as well as the investor's.
+    type: value
+    data_type: string
+  - name: organisation_kind
+    purpose: Which kind of founder work it belongs to, and so which playbook reads it.
+    type: value
+    data_type: enum
+    allowed_values: [fund, angel_network, syndicate, corporate_vc, accelerator, incubator,
+                     government_programme, introduction_service, service_provider, customer, other,
+                     unknown]
+    default: unknown
+  - name: relationship_nature
+    purpose: What Layer 2 says the organisation is to us.
+    type: value
+    data_type: enum
+    allowed_values: [investor, customer, prospect, vendor, candidate, partner, community, unknown]
+    source_paths: [relationship.nature]
+  - name: decision_process
+    purpose: >-
+      Who decides and how — a weekly partnership meeting, an investment committee, an angel's own call, a
+      programme's selection panel. The single fact that most changes what silence from it means.
+    type: value
+    data_type: string
+  - name: stage_focus
+    purpose: The stages it invests in or admits, where it says so.
+    type: value
+    data_type: list
+  - name: thesis
+    purpose: What it says it backs, in its own words.
+    type: value
+    data_type: string
+  - name: people
+    purpose: The people there the founder deals with.
+    type: reference
+    ref: founder_office.obj.core.contact
+
+relationships:
+  - type: works_with
+    target: founder_office.obj.core.contact
+    cardinality: many
+    weight_bp: 9000
+    confidence_bp: 8000
+    description: The people at the organisation. More than one is the healthy shape for a fund.
+  - type: references
+    target: founder_office.obj.core.risk
+    cardinality: zero_or_many
+    weight_bp: 4000
+    confidence_bp: 5000
+    description: Risks that belong to the organisation rather than to one conversation with it.
+
+inference_patterns:
+  deterministic:
+    - id: co.investor_by_nature
+      statement: Layer 2 reads the organisation as an investor.
+      status: executable
+      when:
+        - {path: relationship.nature, op: "=", value: investor}
+      yields: {attribute: relationship_nature, value: investor, confidence_bp: 8000}
+      false_positive: >-
+        An introduction service that writes on investors' behalf, and an accelerator, both read as
+        investors from their mail.
+    - id: co.candidate_by_nature
+      statement: Layer 2 reads the organisation as a candidate's, not an investor's — hiring work.
+      status: executable
+      when:
+        - {path: relationship.nature, op: "=", value: candidate}
+      yields: {attribute: relationship_nature, value: candidate, confidence_bp: 7500}
+      false_positive: >-
+        A candidate who is also an angel. Rare, and the thread's objective tells the two apart.
+  heuristic:
+    - id: co.programme_by_correspondence
+      statement: >-
+        The organisation runs a programme — its mail arrives in batches, on a schedule, from a portal.
+      status: needs_signal
+      requires_signals:
+        - {kind: obs_kind, name: programme_deadline, owner_layer: L1,
+           note: "Cohort and application dates arrive as dates in body text."}
+      yields: {attribute: organisation_kind, value: accelerator, confidence_bp: 6000}
+    - id: co.decision_process_stated
+      statement: How the organisation decides, from what its people say about their process.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: organisation.decision_process, owner_layer: L2,
+           note: "'Our partners meet on Mondays', 'it goes to IC next week' — said in mail, written nowhere."}
+      yields: {attribute: decision_process, confidence_bp: 6500}
+
+evidence:
+  - source: email
+    strength_bp: 7000
+    decays: false
+    description: The domain and the signatures name it; what it is takes reading.
+  - source: website
+    strength_bp: 8000
+    decays: true
+    independent_of: [email]
+    description: Its own site states its kind, its stage focus and its thesis.
+  - source: manual_entry
+    strength_bp: 9000
+    decays: false
+    description: The founder's brief, when it names the organisation's kind.
+
+anti_patterns:
+  - id: co.ap.programme_as_fund
+    statement: Filing an accelerator or a government programme as a fund.
+    why_it_happens: Both write about investment, equity and selection, and both are typed fundraising.
+    cost: >-
+      The programme's fixed deadlines are read as a fund's flexible ones, and the application is chased
+      like an investor or left to miss its date.
+    instead: Set organisation_kind from what it is, and hand a programme to the programmes capability.
+    detectable_by: [co.programme_by_correspondence]
+
+examples:
+  - label: A seed fund whose partners meet weekly
+    kind: typical
+    note: organisation_kind fund; decision_process "weekly partners' meeting".
+  - label: An angel network with monthly pitch sessions
+    kind: typical
+    note: organisation_kind angel_network; its clock is the next session, not a reply.
+  - label: A government startup programme's application portal
+    kind: typical
+    note: organisation_kind government_programme; read by the programmes capability.
+  - label: An introduction service that emails as though it were the investor
+    kind: misclassification
+    note: organisation_kind introduction_service, not fund; it has no cheque.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
+  notes: >
+    New for the Founder Office on STEP-11 (M30.C6.L-data.V1.U01), written for the founder's work rather
+    than copied from Sales' firmographic company. Concise on purpose; programmes, introductions and
+    hiring will add what they need when they load it.

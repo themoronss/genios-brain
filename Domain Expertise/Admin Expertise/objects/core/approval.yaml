@@ -495,7 +495,7 @@ states:
         this object exists.
       entered_when:
         - {path: thread.ball_in_court, op: "=", value: them}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 2, floor: 3}}
       implies: A remedy is needed and it is probably not a reminder. Establish stuck_reason before acting.
     - name: on_hold
       description: Paused deliberately — awaiting a prior step, an external party or a budget period. Distinct from stuck because somebody chose it and named a resume condition.
@@ -526,7 +526,7 @@ states:
     - {from: submitted, to: pending_approval, when: [{path: thread.ball_in_court, op: "=", value: them}]}
     - {from: pending_approval, to: overdue, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
     - {from: pending_approval, to: at_risk, reversible: true,
-       when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}]}
+       when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 2, floor: 3}}]}
     - {from: at_risk, to: pending_approval, trigger: approver_responded, reversible: true}
     - {from: pending_approval, to: on_hold, trigger: hold_reason_recorded, reversible: true}
     - {from: on_hold, to: pending_approval, trigger: hold_condition_cleared}
@@ -640,7 +640,7 @@ relationships:
     weight_bp: 600
     confidence_bp: 5500
     priority: 5
-    conditions: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}]
+    conditions: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 2, floor: 3}}]
     description: The path taken when this stalls. An approval object with no escalation path is a queue entry with no exit.
 
   - type: governed_by
@@ -775,7 +775,7 @@ inference_patterns:
       status: executable
       when:
         - {path: thread.ball_in_court, op: "=", value: them}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 2, floor: 3}}
       yields: {confidence_bp: 7200, attribute: state, value: at_risk}
       evidence_fields: [thread.ball_in_court, thread.last_inbound]
       false_positive: >
@@ -825,7 +825,7 @@ inference_patterns:
       when:
         - {path: thread.ball_in_court, op: "=", value: them}
         - {path: derived.engagement, op: "<=", value: 0.5}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3, floor: 5}}
       yields: {confidence_bp: 6600, attribute: null, corroborates: [apv.stuck_with_the_approver]}
       evidence_fields: [derived.engagement, thread.ball_in_court]
       false_positive: An approver on annual leave produces exactly this shape, and the remedy there is a delegate rather than an escalation. Silence cannot distinguish absent from unwilling.
@@ -1060,7 +1060,7 @@ business_rules:
       and zero stuck ones is not measuring anything.
     when:
       - {path: thread.ball_in_court, op: "=", value: them}
-      - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}
+      - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 2, floor: 3}}
     then: reclassify_as_stuck
     severity: warning
     why: The rule this object exists to make enforceable.
@@ -1077,7 +1077,7 @@ business_rules:
       escalation, never a fourth reminder. Volume is the wrong lever once the route is in doubt.
     when:
       - {path: thread.ball_in_court, op: "=", value: them}
-      - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}
+      - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3, floor: 5}}
     then: switch_from_remind_to_reroute
     severity: warning
 
@@ -1204,7 +1204,7 @@ events:
      payload: [approval_type, approver_ref, subject_value, requested_at]}
   - {id: apv.became_stuck, name: Approval Became Stuck, severity: notable,
      emitted_when: [{path: thread.ball_in_court, op: "=", value: them},
-                    {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 3}}],
+                    {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 2, floor: 3}}],
      payload: [approver_ref, pending_days, stuck_reason, downstream_hardness],
      description: "The event this object exists to emit. Nothing else in the stack currently fires when an approval crosses from working to abandoned."}
   - {id: apv.overdue, name: Approval Overdue, severity: notable,

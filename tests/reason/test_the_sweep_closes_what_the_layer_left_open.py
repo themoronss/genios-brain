@@ -48,12 +48,15 @@ def test_an_oversized_slice_is_reported_and_never_truncated():
     assert big.payload == "y" * 400_000, "the slice was edited to fit a budget"
 
 
-def test_the_sweep_counts_an_oversized_slice_rather_than_swallowing_it():
+def test_the_sweep_sends_r6_no_slice_since_it_retired():
+    """⛔ MOVED 2026-10-11: this asserted the sweep COUNTED a slice too big for R-6. R-6 is retired
+    (`06` D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02) and the sweep sends it nothing, so there
+    is nothing to count; `tests/reason/test_r6_is_retired.py` holds the retirement by the AST."""
     from genios_engine.reason import domain_shadow
 
     src = inspect.getsource(domain_shadow.shadow_compile)
-    assert "slice_over_budget" in src, (
-        "a slice that blew the budget is invisible, which is the defect L2-0 spent a step on")
+    assert "slice_over_budget" not in src and "reason_over_situation" not in src, (
+        "the sweep counts or sends R-6 a slice again — R-6 is retired (06 D51)")
 
 
 # =================================================================================================

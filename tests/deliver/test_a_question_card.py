@@ -1,0 +1,398 @@
+"""STEP-13 · a held file asks you its question on its own card — the file's one card.
+
+    GENIOS_TEST_DATABASE_URL=postgresql+psycopg://… .venv/bin/python -m pytest -q tests/deliver/test_a_question_card.py
+
+Tree `yc2_w27_s13` M36.C2.L-interface.V3.U05 (`deliver/pipeline`: `question_card`, `_build_question_cards`;
+`06` D60, `03` F184). Each open question signal with no live card gets one, through its own door
+(`deliver/store.QUESTION_CARD_SQL`): the question as its headline, the file as the expert read it — checked,
+labelled an inference — as its situation, the Investigation lane, `review` (a request for one answer, never an
+instruction) and an Answer action. A pass later builds nothing again; the same question re-asked keeps its
+card; a new question replaces it; a decision retires it and the file's decision card is built through the
+decision's door. The pass's lane recall stays balanced: a question card is a card.
+"""
+from __future__ import annotations
+
+import os
+from datetime import timedelta
+
+import pytest
+from sqlalchemy import text
+
+from genios_engine.contracts.expert_review import ExpertReview
+from genios_engine.deliver import pipeline
+from genios_engine.deliver.store import QUESTION_CARD_BUILDER, CardStore
+from genios_engine.reason.expert import asks
+from genios_engine.reason.expert.decide import SITUATION_IS
+from tests.reason.expert.test_a_covered_file_decides_once import (  # noqa: F401 — fixtures
+    NOW, _compile, _fund, _open_signals, _review, world)
+from tests.reason.expert.test_a_held_file_asks import FIND_OUT, HELD_Q, _find_out, _held, _questions, _write
+from tests.reason.test_a_programme_is_not_decided_as_an_investor import admitted  # noqa: F401
+
+pytestmark = pytest.mark.pg
+
+
+@pytest.fixture
+def cards():
+    return CardStore(os.environ["GENIOS_TEST_DATABASE_URL"])
+
+
+def _build(store, cards, org, at=NOW):
+    return pipeline.build_cards_for_org(graph=store, card_store=cards, org_id=org, eval_time=at)
+
+
+def _cards(store, org):
+    with store.engine.connect() as c:
+        return c.execute(text(
+            "select card_id, signal_id, state, level, headline, situation, why, actions, output_lane, "
+            "builder_version, render_mode, abstained_because, surfaces, assignee, expires_at from cards "
+            "where org_id = :o "
+            "order by created_at, card_id"), {"o": org}).all()
+
+
+def _queued(cards, org, at):
+    import genios_engine.deliver.store as store_module
+
+    class _Clock(store_module.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return at
+    original = store_module.datetime
+    store_module.datetime = _Clock
+    try:
+        return [r["card_id"] for r in cards.queue(org, admin=True, record_impressions=False)]
+    finally:
+        store_module.datetime = original
+
+
+def _asked(world):
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    return store, org, registry, anchor, events
+
+
+def test_a_held_file_asks_its_question_on_its_own_card(world, cards):
+    store, org, _registry, anchor, _events = _asked(world)
+    counts = _build(store, cards, org)
+    assert counts["question_cards"] == 1 and counts["built"] == 1, counts
+    assert counts["lane_recall_balanced"] is True and counts["cards_output_lane_investigation"] == 1
+    [card] = _cards(store, org)
+    [question] = _questions(store, org, anchor)
+    [signal] = _open_signals(store, org, anchor)
+    assert (card.signal_id, card.headline, card.level, card.output_lane, card.builder_version,
+            card.render_mode) == (signal.signal_id, FIND_OUT, "review", "investigation", QUESTION_CARD_BUILDER,
+                                  "question")
+    assert card.situation and card.abstained_because == question.why
+    assert card.actions[0] == {"type": "answer", "label": "Answer", "question_id": question.question_id}
+    assert [a["type"] for a in card.actions] == list(pipeline.QUESTION_ACTIONS)
+    assert card.why[0] == {"sentence": "headline", "question": FIND_OUT, "because": question.why,
+                           "source": "expert_check"}
+    assert "agent" not in card.surfaces
+    with store.engine.connect() as c:
+        held_until = c.execute(text("select authority_expires_at from signals where org_id = :o and "
+                                    "signal_id = :s"), {"o": org, "s": signal.signal_id}).scalar()
+    assert card.expires_at <= held_until, "never outlives the authority it is read by"
+    assert _queued(cards, org, NOW) == [card.card_id], "it reaches the queue"
+
+
+def test_a_question_card_says_what_answering_does_and_what_waiting_costs(world, cards):
+    """STEP-11's founder-card clause (`tests/replays/test_every_founder_file_reads_its_playbook`): every founder
+    card says what success looks like and what doing nothing costs — a question card carried NULL for both. It
+    says them in our closed words (M36.C2.L-logic.V2.U10), never model prose; a question has no play window."""
+    store, org, _registry, _anchor, _events = _asked(world)
+    _build(store, cards, org)
+    with store.engine.connect() as c:
+        row = c.execute(text("select success_signal, do_nothing_consequence, outcome_window_days from cards "
+                             "where org_id = :o"), {"o": org}).one()
+    assert (row.success_signal, row.do_nothing_consequence, row.outcome_window_days) == (
+        "you answered: your words are kept on the file and its next review reads them",
+        "nothing on this file moves until you answer", None)
+    assert (row.success_signal, row.do_nothing_consequence) == (pipeline.QUESTION_SUCCESS_SIGNAL,
+                                                                pipeline.QUESTION_DO_NOTHING)
+
+
+def test_a_held_review_asks_the_checks_question_over_the_files_checked_reading(world, cards):
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    review = ExpertReview.from_mapping(_review(sorted(events)[0]))
+    held = _held(review)
+    _write(store, org, anchor, "ffp-fund-held-review-00000", events, checked=held)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-held-review-00000"})
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    assert (card.headline, card.situation) == (HELD_Q, held.words.situation)
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U10 (`03` X10): `because` was the check's internal reason ("misquoted
+    # (fact 1)", and with a real check "misquoted: <the model's quote> (fact 1)"). One closed phrase, for you.
+    assert card.why[0]["because"] == asks.WHY_NOT_CONFIRMED == card.abstained_because
+    assert card.why[1] == {"sentence": "situation", "inference": SITUATION_IS, "source": "expert_check"}
+
+
+def test_a_pass_later_builds_nothing_again(world, cards):
+    store, org, _registry, _anchor, _events = _asked(world)
+    _build(store, cards, org)
+    again = _build(store, cards, org, at=NOW + timedelta(hours=1))
+    assert (again["question_cards"], again["built"], again["already_built"], again["build_in_progress"]) == (
+        0, 0, 0, 0), "a carded question is not even selected"
+    assert len(_cards(store, org)) == 1
+
+
+def test_the_same_question_asked_again_keeps_its_card(world, cards):
+    store, org, registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    [first] = _cards(store, org)
+    with store.engine.begin() as c:            # the gate has no memory of it: decided again, re-bound
+        c.execute(text("delete from reasoning_fingerprints where org_id = :o"), {"o": org})
+    later = NOW + timedelta(hours=30)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"}, at=later)
+    assert _build(store, cards, org, at=later)["question_cards"] == 0
+    [card] = _cards(store, org)
+    assert card.card_id == first.card_id and card.state == "queued"
+    assert _queued(cards, org, later) == [card.card_id], "re-bound, still read through its door"
+
+
+# ⛔ RESTATED by yc2_w27_s14/M42.C2.L-integration.V2.U05 (`03` F176, s14-F13, s14-D3): a new question and a decision
+# after a question are VERSIONS of the file's one card — the old card is no longer expired REPLACED and a second one
+# built. Green since delivery versions it (M42.C3.L-integration.V2.U03 removed the markers).
+def test_a_new_question_is_the_cards_next_version(world, cards):
+    store, org, registry, anchor, events = _asked(world)
+    _build(store, cards, org)
+    [first] = _cards(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-001", events, question="Who at the fund decides?")
+    later = NOW + timedelta(hours=1)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
+    _build(store, cards, org, at=later)
+    built = _cards(store, org)
+    assert len(built) == 1, "one file, one card"
+    card = built[0]
+    assert (card.card_id, card.state, card.headline) == (first.card_id, "queued", "Who at the fund decides?")
+    assert _queued(cards, org, later) == [card.card_id]
+
+
+def test_a_decision_after_the_question_is_the_cards_next_version(world, cards):
+    from tests.reason.expert.test_a_covered_file_decides_once import _write as _write_act
+    store, org, registry, anchor, events = _asked(world)
+    _build(store, cards, org)
+    [first] = _cards(store, org)
+    _write_act(store, org, anchor, "ffp-fund-act-review-000000", events)
+    later = NOW + timedelta(hours=1)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-act-review-000000"}, at=later)
+    counts = _build(store, cards, org, at=later)
+    assert counts["question_cards"] == 0
+    built = _cards(store, org)
+    assert len(built) == 1, "one file, one card"
+    assert built[0].card_id == first.card_id and built[0].builder_version != QUESTION_CARD_BUILDER
+
+
+def test_a_question_goes_where_the_files_decision_would(world, cards, monkeypatch):
+    """Routed by the same rule as every card (`router.resolve_assignee`), over the file's own facts."""
+    from genios_engine.deliver import router
+    store, org, _registry, anchor, _events = _asked(world)
+    asked_about = []
+
+    def _owner(_store, _org, facts, attrs):
+        asked_about.append((facts, attrs))
+        return "seat_founder", "rule1_owner"
+    monkeypatch.setattr(router, "resolve_assignee", _owner)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    assert card.assignee == "seat_founder" and len(asked_about) == 1
+
+
+def test_on_the_shadow_lane_no_question_and_no_card(world, cards):
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"}, live=False)
+    counts = _build(store, cards, org)
+    assert counts["question_cards"] == 0 and _cards(store, org) == []
+
+
+def test_a_pass_that_cannot_read_its_questions_says_so_and_keeps_going(monkeypatch):
+    """⛔ The read failing costs no decision card: counted `questions_unread`, never raised."""
+    from types import SimpleNamespace
+    monkeypatch.setattr(pipeline, "ensure_default", lambda *_a: None)
+    monkeypatch.setattr(pipeline, "_open_signals_without_cards", lambda *_a: [])
+    monkeypatch.setattr(pipeline, "_open_situations_without_cards", lambda *_a: [])
+    monkeypatch.setattr(pipeline, "_activated_features", lambda *_a: frozenset())
+    monkeypatch.setattr(pipeline, "_cohort_absorbed", lambda *_a: set())
+    monkeypatch.setattr(pipeline, "_tenant_identities", lambda *_a: ())
+    graph = SimpleNamespace(engine=None, record_cost=lambda **_k: None)
+    out = pipeline.build_cards_for_org(graph=graph, card_store=SimpleNamespace(), org_id="org_q",
+                                       registry=object(), eval_time=NOW)
+    assert out["questions_unread"] == 1 and out["question_cards"] == 0
+
+
+WITHHELD = "Arjun is deciding whether Tiger Global co-leads the round"
+
+
+def _withheld(world):
+    """A find-out file whose reading the check withheld — a party the file never names (`03` X06's run)."""
+    from genios_engine.contracts import claim_check as C
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    checked = C.CheckedReview(
+        verdicts=(C.LineVerdict("situation", C.DROPPED, C.UNSUPPORTED, "name:Tiger"),), fate=C.SHOWN,
+        cited=(sorted(events)[0],), question=FIND_OUT,
+        words=C.CardWords(headline=FIND_OUT, situation=None, done_when=None, draft=None, to=None,
+                          evidence=(sorted(events)[0],)))
+    _write(store, org, anchor, "ffp-fund-withheld-review-0", events, checked=checked, mode="find_out", draft=None,
+           frames={"primary": WITHHELD, "rivals": ["a polite check-in"]},
+           next_move={"who": "you", "what": FIND_OUT, "for_whom": "Arjun", "by_when": None})
+    _compile(store, org, registry, covered={anchor: "ffp-fund-withheld-review-0"})
+    return store, org, anchor
+
+
+def test_a_find_out_card_never_shows_the_reading_the_check_withheld(world, cards):
+    """⛔ `03` X06 (M36.C2.L-logic.V2.U10): the check dropped the reading (a party the file never names), yet the
+    card's situation was the question's raw `why` — "the expert cannot read this file on without your answer:
+    <that reading>" — unlabelled. With no checked reading, the card says why it asks, in our closed words."""
+    store, org, _anchor = _withheld(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    said = " ".join(str(x) for x in (card.headline, card.situation, card.abstained_because, card.why))
+    assert "Tiger" not in said and WITHHELD not in said
+    assert (card.headline, card.situation) == (FIND_OUT, asks.WHY_FIND_OUT)
+    assert [w["sentence"] for w in card.why] == ["headline"], "no reading, so no inference label for one"
+
+
+def test_a_question_filed_with_raw_words_is_carded_in_closed_ones(world, cards):
+    """A question filed before its words were checked (its `why` the check's reason, or the raw reading) is
+    carded with the closed phrase: no card text is raw prose."""
+    store, org, anchor = _withheld(world)
+    raw = "the expert cannot read this file on without your answer: " + WITHHELD
+    with store.engine.begin() as c:
+        c.execute(text("update founder_questions set why = :w where org_id = :o and file_id = :f"),
+                  {"w": raw, "o": org, "f": anchor})
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    assert card.abstained_because == card.why[0]["because"] == card.situation == asks.WHY_FIND_OUT
+    assert "Tiger" not in " ".join(str(x) for x in (card.situation, card.abstained_because, card.why))
+
+
+# ── M36.C2.L-integration.V2.U11 · a question lives while it is asked (`03` X04, X26, X41) ────────────────────────
+
+def _answer_at(store, cards, org, card_id, at):
+    from genios_engine.deliver import actions
+    return actions.ingest_action(card_store=cards, graph=store, org_id=org, card_id=card_id,
+                                 actor="founder@meridian.test", action="answer", eval_time=at,
+                                 allow_any_assignee=True, words="This quarter's.")
+
+
+def test_a_question_card_lives_past_seven_days_with_the_gate_intact(world, cards):
+    """⛔ `03` X04, at NOW+169 h with the change gate's memory intact: the card died at its first authority (168 h)
+    and was never revived — no card, Answer refused V-09, the question still open. The file is decided again
+    before its window closes, and the card's window moves with its authority: one card, the same card, live."""
+    store, org, registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    covered = {anchor: "ffp-fund-findout-review-000"}
+    renew = NOW + timedelta(hours=150)
+    _compile(store, org, registry, covered=covered, at=renew)
+    assert _build(store, cards, org, at=renew)["question_cards"] == 0, "the same card — never torn down"
+    [moved] = _cards(store, org)
+    assert moved.card_id == card.card_id and moved.expires_at == renew + timedelta(hours=168) > card.expires_at
+    later = NOW + timedelta(hours=169)
+    _compile(store, org, registry, covered=covered, at=later)
+    _build(store, cards, org, at=later)
+    assert _queued(cards, org, later) == [card.card_id]
+    assert _answer_at(store, cards, org, card.card_id, later)["ok"] is True
+
+
+def test_a_question_card_that_lapsed_is_revived_while_its_question_is_asked(world, cards):
+    """No sweep in its last day: the card lapsed (the cron's sweep, `window.lapsed`) with its question still open.
+    The next sweep asks it again — re-bound — and the card comes back: the same card, queued, its window moved."""
+    from genios_engine.platform import card_lifecycle
+    store, org, registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    with store.engine.begin() as c:
+        # The cron's own sweep — every tenant's; this one's card is among what it lapsed.
+        assert (card.card_id, org) in card_lifecycle.expire_lapsed(c, now=NOW + timedelta(hours=168, minutes=1))
+    later = NOW + timedelta(hours=169)
+    assert _answer_at(store, cards, org, card.card_id, later)["code"] == "V-09", "lapsed: nothing to answer"
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"}, at=later)
+    _build(store, cards, org, at=later)
+    [revived] = _cards(store, org)
+    assert (revived.card_id, revived.state) == (card.card_id, "queued") and revived.expires_at > later
+    assert _queued(cards, org, later) == [card.card_id]
+    assert _answer_at(store, cards, org, card.card_id, later)["ok"] is True
+
+
+def test_a_lapsed_decision_card_is_never_revived(world, cards):
+    """⛔ THE NEGATIVE CONTROL: only a question card comes back. A decision card that lapsed while its signal still
+    stands is rebuilt in place (its words), and stays lapsed — its revival is not this unit's to give."""
+    from genios_engine.platform import card_lifecycle
+    from tests.reason.expert.test_a_covered_file_decides_once import _write as _write_act
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _write_act(store, org, anchor, "ffp-fund-act-review-000000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-act-review-000000"})
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    with store.engine.begin() as c:
+        card_lifecycle.expire_cards(c, org_id=org, card_ids=[card.card_id], cause=card_lifecycle.LAPSED,
+                                    kind=card_lifecycle.LAPSED_KIND)
+    later = NOW + timedelta(hours=2)
+    assert _build(store, cards, org, at=later)["refreshed"] == 1, "its signal stands: rebuilt in place"
+    assert [(c.card_id, c.state) for c in _cards(store, org)] == [(card.card_id, "expired")]
+
+
+def test_a_file_that_leaves_coverage_takes_its_question_card_with_it(world, cards):
+    """⛔ `03` X26: the file is decided on its situations again; its question card is not left beside them."""
+    from tests.reason.expert.test_a_held_file_asks import _other_file
+    from tests.reason.expert.test_a_covered_file_decides_once import _write as _write_act
+    store, org, registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    other, other_events = _other_file(store, org)
+    _write_act(store, org, other, "ffp-programme-review-0000", other_events)
+    later = NOW + timedelta(hours=1)
+    _compile(store, org, registry, covered={other: "ffp-programme-review-0000"}, at=later)
+    _build(store, cards, org, at=later)
+    assert [c.state for c in _cards(store, org) if c.builder_version == QUESTION_CARD_BUILDER] == ["expired"]
+
+
+def test_a_rebound_question_card_reads_the_review_asking_it_now(world, cards):
+    """⛔ `03` X41: the same words asked by a later review re-bind the question to the run asking now — and its card
+    was built from the FIRST review's reading. It reads the review the run asking it was triggered by."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    later_reading = "a fund that has moved its partner meeting up a week"
+    _write(store, org, anchor, "ffp-fund-findout-review-001", events, mode="find_out", draft=None,
+           frames={"primary": later_reading, "rivals": ["a polite check-in"]},
+           next_move={"who": "you", "what": FIND_OUT, "for_whom": "Arjun", "by_when": None})
+    later = NOW + timedelta(hours=1)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
+    assert counts.get("expert_question_standing") == 1, counts
+    _build(store, cards, org, at=later)
+    [card] = _cards(store, org)
+    assert (card.headline, card.situation) == (FIND_OUT, later_reading)
+
+
+def test_a_question_card_offers_dont_ask_me_this(world, cards):
+    """STEP-16 (`yc2_w27_s16` M46.C3.L-interface.V5.U07; S16-D4, S16-D10): beside answer and later, *don't ask me
+    this* — the eleven reasons under the decision card's four groups, and your words, optional — and pressing it
+    retires the question the card asks."""
+    from genios_engine.contracts.learning_attribution import ALL_REASONS
+    from genios_engine.context import founder_questions as Q
+    from genios_engine.deliver import actions
+    from genios_engine.deliver.card_builder import _WRONG_REASON_GROUPS
+    store, org, _registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    [question] = _questions(store, org, anchor)
+    [wrong] = [a for a in card.actions if a["type"] == "wrong"]
+    assert wrong == {"type": "wrong", "label": "Don't ask me this", "question_id": question.question_id,
+                     "reasons": list(ALL_REASONS), "reason_groups": _WRONG_REASON_GROUPS,
+                     "words": pipeline.QUESTION_WRONG_WORDS}
+    assert len(wrong["reason_groups"]) == 4 and sorted(r for rs in wrong["reason_groups"].values() for r in rs) \
+        == sorted(ALL_REASONS)
+    reason = wrong["reason_groups"]["the conclusion is wrong"][0]
+    out = actions.ingest_action(card_store=cards, graph=store, org_id=org, card_id=card.card_id,
+                                actor="founder@meridian.test", action="wrong", reason=reason,
+                                eval_time=NOW + timedelta(minutes=5), allow_any_assignee=True)
+    assert out["ok"] is True, out
+    [retired] = _questions(store, org, anchor)
+    assert (retired.state, retired.retired_why) == (Q.RETIRED, Q.CALLED_WRONG)

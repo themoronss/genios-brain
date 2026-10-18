@@ -31,6 +31,7 @@ from genios_engine.context.expected_facts import expected_facts_for
 from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.quality import AbsenceType, MissingFact
 from genios_engine.contracts.situation import (
+    CONFIDENCE_AXES,
     Anomaly,
     BusinessSituationObject,
     CohortPosition,
@@ -159,17 +160,20 @@ def _confidence(old: LegacySituation) -> ConfidenceVector:
         value = raw.get(name)
         return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
 
-    axes = {name: axis(name) for name in (
-        "evidence", "freshness", "consistency", "identity", "coverage", "analytic")}
+    # `CONFIDENCE_AXES`, NOT A LIST SPELLED OUT HERE. This was a hand-written tuple of the six
+    # names — a third copy of a declaration that already existed twice as a constant — and a
+    # seventh axis added to the contract would have been read by nothing, published as `None` on
+    # every situation, and reported as working by every test that only asked the contract.
+    axes = {name: axis(name) for name in CONFIDENCE_AXES}
     measured = tuple(sorted(name for name, value in axes.items() if value is not None))
     if not measured:
         axes["evidence"] = old.confidence_bp
         measured = ("evidence",)
     overall = min(old.confidence_bp, *(axes[name] for name in measured if axes[name] is not None))
+    # Keyword-splatted from the same dict rather than six named arguments, for the same reason:
+    # a seventh field on the contract and a sixth line here is how the two drift silently.
     return ConfidenceVector(
-        evidence_bp=axes["evidence"], freshness_bp=axes["freshness"],
-        consistency_bp=axes["consistency"], identity_bp=axes["identity"],
-        coverage_bp=axes["coverage"], analytic_bp=axes["analytic"],
+        **{f"{name}_bp": value for name, value in axes.items()},
         overall_bp=overall, composed_from=measured)
 
 

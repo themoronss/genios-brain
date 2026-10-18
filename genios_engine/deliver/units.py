@@ -67,9 +67,24 @@ CHANNEL_NEEDS_CREDENTIAL: frozenset[str] = frozenset({
 #: fetches them; there is no adapter because there is nothing to send, and demanding one would
 #: report the one delivery path that actually works today as broken.
 #:
-#: For the push half, `channels/base.get_channel` returns Slack or None — one implementation
-#: across every push channel named here. Reporting the rest as "operational" the moment a row
-#: exists in org_channels overstates the product on exactly the surfaces a pilot gets sold on.
+#: For the push half, `channels/base.get_channel` returns an adapter for `slack` and for
+#: `agent_push`, and None for the rest — so `api`, `email`, `teams` and `webhook` have no
+#: implementation at all: TWO of the six named here, not one.
+#:
+#: ⛔ THIS COMMENT SAID "returns Slack or None — one implementation" UNTIL 2026-10-01.
+#: `channels/agent.py` is the LARGEST adapter in that folder and landed two days after `base.py`;
+#: the sentence was never revisited. The BEHAVIOUR was always right, because
+#: `_implemented_channels()` calls `get_channel` and counts the answer instead of trusting this
+#: prose — which is the dangerous combination: no test fails, no receipt goes red, and the only
+#: wrong thing is what a human reads. ⛔ And this sentence is the JUSTIFICATION for the frozen set
+#: below, so a reader deciding whether to build the agent adapter was being told to build a second
+#: one. The count is now pinned in
+#: `tests/deliver/test_a_comment_is_not_a_measurement.py::test_the_implemented_adapter_set_is_
+#: computed_and_not_described`, which names the two and fails when a third lands — so the next
+#: adapter forces somebody back to this paragraph.
+#:
+#: Reporting the rest as "operational" the moment a row exists in org_channels overstates the
+#: product on exactly the surfaces a pilot gets sold on.
 PUSH_REQUIRES_ADAPTER: frozenset[str] = frozenset({
     "slack", "teams", "email", "webhook", "api", "agent_push",
 })

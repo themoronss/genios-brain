@@ -54,11 +54,23 @@ def test_backfill_registers_the_original_entity_before_the_duplicate() -> None:
 
 def test_backfill_excludes_our_own_people_like_the_live_path_does() -> None:
     """Without it, every outbound email in the tenant's history anchors on our own
-    company and the backfill builds ONE situation containing the whole business."""
+    company and the backfill builds ONE situation containing the whole business.
+
+    RESTATED BY STEP-04 (`yc2_w27_s04 · M22.C2.L-logic.V2.U09`). This pinned the TEXT of the
+    exclusion — `org_seats` and `in internal` — and STEP-04 removed exactly that text: who is us
+    is `platform/self_identity`, read once (`identity_for`) and asked per anchor candidate
+    (`is_us_node`), the live pipeline's own answer. The claim is unchanged; what it reads is the
+    call graph, by the AST — a word in a comment or a string can no longer satisfy it. The
+    behaviour itself is `tests/context/test_backfill_reads_the_identity.py`."""
+    import ast
+    import textwrap
+
     from genios_engine.context.backfill import backfill_correlations
-    source = inspect.getsource(backfill_correlations)
-    assert "org_seats" in source
-    assert "in internal" in source
+    tree = ast.parse(textwrap.dedent(inspect.getsource(backfill_correlations)))
+    called = {n.func.attr if isinstance(n.func, ast.Attribute) else getattr(n.func, "id", None)
+              for n in ast.walk(tree) if isinstance(n, ast.Call)}
+    assert "identity_for" in called, "the backfill no longer asks who we are"
+    assert "is_us_node" in called, "the backfill reads who we are but excludes nobody by it"
 
 
 def test_backfill_skips_events_it_has_already_grouped() -> None:

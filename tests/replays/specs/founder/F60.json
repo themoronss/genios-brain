@@ -1,0 +1,604 @@
+{
+ "case_id": "F60",
+ "title": "Three introductions forwarded in one thread: split per contact, never one ask",
+ "kind": "must_detect",
+ "label_row": 60,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-08T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "forward",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-08T07:30:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "cc": [
+    "kiran@pinewood.test",
+    "rhea@saltmarsh.test",
+    "vikram@brightwell.test"
+   ],
+   "subject": "Fwd: three introductions from the Lakefront founder evening",
+   "body": "Arjun, three people from Thursday's Lakefront founder evening asked me to connect you, and I've copied them here so you can take it from here with each of them.\n\nKiran Bhat, a principal at Pinewood Capital, would like your deck before the fund's partner meeting.\n\nRhea Kapur, who runs operations at Saltmarsh, would like a demo for her team of eight.\n\nVikram Nair, who leads partnerships at Brightwell, would like a call about a referral partnership.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-lakefront",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Kiran Bhat",
+       "entity_type": "person",
+       "quote": "Kiran Bhat"
+      },
+      {
+       "surface_form": "Pinewood Capital",
+       "entity_type": "organization",
+       "quote": "Pinewood Capital"
+      },
+      {
+       "surface_form": "Rhea Kapur",
+       "entity_type": "person",
+       "quote": "Rhea Kapur"
+      },
+      {
+       "surface_form": "Saltmarsh",
+       "entity_type": "organization",
+       "quote": "Saltmarsh"
+      },
+      {
+       "surface_form": "Vikram Nair",
+       "entity_type": "person",
+       "quote": "Vikram Nair"
+      },
+      {
+       "surface_form": "Brightwell",
+       "entity_type": "organization",
+       "quote": "Brightwell"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Kiran Bhat",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Kiran Bhat, a principal at Pinewood Capital, would like your deck"
+      },
+      {
+       "party": "Rhea Kapur",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Rhea Kapur, who runs operations at Saltmarsh, would like a demo"
+      },
+      {
+       "party": "Vikram Nair",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Vikram Nair, who leads partnerships at Brightwell, would like a call"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Can Arjun send Kiran Bhat his deck before Pinewood Capital's partner meeting?",
+       "asked_by": "Kiran Bhat",
+       "asked_of": "Arjun Rao",
+       "quote": "would like your deck before the fund's partner meeting"
+      },
+      {
+       "text": "Can Arjun give Rhea Kapur's operations team at Saltmarsh a demo?",
+       "asked_by": "Rhea Kapur",
+       "asked_of": "Arjun Rao",
+       "quote": "would like a demo for her team of eight"
+      },
+      {
+       "text": "Will Arjun take a call with Vikram Nair about a referral partnership with Brightwell?",
+       "asked_by": "Vikram Nair",
+       "asked_of": "Arjun Rao",
+       "quote": "would like a call about a referral partnership"
+      }
+     ],
+     "implied_actions": [
+      "send Kiran the deck",
+      "offer Rhea a demo",
+      "set up a call with Vikram"
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce three contacts at once"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "memory": {
+   "forward": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Kiran",
+     "Pinewood"
+    ],
+    "min": 1,
+    "max": 1
+   },
+   {
+    "about": [
+     "Rhea",
+     "Saltmarsh"
+    ],
+    "min": 1,
+    "max": 1
+   },
+   {
+    "about": [
+     "Vikram",
+     "Brightwell"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Reply to Introly",
+   "reply to Introly",
+   "write to Introly",
+   "Write to Introly",
+   "three introductions"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {},
+ "notes": "Replay 02 m01: one connector mail introduces three contacts at once, each with an ask of its own — split per contact (a card each naming its one contact), never one card for the forward.",
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<pinewood.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly copied Kiran Bhat and two others from the Lakefront founder evening on one mail, so that you could take it from there with each of them.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db"
+       ],
+       "quote": "I've copied them here so you can take it from here with each of them"
+      },
+      {
+       "claim": "Kiran Bhat, a principal at Pinewood Capital, would like your deck before the fund's partner meeting.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db"
+       ],
+       "quote": "Kiran Bhat, a principal at Pinewood Capital, would like your deck before the fund's partner meeting"
+      },
+      {
+       "claim": "The same mail carries two other people's asks, which belong to their own files and not to this one.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db"
+       ]
+      },
+      {
+       "claim": "Nothing from Kiran or from you is in the file since.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db",
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_8b57d07ccf5f31961edd975e",
+        "hist:derived.history.times_seen@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The first move is yours: Kiran was copied so that you would write.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "Only Kiran's ask belongs to this file; the others on the same mail are their own files.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@fundraising"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Pinewood Capital may join your round.",
+       "needs": "What Kiran says after the partner meeting."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "When the partner meeting is.",
+       "relevance": "It sets how soon the deck must go."
+      }
+     ],
+     "frames": {
+      "primary": "An investor from the Lakefront founder evening would like your deck before the fund's partner meeting; the connector copied them so that you would write.",
+      "rivals": [
+       "A principal collecting decks for a meeting where yours is one of many.",
+       "A first step towards a lead for your round."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "Kiran Bhat is a principal at Pinewood Capital and would like your deck before the fund's partner meeting.",
+      "evidence": [
+       "evt_ba329d257d39c140362d15db"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: an investor who asks for the deck gets it before the meeting it is for.",
+      "actual": "Kiran's ask came through the connector's mail; nothing from you is in the file."
+     },
+     "scenarios": {
+      "do_nothing": "The partner meeting comes and goes without your deck.",
+      "act": "Sending the deck now puts it in front of the partner meeting.",
+      "best": "Kiran takes the deck to the partner meeting and asks for a call.",
+      "worst": "The deck never goes, or goes to the connector, and Pinewood Capital meets without it.",
+      "signals_to_watch": [
+       "Kiran confirming the deck arrived",
+       "Kiran saying when the partner meeting is"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "high",
+      "reversibility": "reversible",
+      "reasons": [
+       "An investor's ask waits on you.",
+       "The partner meeting's date is not in the file, so sooner is safer.",
+       "A deck sent late can still be read, so a wrong move is easily put right."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "You",
+      "what": "Send Kiran Bhat your deck before Pinewood Capital's partner meeting",
+      "for_whom": "Kiran Bhat at Pinewood Capital",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Kiran Bhat",
+      "answers": null
+     },
+     "alternative": "If the deck is not ready to share, write to Kiran with a short summary and ask when the partner meeting is.",
+     "wait_or_stop": "Do not wait: the first move is yours. Once you have written, wait for Kiran; if no answer comes within a week, nudge once, then stop.",
+     "done_when": "Kiran Bhat has your deck before Pinewood Capital's partner meeting.",
+     "draft": "Hi Kiran, good to meet you through Introly. Here is our deck, ahead of the partner meeting. I'd be glad to walk you through it whenever suits you. Best"
+    }
+   },
+   {
+    "when": [
+     "<saltmarsh.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly copied Rhea Kapur and two others from the Lakefront founder evening on one mail, so that you could take it from there with each of them.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db"
+       ],
+       "quote": "I've copied them here so you can take it from here with each of them"
+      },
+      {
+       "claim": "Rhea Kapur, who runs operations at Saltmarsh, would like a demo for her team of eight.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db"
+       ],
+       "quote": "Rhea Kapur, who runs operations at Saltmarsh, would like a demo for her team of eight"
+      },
+      {
+       "claim": "The same mail carries two other people's asks, which belong to their own files and not to this one.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db"
+       ]
+      },
+      {
+       "claim": "Nothing from Rhea or from you is in the file since.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db",
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_d95de3fcddfefe8e1d6b3e51",
+        "hist:derived.history.times_seen@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The first move is yours: Rhea was copied so that you would write.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "Only Rhea's ask belongs to this file; the others on the same mail are their own files.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@fundraising"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Saltmarsh may be a fit as an early customer.",
+       "needs": "The demo, and what Rhea's team needs."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Which times next week you can give.",
+       "relevance": "A message that names a time books the demo in one exchange."
+      }
+     ],
+     "frames": {
+      "primary": "An operations lead from the Lakefront founder evening would like a demo for her team; the connector copied her so that you would write.",
+      "rivals": [
+       "A prospective customer whose team is the user the product is for.",
+       "A curious contact, where the demo is goodwill only."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "intro",
+      "why": "Rhea Kapur came to you through the connector's mail and would like a demo for her team at Saltmarsh.",
+      "evidence": [
+       "evt_ba329d257d39c140362d15db"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: a contact who asks for a demo is offered a time promptly.",
+      "actual": "Rhea's ask came through the connector's mail; nothing from you is in the file."
+     },
+     "scenarios": {
+      "do_nothing": "Rhea's ask goes cold, and her team never sees the product.",
+      "act": "Writing to Rhea now with a time books the demo while the introduction is warm.",
+      "best": "Rhea's team sees the product and Saltmarsh becomes a customer.",
+      "worst": "The demo is never offered, or the reply goes to the connector, and the prospect is lost.",
+      "signals_to_watch": [
+       "Rhea accepting a time",
+       "A nudge from Rhea or the connector"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "A prospect's ask waits on you.",
+       "A demo offered late can still be booked, so a wrong move is reversible."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "You",
+      "what": "Offer Rhea Kapur a demo for her team of eight at Saltmarsh",
+      "for_whom": "Rhea Kapur at Saltmarsh",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Rhea Kapur",
+      "answers": null
+     },
+     "alternative": "If a demo is too early, write to Rhea offering a short call first to hear what her team needs.",
+     "wait_or_stop": "Do not wait: the first move is yours. Once you have written, wait for Rhea; if no answer comes within a week, nudge once, then stop.",
+     "done_when": "A demo with Rhea Kapur's team is on both calendars.",
+     "draft": "Hi Rhea, good to meet you through Introly. I'd be glad to show your team the product in a demo. Would one afternoon next week suit you? Send me a time and I'll send an invite. Best"
+    }
+   },
+   {
+    "when": [
+     "<brightwell.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly copied Vikram Nair and two others from the Lakefront founder evening on one mail, so that you could take it from there with each of them.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db"
+       ],
+       "quote": "I've copied them here so you can take it from here with each of them"
+      },
+      {
+       "claim": "Vikram Nair, who leads partnerships at Brightwell, would like a call about a referral partnership.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db"
+       ],
+       "quote": "Vikram Nair, who leads partnerships at Brightwell, would like a call about a referral partnership"
+      },
+      {
+       "claim": "The same mail carries two other people's asks, which belong to their own files and not to this one.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db"
+       ]
+      },
+      {
+       "claim": "Nothing from Vikram or from you is in the file since.",
+       "evidence": [
+        "evt_ba329d257d39c140362d15db",
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_5faaf392643da969952ccb65",
+        "hist:derived.history.times_seen@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The first move is yours: Vikram was copied so that you would write.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "Only Vikram's ask belongs to this file; the others on the same mail are their own files.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@fundraising"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "A referral partnership with Brightwell could bring you customers.",
+       "needs": "The call, and what Vikram proposes."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "What Brightwell's customers need.",
+       "relevance": "It decides whether referrals would suit you."
+      }
+     ],
+     "frames": {
+      "primary": "A partnerships lead from the Lakefront founder evening would like a call about referrals; the connector copied him so that you would write.",
+      "rivals": [
+       "A channel that could bring you customers through Brightwell.",
+       "An exploratory call with no partnership behind it yet."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "partner",
+      "why": "Vikram Nair leads partnerships at Brightwell and would like a call about a referral partnership.",
+      "evidence": [
+       "evt_ba329d257d39c140362d15db"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: a contact who asks for a call is offered a time promptly.",
+      "actual": "Vikram's ask came through the connector's mail; nothing from you is in the file."
+     },
+     "scenarios": {
+      "do_nothing": "Vikram's ask goes cold, and the referral channel never opens.",
+      "act": "Writing to Vikram now with a time sets the call while the introduction is warm.",
+      "best": "The call leads to a referral partnership with Brightwell.",
+      "worst": "The call is never offered, or the reply goes to the connector, and the channel is lost.",
+      "signals_to_watch": [
+       "Vikram accepting a time",
+       "A nudge from Vikram or the connector"
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "A partner's ask waits on you.",
+       "A call offered late can still be set, so a wrong move is reversible."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "You",
+      "what": "Offer Vikram Nair a call about a referral partnership with Brightwell",
+      "for_whom": "Vikram Nair at Brightwell",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Vikram Nair",
+      "answers": null
+     },
+     "alternative": "If a partnership is not a priority now, write to Vikram saying so warmly, and offer to talk later.",
+     "wait_or_stop": "Do not wait: the first move is yours. Once you have written, wait for Vikram; if no answer comes within a week, nudge once, then stop.",
+     "done_when": "A call with Vikram Nair about a referral partnership is on both calendars.",
+     "draft": "Hi Vikram, good to meet you through Introly. I'd be glad to talk about a referral partnership. Would a call one morning next week suit you? Send me a time and I'll send an invite. Best"
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,120 @@
+# The fundraising domain's ACCOUNT anchor, moved from Sales' investor relations with a new id. Its
+# `matches` are Sales' exactly — the same type, scope and narrowing — so routing does not change when
+# the file moves; only the corpus it lands in does. `live-investor-contact.yaml` is its person twin.
+identity:
+  id: founder_office.sit.live_investor_relationship
+  name: Live Investor Relationship
+  domain: founder_office
+  owner_capability: founder_office.fundraising.investor_relations
+  version: 1.0.0
+  status: draft
+
+description: >
+  An ongoing relationship with a party that might fund the company, read at the ACCOUNT level: the
+  fund, the angel network, the syndicate — not the individual partner. Layer 2 types it
+  `fundraising`, which the Founder Office now serves.
+
+
+  It is emphatically NOT an opportunity. There is no purchase, no value to prove, no close date the
+  founder controls, and a "no" is usually a "not now" carrying a condition. Read through a pipeline
+  it produces closed-lost language about a fund that explicitly invited a return next round. An
+  accelerator or a programme that reaches this situation is a misfile: its clock is a cohort's, and
+  it belongs to the programmes capability.
+
+matches:
+  l2_situation_types:
+    - investor_relationship
+  # ACCOUNT, not person. Layer 2 anchors these on the fund's company node; the individual partner
+  # arrives as a neighbour. `investor_contact` is the person-anchored sibling and is deliberately not
+  # claimed here — a different read with a different next move.
+  scope: account
+  # ONE NARROWING, AND ONLY OVER A CLAIM THE COPY ALREADY MAKES. The card says there is no agreed
+  # next step — a statement about a fact — and `absent:` checks exactly that and nothing else. A
+  # deal-shaped predicate would suppress the whole population this file serves; `derived.momentum`
+  # is deliberately not used for "nothing moving", because a node with no observations in the window
+  # carries no momentum row, the predicate answers UNKNOWN, and the dormant relationships this exists
+  # for would stop routing.
+  when:
+    - absent: commitment.due_at
+
+objects:
+  # Founder Office objects only. There is no buying committee, budget, timeline, deal or price in this
+  # corpus to refuse, so there is no `never_load`: the commercial machinery a Sales load-set had to
+  # exclude by name does not exist here.
+  load:
+    - founder_office.obj.core.company
+    - founder_office.obj.investor_relations.investor_conversation
+  optional:
+    - founder_office.obj.core.contact
+    - founder_office.obj.core.next_action
+    - founder_office.obj.core.risk
+
+priority_bp: 5500
+
+# A prior: the deal period venture investors report — 83 days on average to close, 73 at early-stage
+# firms and 96 at firms outside the US (Gompers, Gornall, Kaplan & Strebulaev, "How Do Venture
+# Capitalists Make Decisions?", NBER Working Paper 22587, 2016, Table 9). A relationship with no
+# agreed next step typically lasts about as long as the conversation it belongs to. Sales carried 45
+# with no source.
+typical_duration_days: 83
+
+signals_of_progress:
+  - introduction
+  - intro_made
+  - meeting_request
+  - meeting_scheduled
+  - next_step_agreed
+  - positive_reply
+  - diligence_started
+
+signals_of_decay:
+  - negative_reply
+  - timeline_slip
+  - decision_deferred
+  - meeting_cancelled
+  - pass_received
+
+do_nothing_consequence: >-
+  A fund that is given no reason to move simply stops replying, and by the time the silence reads as
+  a no the round has moved on without it.
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its
+    own; the reader already knows time passed.
+
+    A conversation with a party that might FUND the company. Not a customer, not a deal. There is no
+    value to prove, no budget of ours to approve and no close date we control — never write about
+    pricing, contracts, buying committees or a deal stage, and never render a pass as a loss. A pass
+    is a date: it usually carries a condition and an implicit "come back when".
+
+    Headline: where this stands with the fund and what it turns on — the condition they named, the
+    round, the next real moment. Name the fund.
+
+    Situation: what they actually said, in their terms. The condition, the timing, the person who
+    said it. A "no" that named a milestone is a different fact from silence, and the two must never
+    read alike.
+
+    Artifact: a reply that respects who is chasing whom. Investors do not chase — give them a reason
+    to re-engage (a concrete update against the condition they named), never a nudge.
+  fallback:
+    headline: "Agree a next step with {entity}"
+    situation: >-
+      An open fundraising conversation with {entity} and no agreed next step on the record.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Moved from Sales' investor relations (stable and approved there, 2026-08-25) with a new id, so it
+    is unreviewed here until the founder accepts it (`06` D45). Kept from Sales: `matches`,
+    `priority_bp` and the card copy. Changed: Founder Office objects only, no `also_serves` (the Sales
+    account-research capability it also served is outside this domain), a sourced typical duration,
+    the fundraising observation kinds in the progress and decay signals, and what doing nothing costs.
+    typical_duration_days 83 is a prior: the average days to close a deal that venture investors report
+    (Gompers, Gornall, Kaplan & Strebulaev, NBER Working Paper 22587, 2016, Table 9).

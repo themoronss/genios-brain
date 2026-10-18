@@ -1,0 +1,196 @@
+[
+ {
+  "case": "F01",
+  "title": "A government portal moves the founder's live application",
+  "archived_by_todays_gate": 1,
+  "relist_today": {
+   "duplicate": 1
+  },
+  "set_aside_frees": 0,
+  "orphan_recovery": {
+   "rows_recovered": 1,
+   "outcome_after": "emitted",
+   "payloads_after": 0
+  },
+  "keys_freed": 1,
+  "relist_after_freeing": {
+   "archived": 1
+  },
+  "superseded_by_finish": 1,
+  "after": {
+   "old_rows": {
+    "superseded": 1
+   },
+   "relanded": {
+    "archived/archive": 1
+   },
+   "relanded_without_payload": 0
+  },
+  "relist_again": {
+   "duplicate": 1
+  },
+  "model_misses": 0
+ },
+ {
+  "case": "F02",
+  "title": "One application across four mails: the same card updates",
+  "archived_by_todays_gate": 4,
+  "relist_today": {
+   "duplicate": 4
+  },
+  "set_aside_frees": 0,
+  "orphan_recovery": {
+   "rows_recovered": 1,
+   "outcome_after": "emitted",
+   "payloads_after": 0
+  },
+  "keys_freed": 4,
+  "relist_after_freeing": {
+   "archived": 4
+  },
+  "superseded_by_finish": 4,
+  "after": {
+   "old_rows": {
+    "superseded": 4
+   },
+   "relanded": {
+    "archived/archive": 4
+   },
+   "relanded_without_payload": 0
+  },
+  "relist_again": {
+   "duplicate": 4
+  },
+  "model_misses": 0
+ },
+ {
+  "case": "F03",
+  "title": "A connector introduces an investor, then nudges twice",
+  "archived_by_todays_gate": 3,
+  "relist_today": {
+   "duplicate": 3
+  },
+  "set_aside_frees": 0,
+  "orphan_recovery": {
+   "rows_recovered": 1,
+   "outcome_after": "emitted",
+   "payloads_after": 0
+  },
+  "keys_freed": 3,
+  "relist_after_freeing": {
+   "archived": 3
+  },
+  "superseded_by_finish": 3,
+  "after": {
+   "old_rows": {
+    "superseded": 3
+   },
+   "relanded": {
+    "archived/archive": 3
+   },
+   "relanded_without_payload": 0
+  },
+  "relist_again": {
+   "duplicate": 3
+  },
+  "model_misses": 0
+ },
+ {
+  "case": "F09",
+  "title": "The connector answers the founder's reply with its own ask",
+  "archived_by_todays_gate": 1,
+  "relist_today": {
+   "duplicate": 2
+  },
+  "set_aside_frees": 0,
+  "orphan_recovery": {
+   "rows_recovered": 1,
+   "outcome_after": "emitted",
+   "payloads_after": 0
+  },
+  "keys_freed": 1,
+  "relist_after_freeing": {
+   "archived": 1,
+   "duplicate": 1
+  },
+  "superseded_by_finish": 1,
+  "after": {
+   "old_rows": {
+    "superseded": 1
+   },
+   "relanded": {
+    "archived/archive": 1
+   },
+   "relanded_without_payload": 0
+  },
+  "relist_again": {
+   "duplicate": 2
+  },
+  "model_misses": 0
+ },
+ {
+  "case": "F16",
+  "title": "The founder's mail to a fund bounced",
+  "archived_by_todays_gate": 1,
+  "relist_today": {
+   "duplicate": 2
+  },
+  "set_aside_frees": 0,
+  "orphan_recovery": {
+   "rows_recovered": 1,
+   "outcome_after": "emitted",
+   "payloads_after": 0
+  },
+  "keys_freed": 1,
+  "relist_after_freeing": {
+   "archived": 1,
+   "duplicate": 1
+  },
+  "superseded_by_finish": 1,
+  "after": {
+   "old_rows": {
+    "superseded": 1
+   },
+   "relanded": {
+    "archived/archive": 1
+   },
+   "relanded_without_payload": 0
+  },
+  "relist_again": {
+   "duplicate": 2
+  },
+  "model_misses": 0
+ },
+ {
+  "case": "F32",
+  "title": "Program newsletters are archived, never a card",
+  "archived_by_todays_gate": 3,
+  "relist_today": {
+   "duplicate": 3
+  },
+  "set_aside_frees": 0,
+  "orphan_recovery": {
+   "rows_recovered": 1,
+   "outcome_after": "emitted",
+   "payloads_after": 0
+  },
+  "keys_freed": 3,
+  "relist_after_freeing": {
+   "archived": 3
+  },
+  "superseded_by_finish": 3,
+  "after": {
+   "old_rows": {
+    "superseded": 3
+   },
+   "relanded": {
+    "archived/archive": 3
+   },
+   "relanded_without_payload": 0
+  },
+  "relist_again": {
+   "duplicate": 3
+  },
+  "model_misses": 0
+ }
+]

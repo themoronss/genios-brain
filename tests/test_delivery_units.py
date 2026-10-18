@@ -64,8 +64,15 @@ def test_a_broken_slack_secret_does_not_make_the_human_unit_operational():
 
 
 def test_a_channel_with_no_adapter_is_not_operational_however_configured():
-    """`get_channel` returns Slack or None. Teams has a row in the unit table, a channel name and
-    no implementation, so "configured + credentialed" was enough to report it operational."""
+    """`get_channel` returns an adapter for `slack` and `agent_push` only. Teams has a row in the
+    unit table, a channel name and no implementation, so "configured + credentialed" was enough to
+    report it operational.
+
+    ⛔ THIS DOCSTRING SAID "returns Slack or None" UNTIL 2026-10-01 — the same wrong sentence as the
+    comment in `units.py`, which had propagated into the test that guards the thing. Anyone checking
+    whether the claim was guarded found a test repeating it. The ASSERTION below was always correct:
+    it is about `teams`, which genuinely has no adapter.
+    """
     report = {r["unit"]: r for r in capability_report(
         configured_channels={"teams"}, credentialed_channels={"teams"})}
     assert report["slack_teams"]["blocked_channels"]["teams"] == "no_adapter"

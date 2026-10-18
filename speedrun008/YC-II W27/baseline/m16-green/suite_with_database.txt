@@ -1,0 +1,24 @@
+M16 green record · yc2_w27/M16.C6.L-integration.V0.U01 · speedrun008 @ 19b6eb21 · 2026-10-05
+scratch Postgres 17.11 in Docker, recreated EMPTY for this run; GENIOS_TEST_DATABASE_URL=postgresql+psycopg://…
+Migrations 0001..0190 applied from zero without an error.
+
+WITH the database:     16736 passed, 4 skipped, 152 xfailed, 1595 warnings in 1247.48s (0:20:47)
+WITHOUT the database:  15672 passed, 1068 skipped, 152 xfailed, 1595 warnings in 912.84s (0:15:12)
+
+Against the red record of the same day (../2026-10-05/suite_with_database.txt):
+  50 failed, 0 errors  ->  0 failed, 0 errors       (16,683 -> 16,736 passed; the 53 = the 50 + 3 new tests)
+
+The 4 skips are not database tests, and were there before (the -rs report of the first database run):
+  tests/capture/transcripts/test_transcript_units.py   the optional package python-docx is not installed
+  tests/contracts/test_l1_contracts.py                 an empty parameter set (no lane to parametrize)
+  tests/platform/test_the_code_can_always_be_rolled_back.py   a declared exception (0080), by design
+  tests/test_health_memory.py                          internal auth is not wired in this harness (403)
+
+What turned the 50 green (commits d8c83cb4 cfa1e074 6c651a4c 8bea9fa6 19b6eb21):
+  27  B2 — the edge vocabulary: the guard reads the AST, the four relations are declared
+       (one of the 27 also needed the backfill's clock — M16.C3.U05/U06, found in build)
+   5  the reachability report reads dict-valued counts
+   6  three test clocks that expired, now run at the instant they seed at
+   9  six fixtures that follow the code (premise and commit named per test)
+   2  two guards that read the AST, not the text
+   1  the H0 gate, green once its tests/context sub-run is

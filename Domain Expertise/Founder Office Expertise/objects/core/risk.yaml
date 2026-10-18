@@ -1,0 +1,178 @@
+# CORE — a named way a piece of founder work could fail. Optional in investor relations' load-set;
+# programmes, introductions and hiring will load it too (expected warning until they do).
+identity:
+  id: founder_office.obj.core.risk
+  scope: core
+  name: Risk
+  domain: founder_office
+  subdomain: fundraising
+  owner_capability: founder_office.fundraising.investor_relations
+  version: 1.0.0
+  status: draft
+  aliases: ["Exposure"]
+
+purpose:
+  statement: >-
+    A named way a piece of founder work could fail, with what would trigger it — a fund conversation
+    held by one associate, a round with no investor willing to go first, a closing that slips, a deferral
+    that quietly expires.
+  discriminator: >-
+    A risk is a failure that has not happened and has a trigger; a pass received is not a risk, it is an
+    outcome.
+  answers:
+    - What could make this raise fail, and what would show it starting?
+    - Is anyone doing anything about it?
+  not:
+    - Outcomes that already happened — the investor conversation's closure.
+
+attributes:
+  - name: definition
+    purpose: What the risk is and what would trigger it.
+    type: composite
+    contains: [statement, category, trigger]
+  - name: handling
+    purpose: How likely it is, and whether anything is being done.
+    type: composite
+    contains: [likelihood, mitigation_ref, detected_at]
+  - name: statement
+    purpose: The risk in one sentence a founder would recognise.
+    type: value
+    data_type: string
+    required: true
+  - name: category
+    purpose: Which way it fails — the categories a raise actually fails along.
+    type: value
+    data_type: enum
+    allowed_values: [single_threaded, no_lead, momentum_lost, closing_slip, deadline, misread_party,
+                     other]
+  - name: trigger
+    purpose: The observable event that would show it starting.
+    type: value
+    data_type: string
+  - name: likelihood
+    purpose: A coarse reading, never a score — Layer 4 does the arithmetic.
+    type: value
+    data_type: enum
+    allowed_values: [low, medium, high, unknown]
+    default: unknown
+  - name: mitigation_ref
+    purpose: The next action that reduces it, if there is one.
+    type: reference
+    ref: founder_office.obj.core.next_action
+  - name: detected_at
+    purpose: When it was first seen.
+    type: value
+    data_type: timestamp
+
+states:
+  initial: open
+  terminal: [realised, closed]
+  values:
+    - name: open
+      description: Seen, and nothing yet done about it.
+      implies: Name a mitigation, or accept it explicitly.
+    - name: mitigating
+      description: An action exists that reduces it.
+      implies: Track the action.
+    - name: realised
+      description: It happened.
+      implies: It is now an outcome, read on the conversation, not here.
+    - name: closed
+      description: The work it threatened ended or the trigger can no longer occur.
+      implies: Nothing further.
+  transitions:
+    - {from: open, to: mitigating, trigger: a mitigating action is opened, reversible: true}
+    - {from: open, to: realised, trigger: the trigger is observed, reversible: false}
+    - {from: mitigating, to: realised, trigger: the trigger is observed, reversible: false}
+    - {from: mitigating, to: closed, trigger: the threatened work ends safely, reversible: false}
+
+relationships:
+  - type: requires
+    target: founder_office.obj.core.next_action
+    cardinality: zero_or_many
+    weight_bp: 7000
+    confidence_bp: 6000
+    description: The actions that reduce it.
+  - type: references
+    target: founder_office.obj.core.company
+    cardinality: zero_or_one
+    weight_bp: 5000
+    confidence_bp: 6000
+    description: The organisation it concerns.
+
+inference_patterns:
+  deterministic:
+    - id: rk.single_threaded
+      statement: The party is attached by very few edges — one person, one thread.
+      status: executable
+      when:
+        - {fn: edge_count, op: "<=", value: 2}
+      yields: {attribute: category, value: single_threaded, confidence_bp: 4000}
+      false_positive: >-
+        One well-placed partner, or an angel who decides alone, is a strong position this reads as a weak
+        one.
+    - id: rk.closing_slips
+      statement: A timeline slipped in the exchange.
+      status: executable
+      when:
+        - {has_obs: timeline_slip}
+      yields: {attribute: category, value: closing_slip, confidence_bp: 5500}
+      false_positive: A slip in a date nobody depended on.
+  heuristic:
+    - id: rk.momentum_lost
+      statement: A meeting inside the raise was cancelled.
+      status: executable
+      when:
+        - {has_obs: meeting_cancelled}
+      yields: {attribute: category, value: momentum_lost, confidence_bp: 4500}
+      false_positive: A meeting cancelled and rebooked the same day.
+    - id: rk.no_lead
+      statement: The round has interest and nobody willing to go first.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: funding.round, owner_layer: L2,
+           note: "No writer records the round, so nobody can tell which investors are in the same one."}
+      yields: {attribute: category, value: no_lead, confidence_bp: 6000}
+
+evidence:
+  - source: email
+    strength_bp: 6000
+    decays: true
+    description: Slips, deferrals and cancellations, read from the exchange.
+  - source: derived
+    strength_bp: 3000
+    decays: true
+    description: Structure — how few people and threads hold the relationship.
+
+anti_patterns:
+  - id: rk.ap.outcome_as_risk
+    statement: Recording a pass as a risk.
+    why_it_happens: It is bad news, and risks are where bad news is filed.
+    cost: The reopening condition is lost in a risk register nobody reads.
+    instead: Record the pass on the conversation, with its reason and condition.
+
+examples:
+  - label: One associate holds the whole relationship with a fund
+    kind: typical
+    note: category single_threaded; mitigated by reaching a partner.
+  - label: Several interested angels, none willing to commit first
+    kind: typical
+    note: category no_lead; mitigated by finding the first commitment.
+  - label: The term sheet's closing date has moved twice
+    kind: typical
+    note: category closing_slip.
+  - label: A fund has passed on stage
+    kind: misclassification
+    note: Not a risk — an outcome, recorded on the conversation with its reopening condition.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
+  notes: >
+    New for the Founder Office on STEP-11 (M30.C6.L-data.V1.U01), written for a founder's raise rather
+    than copied from Sales' deal risk. Concise on purpose.

@@ -150,3 +150,26 @@ def test_record_cost_calls_the_watch(monkeypatch):
     source = inspect.getsource(GraphStore.record_cost)
     assert "provider_health" in source, "record_cost no longer observes provider health"
     assert "observe(" in source
+
+
+def test_the_first_streak_after_a_boot_alerts(monkeypatch):
+    """`YC-II W27/03` F145 — CI's red job, 10 Oct. `time.monotonic()` counts from boot, and the watch
+    took "no alert sent yet" to be the time 0: on a machine up for less than an hour (a fresh CI
+    runner, a host just restarted) the cooldown swallowed the first real alert. No alert sent yet
+    is not a time."""
+    clock = {"now": 120.0}                                   # the machine booted two minutes ago
+    monkeypatch.setattr(ph.time, "monotonic", lambda: clock["now"])
+    refused = "You have reached your specified API usage limits"
+    fired = [ph._WATCH.observe(success=False, error=refused, model="m", purpose="p")
+             for _ in range(ph.STREAK_TO_ALERT)]
+    assert fired.count(True) == 1, "the first streak after a boot must alert"
+    clock["now"] += ph.COOLDOWN_S - 1                        # still inside the hour after it
+    assert not ph._WATCH.observe(success=False, error=refused, model="m", purpose="p")
+    clock["now"] += 2                                        # the hour has passed
+    assert ph._WATCH.observe(success=False, error=refused, model="m", purpose="p")
+
+    # …and a watch made fresh at process start (not only one that was reset) alerts the same way.
+    fresh = ph._Watch()
+    clock["now"] = 60.0
+    assert [fresh.observe(success=False, error=refused, model="m", purpose="p")
+            for _ in range(ph.STREAK_TO_ALERT)].count(True) == 1

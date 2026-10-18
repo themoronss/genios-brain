@@ -1,0 +1,101 @@
+# New on STEP-11 (M30.C6.L-data.V1.U01). The claim under the spine's sixth step and under the wave
+# gone silent: a round moves because investors watch each other.
+identity:
+  id: founder_office.heu.investor_relations.momentum_is_a_parallel_process
+  name: Momentum is a parallel process
+  kind: heuristic
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.fundraising.investor_relations
+  subdomain: fundraising
+  version: 1.0.0
+  status: draft
+  aliases:
+    - Breadth first, weighted by expected value
+
+purpose:
+  statement: >-
+    Explains why a round run one investor at a time stalls, and what actually moves an investor who is
+    waiting: another investor moving.
+  answers:
+    - Why does nobody commit until somebody does?
+    - Should we wait for this fund's answer before talking to the next one?
+
+heuristic:
+  statement: >-
+    A round's momentum comes from investors seeing other investors move. Run every conversation in
+    parallel, and let each live investor hear real progress elsewhere; a conversation run on its own has
+    no clock.
+  why: >-
+    "The biggest factor in most investors' opinions of you is the opinion of other investors" (Graham,
+    "How to Raise Money"), and getting far along with one firm "will sometimes provoke other firms, even
+    good ones, to make up their minds, lest they lose the deal" ("Investor Herd Dynamics"). Talked to one
+    at a time, each investor holds a free option and waits; and the first commitment is the hard one —
+    "Once you start getting investors to commit, it becomes increasingly easy to get more to."
+  confidence_bp: 7500
+  applies_when: >-
+    The founder is raising from more than one investor, or deciding whether to wait on one.
+  breaks_down_when: >-
+    When the progress is exaggerated: investors are very sensitive to manufactured urgency, and telling
+    one firm who the other is ("Do not, however, tell A who B is") costs trust with both. When the round
+    is going badly everywhere, parallel silence carries momentum too, downward. And when the company's
+    numbers are flat between meetings, which cools investors faster than competing interest warms them —
+    "if your numbers are flat or down they'll start to get cold feet" (Graham).
+  reads:
+    - founder_office.obj.investor_relations.investor_conversation
+    - founder_office.obj.core.company
+
+objects_used:
+  - founder_office.obj.investor_relations.investor_conversation
+  - founder_office.obj.core.company
+
+outcomes:
+  - >-
+    No conversation waits on another's answer.
+  - >-
+    Each live investor hears true progress elsewhere as it happens, without being told who.
+
+failure_modes:
+  - >-
+    Inventing or inflating interest elsewhere to force a decision, which a good investor detects and
+    remembers.
+  - >-
+    Taking it as licence to talk to everyone equally; the attention goes to the investors with the
+    highest expected value.
+
+limits:
+  - >-
+    It is about pace, not fit. Parallel conversations with investors who do not fit the round produce
+    parallel passes.
+
+references:
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. "You should always talk to investors in parallel rather than serially"; "Get the
+      first commitment"; "If your numbers grow significantly between two investor meetings, investors will
+      be hot to close, and if your numbers are flat or down they'll start to get cold feet."
+  - title: Investor Herd Dynamics
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/herd.html
+    note: >-
+      August 2013. Interest from other investors "imposes a deadline"; "Do not, however, tell A who B is."
+  - title: A guide to seed fundraising
+    kind: practitioner
+    author: Geoff Ralston (Y Combinator)
+    url: https://www.ycombinator.com/library/4A-a-guide-to-seed-fundraising
+    note: >-
+      "Deals have momentum"; "Once the first money is in, each subsequent close will get faster and
+      easier".
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete

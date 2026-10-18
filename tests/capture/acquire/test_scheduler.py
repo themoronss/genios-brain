@@ -191,7 +191,17 @@ def test_postgres_cursor_round_trips_the_last_success_timestamp(live_db_url):
                       {"o": org, "c": conn_id})
         saved = store.get(org, conn_id, "gmail")
         assert saved is not None and saved.synced_at is not None
-        now = datetime.now(timezone.utc)
+        # ⛔ THE DATABASE'S CLOCK, NOT THIS PROCESS'S (`yc2_w27_s17` M41.C1.L-logic.V0.U03, `YC-II
+        # W27/03` F115): the row was back-dated by the database's `now()`, so the gap is read
+        # against the same clock. Read off the host's, it measured the distance between two clocks
+        # as well — "24.17 h" in a loaded run, a Docker VM's clock minutes behind the host's after
+        # the laptop slept — and failed a round trip that was exact.
+        with engine.connect() as c:
+            now, stored = c.execute(text(
+                "select now(), updated_at from sync_cursors "
+                "where org_id=:o and connection_id=:c and source='gmail'"),
+                {"o": org, "c": conn_id}).one()
+        assert saved.synced_at == stored, "the round trip: what was stored is what is read"
         gap_hours = (now - saved.synced_at).total_seconds() / 3600
         assert 23.9 < gap_hours < 24.1
 

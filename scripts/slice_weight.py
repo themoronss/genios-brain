@@ -26,15 +26,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from genios_engine.reason.domain_shadow import _ACTIVE_SITUATIONS  # noqa: E402
 from scripts._db import add_database_argument, resolve_database_url  # noqa: E402
 
-_SITUATIONS = """
-select situation_id, anchor_node_id, anchor_type, domain, situation_type
-  from context_situations
- where org_id = :org and status = 'active'
- order by situation_id
- limit :limit
-"""
+#: ⛔ THE SWEEP'S OWN STATEMENT, NOT A COPY OF IT (`yc2_w27_s17` M40.C1.L-logic.V1.U03, STEP-17
+#: S17-F1). The copy that stood here selected `anchor_type` from `context_situations` — a column of
+#: `context_correlations` — so this script raised `UndefinedColumn` on its first statement on every
+#: run from the day it was written (`aa6ab06e`). The sweep reads the anchor's type as
+#: `graph_nodes.node_type`; reading its statement means the two cannot drift apart again, and the
+#: slices weighed are the first `--sample` of exactly the candidates the sweep takes.
+_SITUATIONS = _ACTIVE_SITUATIONS
 
 
 def main() -> int:
@@ -61,7 +62,9 @@ def main() -> int:
     )
 
     engine = create_engine(url)
-    store = GraphStore(engine)
+    # ⛔ `engine=` by keyword: the first positional argument is a URL, and an engine there raised
+    # `AttributeError` before the first statement (the second reason this script never ran).
+    store = GraphStore(engine=engine)
 
     # ONE org-wide read each, exactly as the sweep does — not one query per situation. Weighing a
     # slice built a different way would measure a slice nothing produces.
@@ -75,7 +78,7 @@ def main() -> int:
 
     slices, rows = [], []
     with engine.connect() as conn:
-        for row in conn.execute(text(_SITUATIONS), {"org": args.org, "limit": args.sample}):
+        for row in conn.execute(text(_SITUATIONS), {"o": args.org, "lim": args.sample}):
             record = dict(row._mapping)
             anchor = str(record["anchor_node_id"])
             node_ctx = _load_context(store, args.org, anchor, record["anchor_type"],

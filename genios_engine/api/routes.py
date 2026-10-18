@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import threading
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:                 # the two chain doors' `eval_time` annotations only
+    from datetime import datetime
 
 from fastapi import (APIRouter, BackgroundTasks, Body, Depends, Header, HTTPException,
                      Query, Request)
@@ -121,9 +125,14 @@ def _l1_stores() -> L1Stores:
 def _bind_gate_costs(gate, org_id: str, seat_id: str | None = None) -> None:
     """Point a shared relevance gate's cost recording at the tenant — and the SEAT — currently
     being synced. Cross-org sweeps reuse one classifier; without this every gate call would be
-    billed to the first org in the loop, and (since 0175) to the first person in it."""
+    billed to the first org in the loop, and (since 0175) to the first person in it.
+
+    STEP-07 · and where that tenant's company brief is read from, in the same act: the sweep's one
+    classifier is built with no tenant, so this re-bind is the only place its prompts can learn the
+    tenant's brief — bound here, the scheduled sweep and `/ingest/all` ask what every other door asks
+    (`platform/wiring.make_relevance_classifier`)."""
     if gate is not None and _graph is not None and hasattr(gate, "bind_costs"):
-        gate.bind_costs(_graph.record_cost, org_id, seat_id)
+        gate.bind_costs(_graph.record_cost, org_id, seat_id, brief_source=_graph)
 
 
 @router.get("/health")
@@ -158,9 +167,44 @@ def health_readiness(org_id: str = Depends(get_current_org)) -> dict:
         raise HTTPException(400, "graph store not configured")
     from genios_engine.platform.receipts import evaluate
     rows = evaluate(_graph.engine, org_id)
-    failed = [r for r in rows if r["status"] != "PASS"]
-    return {"org_id": org_id, "ready": not failed,
-            "passing": len(rows) - len(failed), "total": len(rows),
+    # ⛔⛔ THREE BUCKETS, NOT TWO, AND `ready` REQUIRES EXERCISED (changed 2026-10-04, `3.2`).
+    #
+    # This used to read `failed = [r for r in rows if r["status"] != "PASS"]` — everything that was
+    # not a pass counted as a failure, which left no room for a third answer. ⛔ And `evaluate()`
+    # now has one: `NOT_EXERCISED`, a correctness receipt whose claim held while **nothing
+    # exercised it**, because the table it reads has no rows in scope.
+    #
+    # ⛔ AN UNEXERCISED RECEIPT IS NOT READY, and this docstring is why. It says these receipts
+    # exist because *"an empty sweep looked healthy, A SKIP READ AS A PASS, and 'Present / Wired /
+    # Tested' was communicated as active intelligence."* ⛔ Counting an unexercised correctness
+    # receipt towards `ready` IS that skip reading as a pass — the exact failure the surface was
+    # built to stop. So it is reported separately AND it withholds readiness.
+    #
+    # ⛔ THIS IS A VISIBLE BEHAVIOUR CHANGE: a tenant with sparse data now reports
+    # `ready: false` where it reported `true`. That is not a new product decision — the paragraph
+    # above states the principle and this implements it — but it is recorded as `R24` in
+    # `speedrun008/YCW27/19-PENDING-who-owns-what.md` rather than left to be discovered.
+    #
+    # ⛔ THE PATH IN FULL, AND A PRE-EXISTING GUARD IS WHY. This comment first said just
+    # `19-PENDING`, and `tests/test_spec_deferrals_resolve.py` failed it: a deferral must
+    # point at a record that EXISTS, resolved as a path on disk or a name defined in the
+    # ✅ That guard was written for four comments which deferred to a record that was never
+    # created, and it caught the fifth — mine. ⛔ Naming that record here would have tripped
+    # its sibling guard, which greps for the token: the sixth time in this programme that
+    # explaining a rule has satisfied or violated the check for it. *A citation that does not resolve
+    # reads as a measurement and is not one*, which is a rule this programme has been
+    # writing into its own guards while leaving one dangling here.
+    # ⛔ WHICH STATUSES COUNT AS READY IS `RECEIPT_STATUSES`' ANSWER, NOT THIS FUNCTION'S. A first
+    # version of this block wrote `status in ("FAIL", "ERROR")` — a THIRD implementation of the
+    # question, in the same change that added the constant to stop exactly that.
+    from genios_engine.platform.receipts import RECEIPT_STATUSES
+
+    unready = [r for r in rows if not RECEIPT_STATUSES.get(r["status"], (False, ""))[0]]
+    unexercised = [r for r in rows if r["status"] == "NOT_EXERCISED"]
+    return {"org_id": org_id, "ready": not unready,
+            "passing": len(rows) - len(unready),
+            "failing": len(unready) - len(unexercised),
+            "not_exercised": len(unexercised), "total": len(rows),
             "receipts": rows, "concurrency": _resolved_concurrency()}
 
 
@@ -331,13 +375,17 @@ KNOWN_COUNTERPARTY_SQL = (
 #: suite runs this resolver against SQLite. One combined query made the whole set unreadable
 #: there — including the graph half, which SQLite can answer perfectly well. Two statements let
 #: the half that CAN be answered always be answered.
+#:
+#: SENT BY ANY OF US (STEP-04). `:ours` is every address of ours from the one answer,
+#: `platform/self_identity.identity_for` — the active seats, `orgs.email`, the connected accounts
+#: and what the tenant declared. It read the seats alone, active or not, so whoever the founder
+#: wrote to from his own address stayed a stranger, and a seat that left still vouched for people.
 KNOWN_FROM_SENT_SQL = (
     "select distinct lower(recipient) as canonical_key "
     "  from source_events e, unnest(e.recipients) as recipient "
     " where e.org_id = :o and e.recipients is not null "
-    "   and lower(e.actor ->> 'email') in ("
-    "       select lower(s.email) from org_seats s where s.org_id = :o and s.email is not null"
-    "   ) and nullif(trim(recipient), '') is not null"
+    "   and lower(e.actor ->> 'email') = any(:ours) "
+    "   and nullif(trim(recipient), '') is not null"
 )
 
 
@@ -349,6 +397,8 @@ def known_counterparty_keys(connection, org_id: str) -> frozenset[str]:
     """
     from sqlalchemy import text
 
+    from genios_engine.platform.self_identity import identity_for
+
     rows = connection.execute(text(KNOWN_COUNTERPARTY_SQL), {"o": org_id}).fetchall()
     keys = {(r.canonical_key or "").strip().lower() for r in rows if r.canonical_key}
     # ⛔ THE SENT FOLDER, AND WHY ITS FAILURE MAY NOT TAKE THE GRAPH WITH IT.
@@ -359,7 +409,11 @@ def known_counterparty_keys(connection, org_id: str) -> frozenset[str]:
     # cold start this half exists to fix. Degrading to today's behaviour is the safe direction,
     # and it is logged rather than silent.
     try:
-        sent = connection.execute(text(KNOWN_FROM_SENT_SQL), {"o": org_id}).fetchall()
+        # Who "us" is, read inside the same guard: an identity that cannot be read loses the
+        # sent half only, never the graph half.
+        ours = sorted(identity_for(connection, org_id).addresses)
+        sent = connection.execute(text(KNOWN_FROM_SENT_SQL),
+                                  {"o": org_id, "ours": ours}).fetchall()
         keys |= {(r.canonical_key or "").strip().lower() for r in sent if r.canonical_key}
     except Exception:      # noqa: BLE001 — see above; never lose the graph half
         _log.debug("sent-folder counterparties unavailable for org=%s; graph half only", org_id)
@@ -367,8 +421,23 @@ def known_counterparty_keys(connection, org_id: str) -> frozenset[str]:
 
 
 def _sender_resolver_for(org_id: str):
+    """Is this sender known to us? Known counterparties — and, from STEP-07, every sender the
+    founder's company brief names: a connector's or a key person's address, a watchlist domain.
+
+    One answer for every stage that asks "is the sender known" — the noise rules' whitelist, the AI
+    filter's skip, the relevance page's first rung, the bulk check before extraction — because the
+    brief's senders are stopped by all four today, and naming them to one would read nothing
+    (`speedrun008/YC-II W27/` STEP-07 §8.1). `.named(raw)` says why the brief names a sender, so
+    the gate records W-07 rather than W-01."""
     if _graph is None:
         return None
+
+    def _named(raw) -> str | None:
+        email = (getattr(raw, "actor_email", None) or "").strip().lower()
+        if not email:
+            return None
+        from genios_engine.platform.company_brief import named_sender
+        return named_sender(_graph.engine, org_id, email)
 
     def _known(raw) -> bool:
         email = (getattr(raw, "actor_email", None) or "").strip().lower()
@@ -381,7 +450,9 @@ def _sender_resolver_for(org_id: str):
             with _graph.engine.connect() as c:
                 hit = (now, known_counterparty_keys(c, org_id))
             _SENDER_CACHE[org_id] = hit
-        return email in hit[1]
+        return email in hit[1] or _named(raw) is not None
+
+    _known.named = _named
     return _known
 
 
@@ -457,18 +528,29 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
         with _graph.engine.begin() as c:
             c.execute(text(
                 "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
-                "scanned, emitted, dropped, parked, duplicate, quarantined, error, started_at, "
+                "scanned, emitted, dropped, parked, archived, duplicate, quarantined, error, "
+                "started_at, finished_at, "
                 # L1.2.x · COMPLETENESS (step 5, migration 0178). Named in the INSERT and not
                 # only in the migration, because `started_at` is the cautionary tale: the column
                 # existed from the day the table did, the insert never mentioned it, and every
                 # row in production recorded a finish with no start. A column no writer names is
                 # a column that is null in every row.
                 "cursor_exhausted, page_budget_spent, claimed_total, claimed_is_estimate) "
-                "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu,:err,:start,"
+                # STEP-10 (`yc2_w27_s10 · M29.C5.L-data.V0.U01`) · `finished_at` was the other
+                # unnamed column: it took the default `now()`, the wall clock, so a replay frozen
+                # at a case's instant filed its runs at the hour it ran and no window read could
+                # find them (N8). The run's own finish now; `now()` only for a TOTAL failure, which
+                # has no summary and no clock — and the column is NOT NULL.
+                "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:ar,:du,:qu,:err,:start,"
+                "coalesce(cast(:fin as timestamptz), now()),"
                 ":cx,:pbs,:ct,:cie)"),
                 {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
                  "sc": getattr(summary, "scanned", 0), "em": getattr(summary, "emitted", 0),
                  "dr": getattr(summary, "dropped", 0), "pa": getattr(summary, "parked", 0),
+                 # STEP-03 (migration 0192): what the gate kept and no model read. Named here for
+                 # `started_at`'s reason — a column no writer names is a zero in every row, and a
+                 # run that archived 33 mails would read as one that saw no noise at all.
+                 "ar": getattr(summary, "archived", 0),
                  "du": getattr(summary, "duplicate", 0), "qu": getattr(summary, "quarantined", 0),
                  # `getattr` with a None default throughout, matching every other field here: a
                  # caller reporting a TOTAL failure passes `summary=None`, and "we do not know
@@ -485,7 +567,8 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
                  # one. `run_sync` now carries its own start; a caller reporting a TOTAL failure
                  # has no summary and writes NULL, which is the honest answer for a run that
                  # never started.
-                 "err": error, "start": getattr(summary, "started_at", None)})
+                 "err": error, "start": getattr(summary, "started_at", None),
+                 "fin": getattr(summary, "finished_at", None)})
     except Exception:      # noqa: BLE001 — a ledger hiccup must not break the caller
         _log.exception("l1_sync_runs write failed org=%s conn=%s", org_id, connection_id)
     # (The conflict filing this hook is also responsible for happens at the TOP of the function
@@ -535,6 +618,9 @@ def _notify_sync_failure(*, org_id: str, source: str, error: str) -> None:
 #: The L2 outcomes that mean a message ENTERED THE GRAPH. Only these are billable: the customer
 #: pays for what they got, and `parked_low_relevance` (the junk gate's verdict), `skipped_no_llm`
 #: and `no_op` gave them nothing however much work we did.
+#: ⛔ NOT `committed_metadata` (STEP-05, `06` D21): an archived mail's names and dates entered
+#: memory and no model read it — only what a model read is billed. A mail below the floor IS
+#: billed: Layer 1's model read it, and it enters as `committed` with its words (D20).
 _BILLABLE_L2_OUTCOMES = ("committed", "committed_structured", "committed_structural",
                          "committed_facts", "committed_observation")
 _SCREEN_SOURCE = "screen_session"
@@ -647,9 +733,13 @@ def _replay_l2_history(org_id: str) -> bool:
     return moved
 
 
-def _run_l2_chain(org_id: str) -> bool:
+def _run_l2_chain(org_id: str, *, eval_time: datetime | None = None) -> bool:
     """THE chain, unguarded: provision → L2 → L4 → cards. Call `_run_l2`, which holds the org
-    lease around it. False when the pass failed (logged here), True otherwise."""
+    lease around it. False when the pass failed (logged here), True otherwise.
+
+    `eval_time` is the ONE instant every stage is judged at — `None`, which every production
+    caller passes, is now. A replay passes the instant its case happened at (STEP-01): before
+    this, each stage read its own clock and a case could only ever be judged at the wall clock."""
     from genios_engine.platform.stage_timer import stage
     # EVERYTHING LAYER 3 NEEDS BEFORE IT CAN SAY ANYTHING, first, every time.
     #
@@ -680,7 +770,7 @@ def _run_l2_chain(org_id: str) -> bool:
 
     from genios_engine.platform import funnel as _funnel
     from genios_engine.platform.canonical import stable_id as _stable_id
-    _sweep_at = _fdt.now(_ftz.utc)
+    _sweep_at = eval_time or _fdt.now(_ftz.utc)
     _sweep_id = _stable_id("fsweep", {"org": org_id, "at": _sweep_at.isoformat()})
 
     def _count(stage_name: str, n) -> None:
@@ -706,7 +796,7 @@ def _run_l2_chain(org_id: str) -> bool:
         with stage("l2.process_pending", org_id) as st:
             result = process_pending(org_id=org_id, store=_graph, llm=_llm,
                                      registry=_registry,
-                                     crypto_key=get_settings().crypto_key)
+                                     crypto_key=get_settings().crypto_key, eval_time=eval_time)
             st["processed"] = result.get("processed", 0) if isinstance(result, dict) else 0
         _charge_ingestion(org_id, result)
         # ⛔ `signals_detected` COMES FROM CAPTURE'S PUBLISHER, AND FROM NOTHING ELSE HERE.
@@ -726,7 +816,7 @@ def _run_l2_chain(org_id: str) -> bool:
 
         from genios_engine.reason.runner import run_all as run_l3    # L3 after the graph updates
         with stage("l4.run_all", org_id):
-            _l3 = run_l3(org_id=org_id, store=_graph, registry=_registry)
+            _l3 = run_l3(org_id=org_id, store=_graph, registry=_registry, eval_time=eval_time)
         _outcomes = (_l3 or {}).get("outcomes") if isinstance(_l3, dict) else None
         # ⛔ `nodes` WAS RELAYED HERE AND IT IS NOT THIS NUMBER. `run_all`'s `nodes` is
         # `len(graph_nodes read)` — the subjects the sweep EXAMINED, counted before any capability
@@ -736,14 +826,19 @@ def _run_l2_chain(org_id: str) -> bool:
         # `reason/runner` now counts the resolution itself and publishes it under its own name.
         _count(_funnel.CAPABILITY_RESOLVED,
                _outcomes.get(_funnel.CAPABILITY_RESOLVED) if isinstance(_outcomes, dict) else None)
+        # ⛔ THE PASS'S OWN DECISION COUNT, NOT THE RULE LANE'S `emitted` KEY. That key counted one
+        # lane of three (native capabilities and composites never reached the stage — 4 decisions
+        # beside 15 cards on 3 Oct), and a Counter only carries it when something was emitted, so
+        # a pass that decided nothing wrote NO ROW: "nobody looked". `reason/runner.run` now
+        # publishes `decision_emitted` itself, every lane, zero included.
         _count(_funnel.DECISION_EMITTED,
-               _outcomes.get("emitted") if isinstance(_outcomes, dict) else None)
+               _outcomes.get(_funnel.DECISION_EMITTED) if isinstance(_outcomes, dict) else None)
 
         if _card_store is not None:                              # L5: new gated signals → cards
             from genios_engine.deliver.pipeline import build_cards_for_org
             with stage("deliver.build_cards", org_id):
                 _cards = build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
-                                             llm=_llm, registry=_registry)
+                                             llm=_llm, registry=_registry, eval_time=eval_time)
             _count(_funnel.CARD_DELIVERED,
                    (_cards or {}).get("built") if isinstance(_cards, dict) else None)
             # P4 post-passes (reason/team, reason/verify — SCREEN_INTEL_P4 §3.1): deterministic
@@ -752,7 +847,8 @@ def _run_l2_chain(org_id: str) -> bool:
                 from datetime import datetime as _dt, timezone as _tz
                 from genios_engine.reason.team.postpass import run_post_passes
                 with stage("post.passes", org_id):
-                    run_post_passes(_graph.engine, _card_store, org_id, now=_dt.now(_tz.utc))
+                    run_post_passes(_graph.engine, _card_store, org_id,
+                                    now=eval_time or _dt.now(_tz.utc))
             except Exception:      # noqa: BLE001
                 _log.exception("post-passes failed for org_id=%s", org_id)
     except Exception:
@@ -904,6 +1000,29 @@ def _sync_headroom(org_id: str) -> int:
     except Exception:                                    # noqa: BLE001
         _log.warning("sync quota read failed for org=%s — sweeping without it", org_id)
         return 1 << 30
+
+
+#: The clock the sweep's tail composes the morning briefs by — a seam a test sets; production reads the wall.
+def _brief_clock():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc)
+
+
+def _compose_due_briefs() -> dict:
+    """STEP-15 (`yc2_w27_s15` M44.C4.L-integration.V2.U03; `03` s15-F12: nothing in the engine ran at a local hour).
+    Every sweep ends here — `run_sync_sweep`, which the 6-hour heavy tick (`run_maintenance_sweep`) and the 15-minute
+    light tick both run, and `/ingest/all` once its reasoning is done: each account owner whose 08:00 has passed in
+    the org's timezone, with no brief kept for that local day, gets it composed (`executive/morning.compose_due`) —
+    so a brief lands within one light tick of the hour, after the morning's mail. In a block of its own: a brief
+    that cannot be composed is counted and logged, and never kills the beat."""
+    if _graph is None:
+        return {}
+    try:
+        from genios_engine.executive.morning import compose_due
+        return compose_due(_graph.engine, now=_brief_clock())
+    except Exception as exc:                          # noqa: BLE001 — never kill the heartbeat
+        _log.exception("the morning briefs could not be composed")
+        return {"error": type(exc).__name__}
 
 
 def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
@@ -1070,7 +1189,9 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
     _log.info("auto-sync sweep complete: %d/%d connection(s) pulled, %d due this tick, %d "
               "skipped on budget, %d skipped as paused, %d org(s) reasoned, %d skipped (nothing new)",
               l1_ok, len(conns), l1_due, l1_skipped, l1_paused, len(orgs), len(no_new))
-    return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err,
+    # STEP-15 · and the briefs that are due — after the morning's mail and its reasoning, in a block of its own.
+    briefs = _compose_due_briefs()
+    return {"briefs": briefs, "connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err,
             # Reported rather than silent: "why did this connection not sync" is the question
             # L1.2.6 is always asked, and a sweep that left no number behind could not answer
             # it. `l1_due` is the scheduler's own count for this tick — how many of the active
@@ -1412,9 +1533,14 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
                     packs = [r[0] for r in c.execute(text(
                         "select pack_id from tenant_packs where org_id=:o and state='active'"),
                         {"o": org})]
+                # ⛔ SHADOW UNLESS ARMED (STEP-18 B1, decision D13): `calibration_apply` is never
+                # default-on, and `is_l4_activated` fails closed — no row, no mute.
+                from genios_engine.platform.l4_activation import (FEATURE_CALIBRATION_APPLY,
+                                                                  is_l4_activated)
+                armed = is_l4_activated(_graph.engine, org, FEATURE_CALIBRATION_APPLY)
                 for pid in (packs or ["sales"]):
                     result = run_calibration(_graph, org, registry=_registry, pack_id=pid,
-                                             eval_time=now)
+                                             eval_time=now, apply=armed)
                     runs += int(bool(result.get("applied")))
                     already_ran += int(bool(result.get("already_ran")))
             except Exception:                                # noqa: BLE001 — one org's failure ≠ the rest
@@ -1435,6 +1561,22 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the beat
             _log.exception("learning sweep failed")
             learning = {"error": True}
+    # STEP-07 · THE WEEKLY COMPANY-BRIEF REVIEW — what each tenant's brief is missing, proposed once
+    # per ISO week (`reason/brief_review`, claimed in `company_brief_reviews`), so it is safe on every
+    # heavy tick and on every replica. Its own block and its own transactions, never inside the
+    # learning pass's: the drafter makes a network call. No model, no call; nothing it proposes counts
+    # until the founder accepts it.
+    company_brief_review = None
+    if _graph is not None:
+        try:
+            from genios_engine.platform.wiring import make_company_brief_client
+            from genios_engine.reason.brief_review import run_company_brief_reviews
+            company_brief_review = run_company_brief_reviews(
+                _graph.engine, now=now, llm=make_company_brief_client(),
+                cost_sink=_graph.record_cost)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("company brief review failed")
+            company_brief_review = {"error": True}
     # L2 GRAPH MAINTENANCE — entity lifecycle + a health measurement, per org.
     #
     # Here rather than in the L2 drain because both are O(graph), not O(event): running
@@ -1479,6 +1621,7 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             "seats": seats,
             "executive": executive, "distribution": distribution,
             "calibration": calibration, "learning": learning,
+            "company_brief_review": company_brief_review,
             "graph_maintenance": graph_maintenance}
 
 
@@ -1508,7 +1651,8 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
     rc = make_relevance_classifier()
     conns = _connections.list_active()          # every source type, every org
     activated = _semantic_activated_orgs()      # once for the whole cross-org run
-    totals = {"scanned": 0, "emitted": 0, "dropped": 0, "parked": 0, "duplicate": 0}
+    totals = {"scanned": 0, "emitted": 0, "dropped": 0, "parked": 0, "archived": 0,
+              "duplicate": 0}
     per = []
     for conn in conns:
         _bind_gate_costs(rc, conn.org_id, getattr(conn, "seat_id", None))
@@ -1536,10 +1680,12 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
             totals[k] += getattr(summary, k)
         per.append({"org_id": conn.org_id, "source": conn.source_type,
                     "emitted": summary.emitted, "dropped": summary.dropped,
-                    "parked": summary.parked})
+                    "parked": summary.parked, "archived": summary.archived})
     if auto_l2 and _graph is not None:              # L2 runs in the background per org
         for org in {c.org_id for c in conns}:
             background_tasks.add_task(_run_l2, org)
+    if _graph is not None:                          # STEP-15 · then the briefs due, after every org's reasoning
+        background_tasks.add_task(_compose_due_briefs)
     return {"using": {"composio": s.use_real_composio, "db": s.use_real_db},
             "connections": len(conns), "totals": totals, "per_connection": per,
             "l2_background": auto_l2 and _graph is not None}
@@ -1633,20 +1779,37 @@ def _reread_connection(org_id: str, row, seen: dict):
 
 
 def _reread_unread(org_id: str, *, limit: int = 200) -> int:
-    """Read again the mail this tenant captured while its L1 was switched off
-    (`capture/landing/unread.py`), through the push door, so L2 can pull it. Bounded per call; the
-    rest follows on the next pass. Returns how many objects were handed to capture. Never raises."""
+    """Read again, through the push door, every KEPT mail Layer 1 has not read: what a recovery
+    left emitted and unread — a park the drain re-admitted, a manual recover, a refetch, a
+    recapture, a promotion out of the archive (STEP-05) — mail captured while the tenant's L1 was
+    switched off, and mail whose extraction PARKED (STEP-18 B18). ONE ladder
+    (`capture/landing/unread.py`): queued, read, retried with backoff or given up with its reason,
+    and each object carries why it is read again, so the gate reads it instead of judging it out
+    (W-06). Bounded per call — one bound, each read a model call — and the rest follows on the
+    next pass. Returns how many objects were handed to capture. Never raises."""
     if _graph is None or _connections is None:
         return 0
     from genios_engine.capture.landing import unread
     eng = _graph.engine
+    parked_ids: list[str] = []
     try:
         # Callers hold the org's run lease, so no other pass is mid-flight: anything still set
         # aside is an orphan of a pass a deploy or crash interrupted.
         back = unread.recover_orphans(eng, org_id)
         if back:
             _log.info("re-read: %s rows from an interrupted pass returned org=%s", back, org_id)
-        rows = unread.find_unread(eng, org_id, limit=limit)
+        # Give up first, so a message past its ladder is never offered again.
+        given_up = unread.give_up_parked_extractions(eng, org_id)
+        if given_up:
+            _log.info("re-read: %s parked extractions given up after their ladder org=%s",
+                      given_up, org_id)
+        # Every kept mail nothing read joins the ladder first — no model, idempotent (STEP-05).
+        queued = unread.queue_unread(eng, org_id)
+        if queued:
+            _log.info("re-read: %s kept mails nothing had read joined the ladder org=%s",
+                      queued, org_id)
+        rows = unread.find_parked_extractions(eng, org_id, limit=limit)
+        parked_ids = [r.event_id for r in rows]
         if not rows:
             return 0
         if _llm_over_daily_cap(org_id):
@@ -1697,8 +1860,16 @@ def _reread_unread(org_id: str, *, limit: int = 200) -> int:
                                   "restored", back, len(ids), org_id)
                 except Exception:      # noqa: BLE001
                     _log.exception("re-read restore failed org=%s", org_id)
+    if parked_ids:
+        # After the restore: an event a new copy replaced is settled, one that came back advances
+        # its own ladder — so a parked mail is read, retried later or given up, never lost.
+        try:
+            settled = unread.settle_parked_extractions(eng, org_id, parked_ids)
+            _log.info("re-read: parked extractions settled %s org=%s", settled, org_id)
+        except Exception:      # noqa: BLE001
+            _log.exception("re-read: settling parked extractions failed org=%s", org_id)
     if handed:
-        _log.info("re-read %s objects captured while L1 was off org=%s", handed, org_id)
+        _log.info("re-read %s kept objects org=%s", handed, org_id)
     return handed
 
 
@@ -3172,6 +3343,13 @@ def integration_disconnect(tool: str, wipe_data: bool = False, scope: str = "wor
             wiped = c.execute(text("delete from raw_payloads where org_id=:o and event_id in "
                                    "(select event_id from source_events where org_id=:o and source=:s"
                                    + mine + ")"), params).rowcount
+            # ⛔ STEP-18 B20 · THE FINGERPRINTS GO WITH THEIR EVENTS. A message's claim outlives
+            # the row it names, so without this a reconnect re-synced every message straight into
+            # `seen_on_screen` — claimed by an event that no longer exists — and extracted nothing,
+            # silently. The tenant reset already deletes this table (`account_routes`).
+            c.execute(text("delete from message_fingerprints where org_id=:o and event_id in "
+                           "(select event_id from source_events where org_id=:o and source=:s"
+                           + mine + ")"), params)
             c.execute(text("delete from source_events where org_id=:o and source=:s" + mine),
                       params)
     _mirror_connection(org_id, source, status="disconnected", seat_id=seat_id)
@@ -3430,14 +3608,13 @@ def _pending_count(org_id: str) -> int:
         return 0
     from sqlalchemy import text
 
-    from genios_engine.context.runner import _L2_OWN_EXTRACTIONS
+    # STEP-05: the drain's whole question, not a copy of half of it — every kept event with a road
+    # into memory (`context/runner.PENDING_FROM`). This counted every emitted event and nothing
+    # archived, while the drain took signalled events only: the two disagreed in both directions.
+    from genios_engine.context.runner import PENDING_FROM, pending_params
     with _graph.engine.connect() as c:
-        return int(c.execute(text(
-            "select count(*) from source_events se where se.org_id=:o and se.outcome='emitted' "
-            f"and se.event_id not in ({_L2_OWN_EXTRACTIONS}) "
-            "and se.event_id not in (select event_id from l2_processing_runs "
-            "                        where org_id=:o and status in ('done','parked'))"),
-            {"o": org_id}).scalar() or 0)
+        return int(c.execute(text("select count(*) " + PENDING_FROM),
+                             pending_params(org_id)).scalar() or 0)
 
 
 def _saved_connection_config(org_id: str, source_type: str) -> dict:
@@ -3534,9 +3711,13 @@ def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
                     detail="Finishing in the background")
 
 
-def _process_and_reason_unlocked(org_id: str, hb) -> bool:
+def _process_and_reason_unlocked(org_id: str, hb, *, eval_time: datetime | None = None) -> bool:
     """The Sync job's pass, unguarded — call `_process_and_reason_tracked`. False when the
-    intelligence phase failed (logged and shown as an error phase)."""
+    intelligence phase failed (logged and shown as an error phase).
+
+    `eval_time` is the one instant every stage is judged at, as in `_run_l2_chain` — `None`, which the
+    Sync job passes, is now. A replay passes the instant its case happened at, so a golden case can
+    run through this door too (`tests/replays/test_the_first_connect_door.py`, STEP-01 follow-up a)."""
     from genios_engine.context.runner import process_pending
     from genios_engine.platform import progress as P
     eng = _graph.engine
@@ -3570,7 +3751,7 @@ def _process_and_reason_unlocked(org_id: str, hb) -> bool:
             out = process_pending(org_id=org_id, store=_graph, llm=_llm,
                                   registry=_registry,
                                   crypto_key=get_settings().crypto_key, max_total=500,
-                                  on_progress=_live)
+                                  eval_time=eval_time, on_progress=_live)
             n = int(out.get("processed", 0))
             processed += n
             P.set_phase(eng, org_id, "processing",
@@ -3597,12 +3778,12 @@ def _process_and_reason_unlocked(org_id: str, hb) -> bool:
     try:
         from genios_engine.reason.runner import run_all as run_l3
         with stage("l4.run_all", org_id):
-            run_l3(org_id=org_id, store=_graph, registry=_registry)
+            run_l3(org_id=org_id, store=_graph, registry=_registry, eval_time=eval_time)
         if _card_store is not None:
             from genios_engine.deliver.pipeline import build_cards_for_org
             with stage("deliver.build_cards", org_id):
                 build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
-                                    llm=_llm, registry=_registry)
+                                    llm=_llm, registry=_registry, eval_time=eval_time)
         P.set_phase(eng, org_id, "intelligence", state="done", detail="Ready")
     except Exception:      # noqa: BLE001
         _log.exception("intelligence phase failed org=%s", org_id)
@@ -4786,6 +4967,7 @@ _ACTION_EFFECT: dict[str, str] = {
     "do_it_myself": "claim_only",   # claims ownership; does NOT mark the work complete
     "snooze": "defer_surface",      # defers delivery to a chosen time; decision unchanged
     "wrong": "feedback",            # records structured feedback, suppresses per policy
+    "answer": "answer_kept",        # STEP-13: keeps your words on the file's question; sends nothing
     "open_source": "none",          # read-only navigation
 }
 
@@ -5330,6 +5512,9 @@ class CardAction(BaseModel):
     snooze_option: str | None = None        # 4h | tomorrow_09 | 3d | custom
     custom_until: str | None = None
     surface: str | None = None              # web | desktop | extension | mobile — where it was pressed
+    words: str | None = None                # STEP-13: your answer, for 'answer' on a question card; STEP-16:
+                                            # your words with a 'wrong' — a correction of the card's file
+    scope: str | None = None                # STEP-16: file | kind | company — what the correction reaches
 
 
 @router.post("/cards/{card_id}/action")
@@ -5342,6 +5527,13 @@ def card_action(card_id: str, body: CardAction,
     actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
     if ctx.is_member and not _member_reaches(ctx, card_id):
         raise HTTPException(403, {"ok": False, "error": "assigned_to_different_seat"})
+    # STEP-16 (`yc2_w27_s16` M46.C3.L-integration.V3.U04, `06` D27's rule): a correction for every file of a kind of
+    # work, or for how the company works, steers every judgment it reaches — the account OWNER's alone (an owner-level
+    # credential that is no admin seat; `tests/test_open_loops.py` keeps the old scopes check out of this route).
+    if body.action == "wrong" and (body.words or "").strip() and body.scope in ("kind", "company") \
+            and (not ctx.is_org_admin or ctx.role == "admin"):
+        raise HTTPException(403, {"ok": False, "error": "owner_only",
+                                  "why": "a correction of a kind of work, or of the company, is the owner's"})
     from genios_engine.deliver.actions import ingest_action
     out = ingest_action(card_store=_card_store, graph=_graph, org_id=org_id,
                         card_id=card_id, actor=actor_id, action=body.action,
@@ -5349,7 +5541,8 @@ def card_action(card_id: str, body: CardAction,
                         custom_until=body.custom_until,
                         # a member's reach was proved above; the actor stays their address
                         allow_any_assignee=ctx.sees_org_queue or ctx.is_member,
-                        surface=body.surface if body.surface in _CARD_SURFACES else None)
+                        surface=body.surface if body.surface in _CARD_SURFACES else None,
+                        words=body.words, scope=body.scope)
     if not out.get("ok"):
         status = 403 if out.get("error") == "assigned_to_different_seat" else 422
         raise HTTPException(status, out)

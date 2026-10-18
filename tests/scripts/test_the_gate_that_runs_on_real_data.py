@@ -102,12 +102,54 @@ def test_every_check_says_what_to_do(fn):
         f"{fn.__name__} does not record the production shape it was written for")
 
 
+#: ⛔ STEP-09. A check that reads through ONE org-scoped reader instead of SQL of its own — so that
+#: it and the API read one answer — names the reader and the modules whose statements make it up.
+#: The tenant scope is then asserted where the SQL is: the check hands the reader its `org`, and every
+#: statement in those modules is a SELECT that filters on the tenant. Declared, so no check can step
+#: around the filter by calling something.
+READS_THROUGH: dict[str, tuple[str, tuple[str, ...]]] = {
+    "check_every_named_counterparty_has_a_file": (
+        "files_for", ("genios_engine/context/workstreams.py",
+                      "genios_engine/context/introductions.py")),
+}
+
+
+def _text_statements(module: str) -> list[str]:
+    from pathlib import Path
+    tree = ast.parse((Path(__file__).resolve().parents[2] / module).read_text(encoding="utf-8"))
+    return [node.args[0].value for node in ast.walk(tree)
+            if isinstance(node, ast.Call) and getattr(node.func, "id", None) == "text"
+            and node.args and isinstance(node.args[0], ast.Constant)
+            and isinstance(node.args[0].value, str)]
+
+
 @pytest.mark.parametrize("fn", _all_checks(), ids=lambda f: f.__name__)
 def test_every_check_is_scoped_to_one_tenant(fn):
     """A gate that reads across tenants would fail one customer's deploy on another's data."""
     source = textwrap.dedent(inspect.getsource(fn))
+    if fn.__name__ in READS_THROUGH:
+        reader, modules = READS_THROUGH[fn.__name__]
+        calls = [c for c in ast.walk(ast.parse(source)) if isinstance(c, ast.Call)
+                 and getattr(c.func, "id", None) == reader]
+        assert calls, f"{fn.__name__} no longer reads through {reader}"
+        for call in calls:
+            assert len(call.args) >= 2 and getattr(call.args[1], "id", None) == "org", (
+                f"{fn.__name__} does not hand {reader} the tenant it audits")
+        for module in modules:
+            statements = _text_statements(module)
+            assert statements, f"no statement found in {module} — re-point this test"
+            for statement in statements:
+                assert "org_id = :o" in statement, (
+                    f"{module}: a statement without the tenant filter: {statement[:70]!r}")
+                assert statement.lstrip().lower().startswith("select"), (
+                    f"{module}: a non-SELECT statement reaches the gate: {statement[:70]!r}")
+        return
     assert "org_id = :o" in source or "org_id=:o" in source, (
         f"{fn.__name__} reads without an org filter")
+
+
+def test_every_reader_declared_names_a_live_check():
+    assert set(READS_THROUGH) <= {fn.__name__ for fn in _all_checks()}
 
 
 def test_a_failing_check_exits_non_zero():

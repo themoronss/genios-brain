@@ -1,0 +1,428 @@
+{
+ "runs": [
+  {
+   "case": "F01",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 6.2
+  },
+  {
+   "case": "F02",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 3.6
+  },
+  {
+   "case": "F03",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 3.7
+  },
+  {
+   "case": "F04",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.4
+  },
+  {
+   "case": "F05",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 3.3
+  },
+  {
+   "case": "F06",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 3.3
+  },
+  {
+   "case": "F07",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 4.7
+  },
+  {
+   "case": "F08",
+   "case_kind": "must_detect",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 3.5
+  },
+  {
+   "case": "F09",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.4
+  },
+  {
+   "case": "F10",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.2
+  },
+  {
+   "case": "F11",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.8
+  },
+  {
+   "case": "F12",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.8
+  },
+  {
+   "case": "F13",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.4
+  },
+  {
+   "case": "F14",
+   "case_kind": "must_detect",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 3.4
+  },
+  {
+   "case": "F15",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 5.4
+  },
+  {
+   "case": "F16",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.3
+  },
+  {
+   "case": "F17",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.3
+  },
+  {
+   "case": "F18",
+   "case_kind": "must_detect",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.1
+  },
+  {
+   "case": "F19",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 3.5
+  },
+  {
+   "case": "F20",
+   "case_kind": "must_detect",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.3
+  },
+  {
+   "case": "F21",
+   "case_kind": "must_detect",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.0
+  },
+  {
+   "case": "F22",
+   "case_kind": "must_detect",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.2
+  },
+  {
+   "case": "F23",
+   "case_kind": "must_detect",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.9
+  },
+  {
+   "case": "F24",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 3.2
+  },
+  {
+   "case": "F25",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 4.3
+  },
+  {
+   "case": "F26",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.3
+  },
+  {
+   "case": "F27",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.7
+  },
+  {
+   "case": "F28",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.7
+  },
+  {
+   "case": "F29",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 4.3
+  },
+  {
+   "case": "F30",
+   "case_kind": "must_detect",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.2
+  },
+  {
+   "case": "F31",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.4
+  },
+  {
+   "case": "F32",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.3
+  },
+  {
+   "case": "F33",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.3
+  },
+  {
+   "case": "F34",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.2
+  },
+  {
+   "case": "F35",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.2
+  },
+  {
+   "case": "F36",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.9
+  },
+  {
+   "case": "F37",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.5
+  },
+  {
+   "case": "F38",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.5
+  },
+  {
+   "case": "F39",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.9
+  },
+  {
+   "case": "F40",
+   "case_kind": "must_abstain",
+   "verdict": "fail",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.4
+  },
+  {
+   "case": "F41",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.9
+  },
+  {
+   "case": "F42",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.4
+  },
+  {
+   "case": "F43",
+   "case_kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.2
+  },
+  {
+   "case": "F44",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.9
+  },
+  {
+   "case": "F45",
+   "case_kind": "must_detect",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 3.7
+  },
+  {
+   "case": "F46",
+   "case_kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 2.0
+  },
+  {
+   "case": "F47",
+   "case_kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "tenant_removed": true,
+   "seconds": 1.3
+  }
+ ],
+ "golden_orgs_left": []
+}

@@ -197,17 +197,18 @@ def _erase_tenant(store, org: str) -> None:
             conn.execute(text(f"delete from {tbl} where org_id=:o"), {"o": org})
 
 
-def _seed_event(conn, org: str, event_id: str, domain: str) -> None:
+def _seed_event(conn, org: str, event_id: str, domain: str, *,
+                occurred_at: datetime = NOW) -> None:
     reqd = conn.execute(text(
         "select column_name, data_type from information_schema.columns "
         "where table_name='source_events' and is_nullable='NO' and column_default is null")).all()
     vals = {"event_id": event_id, "org_id": org, "source": "gmail", "object_type": "email",
-            "outcome": "emitted", "occurred_at": NOW,
+            "outcome": "emitted", "occurred_at": occurred_at,
             "domain_hints": json.dumps([{"domain": domain}])}
     for r in reqd:
         if r.column_name in vals:
             continue
-        vals[r.column_name] = (NOW if ("time" in r.data_type or "date" in r.data_type)
+        vals[r.column_name] = (occurred_at if ("time" in r.data_type or "date" in r.data_type)
                                else 0 if ("int" in r.data_type or "numeric" in r.data_type)
                                else "{}" if "json" in r.data_type
                                else f"{r.column_name}_{event_id}")
@@ -281,11 +282,12 @@ _SUPPORT_CANNED = {
 }
 
 
-def _run_admin(store, org: str, event_id: str = "adm_evt") -> None:
+def _run_admin(store, org: str, event_id: str = "adm_evt", *,
+               occurred_at: datetime = NOW) -> None:
     with store.engine.begin() as conn:
-        _seed_event(conn, org, event_id, "admin")
+        _seed_event(conn, org, event_id, "admin", occurred_at=occurred_at)
     res = process_event(org_id=org, event_id=event_id, source="gmail", content=_ADMIN_CONTENT,
-                        sender_email="meera@northwind-registry.test", occurred_at=NOW,
+                        sender_email="meera@northwind-registry.test", occurred_at=occurred_at,
                         llm=_FakeLLM(_ADMIN_CANNED), store=store, is_inbound=True,
                         internal_emails=frozenset(), domain_hints=[{"domain": "admin"}])
     assert res.outcome == "committed"
@@ -321,7 +323,9 @@ def test_the_tenant_resolves_an_admin_pack_lane_where_it_used_to_resolve_none(pg
         rows = {r.pack_id: r for r in conn.execute(text(
             "select pack_id, version, state, authority_revision from tenant_packs "
             "where org_id=:o"), {"o": org})}
-    assert set(rows) == {"sales", "general", "admin", "customer_support"}
+    # + the Founder Office's synthesised lane (STEP-11): installed for every org and inert until a
+    # tenant activates the domain at Layer 3 — it carries no rules, no plays and no fields.
+    assert set(rows) == {"sales", "general", "admin", "customer_support", "founder_office"}
 
     for pack_id in ("admin", "customer_support"):
         lane = _tenant_pack(registry, pg_store, org, pack_id)

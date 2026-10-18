@@ -118,13 +118,33 @@ BUSINESS_SITUATION_V2_VERSION = "business-situation.v2"
 SITUATION_STATES: frozenset[str] = frozenset(
     {"active", "partial", "dormant", "resolved", "archived"})
 
-#: The six confidence axes, exactly. Doc 05's own acceptance row is "confidence vector axes on
-#: every situation: all 6", and five of them already exist as functions in
+#: The confidence axes of the BLOCKING vector, exactly. Doc 05's own acceptance row is "confidence
+#: vector axes on every situation: all 6", and five of those already exist as functions in
 #: `context/situations.py` (`evidence_score`, `freshness_score`, `consistency_score`,
 #: `identity_score`, `coverage_score`); `analytic` is doc 05's one addition, reflecting the
 #: quality of the comparative inputs a situation's trends and cohorts rest on.
+#:
+#: `readiness` is the seventh, and it answers Atlas cell L2-07 — *"role/source-readiness
+#: completeness is not part of the blocking vector"*. It is `situations.readiness_score`: of the
+#: capabilities this DOMAIN requires, how many are connected and fresh. The six above all ask
+#: about the situation; none of them asks whether the tenant has the tools the domain is defined
+#: to need. `coverage` is not that question despite the name — it scores `known/expected` over one
+#: situation's own FIELDS, so a tenant with no finance connector still scores 100 on a situation
+#: whose three expected fields are present. Measured 2026-10-01: `admin`, the one activated
+#: domain, is `coverage_ready=False` in all three orgs and holds 310 of the 459 stored situations.
+#:
+#: ⛔ THIS TUPLE IS DELIBERATELY ONE LONGER THAN `situation_evidence.CONFIDENCE_AXES` UNTIL
+#: MIGRATION 0191. That one is the STORAGE vector, and its `complete` property is the group gate's
+#: own row ("confidence vector axes present — all 6") taken as a count. Declaring a seventh axis
+#: there before `context_situations.confidence_readiness` exists would turn that gate permanently
+#: red for a reason nobody could look up, because there would be no column to inspect. Here the
+#: axis is `int | None` by construction and `composed_from` records what actually composed, so a
+#: seventh nullable axis moves no number at all. The divergence is ONE UNIT LONG, it is asserted
+#: by `tests/contracts/test_the_seventh_axis_is_declared_before_it_is_stored.py`, and it closes
+#: when the column lands. See `speedrun008/YCW27/layer-2-reasoning/
+#: 16-AUDIT-AND-PLAN-the-readiness-axis.md`.
 CONFIDENCE_AXES: tuple[str, ...] = ("evidence", "freshness", "consistency", "identity",
-                                    "coverage", "analytic")
+                                    "coverage", "analytic", "readiness")
 
 
 def _stable(value: Any) -> Any:
@@ -309,7 +329,7 @@ class ImportanceAttribution(BaseModel):
 
 
 class ConfidenceVector(BaseModel):
-    """Six axes, each of which may honestly have NO basis, plus the composed number.
+    """`CONFIDENCE_AXES`, each of which may honestly have NO basis, plus the composed number.
 
     `overall_bp` is bounded by the weakest axis that went into it. Composition is otherwise a
     machine for manufacturing certainty: several weak axes agreeing is not corroboration, and a
@@ -334,6 +354,21 @@ class ConfidenceVector(BaseModel):
     #: How good are the comparative inputs the trends and cohort positions rest on? Doc 05's one
     #: addition to the vector. `None` when the situation makes no comparative claim at all.
     analytic_bp: int | None = None
+    #: Of the capabilities this DOMAIN requires, how many are connected and fresh? Atlas cell
+    #: L2-07's axis — the one question the six above do not ask, because every one of them is
+    #: about the situation and this one is about the tenant. `None` is `situations.
+    #: COVERAGE_UNKNOWN`: a domain nobody registered requirements for has not been ASSESSED, and
+    #: must never read as "nothing is connected" — the error `capture/esqe/publisher.py:415`
+    #: makes one layer down by collapsing a tri-state `coverage_ready` to `10000 if x else 0`.
+    #:
+    #: ⛔ NOT YET IN `composed_from` ON ANY PUBLISHED SITUATION, and that is deliberate rather
+    #: than pending. Admin scores 1-of-2 required capabilities, so composing this axis would cap
+    #: `overall_bp` at 5000 on all 310 admin situations through the weakest-axis law below — a
+    #: re-scoring of two thirds of the corpus. Whether the product SHOULD refuse to speak that
+    #: confidently about a domain missing its finance connector is a product decision, and it is
+    #: not answerable before the axis has been stored for a full sweep. The axis is readable
+    #: first; composing it is its own unit, with the table of what it would do in hand.
+    readiness_bp: int | None = None
     #: The composed answer, 0..10000.
     overall_bp: int
     #: WHICH axes were composed into `overall_bp`. Non-empty, each naming an axis that has a
@@ -343,7 +378,7 @@ class ConfidenceVector(BaseModel):
     composed_from: tuple[str, ...]
 
     @field_validator("evidence_bp", "freshness_bp", "consistency_bp", "identity_bp",
-                     "coverage_bp", "analytic_bp", mode="before")
+                     "coverage_bp", "analytic_bp", "readiness_bp", mode="before")
     @classmethod
     def _axis(cls, value: Any, info: ValidationInfo) -> int | None:
         return None if value is None else require_bp(value, info.field_name or "axis")
@@ -362,7 +397,7 @@ class ConfidenceVector(BaseModel):
         unknown = sorted(set(axes) - set(CONFIDENCE_AXES))
         if unknown:
             raise ValueError(
-                f"composed_from names axes that do not exist: {unknown} — the six are "
+                f"composed_from names axes that do not exist: {unknown} — the axes are "
                 f"{list(CONFIDENCE_AXES)}")
         return axes
 
@@ -397,7 +432,7 @@ class ConfidenceVector(BaseModel):
 
     @property
     def axes(self) -> dict[str, int | None]:
-        """The six, by name. The read a renderer makes; `None` stays `None` and is never a 0."""
+        """Every axis, by name. The read a renderer makes; `None` stays `None` and is never a 0."""
         return {name: getattr(self, f"{name}_bp") for name in CONFIDENCE_AXES}
 
     @property

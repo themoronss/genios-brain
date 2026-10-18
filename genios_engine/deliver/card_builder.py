@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import bindparam, text
@@ -14,6 +15,9 @@ from genios_engine.contracts.learning_attribution import (ALL_REASONS as _WRONG_
                                                           reasons_for_layer as _reasons_for_layer)
 from .router import co_recipients_for, resolve_assignee
 from .slots import _fval, compute_slots
+from genios_engine.platform.self_identity import SelfIdentity, names_us
+from genios_engine.reason.expert.decide import is_expert
+from .render import HEADLINE_CAP
 
 # E0 · Card Builder (§5.10). Compose the card.v1 draft deterministically from a signal + play +
 # template — NO LLM here (that is E1). Attaches band (E2), owner (E3), the evidence chain (≥2,
@@ -33,7 +37,9 @@ from .slots import _fval, compute_slots
 #: production, and deciding that a change is user-visible is a judgment the author makes.
 # Seven stored campaign recipients now render as 7/7 and keep their verified quote outside
 # the prose budget. v4 cards otherwise block a build claim and retain the old copy forever.
-BUILDER_VERSION = "card-builder.v6-lane-and-eleven-reasons"
+#: v7 (STEP-14, `yc2_w27_s14` M43.C3.L-interface.V3.U01): an expert card in the gold shape — every untouched card is
+#: rebuilt in place (`deliver/store.claim_build`).
+BUILDER_VERSION = "card-builder.v7-the-gold-shape"
 
 #: ⛔ The eleven reasons, grouped by the QUESTION a founder is actually answering — not by our
 #: package names. "The facts are wrong" is a sentence a person can pick; "capture" is not.
@@ -216,8 +222,19 @@ def _play_window(effective: dict, play_id: str | None) -> int | None:
     return int(window) if isinstance(window, int) else None
 
 
-def _play_success(effective: dict, play_id: str | None) -> str | None:
-    play = (effective.get("plays") or {}).get(str(play_id or ""), {})
+def _play_success(effective: dict, signal: dict) -> str | None:
+    """What success looks like for this card's play — the PLAY's own authored signal first, carried off
+    the audited capability snapshot (`pipeline._open_signals_without_cards`, `play_success_events`);
+    the tenant pack's second; NULL only when neither says one.
+
+    STEP-11 (M30.C3.L-interface.V2.U04). The pack's `plays` are `{}` for every corpus pack, so reading
+    only them meant no compiled card could ever name its success, however its playbook put it.
+    """
+    for event in signal.get("play_success_events") or ():
+        text = " ".join(str(event or "").split())
+        if text:
+            return text
+    play = (effective.get("plays") or {}).get(str(signal.get("play") or ""), {})
     return play.get("success_signal") or None
 
 
@@ -394,9 +411,14 @@ select o.kind, o.occurred_at, sr.evidence, sr.event_id, se.actor ->> 'email' as 
    and o.kind not like 'email_noise%'
    and o.kind != 'event_presence'
    and o.observation_id in (select observation_id from reachable)
- order by o.occurred_at desc nulls last
+ order by o.occurred_at desc nulls last, o.kind, sr.event_id, cast(sr.evidence as text)
  limit :lim
 """
+# ⛔ THE TIE-BREAK IS CONTENT. The quotes of one message share its instant, and `occurred_at` alone
+# left their order — and, at the LIMIT, which of them made it in — to the database's physical
+# order: two identical runs gave the narrator two different prompts (yc2_w27/M19.C3.L-logic.V1.U02,
+# tests/deliver/test_a_cards_quotes_break_ties_on_content.py). Never `observation_id`: it is minted
+# at random, which is the same problem with a stable look.
 
 
 def _quote_source_texts(conn, org_id: str, event_ids) -> dict[str, str]:
@@ -619,16 +641,36 @@ def _visible_quotes(quotes, seat_id, *, store, org_id: str, co_seats=()) -> list
     return kept
 
 
-def resolved_person_name(quotes: list[dict], fallback: str) -> str:
+def resolved_person_name(quotes: list[dict], fallback: str, is_us=None) -> str:
     """The human name for a node keyed on an email address.
 
     35 of 38 person cards named an address in the headline. The real name was already extracted —
     a `mention:person` observation carries `{"name": "Maria Exconde"}` — but the node's
     display_name stayed the address, so the headline spent its 60-character budget on
-    "maria@alystventures.com" and the invention guard rejected any draft that wrote "Maria".
+    "maria@alystventures.com".
+
+    ⛔ THIS DOCSTRING ALSO SAID "and the invention guard rejected any draft that wrote Maria".
+    That was true and is not: `render._corpus` appends `q["name"]` for every quote it is handed, so
+    a `mention:person` name is grounded and `invention_ok` accepts it. Measured 2026-10-01 — see
+    `tests/deliver/test_a_person_card_names_a_person.py::
+    test_the_resolved_name_passes_the_invention_validator`, which asserts it rather than claiming
+    it. The grounding half of this defect was fixed when the corpus was widened; only the headline
+    half was still open, and that is what WIRING this function closes.
+
+    ⛔ Called from `build_draft`'s subject chain, LAST and only for `node_type == "person"`. On a
+    company node the quotes are its people's observations, so resolving there would rename the card
+    after whichever of them spoke first.
+
+    ⛔ NEVER ONE OF US (STEP-04). A `mention:person` lands on the SENDER for every person named in
+    their mail — so an investor's "Rohit, can you send your traction metrics?" put the founder's
+    name first in the investor's own quotes, and the card read "Send Mr Rohit Swerashi your
+    traction metrics". `is_us` — `platform/self_identity.names_us` over the tenant — skips such a
+    name; the next one, or the fallback, names the card.
     """
     for q in quotes:
         if q.get("kind") == "mention:person" and q.get("name"):
+            if is_us is not None and is_us(q["name"]):
+                continue
             return q["name"]
     return fallback
 
@@ -784,6 +826,145 @@ def _readable_structure(value: dict) -> str | None:
 #: citation list stays on the signal row for anyone auditing it.
 MAX_WHY_CITATIONS = 2
 
+#: STEP-11 · `06` D3. The corpora whose playbooks the founder reviews line by line (D45) — today the
+#: Founder Office, switched on for the pilot org alone. Before a playbook there is reviewed, the expert
+#: may still advise from it, and the card says so in these words. Other corpora's review states are
+#: counted on the package (`unreviewed_artifact_ids`), not shown on every card.
+REVIEWED_BY_THE_FOUNDER: frozenset[str] = frozenset({"founder_office"})
+PLAYBOOK_NOT_YET_REVIEWED = "playbook not yet reviewed"
+
+
+#: The order a card's sentences are read in — the order their sources lead its `why`.
+CARD_SENTENCES: tuple[str, ...] = ("headline", "situation", "draft", "done_when", "do_nothing")
+
+
+def _sentence_sources(signal: dict) -> list[dict]:
+    """STEP-13 §5 (`yc2_w27_s13` M35.C3.L-interface.V3.U03): an expert card's `why` leads with one entry
+    per sentence — where it came from, as the review's check let it stand (`reason/expert/decide.
+    sources_of`, carried on the audited capability's render block): the headline with the mails and asks
+    its move rests on and their quotes (or, a held file, the question and why), the situation, what done
+    looks like and what doing nothing costs labelled inferences, the draft with whom it goes to and what it
+    stands on (M35.C3.L-integration.V2.U05, crosscheck X24: every sentence the card shows — its success
+    signal and its cost of ignoring too). The names in them were held to the expert's dossier by the
+    card validator's own rule (`reason/expert/verify`); a card never holds that dossier, so it does not
+    judge them again against less. Any other card carries none, and its `why` is what it always was."""
+    render = signal.get("capability_render")
+    sources = render.get("sources") if isinstance(render, dict) else None
+    if not isinstance(sources, dict):
+        return []
+    return [{"sentence": part, **dict(sources[part]), "source": "expert_check"}
+            for part in CARD_SENTENCES if isinstance(sources.get(part), dict)]
+
+
+# ── STEP-14 · THE GOLD SHAPE (`yc2_w27_s14` M43.C3.L-interface.V3.U01, s14-F6–F9, s14-D8) ──────────────────────────
+#
+# The decision carries the gold lines on its render block (`reason/expert/decide._render`, `gold`): who and what the
+# file is, what remains, why now, the move WHOLE, its alternative and stop rule as the check held them, the file's
+# window. An expert card reads them; a card no review wrote — or an expert card from before 0221 — has none, and is
+# built as before. The headline is the move CUT AT A CLAUSE by code (s14-D8: no prompt change, the same on any
+# model), never on a bare function word; the whole move is under `recommended`.
+
+#: Words a headline never ends on: a cut there reads as a card that broke (*"…before the"*, *"…call on"*). One string,
+#: split: a lone literal "with" reads as a SQL statement to the statement census (`platform/table_coverage`).
+FUNCTION_WORDS: frozenset[str] = frozenset((
+    "a an the to of on in at for by with and or but nor so then before after from into onto about as than that "
+    "this these those which who whom whose whether if once when while until because via per your our his her "
+    "their its my is are was be been will would can not plus").split())
+#: Where a move's clause may end: a clause's punctuation, or before a word that opens the next clause or phrase.
+_GOLD_CUT = re.compile(r",\s+|;\s+|:\s+|\s+[—–]\s+|\s+(?=(?:and|then|so|before|after|by|while|with|to|for|if|once|"
+                       r"when|until|because|but|or|on|at|in|from|via|whether|that|which|who)\b)")
+
+
+def _tidy_head(text: str) -> str:
+    """A cut's head with no trailing punctuation and no bare function word at its end."""
+    words = text.strip().rstrip(",;:—– ").split()
+    while words and words[-1].lower().strip(",;:—–") in FUNCTION_WORDS:
+        words.pop()
+    return " ".join(words).rstrip(",;:—– ")
+
+
+def gold_headline(move: str, cap: int = HEADLINE_CAP) -> str:
+    """The move as a headline: whole when it fits; else the longest start of it that ends a clause and fits; else
+    the longest start that fits at a word — never ending on a bare function word."""
+    text = " ".join(str(move or "").split())
+    if len(text) <= cap:
+        return text
+    best = ""
+    for m in _GOLD_CUT.finditer(text):
+        head = _tidy_head(text[:m.start()])
+        if len(head) <= cap and len(head) > len(best):
+            best = head
+    if best:
+        return best
+    return _tidy_head(text[:cap + 1].rsplit(" ", 1)[0]) or text[:cap]
+
+
+def _gold(signal: dict) -> dict | None:
+    """The gold lines the decision carried — None on a card no review wrote, or one from before 0221."""
+    render = signal.get("capability_render")
+    gold = render.get("gold") if isinstance(render, dict) else None
+    return gold if isinstance(gold, dict) else None
+
+
+def _gold_template(template: dict, gold: dict | None) -> dict:
+    """The render template with its headline the move cut at a clause — a shown move only (a held file's
+    question keeps its own words, capped by the renderer as before)."""
+    if not gold or not gold.get("recommended"):
+        return template
+    fallback = dict(template.get("fallback") or {})
+    fallback["headline"] = gold_headline(fallback.get("headline") or "")
+    return {**template, "fallback": fallback}
+
+
+def _window_receipt(gold: dict | None) -> list[dict]:
+    """The file's window among the card's receipts — how long, and where it came from (`03` F179)."""
+    window = (gold or {}).get("window")
+    if not isinstance(window, dict) or not window.get("days"):
+        return []
+    return [{"window": window.get("said"), "days": int(window["days"]), "from": window.get("from"),
+             "source": "card_lines"}]
+
+
+#: The confidence axes an expert card does not show: its reader publishes no recency, so R is the authority's
+#: 5,000 bp fallback on every expert decision (s14-F9) — a default, never a measurement.
+UNMEASURED_ON_AN_EXPERT_CARD: frozenset[str] = frozenset({"R"})
+
+
+#: Why an expert card does not instruct (STEP-14 M42.C3.L-logic.V0.U01) — its check's own grade, not a quote gate.
+EXPERT_HELD = "the file asks you one question before any move — answer it on the file's card"
+EXPERT_UNCHECKED = "no check of the expert's review stands behind this move"
+
+
+def _expert_grade(signal: dict) -> str | None:
+    """An expert card is graded BY ITS CHECK (STEP-14 `yc2_w27_s14` M42.C3.L-logic.V0.U01, s14-F1): None when its
+    move was shown — every sentence of it carries its source (`_sentence_sources`) and the headline stands on the
+    ids its check kept — else why it does not instruct: a held file's card is a question, and a decision with no
+    check behind it has nothing to stand on. Never the formula lane's quote gate: an expert move rests on facts the
+    check verified and is often OURS to make, with no sentence of theirs on record."""
+    render = signal.get("capability_render")
+    sources = render.get("sources") if isinstance(render, dict) else None
+    headline = sources.get("headline") if isinstance(sources, dict) else None
+    if not isinstance(headline, dict):
+        return EXPERT_UNCHECKED
+    if headline.get("question"):
+        return EXPERT_HELD
+    return None if headline.get("evidence") else EXPERT_UNCHECKED
+
+
+def _review_label(signal: dict) -> list[dict]:
+    """The first `why` entry of a card whose play rests on a founder playbook nobody has reviewed.
+
+    Read off what the signal carries from the audited snapshot (`pipeline._open_signals_without_cards`:
+    `capability_domain`, `play_review_state`). Only `accepted` is reviewed — a missing state is not a
+    review, so it is labelled too.
+    """
+    if str(signal.get("capability_domain") or "") not in REVIEWED_BY_THE_FOUNDER:
+        return []
+    if signal.get("play_review_state") == "accepted":
+        return []
+    return [{"review": PLAYBOOK_NOT_YET_REVIEWED, "play": signal.get("play"),
+             "source": "expertise_review"}]
+
 
 def _why(evidence: list, _facts: dict, citations: list | None = None) -> list[dict]:
     """Project the evidence the immutable reasoning context bound, then the doctrine it rested on.
@@ -849,11 +1030,24 @@ def _context_tags(node_type: str, attrs: dict, facts: dict, sources: set[str]) -
     return sorted(tags)
 
 
+class SubjectIsUs(Exception):
+    """A card whose subject is one of us is not built (STEP-04). The pipeline counts it under
+    `refused_subject_is_us` and logs the reason; the rest of the pass goes on."""
+
+
 def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
-                quotes: list[dict] | None = None) -> dict:
-    """E0 output — a complete card.v1 minus the rendered copy (E1) and persisted state."""
+                quotes: list[dict] | None = None, us: SelfIdentity | None = None,
+                our_names: tuple[str, ...] = ()) -> dict:
+    """E0 output — a complete card.v1 minus the rendered copy (E1) and persisted state.
+
+    `us` and `our_names` — who the tenant is (`platform/self_identity`) and its own names — are read
+    once per pass by the caller; without them nothing is refused and no mention is skipped."""
     node_id = signal["subject_node_id"]
     name, node_type, attrs, facts = load_node(store, org_id, node_id)
+    us = us if us is not None else SelfIdentity()
+
+    def is_us(text: str | None) -> bool:
+        return names_us(text, us, our_names)
     # A SYNTHETIC ANCHOR'S DISPLAY NAME IS NOT THE CARD'S SUBJECT.
     #
     # `context/outreach_situations.py` names its nodes "Investor A — awaiting reply" so a person
@@ -863,7 +1057,37 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     #
     # The plain counterparty travels as a FACT on the anchor for exactly this reason, so the card
     # reads the name from the data rather than from a label meant for a different reader.
-    name = _fval(facts, "outreach.counterparty") or _fval(facts, "commitment.owed_to") or name
+    # ⛔ AND A PERSON NODE'S DISPLAY NAME IS AN EMAIL ADDRESS. The fix for that was written,
+    # measured, and never called.
+    #
+    # `resolved_person_name` carries its own evidence: *"35 of 38 person cards named an address in
+    # the headline. The real name was already extracted — a `mention:person` observation carries
+    # {"name": "Maria Exconde"} — but the node's display_name stayed the address, so the headline
+    # spent its 60-character budget on 'maria@alystventures.com'."* Somebody measured 38 cards,
+    # found 35 broken, wrote the resolver, and nothing ever called it.
+    #
+    # ⛔ IT GOES LAST IN THIS CHAIN, NOT FIRST. `outreach.counterparty` and `commitment.owed_to`
+    # are FACTS written by the extractor about who the reading concerns; a `mention:person` name is
+    # an observation. Putting the resolver ahead of them would let an observation override the fact
+    # that names the counterparty — so it replaces only the `or name` fallback, which is exactly
+    # the shape `resolved_person_name(quotes, fallback)` was written for.
+    #
+    # ⛔ AND THE `person` GATE IS LOAD-BEARING. On a COMPANY node the quote loader returns
+    # "observations of the people who works_at it" — this module's own comment, with the reason:
+    # *"the card names the company, and these are its people."* Resolving a name there would rename
+    # a company card after whichever of its people spoke first. On a `thread` node the quotes are
+    # that conversation's, and the subject is a conversation. The minted `outreach`/`commitment`
+    # anchors are already handled by the two facts above; extending this to them is a separate
+    # decision nobody has asked for, and it is recorded in STEP-08 rather than taken here.
+    name = (_fval(facts, "outreach.counterparty") or _fval(facts, "commitment.owed_to")
+            or (resolved_person_name(quotes or [], name, is_us) if node_type == "person" else name))
+    # ⛔ WE ARE NEVER A CARD'S SUBJECT (STEP-04). A card's subject is the counterparty, always; one
+    # about the tenant tells the founder to act on himself. Whatever chain produced the name — a
+    # fact, an observation, the node's own label — a subject that is one of us is refused here,
+    # with its reason, not printed. `7075014c` still holds: our own words may GROUND a
+    # `dependency_stated` card (`_GROUNDED_BY_OUR_OWN_WORDS`); we are never the one it is about.
+    if is_us(name):
+        raise SubjectIsUs(f"signal {signal.get('signal_id')}: the subject {name!r} is one of us")
     sources = _real_sources(store, org_id, node_id)
     reason_code = signal["reason_code"]
     _lane = describe_lane(signal.get("output_lane"), signal.get("lane_reason"))
@@ -914,6 +1138,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     template = (dict(capability_render) if isinstance(capability_render, dict)
                 and capability_render else
                 (effective.get("templates", {}) or {}).get(reason_code, {}))
+    gold = _gold(signal) if is_expert(signal.get("capability_id")) else None
+    template = _gold_template(template, gold)
     _play_id = (effective.get("plays", {}).get(signal.get("play") or "", {}) and signal.get("play"))
 
     actions = [
@@ -949,10 +1175,18 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # there, so the list view — the surface anyone actually scans — showed the imperative anyway.
     level = _require_level(signal)
     abstained = signal.get("abstained_because")
+    # ⛔ STEP-14 (M42.C3.L-logic.V0.U01): AN EXPERT CARD IS GRADED BY ITS CHECK — the three gates below are the
+    # formula lane's, and stay for every other card. A shown move keeps the level its decision gave it.
+    expert = is_expert(signal.get("capability_id"))
+    grade = _expert_grade(signal) if expert else None
+    if grade is not None:
+        level = str(_ABSTENTION.REVIEW)
+        abstained = abstained or grade
+        actions = [a for a in actions if a.get("type") in ("wrong", "snooze")]
     grounded, missing, recommended = clarity_verdict(
         reason_code, {str(o.get("kind")) for o in (signal.get("observations") or ())},
         set(facts))
-    if not grounded:
+    if not grounded and not expert:
         level = str(_ABSTENTION.OBSERVATION)
         abstained = abstained or f"missing {missing} — {recommended}"
         # A card that cannot say what to do must not offer a button that claims to do it. `wrong`
@@ -977,7 +1211,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # human must look", which names what this card is. Downgrading is not hiding — the card still
     # answers Ask and the API, it just stops claiming the authority to give an order it cannot
     # phrase.
-    has_finding = not states_absence(template)
+    has_finding = expert or not states_absence(template)
     if not has_finding:
         level = str(_ABSTENTION.REVIEW)
         abstained = abstained or (
@@ -1035,7 +1269,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         grounding = [q for q in (quotes or ())
                      if str(q.get("kind") or "") not in _NAMING_ONLY_KINDS
                      and str(q.get("quote") or "").strip()]
-    has_quote = bool(grounding)
+    has_quote = expert or bool(grounding)
     if not has_quote:
         level = str(_ABSTENTION.REVIEW)
         abstained = abstained or (
@@ -1060,6 +1294,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
 
     return {
         "signal_id": signal["signal_id"], "org_id": org_id, "subject_node_id": node_id,
+        # STEP-14 (`migrations/0220`): an expert card is its FILE's — the file's decisions and questions version it.
+        "file_id": node_id if expert else None,
         # Fail closed on level: defaulting to "prescriptive" is what let the pipeline's hardcoded
         # literal go unnoticed, turning every predictive risk warning into a direct order.
         "domain": effective.get("pack_id", "sales"), "level": level,
@@ -1083,8 +1319,9 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # Every one of these is populated from something the engine already computed. None is
         # inferred: a NULL means this card genuinely never carried that answer, which is the
         # measurement the scorecard needs.
-        "business_subject": name,                      # the counterparty, not the GeniOS seat
-        "relationship_role": _fval(facts, "party.role"),
+        # STEP-14: an expert card's subject is the file's PERSON when it has one (`03` F64), its role the brief's.
+        "business_subject": (gold or {}).get("subject") or name,   # the counterparty, not the GeniOS seat
+        "relationship_role": (gold or {}).get("role") or _fval(facts, "party.role"),
         # NEVER the slot, and never the objective. `compute_slots` fills an absent
         # `commitment.action` with the sentinel "the commitment", so this contract field — which
         # is supposed to say what is actually OPEN — reported the words "the commitment" on every
@@ -1092,8 +1329,13 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # what the thread is FOR, not what is outstanding in it, and putting it here would answer
         # a different question in the field's own name. A NULL is the measurement the intelligence
         # contract asks for.
-        "unresolved_item": _fval(facts, "commitment.action"),
-        "why_now": _why_now(reason_code, facts, slots, eval_time),
+        # STEP-14: an expert card's what remains is its file's open asks, ours and theirs; its why now the trigger's.
+        "unresolved_item": ("; ".join((gold or {}).get("what_remains") or ()) or _fval(facts, "commitment.action")),
+        "why_now": (gold or {}).get("why_now") or _why_now(reason_code, facts, slots, eval_time),
+        # STEP-14 (0221): the move whole, the alternative and when to stop — as the check held them.
+        "recommended": dict(gold["recommended"]) if gold and gold.get("recommended") else None,
+        "alternative": (gold or {}).get("alternative"),
+        "wait_or_stop": (gold or {}).get("wait_or_stop"),
         "capability_key": signal.get("capability_id"),
         "capability_version": signal.get("capability_version"),
         # Unreviewed expertise must not instruct — the same state the abstention gate reads.
@@ -1106,9 +1348,10 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # The DECISION's own values first; the pack template only fills a pre-0070 signal.
         # These came from ReasoningDecision at emit time — the pack fallback is a config author's
         # generic estimate, not this decision's judgment.
-        "outcome_window_days": (signal.get("decision_window")
+        "outcome_window_days": (((gold or {}).get("window") or {}).get("days")
+                                or signal.get("decision_window")
                                 or _play_window(effective, signal.get("play"))),
-        "success_signal": _play_success(effective, signal.get("play")),
+        "success_signal": _play_success(effective, signal),
         "do_nothing_consequence": signal.get("do_nothing_consequence"),
         "candidate_steps": signal.get("candidate_steps") or [],
         "rejected_candidates": signal.get("rejected_candidates") or [],
@@ -1122,9 +1365,12 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         "lane_label": _lane.label,
         # Decomposed, not a scalar: "unsure about the evidence" and "unsure about the timing"
         # call for different user actions and a single number cannot tell them apart.
-        "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")},
+        # STEP-14 (s14-F9): only the axes that were measured — an expert card's R is a default.
+        "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")
+                              if not (expert and k in UNMEASURED_ON_AN_EXPERT_CARD)},
         "actions": actions,
-        "why": _why(signal.get("evidence"), facts, signal.get("citations")),
+        "why": _review_label(signal) + _sentence_sources(signal) + _window_receipt(gold)
+        + _why(signal.get("evidence"), facts, signal.get("citations")),
         "surfaces": _surfaces(facts, signal, actions,
                               has_finding=has_finding and has_quote),
         "context_tags": _context_tags(node_type, attrs, facts, sources),

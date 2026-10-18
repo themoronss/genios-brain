@@ -756,7 +756,7 @@ inference_patterns:
       status: executable
       when:
         - {path: thread.ball_in_court, op: "=", value: them}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 5}}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 2, floor: 5}}
       yields: {confidence_bp: 7400, attribute: ball_in_court, value: claimant}
       evidence_fields: [thread.ball_in_court, thread.last_inbound]
       false_positive: >

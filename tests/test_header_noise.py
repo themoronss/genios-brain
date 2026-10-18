@@ -10,7 +10,8 @@ from genios_engine.capture.pipeline import capture_event
 # raw["headers"] — but the Gmail connector never built that dict, so on real Gmail those three rules
 # were DEAD: bulk/automated mail slipped L1, hit L2's LLM, and only THEN got classified as noise (a
 # wasted LLM call reaching no situation). The connector now surfaces the noise headers so the rules
-# actually fire at L1, before any LLM spend.
+# actually fire at L1, before any LLM spend. Since STEP-03 a mail they stop is ARCHIVED — kept, unread
+# by any model — not deleted, so "stopped at L1" reads `archived`.
 
 
 def _b64(s: str) -> str:
@@ -39,12 +40,12 @@ def test_connector_now_surfaces_noise_headers():
     assert raw.raw.get("headers", {}).get("List-Unsubscribe")   # was absent before → the rule was dead
 
 
-def test_list_unsubscribe_now_drops_at_l1():
-    assert _outcome(_email({"List-Unsubscribe": "<mailto:u@x.com>"})) == "dropped"
+def test_list_unsubscribe_now_stops_at_l1():
+    assert _outcome(_email({"List-Unsubscribe": "<mailto:u@x.com>"})) == "archived"
 
 
-def test_auto_submitted_machine_ack_drops_at_l1():
-    assert _outcome(_email({"Auto-Submitted": "auto-generated"})) == "dropped"
+def test_auto_submitted_machine_ack_stops_at_l1():
+    assert _outcome(_email({"Auto-Submitted": "auto-generated"})) == "archived"
 
 
 def test_vacation_responder_is_kept_as_an_availability_notice():
@@ -62,22 +63,24 @@ def test_connector_surfaces_responder_headers():
     assert raw.raw["headers"].get("X-Autoreply") == "yes"
 
 
-def test_precedence_bulk_drops_at_l1():
-    assert _outcome(_email({"Precedence": "bulk"})) == "dropped"
+def test_precedence_bulk_stops_at_l1():
+    assert _outcome(_email({"Precedence": "bulk"})) == "archived"
 
 
-def test_list_id_mailing_list_drops_at_l1():
-    assert _outcome(_email({"List-Id": "<news.acme.com>"})) == "dropped"
+def test_list_id_mailing_list_stops_at_l1():
+    assert _outcome(_email({"List-Id": "<news.acme.com>"})) == "archived"
 
 
 def test_clean_business_mail_is_untouched():
     # real sender, no noise headers, a genuine request → must still reach L2
     raw = _email({}, sender="priya@acme.io", body="Can we meet Friday to discuss the proposal?")
-    assert _outcome(raw) != "dropped"
+    # `== "emitted"`, not `!= "dropped"`: since STEP-03 a stopped mail is `archived`, and the old
+    # inequality would pass for it — the guard would look wired and test nothing.
+    assert _outcome(raw) == "emitted"
 
 
 def test_bulk_with_attachment_still_survives():
     # a noreply/bulk mail that carries a real file (invoice) is NOT dropped — relevance/L2 decides
     raw = _email({"List-Unsubscribe": "<mailto:u@x.com>"})
     raw.raw["has_attachment"] = True
-    assert _outcome(raw) != "dropped"
+    assert _outcome(raw) == "emitted"

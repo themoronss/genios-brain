@@ -138,6 +138,12 @@ def has_mapping(source: str, object_type: str) -> bool:
     return (source, object_type) in _REGISTRY
 
 
+def mapped_kinds() -> tuple[str, ...]:
+    """Every kind a structured mapping exists for, as `"source:object_type"` — the calendar road into
+    memory takes these whatever their signal (`context/memory_lanes`, STEP-05)."""
+    return tuple(sorted(f"{source}:{object_type}" for source, object_type in _REGISTRY))
+
+
 def all_mappings() -> list[StructuredMapping]:
     return list(_REGISTRY.values())
 
@@ -203,6 +209,8 @@ register(StructuredMapping(
             FieldMap("status", "meeting.status", "enum"),
             FieldMap("description", "meeting.description", "string"),
             FieldMap("location", "meeting.location", "string"),
+            # STEP-05 · whose meeting it is — an investor's invite and our own are different work.
+            FieldMap("organizer", "meeting.organizer", "string"),
             # P5 · how a Drive transcript Doc finds its meeting (capture/transcripts/link.py).
             FieldMap("conferenceId", "meeting.conference_id", "string"),
             FieldMap("attachment_file_ids", "meeting.attachment_file_ids", "string")],

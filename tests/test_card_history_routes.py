@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -27,7 +29,17 @@ from genios_engine.platform import auth
 from genios_engine.platform.auth import AuthCtx, get_auth_ctx
 
 ORG = "org_hist"
-NOW = datetime.now(timezone.utc)
+#: ⛔ Read when each test runs, never when this module is imported (`yc2_w27_s17`
+#: M41.C1.L-integration.V1.U02, `YC-II W27/03` F142): an instant taken at import is hours old by the
+#: time a long run — a sleeping laptop, a slow CI runner — reaches the test. Set by `_clock`.
+NOW: datetime = None  # type: ignore[assignment]
+
+
+@pytest.fixture(autouse=True)
+def _clock():
+    global NOW
+    NOW = datetime.now(timezone.utc)
+
 
 OWNER = AuthCtx(org_id=ORG, actor_id="founder@example.com")
 # An agent-bound key reads only its own lane — the member case for the visibility rule.

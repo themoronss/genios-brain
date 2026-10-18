@@ -70,17 +70,18 @@ def test_hinglish_chutti_subject_is_kept():
     assert availability_marker({"subject": "kal se 3 din chutti"}) == LEAVE_NOTICE
 
 
-def test_machine_ack_without_ooo_still_drops():
+def test_machine_ack_without_ooo_is_still_stopped():
+    # stopped = archived (kept, unread) since STEP-03 — never routed as an availability notice
     res, _ = _gate("person@realco.com", {"subject": "Delivery receipt", "snippet": "received",
                                          "headers": {"Auto-Submitted": "auto-generated"}})
-    assert res.action == "drop" and res.reason_code == "N-01"
+    assert res.action == "archive" and res.reason_code == "N-01"
 
 
-def test_automated_sender_auto_reply_still_drops():
+def test_automated_sender_auto_reply_is_still_stopped():
     # a helpdesk "Automatic reply: ticket received" from noreply@ is nobody's leave
     res, _ = _gate("no-reply@helpdesk.io", {"subject": "Automatic reply: ticket #42",
                                              "snippet": "We received your request."})
-    assert res.action == "drop" and res.reason_code == "N-03"
+    assert res.action == "archive" and res.reason_code == "N-03"
 
 
 def test_body_mention_does_not_mark():

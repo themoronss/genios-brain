@@ -1,0 +1,23 @@
+# STUB — declared by the domain root (STEP-11 M30.C1.L-contract.V0.U01) and filled by its content unit.
+# A stub is skipped by the resolver: nothing compiles through it until it is authored and admitted.
+identity:
+  id: founder_office.meetings.external_meetings
+  name: External Meetings
+  domain: founder_office
+  subdomain: meetings
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Investor calls, programme interviews and partner meetings: the preparation before and the follow-through after. Filled by STEP-11 M31.
+
+question: "Is this external meeting prepared for, and followed through after?"
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental

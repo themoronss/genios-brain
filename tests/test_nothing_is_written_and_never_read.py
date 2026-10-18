@@ -119,6 +119,12 @@ MUST_BE_READ: dict[str, str] = {
     "commitment.status": "context/outreach_situations.py, read_overdue_commitments",
     "requires_complete_coverage": "context/situation_publisher.py, _preflight",
     "contradicted_by": "context/situation_publisher.py, _preflight",
+    # STEP-10 (tree `yc2_w27_s10`) — each was registered in KNOWN_UNREAD in the commit that wrote
+    # it, its reader being a later unit of the same tree; read since M29.C2.L-logic.V2.U04.
+    "party.reply_cadence_n": "context/workstream_numbers.py, numbers_for — their normal's n",
+    "party.our_reply_days": "context/workstream_numbers.py, numbers_for — your normal with them",
+    "derived.our_reply_days": "context/workstream_numbers.py, numbers_for — your normal overall",
+    "delivery.status": "context/workstream_numbers.py, numbers_for — the person's bounce",
 }
 
 #: Written on purpose and read by nothing YET. Each says why it is not a defect to fix today and
@@ -179,18 +185,6 @@ KNOWN_UNREAD: dict[str, str] = {
         "requires the exact sentence, so turning an adjudicated candidate into a card is a "
         "separate decision nobody has made. MOVES WHEN: a reader carries an adjudicated "
         "candidate somewhere a person sees it.",
-    "open_loops.closed_basis":
-        "Both closers record whether the closing message ANSWERED the ask (a kind in the "
-        "`discharges` table) or merely arrived on the thread, and no reading selects it yet. "
-        "Recorded now rather than when a consumer appears because it CANNOT BE RECOVERED LATER: "
-        "once a closure is a flat `closed`, which observations the closer saw — and which loops "
-        "it was closing at that instant — is gone, unlike a typed absence that any later reader "
-        "can recompute. The obvious consumer is `support_situations.read_backlog_items`, and it "
-        "is deliberately not wired today: that reading requires the loop OPEN and the ball ours, "
-        "so a loop closed on contact alone is hidden by two conditions rather than one, and "
-        "lifting either changes card VOLUME by an amount nobody has measured against a real "
-        "tenant. MOVES WHEN: the effect on live card counts is measured and the ball-in-court "
-        "half is decided with it.",
 }
 
 

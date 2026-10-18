@@ -21,7 +21,7 @@ from genios_engine.capture.connectors.base import RawObject, SourceBatch, Source
 from genios_engine.capture.landing.repository import SourceEventRepository
 from genios_engine.capture.parked.store import ParkedStore, parked_from_trace
 from genios_engine.capture.payload_store import RawPayloadStore
-from genios_engine.capture.pipeline import (CaptureResult, capture_event,
+from genios_engine.capture.pipeline import (CaptureResult, capture_event, named_in_brief,
                                             prime_relevance_page)
 from genios_engine.capture.validate.claim_group import (ClaimGroup, assemble_claim_groups,
                                                         claims_from_extraction)
@@ -211,6 +211,11 @@ class SyncSummary:
     emitted: int = 0
     dropped: int = 0
     parked: int = 0
+    #: Kept and unread: what the gate's noise rules and the AI filter's confident junk would once
+    #: have DROPPED (STEP-03, the gate keeps everything). A field per outcome is not optional —
+    #: the loop below counts with `setattr(summary, outcome, …)`, so an outcome with no field
+    #: raises and takes the sweep with it.
+    archived: int = 0
     duplicate: int = 0
     quarantined: int = 0
     next_cursor: str | None = None
@@ -324,6 +329,10 @@ class SyncSummary:
     #: A rising count here and a flat `intent_unread` is a prompt that changed its mind, not one
     #: that went quiet — and the two need different fixes.
     intent_disagreements: int = 0
+    #: GeniOS-008 L1 A3 · objects whose source gave no readable time, so `occurred_at` is the
+    #: moment we read them (`RawObject.occurred_at_inferred`). They are captured, never dropped,
+    #: and never move the cursor. A non-zero count is a connector whose time field changed shape.
+    time_inferred: int = 0
 
     @property
     def intent_unknown_rate_bp(self) -> int:
@@ -343,6 +352,22 @@ class SyncSummary:
     #: is read once by `api/routes._run_ledger`, and it comes from the SAME `_now` seam the poll
     #: decision uses so a test can freeze it rather than race it.
     started_at: datetime | None = None
+    # ------------------------------------------------------------------------------------------
+    # STEP-10 · WHAT THIS RUN READ AND WHEN IT ENDED (`yc2_w27_s10 · M29.C5.L-data.V0.U01`)
+    #
+    # The publisher files every signal's coverage under the sweep's `source`, over the window
+    # `started_at` → `finished_at` (`capture/esqe/publisher._coverage_of`), and this summary had
+    # neither name: per-signal coverage was NULL on 28 of 28 golden signals (`STEP-18` B5), while
+    # the publisher's own test passed on a stand-in that carried both.
+    # ------------------------------------------------------------------------------------------
+    #: The source this run read — set where the run starts, the same resolution its cursor is
+    #: keyed on (the connector's own `source`). None only on a summary no run produced.
+    source: str | None = None
+    #: WHEN THIS RUN FINISHED — off the clock seam `started_at` came from, after the last page,
+    #: before the ledger row is written. `l1_sync_runs.finished_at` records it instead of the
+    #: database's `now()`, so a replay frozen at a case's instant reads its runs at that instant
+    #: (STEP-10 N8). None on a poll the cadence declined: it never ran, so it never finished.
+    finished_at: datetime | None = None
 
     @property
     def skipped_not_due(self) -> bool:
@@ -583,8 +608,16 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
     # doesn't move it) — anything the primary sync missed lands; dupes drop at dedup.
     since = None
     # The run's own start, taken once, from the injectable seam rather than a bare clock so the
-    # ledger row and the cadence decision below cannot disagree about when "now" was.
-    started_at = (_now or (lambda: datetime.now(timezone.utc)))()
+    # ledger row and the cadence decision below cannot disagree about when "now" was. Its finish
+    # is read off the same seam at the end (STEP-10).
+    clock = _now or (lambda: datetime.now(timezone.utc))
+    started_at = clock()
+    # STEP-07 · the junk filter learns who the company brief names before the first page is
+    # listed, so neither its batch (here) nor the connector's snippet gate (the fast path, which
+    # holds the same classifier) spends a call on a sender the gate will whitelist as W-07.
+    if relevance is not None and sender_resolver is not None and hasattr(relevance,
+                                                                         "bind_senders"):
+        relevance.bind_senders(sender_resolver)
     saved = None
     if mode == "recovery":
         since = started_at - timedelta(days=reconcile_days)
@@ -614,7 +647,8 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                       "(cadence %ss, origin=%s)", org_id, connection_id, source,
                       decision.next_run_at.isoformat(), decision.cadence.interval_seconds,
                       decision.cadence.origin)
-            return SyncSummary(next_cursor=cursor, poll=decision, started_at=started_at)
+            return SyncSummary(next_cursor=cursor, poll=decision, started_at=started_at,
+                               source=source)
         if decision.is_catch_up:
             # An outage is paid for in PAGES, once, resuming from the stored watermark — never by
             # re-reading history the watermark already covers.
@@ -632,7 +666,7 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 since = decision.catch_up.since
 
     sync_mode = SyncMode.backfill if mode == "backfill" else SyncMode.incremental
-    summary = SyncSummary(poll=decision, started_at=started_at)
+    summary = SyncSummary(poll=decision, started_at=started_at, source=source)
     watermark = since
     page_cursor = cursor
     # PREFETCH the next page while this one is being captured.
@@ -696,6 +730,8 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 res, err = _capture_bounded(raw, retries=2, org_id=org_id,
                                             connection_id=connection_id, repo=repo,
                                             sender_known=sk, relevance=relevance,
+                                            named_in_brief=named_in_brief(sender_resolver,
+                                                                          raw),
                                             trace_repo=trace_repo, payload_store=payload_store,
                                             prepared_store=prepared_store,
                                             document_job_store=document_job_store,
@@ -809,6 +845,12 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                         parked_store.add(parked_from_trace(org_id, res.event.event_id,
                                                            res.event.source, reason or "unknown",
                                                            res.trace))
+                if getattr(raw, "occurred_at_inferred", False):
+                    # A time we made up is not a place the cursor may move to: "now" would skip
+                    # everything the provider has not handed us yet.
+                    summary.time_inferred += 1
+                    if raw.synced_at is None:
+                        continue
                 if watermark is None or raw.watermark_at > watermark:
                     watermark = raw.watermark_at
             page_cursor = batch.next_cursor
@@ -821,6 +863,12 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 # which is the opposite conclusion.
                 summary.cursor_exhausted = True
                 break
+        else:
+            # The page budget ran out with a live cursor: WE stopped, and the next run resumes
+            # from `next_cursor`. Said here rather than left as None, which reads as "not
+            # applicable" — a truncated poll is not a webhook.
+            summary.cursor_exhausted = False
+            summary.page_budget_spent = True
     finally:
         # A pending fetch after an early break is a read we no longer need; never let it hold the
         # process open. shutdown(wait=False) so a hung provider call cannot outlive the sync.
@@ -829,6 +877,10 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
         if pool is not None:
             pool.shutdown(wait=False)
 
+    if summary.time_inferred:
+        _log.warning("time inferred: org=%s conn=%s source=%s — %d object(s) had no readable "
+                     "time and were captured at the moment read", org_id, connection_id, source,
+                     summary.time_inferred)
     # recovery is a pure safety re-scan — never regress/advance the primary watermark
     if cursor_store is not None and mode != "recovery":
         # Fail-closed clamp: a watermark in the future asks the provider for changes "since" a
@@ -848,6 +900,9 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
     # this decides whether those things agree.
     summary.conflicts = _detect_conflicts(summary.results, groups=summary.claim_groups,
                                           detected_at=_detected_at(semantic))
+    # STEP-10 · the run is over: its finish, off its own clock, BEFORE the ledger hook — which
+    # writes the row and publishes the sweep's signals, and both read it.
+    summary.finished_at = clock()
     if run_ledger is not None:                    # l1_sync_runs — observability, never fatal
         try:
             run_ledger(org_id=org_id, connection_id=connection_id, source=source,
@@ -862,6 +917,7 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
             "source": source, "mode": mode,
             "scanned": getattr(summary, "scanned", 0), "emitted": getattr(summary, "emitted", 0),
             "dropped": getattr(summary, "dropped", 0), "parked": getattr(summary, "parked", 0),
+            "archived": getattr(summary, "archived", 0),
         })
     except Exception:           # noqa: BLE001
         pass
@@ -899,9 +955,10 @@ def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: st
         summary = run_sync(connector, org_id=org_id, connection_id=connection_id, repo=repo,
                            mode="backfill", cursor=cursor, limit=limit, source=source,
                            cursor_store=None, max_pages=take, **kw)
-        for f in ("scanned", "emitted", "dropped", "parked", "duplicate", "quarantined",
+        for f in ("scanned", "emitted", "dropped", "parked", "archived", "duplicate", "quarantined",
                   "domain_tagged", "domain_fallback_only",
-                  "intent_unread", "intent_read_attempts", "intent_disagreements"):
+                  "intent_unread", "intent_read_attempts", "intent_disagreements",
+                  "time_inferred"):
             setattr(total, f, getattr(total, f) + getattr(summary, f))
         # The drain's completeness is the LAST round's, not a sum: each round is a slice of one
         # sweep, and only the final one can say whether the provider ran out. Carried rather than
@@ -913,6 +970,9 @@ def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: st
         # The FIRST round's start is the backfill's start; later rounds would report the last
         # page's, which is the one number a duration cannot be computed from.
         total.started_at = total.started_at or summary.started_at
+        # STEP-10 · and the LAST round's finish is its finish; every round read one source.
+        total.source = total.source or summary.source
+        total.finished_at = summary.finished_at
         total.gated.extend(summary.gated)
         total.results.extend(summary.results)
         cursor = summary.next_cursor

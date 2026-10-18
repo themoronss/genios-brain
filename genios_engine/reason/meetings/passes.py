@@ -244,6 +244,9 @@ def compose_followup(items: Items, *, viewer: str, title: str | None,
             owner[cm] = (person, name, emails)
     groups: dict[str, list[str]] = {}
     evidence: list[dict] = []
+    # STEP-14: what the words are composed from — the facts' values and the count of yours — for the card contract
+    # (`reason/team/emit.refusals`): the evidence names each fact, it does not hold its value.
+    corpus: list[str] = [title or ""]
     mine = 0
     for node in sorted(visible, key=lambda n: (text_of(fv.get(n, {}).get("commitment.due_at"))
                                                or "9999", n)):
@@ -264,6 +267,7 @@ def compose_followup(items: Items, *, viewer: str, title: str | None,
         else:
             label = _first(who_[1])
         groups.setdefault(label, []).append(item)
+        corpus += [what, text_of(f.get("commitment.due_at")) or ""]
         evidence.append({"node_id": node, "field": "commitment.text", "source": "graph"})
     order = sorted(groups, key=lambda lb: (lb != "You", lb == "No owner", lb))
     parts = [f"{lb}: " + "; ".join(groups[lb]) for lb in order]
@@ -278,8 +282,10 @@ def compose_followup(items: Items, *, viewer: str, title: str | None,
         seen.add(words)
         if st in DECIDED_STATES:
             decided.append(words)
+            corpus.append(quote or state or "")
         elif st in OPEN_DECISION_STATES:
             undecided.append(words)
+            corpus.append(quote or state or "")
     if decided:
         parts.append("Decided: " + "; ".join(decided))
         evidence.append({"node_id": meeting_node_id, "field": "decision.status",
@@ -293,7 +299,7 @@ def compose_followup(items: Items, *, viewer: str, title: str | None,
     return {"headline": f"Follow-ups from {label}{tail}",
             "body": " · ".join(parts),
             "subjects": ([meeting_node_id] if meeting_node_id else []) + visible[:19],
-            "evidence": evidence[:19]}
+            "evidence": evidence[:19], "corpus": [*corpus, str(mine)]}
 
 
 def _active_seats(conn, org_id: str) -> dict[str, str]:
@@ -358,7 +364,8 @@ def emit_followups(engine, card_store, org_id: str, *, now: datetime) -> int:
                         body=out["body"], actions=actions, evidence=evidence,
                         priority="normal", ttl_seconds=FOLLOWUP_TTL_SECONDS,
                         digest=digest(out["headline"], out["body"], out["subjects"]),
-                        capability_id=FOLLOWUP_CAPABILITY, now=now) is not None:
+                        capability_id=FOLLOWUP_CAPABILITY, now=now,
+                        corpus=out.get("corpus") or ()) is not None:
                     emitted += 1
             except Exception:      # noqa: BLE001 — one seat's follow-up never blocks the rest
                 _log.exception("follow-up %s/%s failed org=%s", tx.transcript_id, seat_id, org_id)

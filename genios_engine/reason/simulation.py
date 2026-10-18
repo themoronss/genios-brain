@@ -1,9 +1,20 @@
-"""Deterministic, read-only counterfactual simulation over a captured context snapshot."""
+"""Deterministic, read-only counterfactual simulation over a captured context snapshot.
+
+THE TIME-PASSES WHAT-IF (STEP-12, `06` D39; tree `yc2_w27_s12` M32.C2.L-logic.V1.U08). `simulate`
+answers a counterfactual in the formula's utilities and needs a finished decision to start from, so it
+could not state the one scenario every file has: NOTHING HAPPENS. `time_passes` does, from the file's
+own numbers and its playbook — no model, no I/O, no decision: after N days of nothing, how long the file
+has been quiet; against the playbook's stop rule (a prior, cited) whether the work is then dormant and
+how many days of nothing are left before it is; whether its next date passes; which of its open
+situations go past the window their kind holds them to; and the playbook's own words for what doing
+nothing costs, carried as its prior. Every number it says is one it was handed or computed from them.
+"""
 
 from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
+from datetime import datetime, timedelta
 from types import MappingProxyType
 from typing import Any
 
@@ -155,4 +166,95 @@ def simulate(*, baseline: ReasoningExecution, scenarios: tuple[SimulationScenari
     return tuple(results)
 
 
-__all__ = ["SimulationResult", "SimulationScenario", "simulate"]
+# ── the time-passes what-if ─────────────────────────────────────────────────────────────────────
+
+#: The days of nothing the dossier asks about (STEP-12): a few days, a week, two weeks.
+TIME_STEPS: tuple[int, ...] = (3, 7, 14)
+#: A situation still in play (`context/workstreams.OPEN_STATUSES`); an ended one goes past nothing.
+_OPEN = frozenset({"active", "partial"})
+
+
+def _n(value: float) -> str:
+    """A day count as a reader says it — `92`, `12.5` — never with a trailing `.0`."""
+    return str(int(value)) if float(value).is_integer() else f"{value:g}"
+
+
+@dataclass(frozen=True, slots=True)
+class TimePasses:
+    """What N days of nothing does to one file."""
+    days: int
+    quiet_days_then: float | None          # quiet now + N; None when the file has no touch
+    stop_after_days: int | None            # the playbook's stop rule — a prior, cited
+    stop_cited: str | None
+    dormant_then: bool | None              # quiet then past the stop rule; None without one
+    days_to_dormant: float | None          # the days of nothing left before it is dormant
+    next_date: datetime | None
+    passes_next_date: bool | None          # N days of nothing pass the next date; None without one
+    situations_past_window: tuple[str, ...]   # open situations past their window by then
+    do_nothing: str | None                 # the playbook's own words for what doing nothing costs
+    says: str
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"days": self.days, "quiet_days_then": self.quiet_days_then,
+                "stop_after_days": self.stop_after_days, "stop_cited": self.stop_cited,
+                "dormant_then": self.dormant_then, "days_to_dormant": self.days_to_dormant,
+                "next_date": self.next_date.isoformat() if self.next_date else None,
+                "passes_next_date": self.passes_next_date,
+                "situations_past_window": list(self.situations_past_window),
+                "do_nothing": self.do_nothing, "says": self.says}
+
+
+def time_passes(*, days: int, now: datetime, quiet_days: float | None,
+                stop_after_days: int | None, stop_cited: str | None, do_nothing: str | None,
+                lifecycle: Any, next_date: datetime | None) -> TimePasses:
+    """What `days` days of nothing do to a file — its quiet days (`FileTimeline.days_quiet`), its
+    playbook's stop rule and do-nothing words (`KindPlaybook.stop`, `.do_nothing_consequence`), its
+    situations' lifecycle (`context/workstreams.Lifecycle`) and its next date."""
+    if isinstance(days, bool) or not isinstance(days, int) or days < 1:
+        raise ValueError(f"days is a positive whole number of days, not {days!r}")
+    then = None if quiet_days is None else round(float(quiet_days) + days, 1)
+    dormant = to_dormant = None
+    if then is not None and stop_after_days:
+        dormant = then > stop_after_days
+        # What is left AFTER the N days — the scenario's own state, not today's (`03` F162).
+        to_dormant = max(0.0, round(stop_after_days - then, 1))
+    passes = None if next_date is None else next_date <= now + timedelta(days=days)
+    past = tuple(sorted(
+        s.situation_id for s in getattr(lifecycle, "situations", ()) or ()
+        if s.status in _OPEN and s.days_since_seen is not None
+        and s.days_since_seen + days > s.quiet_window_days))
+
+    said = [f"After {days} days of nothing"]
+    if then is None:
+        said.append("the file has no touch to count quiet days from.")
+    elif not stop_after_days:
+        said.append(f"the file has been quiet {_n(then)} days; its playbook names no stop rule, "
+                    "so whether the work goes dormant is not said.")
+    else:
+        said.append(f"the file has been quiet {_n(then)} days; its playbook's stop rule — a prior — "
+                    f"calls the work dormant after {stop_after_days}: "
+                    + ("it would be dormant." if dormant else
+                       f"{_n(to_dormant)} more days of nothing before it is."))
+    if passes is not None:
+        said.append("The next date passes." if passes else "The next date is still ahead.")
+    if past:
+        said.append(f"{len(past)} open situation(s) go past their window.")
+    return TimePasses(days=days, quiet_days_then=then, stop_after_days=stop_after_days or None,
+                      stop_cited=stop_cited if stop_after_days else None, dormant_then=dormant,
+                      days_to_dormant=to_dormant, next_date=next_date, passes_next_date=passes,
+                      situations_past_window=past, do_nothing=do_nothing or None,
+                      says=" ".join(said))
+
+
+def what_if_nothing(*, now: datetime, quiet_days: float | None, stop_after_days: int | None,
+                    stop_cited: str | None, do_nothing: str | None, lifecycle: Any,
+                    next_date: datetime | None) -> tuple[TimePasses, ...]:
+    """The what-if at each of `TIME_STEPS` — what the dossier shows."""
+    return tuple(time_passes(days=n, now=now, quiet_days=quiet_days,
+                             stop_after_days=stop_after_days, stop_cited=stop_cited,
+                             do_nothing=do_nothing, lifecycle=lifecycle, next_date=next_date)
+                 for n in TIME_STEPS)
+
+
+__all__ = ["SimulationResult", "SimulationScenario", "TIME_STEPS", "TimePasses", "simulate",
+           "time_passes", "what_if_nothing"]

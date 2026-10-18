@@ -1,0 +1,107 @@
+identity:
+  id: founder_office.heu.program_applications.a_batch_is_silent_until_it_decides
+  name: A batch is silent until it decides
+  kind: heuristic
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.programs_and_applications.program_applications
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  aliases:
+    - A programme's silence is not a no
+
+purpose:
+  statement: >
+    Says what a programme's quiet means, which is not what an investor's quiet means: a selection team
+    with a published decision date is silent because the batch has not been decided, not because this
+    application has.
+  answers:
+    - Is the programme's silence evidence of anything yet?
+    - When does the quiet start to mean something?
+
+heuristic:
+  statement: >
+    A programme that reads its applications as a batch answers on its own published calendar, not on
+    the applicant's. Its quiet before that date is not a no — and after it, the programme's own reply
+    rule, not the length of the quiet, says what the quiet means.
+  why: >
+    Reviewers read an intake's applications against one calendar and answer on dates they publish. YC
+    tells on-time applicants they "will get a decision by December 11" and says "We always respond to
+    everyone who applies, no exceptions"; Techstars reviews "within four weeks of applications closing"
+    and "will notify all applicants about the state of their application"; Hub71 promises "feedback
+    about the status of your application within three months of applying". The answer has a date, so
+    until that date has come the quiet carries no information about this application.
+  confidence_bp: 8000
+  applies_when: >
+    The application is under review or awaiting a decision, and the programme has published a decision
+    date or a response time.
+  breaks_down_when: >
+    Three regimes. A programme that writes only to the applicants it wants — Antler's form says "If
+    there's a fit, we'll be in touch by email" — means its silence, once past its own response time, as
+    the answer. A programme that publishes no date gives the quiet no reference point, and the outcome
+    window has to stand in for one. And on a government scheme the status may already have changed on
+    the portal while the mailbox is silent: SISFS shows status on its dashboard in real time.
+  reads:
+    - founder_office.obj.program_applications.application
+    - thread.last_inbound
+    - thread.ball_in_court
+
+objects_used:
+  - founder_office.obj.program_applications.application
+
+outcomes:
+  - The programme's quiet is read against its own published date, not against the founder's patience.
+  - A programme that writes only to the applicants it wants is recognised, and its quiet read as the answer in time.
+
+failure_modes:
+  - Applying it to a programme that only writes when there is a fit, and waiting for a reply that is not coming.
+  - Using it to wait past the programme's own date without asking once.
+
+limits:
+  - >
+    It reads the programme's quiet; it says nothing about the founders' own quiet, which at the interview
+    and onboarding stages is usually the risk.
+
+references:
+  - title: Apply to Y Combinator
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/apply
+    note: Read 9 Oct 2026. On-time applicants "will get a decision by December 11".
+  - title: Y Combinator FAQ
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/faq
+    note: >
+      Read 9 Oct 2026. "We always respond to everyone who applies, no exceptions"; a late applicant who has
+      not heard has not been forgotten — "it's because we're still working on it".
+  - title: "Inside a Techstars Accelerator: The Application & Interview Process"
+    kind: practitioner
+    author: Techstars
+    url: https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process
+    note: Published 12 Jan 2026, read 9 Oct 2026. Review within four weeks of the close; all applicants notified.
+  - title: Hub71 FAQs
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/faqs
+    note: Read 9 Oct 2026. Feedback within three months of applying.
+  - title: Apply to Antler
+    kind: practitioner
+    author: Antler
+    url: https://www.antler.co/apply
+    note: Read 9 Oct 2026. "If there's a fit, we'll be in touch by email."
+  - title: Startup India Seed Fund Scheme — F.A.Q.
+    kind: standard
+    author: DPIIT, Government of India
+    url: https://seedfund.startupindia.gov.in/faq
+    note: Read 9 Oct 2026. The application's real-time status on the startup's dashboard.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial

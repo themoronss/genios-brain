@@ -54,6 +54,7 @@ from genios_engine.context.lifecycle.gate import (
 from genios_engine.context.lifecycle.judge import judge
 from genios_engine.context.lifecycle.ledger import derive_statement_state
 from genios_engine.context.lifecycle.prompt import parse_description
+from genios_engine.context.lifecycle.store import situations_to_examine
 from genios_engine.context.situations import (
     RESOLVED_BY_FACT,
     RESOLVED_BY_STATEMENT,
@@ -483,17 +484,21 @@ def test_a_situation_the_crm_already_closed_costs_no_model_call(pg_store):
         out = process_pending(org_id=org, store=pg_store, llm=llm,
                               crypto_key=get_settings().crypto_key, eval_time=AT)
         assert llm.calls == 0, "a situation the CRM already closed cost a model call"
-        assert out["resolutions"]["calls"] == 0 and out["resolutions"]["gated_out"] >= 1
+        assert out["resolutions"]["calls"] == 0
+        assert out["resolutions"]["claims_written"] == 0
         with pg_store.engine.connect() as conn:
             row = conn.execute(text("select status, resolved_by from context_situations "
                                     "where org_id=:o and situation_id=:sid"),
                                {"o": org, "sid": ids["situation"]}).mappings().one()
             assert conn.execute(text("select count(*) from situation_resolution_claims "
                                      "where org_id=:o"), {"o": org}).scalar() == 0
-        # M-4 spent nothing and CHANGED nothing. Turning the fact itself into `resolved`/`fact`
-        # is `refresh_situations`' job (proven in tests/test_situations.py) and this drain does
-        # not run it — it ingested no events. What is proven here is the refusal.
-        assert (row["status"], row["resolved_by"]) == (STATUS_ACTIVE, None)
+            examined = {s.situation_id for s in situations_to_examine(conn, org)}
+        # The drain runs `refresh_situations` on EVERY pass (4ade9133 — it used to sit behind
+        # `if done or affected:`), and it runs BEFORE M-4. So the fact is APPLIED first — the row
+        # is closed `resolved`/`fact` — and a fact-closed row is outside M-4's set altogether:
+        # the refusal happens one step before the gate, and it costs nothing either way.
+        assert (row["status"], row["resolved_by"]) == (STATUS_RESOLVED, RESOLVED_BY_FACT)
+        assert ids["situation"] not in examined, "a fact-closed situation re-entered M-4's set"
         assert gate_decision(
             status=row["status"], resolved_by=row["resolved_by"], terminal_by_fact=True,
             has_new_signal=True, already_examined=False, has_text=True, speaker_role="owner",

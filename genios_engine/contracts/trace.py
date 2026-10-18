@@ -13,6 +13,9 @@ class StageAction(str, Enum):
     park = "park"
     emit = "emit"
     short_circuit = "short_circuit"
+    #: STEP-03 (`yc2_w27_s03`): kept, and not read. What the gate does to a mail the noise rules or
+    #: the AI filter called noise — it used to `drop` it, and a drop kept no body.
+    archive = "archive"
 
 
 class StageRecord(BaseModel):

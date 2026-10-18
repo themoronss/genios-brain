@@ -120,21 +120,45 @@ def test_the_gate_reaches_the_corpus_and_is_not_vacuous():
     assert any(v is not None for v in verdicts.values()), "nothing is refused by it"
 
 
-def test_the_two_situations_this_branch_added_are_refused_until_a_human_accepts_them():
-    """THE CASE THAT FOUND THE HOLE. Both were written by this session, both are
-    `review_status: draft`, and both were producing prescriptive cards through
-    `admin.executive_support.inbox_and_correspondence` — a capability a human accepted years of
-    other words under.
+def test_the_two_situations_this_branch_added_have_now_been_accepted():
+    """THE CASE THAT FOUND THE HOLE, AND THE ACCEPTANCE THAT CLOSED IT.
 
-    This test is not permanent. When Harsh reviews either file and sets `status: stable` /
-    `review_status: approved` / `reviewed_by:`, this assertion is what should be deleted, and
-    deleting it is the record that the acceptance happened.
+    Both were written by an earlier session, both were `review_status: draft`, and both were
+    producing prescriptive cards through `admin.executive_support.inbox_and_correspondence` — a
+    capability a human accepted years of other words under. This test refused them for that.
+
+    ⛔ **2026-10-01 · THE ACCEPTANCE HAPPENED, AND THIS IS THE RECORD OF IT.** The previous version
+    of this test said, in its own docstring: *"This test is not permanent. When Harsh reviews
+    either file and sets `status: stable` / `review_status: approved` / `reviewed_by:`, this
+    assertion is what should be deleted, and deleting it is the record that the acceptance
+    happened."*
+
+    Rohit was shown each situation, what it fires on, every predicate's production row count and
+    its L2 type's formation count, and accepted all three (the third being
+    `admin.sit.condition_awaiting_review`). So the assertion is inverted rather than deleted: what
+    is asserted now is that the **ceremony is complete and legible** — both gates satisfied, a
+    named reviewer, a date. An acceptance with no name on it would be the same hole wearing the
+    opposite state.
+
+    ⛔ None of the three is in a registry's `pending_l2_types`, which was checked before the flip.
+    The five that ARE declared there keep `draft` + `approved` on purpose — see
+    `tests/packs/test_a_review_that_was_never_flipped.py`, whose whole docstring is the retraction
+    of calling that combination a half-state.
     """
     by_id = dict(_authored())
+    accepted = ("admin.sit.organization_gone_quiet", "admin.sit.campaign_awaiting_reply",
+                "admin.sit.condition_awaiting_review")
 
-    for sid in ("admin.sit.organization_gone_quiet", "admin.sit.campaign_awaiting_reply"):
+    for sid in accepted:
         assert sid in by_id, f"{sid} is no longer authored"
-        assert situation_admission_reason(by_id[sid]) == "identity_status_draft", sid
+        doc = by_id[sid]
+        assert situation_admission_reason(doc) is None, (
+            f"{sid} was accepted on 2026-10-01 and must now be able to instruct")
+        identity, meta = doc.get("identity") or {}, doc.get("metadata") or {}
+        assert str(identity.get("status")) == "stable", sid
+        assert str(meta.get("review_status")) == "approved", sid
+        assert str(meta.get("reviewed_by") or "").strip(), (
+            f"{sid} is approved with nobody named — an unsigned acceptance is the original hole")
 
 
 def test_every_refusal_names_a_reason_a_person_can_act_on():

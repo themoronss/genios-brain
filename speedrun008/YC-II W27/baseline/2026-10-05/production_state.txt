@@ -1,0 +1,109 @@
+production state · org org_e97e86f858ad48b2bbf64b8a · measured 2026-10-05 13:51:00 UTC · read-only session
+statements: baseline/production_state.sql, run verbatim, in this order
+
+@sweeps_recorded
+  sweeps  first_sweep          last_sweep
+  ──────  ───────────────────  ───────────────────
+  64      2026-10-03 08:50:48  2026-10-05 13:41:43
+
+@funnel_last_8_sweeps
+  sweep_at             stages
+  ───────────────────  ──────────────────────────────────────────────────────────────────────────────────────
+  2026-10-05 13:41:43  situations_formed=108
+  2026-10-05 13:20:34  capability_resolved=38 · card_delivered=0 · situations_formed=108
+  2026-10-05 12:57:02  capability_resolved=38 · card_delivered=0 · situations_formed=108
+  2026-10-05 12:38:12  capability_resolved=38 · card_delivered=0 · situations_formed=108
+  2026-10-05 12:22:20  capability_resolved=38 · card_delivered=0 · situations_formed=108
+  2026-10-05 12:06:41  capability_resolved=38 · card_delivered=0 · signals_detected=1 · situations_formed=108
+  2026-10-05 11:53:01  capability_resolved=37 · card_delivered=0 · situations_formed=106
+  2026-10-05 11:41:21  capability_resolved=37 · card_delivered=0 · situations_formed=106
+
+@funnel_per_stage
+  stage                sweeps_that_wrote_it  min_n  max_n  first_written        last_written
+  ───────────────────  ────────────────────  ─────  ─────  ───────────────────  ───────────────────
+  capability_resolved  59                    1      56     2026-10-03 08:50:48  2026-10-05 13:20:34
+  card_delivered       59                    0      15     2026-10-03 08:50:48  2026-10-05 13:20:34
+  decision_emitted     3                     1      4      2026-10-03 11:40:32  2026-10-04 11:12:56
+  signals_detected     3                     1      19     2026-10-03 10:19:38  2026-10-05 12:06:41
+  situations_formed    63                    3      108    2026-10-03 10:19:38  2026-10-05 13:41:43
+
+@l2_processing_runs
+  status  runs  edge_type_errors  first_run            last_run
+  ──────  ────  ────────────────  ───────────────────  ───────────────────
+  done    30    0                 2026-10-03 10:19:41  2026-10-05 12:06:46
+
+@park_queue
+  source          object_type         source_outcome  stage                   reason_code              status       n    max_attempts  first_parked         last_parked          latest_next_attempt
+  ──────────────  ──────────────────  ──────────────  ──────────────────────  ───────────────────────  ───────────  ───  ────────────  ───────────────────  ───────────────────  ───────────────────
+  screen_session  screen_doc          emitted         S2                      low_relevance            recovered    143  0             2026-10-03 11:45:02  2026-10-05 08:25:51  —
+  screen_session  screen_doc          parked          S2                      low_relevance            pending      85   0             2026-10-05 09:47:49  2026-10-05 12:39:12  —
+  gmail           email_attachment    parked          S1                      DOC-02                   dead_letter  27   5             2026-10-03 10:14:00  2026-10-03 10:15:58  —
+  gmail           email_attachment    parked          S1                      DOC-02                   pending      23   3             2026-10-03 10:16:15  2026-10-05 08:21:54  2026-10-05 11:25:47
+  gmail           email_attachment    parked          S1                      DOC-05                   dead_letter  23   5             2026-10-03 10:14:01  2026-10-03 10:16:14  —
+  gmail           email_attachment    parked          S1                      DOC-05                   pending      15   3             2026-10-03 10:16:15  2026-10-03 10:18:22  2026-10-05 11:25:47
+  screen_session  screen_chat_sent    emitted         S2                      low_relevance            recovered    14   0             2026-10-03 11:43:23  2026-10-05 08:12:34  —
+  screen_session  screen_chat_sent    parked          S2                      low_relevance            pending      9    0             2026-10-05 09:52:57  2026-10-05 12:31:20  —
+  screen_session  screen_chat_thread  emitted         S2                      low_relevance            recovered    5    0             2026-10-03 11:43:24  2026-10-05 08:12:36  —
+  gmail           email_message       superseded      S2                      llm_junk_unconfident     recovered    3    0             2026-10-03 10:15:37  2026-10-03 10:19:07  —
+  gmail           email_message       emitted         s2_semantic_extraction  extraction_parse_failed  pending      2    0             2026-10-03 11:17:59  2026-10-03 11:17:59  —
+  gmail           email_message       emitted         S2                      llm_junk_unconfident     recovered    1    0             2026-10-03 11:29:41  2026-10-03 11:29:41  —
+  screen_session  screen_chat_thread  parked          S2                      low_relevance            pending      1    0             2026-10-05 09:53:04  2026-10-05 09:53:04  —
+
+@attachment_refetch_errors
+  error_shape                                                                                                                                                      refetch_failure_kind  status       n   last_attempt
+  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  ────────────────────  ───────────  ──  ───────────────────
+  RuntimeError: gmail attachment fetch failed for <message>::<attachment> Invalid request data provided - Value error, Missing required fields: file_name. To get  transient             dead_letter  50  2026-10-05 02:54:52
+  RuntimeError: gmail attachment fetch failed for <message>::<attachment> Invalid request data provided - Value error, Missing required fields: file_name. To get  transient             pending      38  2026-10-05 09:25:47
+
+@model_calls_by_day
+  day         purpose          calls  failed
+  ──────────  ───────────────  ─────  ──────
+  2026-10-02  l4_llm_decision  718    0
+  2026-10-02  l4_llm_r1        495    0
+  2026-10-02  relevance_gate   45     0
+  2026-10-03  l4_llm_decision  477    0
+  2026-10-03  l4_llm_r1        282    0
+  2026-10-03  relevance_gate   426    1
+  2026-10-04  l4_llm_decision  1204   0
+  2026-10-04  l4_llm_r1        683    0
+  2026-10-04  relevance_gate   241    1
+  2026-10-05  l4_llm_decision  306    0
+  2026-10-05  l4_llm_r1        183    0
+  2026-10-05  relevance_gate   49     0
+
+@narrator_ceiling
+  day         calls  failed  failed_at_1400  last_failure
+  ──────────  ─────  ──────  ──────────────  ───────────────────
+  2026-10-02  30     30      0               2026-10-02 10:51:20
+  2026-10-03  55     29      29              2026-10-03 12:10:06
+  2026-10-04  12     8       8               2026-10-04 11:30:29
+
+@l3_domains
+  domain  enabled_at           disabled_at  enabled_by
+  ──────  ───────────────────  ───────────  ─────────────────
+  admin   2026-10-03 10:19:38  —            system:onboarding
+
+@l4_features
+  feature     enabled_at           disabled_at  enabled_by
+  ──────────  ───────────────────  ───────────  ─────────────────
+  brief       2026-10-03 10:54:56  —            system:onboarding
+  bundle      2026-10-03 10:54:55  —            system:onboarding
+  critique    2026-10-03 10:54:56  —            system:onboarding
+  ranking_v2  2026-10-03 10:54:55  —            system:onboarding
+  roster_v2   2026-10-03 10:54:55  —            system:onboarding
+
+@latest_migration
+  filename            applied_at
+  ──────────────────  ───────────────────
+  0190_card_lane.sql  2026-10-02 10:35:17
+
+@connections
+  provider  source_type  status     created_at
+  ────────  ───────────  ─────────  ───────────────────
+  google    gcal         connected  2026-08-21 12:53:07
+  google    gmail        connected  2026-08-21 12:53:09
+
+@database
+  version
+  ────────────────────────────────────────────────────────────────────────────
+  PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit

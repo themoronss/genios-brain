@@ -1,0 +1,20 @@
+F12 decider=3 with_claims=2 with_framing=0 nulls=0
+     (authored claims, quoted whole):
+    - admin.heu.commitment_tracking.forgotten_beats_broken_for_damage: "A promise that will be missed should be renegotiated BEFORE its date, even when the new date is worse than the old one and even when nothing has been done. The message costs one line and converts a broken promise into a managed one; the same message sent the day after is an excuse."
+    - admin.heu.follow_up_coordination.momentum_decays_in_days: "Follow-up has two regimes with a boundary between them, and the boundary matters more than the speed. Inside it, a late follow-up is still the same conve
+F25 decider=8 with_claims=7 with_framing=0 nulls=0
+     (authored claims, quoted whole):
+    - admin.heu.commitment_tracking.forgotten_beats_broken_for_damage: "A promise that will be missed should be renegotiated BEFORE its date, even when the new date is worse than the old one and even when nothing has been done. The message costs one line and converts a broken promise into a managed one; the same message sent the day after is an excuse."
+    - admin.heu.follow_up_coordination.momentum_decays_in_days: "Follow-up has two regimes with a boundary between them, and the boundary matters more than the speed. Inside it, a late follow-up is still the same conve
+F28 decider=3 with_claims=2 with_framing=0 nulls=0
+     (authored claims, quoted whole):
+    - admin.heu.commitment_tracking.forgotten_beats_broken_for_damage: "A promise that will be missed should be renegotiated BEFORE its date, even when the new date is worse than the old one and even when nothing has been done. The message costs one line and converts a broken promise into a managed one; the same message sent the day after is an excuse."
+    - admin.heu.follow_up_coordination.momentum_decays_in_days: "Follow-up has two regimes with a boundary between them, and the boundary matters more than the speed. Inside it, a late follow-up is still the same conve
+F29 decider=10 with_claims=8 with_framing=2 nulls=0
+     (authored claims, quoted whole):
+    - admin.heu.commitment_tracking.forgotten_beats_broken_for_damage: "A promise that will be missed should be renegotiated BEFORE its date, even when the new date is worse than the old one and even when nothing has been done. The message costs one line and converts a broken promise into a managed one; the same message sent the day after is an excuse."
+    - admin.heu.follow_up_coordination.momentum_decays_in_days: "Follow-up has two regimes with a boundary between them, and the boundary matters more than the speed. Inside it, a late follow-up is still the same conve
+F38 decider=2 with_claims=2 with_framing=1 nulls=0
+     (authored claims, quoted whole):
+    - admin.heu.commitment_tracking.forgotten_beats_broken_for_damage: "A promise that will be missed should be renegotiated BEFORE its date, even when the new date is worse than the old one and even when nothing has been done. The message costs one line and converts a broken promise into a managed one; the same message sent the day after is an excuse."
+    - admin.heu.follow_up_coordination.momentum_decays_in_days: "Follow-up has two regimes with a boundary between them, and the boundary matters more than the speed. Inside it, a late follow-up is still the same conve

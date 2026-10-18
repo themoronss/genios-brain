@@ -28,9 +28,14 @@ from genios_engine.capture.documents.router import has_pages
 # the module imported cleanly, every test passed, and the first real fetch with a drop verdict
 # raised NameError and took the whole gmail sync down.
 from genios_engine.capture.gate.relevance import DROP_BELOW_RELEVANCE
+# The gate's own question, so the connector leaves out the original of exactly the mail the gate
+# keeps and reads as a delivery report (`_REPORT_PARTS`). At import time for the reason above.
+from genios_engine.capture.gate.rules import is_a_delivery_report
 
 from .backfill import DEFAULT_BACKFILL_DAYS, BackfillWindow
+from .composio_base import raise_if_refused
 from .thread_position import thread_place_from_references
+from .base import InferredInstant
 from .base import RawObject, SourceBatch
 
 # Composio sits BEHIND this interface — auth + Gmail data delivery only. Our contract,
@@ -68,6 +73,22 @@ _EXTRACTABLE_ATTACHMENT_MIMES = {
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",   # pptx
     "text/plain", "text/markdown",
 }
+
+# STEP-10 · A DELIVERY REPORT'S ORIGINAL IS NOT A DOCUMENT (`yc2_w27_s10 · M29.C3.L-data.V0.U05`,
+# `06` D38). A delivery report is RFC 6522's `multipart/report`: the daemon's own words, the status
+# for machines (`message/delivery-status`, RFC 3464), and the mail that bounced — whole
+# (`message/rfc822`) or its headers alone (`text/rfc822-headers`). That mail is OURS: production's
+# reports carried the founder's pitch, which `_to_objects` minted as an `email_attachment` of its
+# own and the gate parked as a DOC-02 "unsupported" stub for review — and `_walk` walked into it,
+# so a deck on the pitch would have been filed as a document the mail daemon sent. So when a
+# message is a delivery report — the question the gate asks of the same fields,
+# `gate/rules.is_a_delivery_report` —
+# these three parts mint no attachment event and are never walked into, and the report's own
+# words stay its body, for the parser. RECOGNISED BY MIME TYPE, NEVER BY FILENAME: a part's name
+# is whatever the mailer chose, or nothing, while its type is the standard's (compared without
+# case, RFC 2045). Any other message — a person forwarding a bounce with the `.eml` attached, a
+# daemon's notice that is not a report — keeps every part exactly as before.
+_REPORT_PARTS = frozenset({"message/delivery-status", "message/rfc822", "text/rfc822-headers"})
 
 # Headers that mark automated / bulk / mailing-list mail. Surfaced into raw["headers"] so the gate's
 # N-01 (Auto-Submitted), N-02 (List-Unsubscribe) and N-04 (Precedence) rules can actually FIRE — the
@@ -168,6 +189,16 @@ def _header(m: dict, name: str) -> str | None:
     return None
 
 
+def _body_and_snippet(texts: list, list_body: str, preview: str) -> tuple[str, str]:
+    """A message's body — its first text/plain part, else its first text/html, else the list's
+    text — and its snippet: the provider's preview when it says something, else the body's start."""
+    plain = next((t for mm, t in texts if mm == "text/plain"), b"")
+    html = next((t for mm, t in texts if mm == "text/html"), b"")
+    body_bytes = plain or html
+    body = body_bytes.decode("utf-8", "replace") if body_bytes else list_body
+    return body, (preview if len(preview.strip()) >= 20 else body[:280])
+
+
 def _parse_ts(m: dict) -> datetime:
     for k in ("internalDate", "messageTimestamp", "timestamp", "date"):
         v = m.get(k)
@@ -194,7 +225,28 @@ def _parse_ts(m: dict) -> datetime:
                 return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
         except Exception:
             pass
-    return datetime.now(timezone.utc)
+    return InferredInstant.now_utc()      # no readable time: say so (GeniOS-008 L1 A3)
+
+
+#: What `GMAIL_GET_ATTACHMENT` is told to call the download when the caller has no filename.
+#: The toolkit requires a non-empty `file_name`; the attachment itself is found by its id.
+_DEFAULT_ATTACHMENT_NAME = "attachment"
+
+
+def _shape(value, depth: int = 0):
+    """A response's STRUCTURE with every value replaced by its type — the part of a provider
+    answer an error may carry. Strings become their length, lists their first element's shape."""
+    if depth > 4:
+        return "…"
+    if isinstance(value, dict):
+        return {str(k): _shape(v, depth + 1) for k, v in list(value.items())[:20]}
+    if isinstance(value, (list, tuple)):
+        return [_shape(value[0], depth + 1), f"×{len(value)}"] if value else []
+    if isinstance(value, str):
+        return f"str[{len(value)}]"
+    if isinstance(value, (bytes, bytearray)):
+        return f"bytes[{len(value)}]"
+    return type(value).__name__
 
 
 class ComposioGmailConnector:
@@ -244,7 +296,8 @@ class ComposioGmailConnector:
             args["page_token"] = page_token
         if self._account:
             args["connected_account_id"] = self._account
-        return self._execute("GMAIL_FETCH_EMAILS", args)
+        # The LIST call is the one whose failure would otherwise pass for an empty mailbox.
+        return raise_if_refused("GMAIL_FETCH_EMAILS", self._execute("GMAIL_FETCH_EMAILS", args))
 
     def validate_connection(self) -> bool:
         self._fetch(max_results=1)
@@ -278,7 +331,8 @@ class ComposioGmailConnector:
         d = r.get("data", r) if isinstance(r, dict) else {}
         return d if isinstance(d, dict) else {}
 
-    def fetch_attachment(self, message_id: str, attachment_id: str) -> bytes:
+    def fetch_attachment(self, message_id: str, attachment_id: str, *,
+                         file_name: str | None = None) -> bytes:
         """L1.3.8-U1 — download one attachment's bytes, and RAISE when that does not happen.
 
         The sibling `_attachment_bytes` swallows every error into ``b""``, which is right for a
@@ -295,8 +349,15 @@ class ComposioGmailConnector:
             raise ValueError(
                 f"no provider attachment id for message {message_id!r} — the parked reference "
                 "carries only a filename, which Gmail cannot be asked for")
+        # ⛔ STEP-18 B19 · `file_name` IS REQUIRED. Composio's toolkit (20260915_00) refuses the call
+        # without it — "Missing required fields: file_name" — and the toolkit version is not
+        # pinned here, so the requirement arrived unannounced: on the design partner's org every
+        # attachment fetch since 3 Oct was refused (88 of 88), at capture and on every refetch.
+        # It names the DOWNLOADED file; the attachment is found by `attachment_id`. So the
+        # attachment's own name when the caller has it, a neutral one when it does not.
         r = self._execute("GMAIL_GET_ATTACHMENT",
-                          {"message_id": message_id, "attachment_id": attachment_id})
+                          {"message_id": message_id, "attachment_id": attachment_id,
+                           "file_name": (file_name or "").strip() or _DEFAULT_ATTACHMENT_NAME})
         if isinstance(r, dict) and r.get("successful") is False:
             # Composio reports a tool failure in the envelope rather than by raising, so a
             # response that "arrived" can still be a 404. The message text is what
@@ -306,14 +367,19 @@ class ComposioGmailConnector:
         d = r.get("data", r) if isinstance(r, dict) else {}
         data = _b64url(d.get("data") or d.get("attachmentData") or d.get("body") if isinstance(d, dict) else "")
         if not data:
+            # ⛔ STEP-18 B19 · SAY WHAT ARRIVED. The toolkit documents `data` only as "data from the
+            # action execution", so a response in a shape this reader does not know must name
+            # that shape — keys and value types, NEVER a value — and the refetch ladder stores it
+            # in `parked_events.refetch_last_error`, where it can be read without reading content.
             raise RuntimeError(f"gmail returned no attachment data for "
-                               f"{message_id}::{attachment_id}")
+                               f"{message_id}::{attachment_id}: response shape {_shape(r)}")
         return data
 
-    def _attachment_bytes(self, mid: str, attachment_id: str | None) -> bytes:
+    def _attachment_bytes(self, mid: str, attachment_id: str | None,
+                          file_name: str | None = None) -> bytes:
         """Download one attachment's bytes via Gmail's attachments.get. Defensive → b'' on any error."""
         try:
-            return self.fetch_attachment(mid, attachment_id or "")
+            return self.fetch_attachment(mid, attachment_id or "", file_name=file_name)
         except Exception:      # noqa: BLE001 — a sync never dies on one file; the refetch ladder
             return b""         # is the path that needs the reason, and it calls fetch_attachment
 
@@ -348,14 +414,21 @@ class ComposioGmailConnector:
         )
 
     @staticmethod
-    def _walk(payload: Any, texts: list, atts: list) -> None:
+    def _walk(payload: Any, texts: list, atts: list, pruned: list | None = None) -> None:
         """Recursively collect (mime, bytes) text bodies and attachment part-refs from a Gmail
-        MIME payload — so the FULL body (not a 280-char snippet) and every PDF/file are captured."""
+        MIME payload — so the FULL body (not a 280-char snippet) and every PDF/file are captured.
+
+        Given `pruned`, a delivery report's own parts (`_REPORT_PARTS`) are neither collected nor
+        walked into, and each one left out is appended to it — so the caller knows this walk
+        skipped something, and walks again whole when the message is not a report after all."""
         if not isinstance(payload, dict):
             return
-        for p in (payload.get("parts") or []):
-            ComposioGmailConnector._walk(p, texts, atts)
         mime = payload.get("mimeType") or ""
+        if pruned is not None and mime.lower() in _REPORT_PARTS:
+            pruned.append(mime)
+            return
+        for p in (payload.get("parts") or []):
+            ComposioGmailConnector._walk(p, texts, atts, pruned)
         filename = payload.get("filename") or ""
         body = payload.get("body") or {}
         data = body.get("data") if isinstance(body, dict) else None
@@ -395,25 +468,50 @@ class ComposioGmailConnector:
         # confident DROP is full-fetched, so recall (and L2's full body) is preserved.
         rel = self._relevance
         if rel is not None and hasattr(rel, "prime") and hasattr(rel, "verdict_for"):
-            from genios_engine.capture.gate.rules import availability_marker, light_junk
+            from genios_engine.capture.gate.rules import availability_marker
+            from genios_engine.capture.gate.rules import is_a_delivery_report
+            from genios_engine.capture.gate.rules import light_junk
             light: list[tuple[dict, list[RawObject]]] = [(m, self._to_objects(m, fetch_full=False))
                                                          for m in messages]
+
+            # ⛔ A DELIVERY REPORT IS READ WHOLE (`03` F117, STEP-18; `yc2_w27_s18`
+            # M49.C1.L-logic.V0.U02). Since STEP-10 (`06` D38) the gate keeps a report and reads it:
+            # the failed address, the code and the original are in its BODY. On this path a daemon's
+            # report was settled from its LIST fields (its sender is automated: N-03) and a
+            # postmaster's went to the junk filter's batch, where a confident drop left it a snippet
+            # — so the bounce parser read a body nobody fetched, and the batch bought a verdict the
+            # gate never asks. Asked the way Layer 1 asks it, once, on the light object.
+            def _report(objs) -> bool:
+                return bool(objs) and is_a_delivery_report(objs[0].raw,
+                                                           sender_email=objs[0].actor_email)
+
+            reports = {id(m) for m, objs in light if _report(objs)}
             # DETERMINISTIC PRE-FILTER — the cheap rules run BEFORE the LLM, not after. Gmail's own
             # PROMOTIONS/SOCIAL/SPAM labels and clearly-automated senders are high-confidence junk we
-            # can drop from the LIST fields alone, so they never cost an S2 gate call. On a real inbox
+            # can settle from the LIST fields alone, so they never cost an S2 gate call (the gate
+            # ARCHIVES them since STEP-03 — kept with these list fields, never deleted). On a real inbox
             # this is most of the volume. Header-only bulk signals (List-Unsubscribe) still need the
             # full body → they stay on the LLM path. Flag-guarded (GENIOS_L1_DET_JUNK) for rollback.
+            # STEP-07 · a known counterparty, or a sender the company brief names, is never
+            # settled from its list snippet: the gate keeps it (W-01, W-07), so it must arrive
+            # whole — a watchlisted portal's status mail sits on Promotions as often as not.
+            whole = getattr(rel, "keeps_whole", None)
             det_junk: set[int] = set()
             if _DET_JUNK_PREFILTER:
                 for m, objs in light:
                     if not objs:
                         continue
+                    if whole is not None and whole(objs[0]):
+                        continue
+                    if id(m) in reports:
+                        continue
                     # L1.3.8-U2 — attachment presence overrides junk confidence. A
                     # PROMOTIONS-labelled message carrying a signed contract is junk MAIL with a
                     # real document inside it, and dropping it here costs the document: the light
                     # pass never fetched the MIME payload, so `_walk` found no attachment parts
-                    # and no attachment event was ever built. The email itself is still dropped —
-                    # the pipeline gate applies the same N-06 rule to the full-fetched message —
+                    # and no attachment event was ever built. The email itself is still stopped —
+                    # archived since STEP-03; the pipeline gate applies the same N-06 rule to the
+                    # full-fetched message —
                     # but the attachment reaches the gate as its own event and survives.
                     if attachment_overrides_junk(m, objs, ocr_enabled=self._ocr is not None):
                         continue
@@ -422,7 +520,7 @@ class ComposioGmailConnector:
                         det_junk.add(id(m))
             # An availability notice (N-05) skips the LLM junk gate at the pipeline, so it must not
             # spend a prime call here either — nor be left as a body-less snippet by one.
-            all_light = [o for m, objs in light if id(m) not in det_junk for o in objs
+            all_light = [o for m, objs in light if id(m) not in det_junk | reports for o in objs
                          if not availability_marker(o.raw)]
             try:
                 rel.prime(all_light)                          # LLM only on what the rules couldn't settle
@@ -430,7 +528,8 @@ class ComposioGmailConnector:
                 pass
             # A "drop" verdict is NOT sufficient to skip the body fetch.
             #
-            # The gate only DELETES on a drop the model was confident about; below
+            # The gate only takes a mail out (ARCHIVES it, since STEP-03 — it used to delete it)
+            # on a drop the model was confident about; below
             # DROP_BELOW_RELEVANCE it parks instead, and its own comment promises the park
             # "keeps a payload and can be re-adjudicated when the gate improves". That promise
             # was empty on this path: the fetch decision here ran FIRST and keyed on
@@ -441,7 +540,9 @@ class ComposioGmailConnector:
             #
             # Same threshold, same constant, so the two surfaces cannot drift apart again.
             def _skip_body(m, objs) -> bool:
-                if not objs or availability_marker(objs[0].raw):
+                if not objs or availability_marker(objs[0].raw) or id(m) in reports:
+                    return False
+                if whole is not None and whole(objs[0]):
                     return False
                 # L1.3.8-U2 — the same override, against the LLM's confident drop. This is the
                 # case the spec names: "a junk-classified email with a real contract attached
@@ -459,8 +560,9 @@ class ComposioGmailConnector:
                        if id(m) not in det_junk and not _skip_body(m, objs)]
             drops = {id(m) for m, _ in light} - {id(m) for m in keepers}
             # full-fetch keepers concurrently; CONFIDENT junk keeps its light (snippet) object —
-            # the pipeline gate re-reads the SAME primed verdict and drops it without another
-            # call. Unconfident drops are fetched in full so the park they become is recoverable.
+            # the pipeline gate re-reads the SAME primed verdict and archives it without another
+            # call, so its archive holds the list fields, not the body (the message id re-fetches
+            # it). Unconfident drops are fetched in full so the park they become is recoverable.
             fetched: dict[int, list[RawObject]] = {}
             if keepers:
                 workers = min(_FETCH_WORKERS, len(keepers))
@@ -500,7 +602,8 @@ class ComposioGmailConnector:
     def _to_objects(self, m: dict, fetch_full: bool | None = None) -> list[RawObject]:
         """One Gmail message → [email_message] + one [email_attachment] per file. The email carries
         the FULL body (walked from MIME parts, snippet only as fallback); each attachment is text-
-        extracted (native/OCR) exactly like a Drive file so its content reaches the graph too.
+        extracted (native/OCR) exactly like a Drive file so its content reaches the graph too. A
+        delivery report's status and the original it carries are not files (`_REPORT_PARTS`).
 
         fetch_full: None → decide by need_full (legacy); True → always full-fetch (keepers); False →
         LIGHT (list snippet only, NO per-message call) — used to gate cheaply before deciding."""
@@ -511,7 +614,7 @@ class ComposioGmailConnector:
 
         # Full-fetch policy. For keepers we pull the FULL MIME message (a signal can sit anywhere in
         # the body); for a LIGHT pass (fetch_full=False) we use only the cheap list snippet so the
-        # gate can drop obvious junk WITHOUT paying ~2000 per-message fetches. Legacy (None) keeps the
+        # gate can settle obvious junk WITHOUT paying ~2000 per-message fetches. Legacy (None) keeps the
         # old need_full behaviour so nothing else changes.
         list_body = m.get("messageText") or m.get("body") or ""
         list_body = list_body if isinstance(list_body, str) else ""
@@ -557,17 +660,22 @@ class ComposioGmailConnector:
         position, depth = thread_place_from_references(
             references=headers.get("References"), in_reply_to=headers.get("In-Reply-To"))
 
-        # walk MIME → full body text + attachment refs
-        texts: list = []
-        atts: list = []
-        self._walk(payload, texts, atts)
-        plain = next((t for mm, t in texts if mm == "text/plain"), b"")
-        html = next((t for mm, t in texts if mm == "text/html"), b"")
-        body_bytes = plain or html
-        body = body_bytes.decode("utf-8", "replace") if body_bytes else list_body
+        # walk MIME → full body text + attachment refs. STEP-10 (`_REPORT_PARTS`): first without a
+        # delivery report's status and original, so a report is recognised on the daemon's OWN
+        # words — the very fields the gate will read; a message that is not one is walked whole.
         preview = pick("preview", "snippet") or ""
         preview = preview if isinstance(preview, str) else ""
-        snippet = preview if len(preview.strip()) >= 20 else body[:280]
+        texts: list = []
+        atts: list = []
+        pruned: list = []
+        self._walk(payload, texts, atts, pruned)
+        if pruned:
+            own_body, own_snippet = _body_and_snippet(texts, list_body, preview)
+            if not is_a_delivery_report({"subject": subject, "body": own_body,
+                                         "snippet": own_snippet}, sender_email=sender_email):
+                texts, atts = [], []
+                self._walk(payload, texts, atts)
+        body, snippet = _body_and_snippet(texts, list_body, preview)
 
         objs = [RawObject(
             source="gmail", object_type="email_message", source_object_id=mid,
@@ -647,7 +755,7 @@ class ComposioGmailConnector:
                     to_emails=to_emails, cc_emails=cc_emails, status=status))
                 continue
             raw_bytes = _b64url(a.get("data")) if a.get("data") else \
-                self._attachment_bytes(mid, a.get("attachmentId"))
+                self._attachment_bytes(mid, a.get("attachmentId"), a.get("filename"))
             if not raw_bytes:
                 # a file we WANTED (pdf/docx/…) whose download failed → park + retry, never lose it
                 objs.append(self._attachment_stub(
@@ -696,7 +804,8 @@ class ComposioGmailConnector:
 #
 # The rule the spec states is absolute and it is the right one: **attachment presence overrides
 # junk confidence.** Note what it does NOT do — it does not keep the email. The message still
-# meets the pipeline gate with the same verdict and is still dropped; all this buys is the FETCH,
+# meets the pipeline gate with the same verdict and is still stopped (archived since STEP-03);
+# all this buys is the FETCH,
 # which is what turns the attachment into its own event that can be judged on its own merits.
 #
 # The extractable-mime qualifier is load-bearing in the other direction. Overriding on ANY named

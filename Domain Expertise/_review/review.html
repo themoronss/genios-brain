@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>Situation Review</title>
+<style>
+:root{--bg:#fbfaf8;--fg:#1c1b19;--mut:#6b6762;--line:#e3ded6;--card:#fff;
+--bad:#b4401f;--warn:#9a6a10;--ok:#2d6a3f;--acc:#1c1b19}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#171614;--fg:#eceae6;
+--mut:#9a948c;--line:#2e2c28;--card:#201e1b;--bad:#e2795a;--warn:#d6a73f;--ok:#7bbb8e;--acc:#eceae6}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.55 ui-serif,Georgia,serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:32px 16px 140px}
+h1{font-size:28px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mut);margin:0 0 28px;font-size:15px}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);
+margin:40px 0 6px;font-family:ui-sans-serif,system-ui,sans-serif;font-weight:600}
+h2+p{color:var(--mut);margin:0 0 18px;font-size:15px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:18px 20px;margin:0 0 14px}
+.card.done{border-color:var(--ok)}
+.head{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.num{font:600 13px ui-sans-serif,system-ui,sans-serif;color:var(--mut);min-width:20px}
+.name{font-weight:600;font-size:19px;flex:1;letter-spacing:-.01em}
+.pri{font:600 12px ui-sans-serif,system-ui,sans-serif;color:var(--mut);
+border:1px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--line);flex:0 0 auto}
+.card.done .dot{background:var(--ok)}
+.lead{margin:0 0 14px;font-size:17px}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;
+font:13px/1.45 ui-sans-serif,system-ui,sans-serif;color:var(--mut);
+border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:11px 0;margin-bottom:14px}
+.meta b{color:var(--fg);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.07em}
+code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);
+border:1px solid var(--line);border-radius:4px;padding:1px 4px}
+.bad{color:var(--bad)}.warn{color:var(--warn)}
+.q{margin:0 0 12px;font-weight:600}
+.choices{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.choices label{font:14px ui-sans-serif,system-ui,sans-serif;border:1px solid var(--line);
+border-radius:8px;padding:7px 13px;cursor:pointer;user-select:none;background:var(--bg)}
+.choices label:has(input:checked){border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc);font-weight:600}
+.choices input[type=radio]{margin-right:6px;accent-color:var(--acc)}
+.note{flex:1;min-width:190px;font:14px ui-sans-serif,system-ui,sans-serif;padding:8px 11px;
+border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+details{margin-top:14px;font-size:14px}
+summary{cursor:pointer;color:var(--mut);font:13px ui-sans-serif,system-ui,sans-serif}
+.full{color:var(--mut);font-size:15px;margin:10px 0}
+.sig{color:var(--mut);font:12px/1.6 ui-sans-serif,system-ui,sans-serif}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);
+border-top:1px solid var(--line);padding:12px 16px;display:flex;gap:12px;align-items:center;
+justify-content:center;font:14px ui-sans-serif,system-ui,sans-serif;flex-wrap:wrap}
+.bar b{font-variant-numeric:tabular-nums}
+button{font:600 14px ui-sans-serif,system-ui,sans-serif;padding:9px 18px;border-radius:8px;
+border:1px solid var(--acc);background:var(--acc);color:var(--bg);cursor:pointer}
+button.ghost{background:transparent;color:var(--fg)}
+#out{width:100%;max-width:860px;min-height:150px;margin-top:10px;display:none;
+font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:12px;
+border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg)}
+</style></head><body><div class=wrap>
+<h1>Situation review</h1>
+<p class=sub>15 situations waiting on you. Click one of the three, add a note only if you
+pick <i>change</i> or <i>defer</i>, then press <b>Copy decisions</b> at the bottom and paste it
+back to me. Nothing here leaves your laptop.</p>
+
+<h2>Part 1 &middot; no condition at all &mdash; 10</h2>
+<p>Each of these fires on its situation type alone. Same question for all ten.</p>
+
+<div class=card id="c1" data-id="customer_support.sit.bug_awaiting_engineering" data-name="Bug Awaiting Engineering">
+  <div class=head>
+    <span class=num>1</span>
+    <span class=name>Bug Awaiting Engineering</span>
+    <span class=pri>6000bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>A defect has been filed and the customer is waiting on somebody who does not work in support.</p>
+  <div class=meta><div><b>Fires on</b><br><b class=bad>No condition at all.</b> It matches every situation of its type &mdash; the most permissive shape there is.</div>
+    <div><b>Seen in production</b><br><b class=warn>never formed yet</b></div>
+    <div><b>Typical</b><br>45 days</div>
+    <div><b>Card</b><br>draft_reply</div></div>
+  <p class=q>Is matching on the type alone right here, or does it need a condition?</p>
+  <div class=choices>
+    <label><input type=radio name="d1" value=approve> approve</label>
+    <label><input type=radio name="d1" value=change> change</label>
+    <label><input type=radio name="d1" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>A defect has been filed and the customer is waiting on somebody who does not work in support. Support has done its part — reproduced it, written it up, handed it over — and has now entered the state it is worst at: owning a relationship while owning none of the work. The ticket has no next action an agent can take, which is precisely why it stops appearing in anyone's day. Frequently a workaround exists, which makes it worse rather than better: the ticket is marked resolved on the strength of it, the clock stops, the queue reports health, and a customer is left performing a manual step every morning against a defect nobody is telling them about. The situation is live for as long as the customer's problem is real, regardless of what state their ticket is in.</p>
+    <p class=sig><b>progress</b> followup_sent, workaround_provided, root_cause_identified, bug_fixed<br>
+       <b>decay</b> escalation_requested, cancellation_threat, angry_language, ticket_reopened<br>
+       <b>id</b> <code>customer_support.sit.bug_awaiting_engineering</code> &middot;
+       <b>owner</b> <code>customer_support.escalation_and_incident.engineering_handoff</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c2" data-id="customer_support.sit.csat_detractor" data-name="CSAT Detractor">
+  <div class=head>
+    <span class=num>2</span>
+    <span class=name>CSAT Detractor</span>
+    <span class=pri>6200bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>A customer has answered a survey and answered it badly.</p>
+  <div class=meta><div><b>Fires on</b><br><b class=bad>No condition at all.</b> It matches every situation of its type &mdash; the most permissive shape there is.</div>
+    <div><b>Seen in production</b><br><b class=warn>never formed yet</b></div>
+    <div><b>Typical</b><br>7 days</div>
+    <div><b>Card</b><br>&amp;mdash;</div></div>
+  <p class=q>Is matching on the type alone right here, or does it need a condition?</p>
+  <div class=choices>
+    <label><input type=radio name="d2" value=approve> approve</label>
+    <label><input type=radio name="d2" value=change> change</label>
+    <label><input type=radio name="d2" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>A customer has answered a survey and answered it badly. The interaction is over, the ticket is usually closed, and someone has taken the trouble to say it did not work — which is rarer than the response rate suggests, because most unhappy customers simply leave. The window is short and unusually favourable: a detractor who is contacted quickly, by someone who has read the ticket, about the specific thing they complained about, is one of the few recoverable states in support. The window closes fast, and the two ways it is habitually wasted are ignoring the response entirely because the ticket is closed, and answering it with a templated apology that proves nobody read the comment.</p>
+    <p class=sig><b>progress</b> followup_sent, callback_promised, ticket_resolved, csat_submitted<br>
+       <b>decay</b> cancellation_threat, escalation_requested, refund_requested, ticket_reopened<br>
+       <b>id</b> <code>customer_support.sit.csat_detractor</code> &middot;
+       <b>owner</b> <code>customer_support.voice_of_customer.satisfaction_measurement</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c3" data-id="customer_support.sit.entitlement_expired" data-name="Entitlement Expired">
+  <div class=head>
+    <span class=num>3</span>
+    <span class=name>Entitlement Expired</span>
+    <span class=pri>5500bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>The coverage this customer is being served under has lapsed, or the system's belief about it no longer matches what was actually sold.</p>
+  <div class=meta><div><b>Fires on</b><br><b class=bad>No condition at all.</b> It matches every situation of its type &mdash; the most permissive shape there is.</div>
+    <div><b>Seen in production</b><br><b class=warn>never formed yet</b></div>
+    <div><b>Typical</b><br>21 days</div>
+    <div><b>Card</b><br>&amp;mdash;</div></div>
+  <p class=q>Is matching on the type alone right here, or does it need a condition?</p>
+  <div class=choices>
+    <label><input type=radio name="d3" value=approve> approve</label>
+    <label><input type=radio name="d3" value=change> change</label>
+    <label><input type=radio name="d3" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>The coverage this customer is being served under has lapsed, or the system's belief about it no longer matches what was actually sold. It surfaces almost always at the worst possible moment — mid-ticket, with someone already waiting — because entitlement expires quietly and is checked reactively. There are two distinct sub-cases underneath and they need different first moves: a clean expiry, where the term genuinely ended and there is a renewal conversation to have, and a mismatch, where the contract and the configuration disagree and the customer is very likely right. Both are discovered by an angry customer rather than by an audit, and in both the expensive error is the same one: telling the person in front of you what they are not entitled to, in the middle of the work, as though it were their mistake.</p>
+    <p class=sig><b>progress</b> entitlement_checked, followup_sent, ticket_resolved, contract_countersigned<br>
+       <b>decay</b> cancellation_threat, escalation_requested, angry_language, refund_requested<br>
+       <b>id</b> <code>customer_support.sit.entitlement_expired</code> &middot;
+       <b>owner</b> <code>customer_support.entitlement_and_sla.entitlement_verification</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c4" data-id="customer_support.sit.escalation_requested" data-name="Escalation Requested">
+  <div class=head>
+    <span class=num>4</span>
+    <span class=name>Escalation Requested</span>
+    <span class=pri>8800bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>Someone has asked for this to leave its current owner.</p>
+  <div class=meta><div><b>Fires on</b><br><b class=bad>No condition at all.</b> It matches every situation of its type &mdash; the most permissive shape there is.</div>
+    <div><b>Seen in production</b><br>6 times</div>
+    <div><b>Typical</b><br>5 days</div>
+    <div><b>Card</b><br>draft_reply</div></div>
+  <p class=q>Is matching on the type alone right here, or does it need a condition?</p>
+  <div class=choices>
+    <label><input type=radio name="d4" value=approve> approve</label>
+    <label><input type=radio name="d4" value=change> change</label>
+    <label><input type=radio name="d4" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>Someone has asked for this to leave its current owner. Usually the customer — &quot;can I speak to your manager&quot;, &quot;who is your VP&quot;, &quot;I am taking this to our account team&quot; — and sometimes an agent who has recognised that normal handling will not finish it. The two look identical in a ticket and need opposite first moves, which is why the trigger side is the first thing this situation wants to establish. The defining property is that the request exists and nobody has yet accepted it: for as long as that is true the work has two owners in principle and none in practice, and the interval before a named person says yes is the interval where escalations actually go wrong. What is being asked for is rarely speed. It is almost always confidence, which is why replying faster to the same person is the reflex that makes it worse.</p>
+    <p class=sig><b>progress</b> escalation_accepted, callback_promised, followup_sent, workaround_provided, ticket_resolved<br>
+       <b>decay</b> cancellation_threat, angry_language, agent_reassigned, refund_requested, champion_change<br>
+       <b>id</b> <code>customer_support.sit.escalation_requested</code> &middot;
+       <b>owner</b> <code>customer_support.escalation_and_incident.escalation_management</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c5" data-id="customer_support.sit.first_response_overdue" data-name="First Response Overdue">
+  <div class=head>
+    <span class=num>5</span>
+    <span class=name>First Response Overdue</span>
+    <span class=pri>7000bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>A request arrived by mail, the deadline our own stated first-response policy implies has passed, and nobody has replied.</p>
+  <div class=meta><div><b>Fires on</b><br><b class=bad>No condition at all.</b> It matches every situation of its type &mdash; the most permissive shape there is.</div>
+    <div><b>Seen in production</b><br>37 times</div>
+    <div><b>Typical</b><br>2 days</div>
+    <div><b>Card</b><br>draft_reply</div></div>
+  <p class=q>Is matching on the type alone right here, or does it need a condition?</p>
+  <div class=choices>
+    <label><input type=radio name="d5" value=approve> approve</label>
+    <label><input type=radio name="d5" value=change> change</label>
+    <label><input type=radio name="d5" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>A request arrived by mail, the deadline our own stated first-response policy implies has passed, and nobody has replied. Not a contractual breach and not a forecast — a plain statement that the promise this organisation made to itself has been missed on a specific conversation, while there is still somebody at the other end of it. The value is in the first half of the sentence rather than the second: everybody already knows the queue has old threads in it, and what nobody has is the specific list of people who wrote first and have heard nothing back.</p>
+    <p class=sig><b>progress</b> followup_sent, first_response_sent<br>
+       <b>decay</b> escalation_requested, angry_language<br>
+       <b>id</b> <code>customer_support.sit.first_response_overdue</code> &middot;
+       <b>owner</b> <code>customer_support.entitlement_and_sla.breach_prevention</code> &middot;
+       authored <i>experimental</i>, edited 2026-08-29</p>
+  </details>
+</div>
+<div class=card id="c6" data-id="customer_support.sit.major_incident_declared" data-name="Major Incident Declared">
+  <div class=head>
+    <span class=num>6</span>
+    <span class=name>Major Incident Declared</span>
+    <span class=pri>9600bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>A fault has stopped being one customer's problem and has been declared as such.</p>
+  <div class=meta><div><b>Fires on</b><br><b class=bad>No condition at all.</b> It matches every situation of its type &mdash; the most permissive shape there is.</div>
+    <div><b>Seen in production</b><br><b class=warn>never formed yet</b></div>
+    <div><b>Typical</b><br>3 days</div>
+    <div><b>Card</b><br>&amp;mdash;</div></div>
+  <p class=q>Is matching on the type alone right here, or does it need a condition?</p>
+  <div class=choices>
+    <label><input type=radio name="d6" value=approve> approve</label>
+    <label><input type=radio name="d6" value=change> change</label>
+    <label><input type=radio name="d6" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>A fault has stopped being one customer's problem and has been declared as such. The declaration is the event — not the fault, which was already happening, and not the ticket volume, which arrives late and undercounts badly because the customers who did not write in have already formed an opinion. From the moment of declaration the unit of work is the incident and not the ticket: there is a commander who coordinates rather than debugs, one status narrative rather than many replies, and a standing assumption that anything the individual-ticket machinery wants to do right now is probably wrong. The situation stays live through the customer-side cleanup, which routinely outlasts the technical restoration by days and is where the relationship damage is actually repaired or confirmed.</p>
+    <p class=sig><b>progress</b> incident_resolved, root_cause_identified, workaround_provided, followup_sent<br>
+       <b>decay</b> ticket_created, escalation_requested, cancellation_threat, angry_language<br>
+       <b>id</b> <code>customer_support.sit.major_incident_declared</code> &middot;
+       <b>owner</b> <code>customer_support.escalation_and_incident.incident_management</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c7" data-id="customer_support.sit.queue_overloaded" data-name="Queue Overloaded">
+  <div class=head>
+    <span class=num>7</span>
+    <span class=name>Queue Overloaded</span>
+    <span class=pri>7200bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>A queue is taking in more than it is getting through, and has been for long enough that the oldest end of it has stopped being served at all.</p>
+  <div class=meta><div><b>Fires on</b><br><b class=bad>No condition at all.</b> It matches every situation of its type &mdash; the most permissive shape there is.</div>
+    <div><b>Seen in production</b><br>3 times</div>
+    <div><b>Typical</b><br>10 days</div>
+    <div><b>Card</b><br>brief</div></div>
+  <p class=q>Is matching on the type alone right here, or does it need a condition?</p>
+  <div class=choices>
+    <label><input type=radio name="d7" value=approve> approve</label>
+    <label><input type=radio name="d7" value=change> change</label>
+    <label><input type=radio name="d7" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>A queue is taking in more than it is getting through, and has been for long enough that the oldest end of it has stopped being served at all. Not a busy morning — a rate mismatch that has persisted, which is a different thing with different remedies. The characteristic shape is a queue that looks acceptable by count and terrible by age distribution: the middle of the queue moves, the tail calcifies, and every incentive an individual agent has points away from the tail. The situation is about the team's ability to absorb what arrives, so the useful questions are what changed on the arrival side, what is deliberately not being served while this is true, and who has been forgotten — never simply how many are open.</p>
+    <p class=sig><b>progress</b> ticket_resolved, ticket_closed, agent_reassigned, first_response_sent<br>
+       <b>decay</b> ticket_created, ticket_reopened, sla_breach, escalation_requested, angry_language<br>
+       <b>id</b> <code>customer_support.sit.queue_overloaded</code> &middot;
+       <b>owner</b> <code>customer_support.support_operations.queue_management</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c8" data-id="customer_support.sit.repeat_contact" data-name="Repeat Contact">
+  <div class=head>
+    <span class=num>8</span>
+    <span class=name>Repeat Contact</span>
+    <span class=pri>6800bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>The same person is back about the same thing.</p>
+  <div class=meta><div><b>Fires on</b><br><b class=bad>No condition at all.</b> It matches every situation of its type &mdash; the most permissive shape there is.</div>
+    <div><b>Seen in production</b><br>1 times</div>
+    <div><b>Typical</b><br>14 days</div>
+    <div><b>Card</b><br>draft_reply</div></div>
+  <p class=q>Is matching on the type alone right here, or does it need a condition?</p>
+  <div class=choices>
+    <label><input type=radio name="d8" value=approve> approve</label>
+    <label><input type=radio name="d8" value=change> change</label>
+    <label><input type=radio name="d8" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>The same person is back about the same thing. Not a reopened ticket — the previous contact was answered, closed, and by the system's own account handled correctly — but a fresh arrival that is, in substance, the same question. Read from the customer's side this is a broken promise wearing a compliant record: they asked, we answered, and they still had to come back. Read from the queue's side it is evidence that the answer was wrong, incomplete, unfindable, or correct but delivered in a form the customer could not use. The second reading is the one that pays, and it is only visible if the two contacts can be seen at once, which is exactly what the ticket-per-contact model prevents.</p>
+    <p class=sig><b>progress</b> knowledge_article_linked, self_service_attempted, ticket_resolved, followup_sent<br>
+       <b>decay</b> ticket_created, self_service_abandoned, ticket_reopened, angry_language<br>
+       <b>id</b> <code>customer_support.sit.repeat_contact</code> &middot;
+       <b>owner</b> <code>customer_support.knowledge_and_deflection.content_gap_analysis</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c9" data-id="customer_support.sit.sla_breach_imminent" data-name="SLA Breach Imminent">
+  <div class=head>
+    <span class=num>9</span>
+    <span class=name>SLA Breach Imminent</span>
+    <span class=pri>9200bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>A clock that a contract created is going to run out before anyone is scheduled to touch the ticket, and there is still time to change that.</p>
+  <div class=meta><div><b>Fires on</b><br><b class=bad>No condition at all.</b> It matches every situation of its type &mdash; the most permissive shape there is.</div>
+    <div><b>Seen in production</b><br><b class=warn>never formed yet</b></div>
+    <div><b>Typical</b><br>1 days</div>
+    <div><b>Card</b><br>&amp;mdash;</div></div>
+  <p class=q>Is matching on the type alone right here, or does it need a condition?</p>
+  <div class=choices>
+    <label><input type=radio name="d9" value=approve> approve</label>
+    <label><input type=radio name="d9" value=change> change</label>
+    <label><input type=radio name="d9" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>A clock that a contract created is going to run out before anyone is scheduled to touch the ticket, and there is still time to change that. This is forecasting rather than bookkeeping: the useful signal is not the time remaining but everything around it — how many other deadlines the assignee holds in the same window, whether the deadline falls across a coverage handover, and whether the last outbound message actually asked the customer for anything or merely looked like it did. The intervention ladder runs cheapest first (reply, reassign, borrow, escalate, renegotiate) and every rung gets dramatically more expensive as the deadline approaches, which is the whole argument for firing early. The characteristic failure at the other end is alerting at the moment of breach, which is not a warning but a notification about the past.</p>
+    <p class=sig><b>progress</b> first_response_sent, followup_sent, escalation_accepted, agent_reassigned<br>
+       <b>decay</b> sla_clock_paused, sla_breach, escalation_requested, angry_language<br>
+       <b>id</b> <code>customer_support.sit.sla_breach_imminent</code> &middot;
+       <b>owner</b> <code>customer_support.entitlement_and_sla.breach_prevention</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c10" data-id="customer_support.sit.ticket_reopened" data-name="Ticket Reopened">
+  <div class=head>
+    <span class=num>10</span>
+    <span class=name>Ticket Reopened</span>
+    <span class=pri>8800bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>Something we declared resolved was not resolved, and the customer has come back to say so.</p>
+  <div class=meta><div><b>Fires on</b><br><b class=bad>No condition at all.</b> It matches every situation of its type &mdash; the most permissive shape there is.</div>
+    <div><b>Seen in production</b><br><b class=warn>never formed yet</b></div>
+    <div><b>Typical</b><br>3 days</div>
+    <div><b>Card</b><br>&amp;mdash;</div></div>
+  <p class=q>Is matching on the type alone right here, or does it need a condition?</p>
+  <div class=choices>
+    <label><input type=radio name="d10" value=approve> approve</label>
+    <label><input type=radio name="d10" value=change> change</label>
+    <label><input type=radio name="d10" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>Something we declared resolved was not resolved, and the customer has come back to say so. The correct first move is not to answer again — it is to work out which of four categorically different failures this is, because they carry opposite lessons and averaging them into a reopen rate is why that metric is useless in most organisations. It was never fixed (closure without verification, usually an auto-close on silence). It fixed the wrong problem (a diagnosis error, and the most instructive of the four). It was fixed and regressed (a product defect, and not a support failure at all). Or it was fixed for some cases and not others (a scope error, which means other customers are affected and have not written in). The second attempt also starts from a worse position than the first: the customer's patience is already spent and their belief that anyone is tracking their problem is already damaged, so the reply has to acknowledge the first attempt before it does anything else. Answering a reopen as though it were a fresh question is the response most likely to produce an escalation.</p>
+    <p class=sig><b>progress</b> reproduction_confirmed, root_cause_identified, followup_sent, ticket_resolved<br>
+       <b>decay</b> ticket_reopened, escalation_requested, angry_language, cancellation_threat<br>
+       <b>id</b> <code>customer_support.sit.ticket_reopened</code> &middot;
+       <b>owner</b> <code>customer_support.diagnosis_and_resolution.verification_and_closure</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<h2>Part 2 &middot; carries a condition &mdash; 5</h2>
+<p>Every predicate here was checked against production and all of them have a writer.</p>
+
+<div class=card id="c11" data-id="customer_support.sit.customer_awaiting_reply" data-name="Customer Awaiting Reply">
+  <div class=head>
+    <span class=num>11</span>
+    <span class=name>Customer Awaiting Reply</span>
+    <span class=pri>8200bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>A customer has written and the next move is ours.</p>
+  <div class=meta><div><b>Fires on</b><br><code>thread.ball_in_court</code> &middot; 293 rows</div>
+    <div><b>Seen in production</b><br>14 times</div>
+    <div><b>Typical</b><br>2 days</div>
+    <div><b>Card</b><br>draft_reply</div></div>
+  <p class=q>Is this the card you want, and is the priority right against the others?</p>
+  <div class=choices>
+    <label><input type=radio name="d11" value=approve> approve</label>
+    <label><input type=radio name="d11" value=change> change</label>
+    <label><input type=radio name="d11" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>A customer has written and the next move is ours. Nothing else is known — not whether a clock is running, not whether the question is hard, not whether anyone has started on it. The only fact in evidence is that a human asked something and the silence since then belongs to us. That is enough to act on, and treating it as insufficient is how threads rot: teams wait for the ticket record to catch up before replying, and the customer experiences the lag as being ignored rather than as being processed. The expert reading is that the reply owed here is not necessarily the answer — an acknowledgement that names what was asked, what happens next and who owns it discharges most of the obligation, and can be written before the diagnosis exists.</p>
+    <p class=sig><b>progress</b> followup_sent, first_response_sent, callback_promised<br>
+       <b>decay</b> angry_language, escalation_requested, cancellation_threat<br>
+       <b>id</b> <code>customer_support.sit.customer_awaiting_reply</code> &middot;
+       <b>owner</b> <code>customer_support.customer_communication.response_drafting</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c12" data-id="customer_support.sit.named_contact_gone_quiet" data-name="Named Contact Gone Quiet">
+  <div class=head>
+    <span class=num>12</span>
+    <span class=name>Named Contact Gone Quiet</span>
+    <span class=pri>6800bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>A named contact at a supported account has stopped writing in, and the gap is long relative to how often they used to.</p>
+  <div class=meta><div><b>Fires on</b><br><code>thread.last_inbound</code> &middot; 198 rows</div>
+    <div><b>Seen in production</b><br>4 times</div>
+    <div><b>Typical</b><br>30 days</div>
+    <div><b>Card</b><br>draft_reengage</div></div>
+  <p class=q>Is this the card you want, and is the priority right against the others?</p>
+  <div class=choices>
+    <label><input type=radio name="d12" value=approve> approve</label>
+    <label><input type=radio name="d12" value=change> change</label>
+    <label><input type=radio name="d12" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>A named contact at a supported account has stopped writing in, and the gap is long relative to how often they used to. Nothing is broken, no clock is running, and no ticket is open — which is exactly the problem, because every instrument a support team owns is pointed at open work and this account has none. The expert reading is that silence from an account that used to file tickets is a hypothesis to be tested rather than a result to be enjoyed: either the product got better, or they found another way to get answers, or they stopped believing it was worth asking us. The test is cheap and it is not a survey — it is a specific message that references something real from their history and asks a question only they can answer. A generic check-in gets ignored, and being ignored converts a soft signal into no signal.</p>
+    <p class=sig><b>progress</b> ticket_created, followup_sent, introduction, self_service_attempted<br>
+       <b>decay</b> champion_change, cancellation_threat, entitlement_expired<br>
+       <b>id</b> <code>customer_support.sit.named_contact_gone_quiet</code> &middot;
+       <b>owner</b> <code>customer_support.support_management.account_relationship_management</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c13" data-id="customer_support.sit.new_account_contact" data-name="New Account Contact">
+  <div class=head>
+    <span class=num>13</span>
+    <span class=name>New Account Contact</span>
+    <span class=pri>5500bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>A new person has appeared on a supported account — introduced, handed over to, or simply copied in as the successor to someone who has gone.</p>
+  <div class=meta><div><b>Fires on</b><br>a condition on an <b>observation</b></div>
+    <div><b>Seen in production</b><br>4 times</div>
+    <div><b>Typical</b><br>14 days</div>
+    <div><b>Card</b><br>draft_reply</div></div>
+  <p class=q>Is this the card you want, and is the priority right against the others?</p>
+  <div class=choices>
+    <label><input type=radio name="d13" value=approve> approve</label>
+    <label><input type=radio name="d13" value=change> change</label>
+    <label><input type=radio name="d13" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>A new person has appeared on a supported account — introduced, handed over to, or simply copied in as the successor to someone who has gone. They arrive with the account's entire support history in our records and none of it in their head, and with no idea what the account is actually entitled to. The correct move is not a welcome message. It is a short, concrete orientation: what you are entitled to and through which channel, what is currently open, what has already been resolved that you may be about to re-report, and who to contact when it is urgent. This costs one message and prevents the first-contact failure that otherwise defines the relationship for a year. It is also, quietly, our own housekeeping — our records still name the person who left, and the ticket that gets routed to them is the one nobody answers.</p>
+    <p class=sig><b>progress</b> introduction, followup_sent, entitlement_checked, ticket_created<br>
+       <b>decay</b> champion_change, escalation_requested, angry_language<br>
+       <b>id</b> <code>customer_support.sit.new_account_contact</code> &middot;
+       <b>owner</b> <code>customer_support.support_management.account_relationship_management</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c14" data-id="customer_support.sit.promised_followup_overdue" data-name="Promised Follow-up Overdue">
+  <div class=head>
+    <span class=num>14</span>
+    <span class=name>Promised Follow-up Overdue</span>
+    <span class=pri>9000bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>Someone on our side said they would do a specific thing by a specific time, and that time has passed with nothing sent.</p>
+  <div class=meta><div><b>Fires on</b><br><code>commitment.action</code> &middot; 14 rows</div>
+    <div><b>Seen in production</b><br>14 times</div>
+    <div><b>Typical</b><br>1 days</div>
+    <div><b>Card</b><br>draft_delivery</div></div>
+  <p class=q>Is this the card you want, and is the priority right against the others?</p>
+  <div class=choices>
+    <label><input type=radio name="d14" value=approve> approve</label>
+    <label><input type=radio name="d14" value=change> change</label>
+    <label><input type=radio name="d14" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>Someone on our side said they would do a specific thing by a specific time, and that time has passed with nothing sent. The callback before end of day, the update on Friday, the bug that was going to be filed with engineering. These are the promises no contract created and no clock is watching, and they are the ones customers remember most sharply, because a human said them directly. The load-bearing expert judgement here is that the promise is discharged by CONTACT, not by COMPLETION: an update saying there is no news yet keeps the relationship whole, while silence — even silence spent working hard on the problem — is read as being forgotten. So the correct response to this situation is almost never to rush the underlying work. It is to write, today, with whatever is true, and to re-promise a date that will survive.</p>
+    <p class=sig><b>progress</b> followup_sent, callback_promised, first_response_sent<br>
+       <b>decay</b> angry_language, escalation_requested, cancellation_threat<br>
+       <b>id</b> <code>customer_support.sit.promised_followup_overdue</code> &middot;
+       <b>owner</b> <code>customer_support.entitlement_and_sla.commitment_tracking</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<div class=card id="c15" data-id="customer_support.sit.support_call_no_recap" data-name="Support Call Without Recap">
+  <div class=head>
+    <span class=num>15</span>
+    <span class=name>Support Call Without Recap</span>
+    <span class=pri>7000bp</span>
+    <span class=dot></span>
+  </div>
+  <p class=lead>A call with the customer happened and nothing was written afterwards.</p>
+  <div class=meta><div><b>Fires on</b><br><code>meeting.status</code> &middot; 49 rows</div>
+    <div><b>Seen in production</b><br>4 times</div>
+    <div><b>Typical</b><br>1 days</div>
+    <div><b>Card</b><br>draft_recap</div></div>
+  <p class=q>Is this the card you want, and is the priority right against the others?</p>
+  <div class=choices>
+    <label><input type=radio name="d15" value=approve> approve</label>
+    <label><input type=radio name="d15" value=change> change</label>
+    <label><input type=radio name="d15" value=defer> defer</label>
+    <input class=note type=text placeholder="note (only if change or defer)">
+  </div>
+  <details><summary>full description &amp; signals</summary>
+    <p class=full>A call with the customer happened and nothing was written afterwards. The gap is not courtesy, it is custody: everything established on that call — what was reproduced, what was ruled out, what we said we would do next and by when — currently exists only as two people's recollection, and one of those people is going to be replaced by a colleague on the next shift. The recap is what converts a synchronous hour into a durable record, and it is also the customer's only chance to correct our understanding before we act on it. The expert discipline is that it goes out the same working day, in the customer's language rather than the engineer's, and that it separates what was OBSERVED from what was CONCLUDED — because the conclusion is the part most likely to be wrong and the part they can most usefully challenge.</p>
+    <p class=sig><b>progress</b> followup_sent, minutes_circulated, callback_promised, reproduction_confirmed<br>
+       <b>decay</b> agent_reassigned, escalation_requested, angry_language<br>
+       <b>id</b> <code>customer_support.sit.support_call_no_recap</code> &middot;
+       <b>owner</b> <code>customer_support.customer_communication.proactive_status_updates</code> &middot;
+       authored <i>provisional</i>, edited 2026-08-08</p>
+  </details>
+</div>
+<textarea id=out spellcheck=false></textarea>
+</div>
+<div class=bar>
+  <span><b id=n>0</b> of 15 decided</span>
+  <button onclick=copyAll()>Copy decisions</button>
+  <button class=ghost onclick=showAll()>Show as text</button>
+</div>
+<script>
+const cards=[...document.querySelectorAll('.card')];
+function tick(){
+  let n=0;
+  cards.forEach(c=>{const got=c.querySelector('input:checked');
+    c.classList.toggle('done',!!got); if(got)n++;});
+  document.getElementById('n').textContent=n;
+}
+document.addEventListener('change',tick);
+function text(){
+  const lines=['SITUATION REVIEW — decisions',''];
+  cards.forEach(c=>{
+    const got=c.querySelector('input:checked');
+    const note=c.querySelector('.note').value.trim();
+    lines.push(`${c.dataset.id} : ${got?got.value:'(not decided)'}${note?'  — '+note:''}`);
+  });
+  return lines.join('
+');
+}
+function showAll(){const o=document.getElementById('out');o.style.display='block';
+  o.value=text();o.scrollIntoView({behavior:'smooth',block:'center'});}
+async function copyAll(){
+  const t=text();
+  try{await navigator.clipboard.writeText(t);
+    const b=event.target;const was=b.textContent;b.textContent='Copied';
+    setTimeout(()=>b.textContent=was,1400);}
+  catch(e){showAll();document.getElementById('out').select();}
+}
+tick();
+</script></body></html>

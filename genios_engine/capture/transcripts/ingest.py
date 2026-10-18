@@ -30,6 +30,7 @@ from typing import Any, Callable, Mapping
 
 from sqlalchemy import text
 
+from genios_engine.capture.connectors.base import InferredInstant
 from genios_engine.capture.documents.base import UNKNOWN_SPEAKER
 from genios_engine.capture.semantic.profiles import SCREEN_CONTEXT_HEADER
 from genios_engine.contracts.visibility import PRIVATE, Visibility
@@ -226,7 +227,7 @@ def _occurred(started_at: datetime | None, day: date | None) -> datetime:
         return started_at
     if day is not None:
         return datetime.combine(day, time(12, 0), tzinfo=timezone.utc)
-    return datetime.now(timezone.utc)
+    return InferredInstant.now_utc()      # no readable time: say so (GeniOS-008 L1 A3)
 
 
 def _attendee_views(link: LinkResult, candidates: list[Candidate]) -> list[dict]:

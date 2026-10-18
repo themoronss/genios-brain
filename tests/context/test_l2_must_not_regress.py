@@ -625,7 +625,7 @@ def test_the_sixth_axis_suite_is_still_the_one_proving_the_vector_composes() -> 
     """X5's file owns the composition rule; this suite owns the survival of the vector. Invoked
     so the two cannot be separated by a delete."""
     _call_upstream(_TESTS_ROOT / "context" / "test_situation_confidence.py",
-                   "test_the_vector_has_six_axes_and_still_reports_a_weakest",
+                   "test_the_vector_has_seven_axes_and_still_reports_a_weakest",
                    "test_no_comparison_is_not_a_bad_comparison",
                    "test_a_thin_comparison_does_not_make_the_situation_less_true",
                    "test_the_five_older_axes_are_untouched_by_the_sixth")

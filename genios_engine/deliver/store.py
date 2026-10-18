@@ -5,12 +5,17 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import bindparam, text
 
+from genios_engine.contracts.card_version import VersionWords, version_of
 from genios_engine.platform.db import get_engine
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.authority import (
     AUTHORITATIVE_SCORE_SQL,
     AUTHORITATIVE_SIGNAL_JOINS,
     AUTHORITATIVE_SIGNAL_PREDICATE,
+    QUESTION_SIGNAL_JOINS,
+    QUESTION_SIGNAL_LIVE,
+    QUESTION_SIGNAL_PREDICATE,
     authority_time,
 )
 
@@ -24,6 +29,133 @@ SITUATION_CARD_BUILDER = "team.emit.v1"
 SITUATION_CARD_SQL = (
     "k.builder_version = :situation_builder and s.reasoning_run_id is null "
     "and s.rule_id = s.capability_id and split_part(s.capability_id, '.', 1) in ('team', 'verify')")
+
+# STEP-13 · A QUESTION CARD'S OWN DOOR (`yc2_w27_s13` M36.C2.L-interface.V2.U09). A held file asks the founder
+# one question on its own card (`06` D60), and its signal is authorised AS A QUESTION
+# (`reason/authority.QUESTION_SIGNAL_PREDICATE`): the expert's live run that ended insufficient, the signal
+# bound to it, the question that run asked still open. Every door above re-proves a DECISION's authority — a
+# selected move a question never has — so a question card written to `cards` reached nobody. It is read
+# through this door, joined with `QUESTION_SIGNAL_JOINS`, and only a card its builder wrote passes: never a
+# decision through it, never a question through the decision's.
+QUESTION_CARD_BUILDER = "founder_question.v1"
+# ⛔ AND ITS ANSWER (STEP-14 fix, the crosscheck's finding 2, `yc2_w27_s14` M42.C3.L-interface.V4.U06; s14-D3). Your
+# answer versions the file's card — "your answer is in; the file is read again" — on the question's signal, which
+# stays open; but it closes the QUESTION, and this door read only an open one: the answered card was on no route
+# (the queue, its detail, its one offered action) until the file's next review. The door admits the ANSWERED
+# VERSION too: its question answered, the card waiting in the lane only the answer's version puts it in. Nothing
+# else — a question answered with no version written (a card that names no file is never versioned) is stale.
+#: The lane an answered card waits in (`deliver/actions.ANSWERED_LANE` reads it from here).
+ANSWERED_LANE = "monitor"
+QUESTION_CARD_SQL = (
+    "k.builder_version = :question_builder and " + QUESTION_SIGNAL_LIVE +
+    "and (question_asked.state='open' "
+    "     or (question_asked.state='answered' and k.output_lane='" + ANSWERED_LANE + "')) ")
+
+# ── STEP-14 · A FILE'S CARD IS VERSIONED (`yc2_w27_s14` M42.C3.L-data.V1.U02; `migrations/0220`) ─────────────────────
+#
+# A file's next decision or question is a VERSION of its one card, never a second card: `CardStore.version_card`
+# re-proves the new signal's authority under its build lease — exactly as an insert does — moves the card onto it
+# through the one writer of a card's signal (`platform/card_lifecycle.version_card`) and writes the new words in
+# place. Its state, snooze, history and verdicts are the founder's and are kept. What changed is named against the
+# card's own last version: the words its `card.created` or last `card.versioned` event recorded.
+
+#: The words a version writes in place — the card's presentation, as a refresh writes it (`insert_card`'s upsert),
+#: and the builder its door reads (`QUESTION_CARD_SQL`, the decision's authority): a version may turn a question into
+#: a decision, or back.
+_VERSION_WORDS = (
+    "update cards set assignee=:asg, domain=:dom, level=:lvl, urgency_band=:band, headline=:head, situation=:sit, "
+    "score=:score, score_block=cast(:sb as jsonb), actions=cast(:act as jsonb), why=cast(:why as jsonb), "
+    "context_tags=:tags, artifact=cast(:art as jsonb), render_mode=:rm, config_snapshot_id=:cs, template_version=:tv, "
+    "reject_code=:rjc, reject_detail=:rjd, abstained_because=:abst, business_subject=:bsub, "
+    "relationship_role=:brole, unresolved_item=:bitem, why_now=:bwhy, capability_key=:ckey, "
+    "capability_version=:cver, capability_review_state=:crev, outcome_window_days=:owin, success_signal=:osig, "
+    "do_nothing_consequence=:odnc, confidence_vector=cast(:cvec as jsonb), surfaces=:surf, builder_version=:bver, "
+    "output_lane=:lane, lane_reason=:lreason, "
+    # STEP-14 (0221): the gold card's columns are a version's words too — its own, never the last version's.
+    "recommended=cast(:grec as jsonb), alternative=:galt, wait_or_stop=:gwait "
+    " where org_id=:o and card_id=:id")
+
+#: STEP-14 (M42.C3.L-interface.V3.U04): the open cards a door is asked about (`CardStore.doors`) — a file's card, or
+#: an expert or question card from before 0220 that names no file. A module constant, so the statement census
+#: resolves every door it is joined to (`tests/platform/test_every_statement_plans.py`).
+_FILE_CARDS = (" k.org_id=:o and k.state = any(:open) and s.status='open' and k.expires_at > :authority_time "
+               "and (k.file_id is not null or k.capability_key = 'expert.file_review' "
+               "     or k.builder_version = :question_builder) ")
+
+
+#: What `file_card_doors` reads: every open file card, and those each door passes.
+FILE_CARD_DOORS: dict[str, str] = {
+    "every": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+              "where" + _FILE_CARDS),
+    "decision": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id "
+                 "and s.org_id=k.org_id " + AUTHORITATIVE_SIGNAL_JOINS + " where" + _FILE_CARDS +
+                 "and " + AUTHORITATIVE_SIGNAL_PREDICATE),
+    "question": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id "
+                 "and s.org_id=k.org_id " + QUESTION_SIGNAL_JOINS + " where" + _FILE_CARDS +
+                 "and " + QUESTION_CARD_SQL),
+}
+
+
+def file_card_doors(conn, org_id: str, *, eval_time=None,
+                    statements: dict[str, str] = FILE_CARD_DOORS) -> dict[str, tuple[str, ...]]:
+    """`CardStore.doors` over a connection the caller holds — read-only, so the health check asks it too
+    (`scripts/pipeline_health.check_every_file_card_passes_one_door`, the STEP-14 crosscheck's finding 2), handing
+    `FILE_CARD_DOORS` with its own tenant filter said beside them."""
+    params = {"o": org_id, "open": list(card_lifecycle.OPEN_STATES), "authority_time": authority_time(eval_time),
+              "question_builder": QUESTION_CARD_BUILDER}
+    every = [r.card_id for r in conn.execute(text(statements["every"]), params)]
+    passed = {door: {r.card_id for r in conn.execute(text(statements[door]), params)}
+              for door in ("decision", "question")}
+    return {card: tuple(door for door in ("decision", "question") if card in passed[door]) for card in every}
+
+
+#: The card's own last words: its latest `card.created`, `card.rebuilt` or `card.versioned` event that kept them —
+#: by VERSION first (a version is dated by its decision, a creation by the database's clock), then by when.
+_LAST_WORDS = (
+    "select detail -> 'words' as words from card_events where org_id=:o and card_id=:id "
+    "   and kind in ('card.created', 'card.rebuilt', 'card.versioned') and detail ? 'words' "
+    " order by coalesce((detail ->> 'version')::int, 1) desc, occurred_at desc, id desc limit 1")
+
+
+def _words_of(card: dict, copy: dict) -> VersionWords:
+    """What a card shows, as a version names it: the words its builder handed (`_words`, with the move's ask,
+    recipient, date and mode), or — a builder that names none — its copy and lane alone."""
+    given = card.get("_words")
+    gold = {"alternative": card.get("alternative"), "wait_or_stop": card.get("wait_or_stop")}
+    if given:
+        return VersionWords.from_mapping({**given, **gold, "headline": copy.get("headline"),
+                                          "situation": copy.get("situation")})
+    return VersionWords(headline=str(copy.get("headline") or ""), situation=str(copy.get("situation") or ""),
+                        draft=(copy.get("artifact") or {}).get("body") or None, lane=card.get("output_lane"),
+                        **gold)
+
+
+def _words_params(card: dict, copy: dict) -> dict:
+    """`insert_card`'s presentation parameters — one spelling for a refresh and a version."""
+    return {"asg": card["assignee"], "dom": card["domain"], "lvl": card["level"], "band": card["urgency_band"],
+            "head": copy["headline"], "sit": copy["situation"], "score": card["score"],
+            "sb": json.dumps(card["score_block"], default=str), "act": json.dumps(card["actions"], default=str),
+            "why": json.dumps(card["why"], default=str), "tags": card["context_tags"],
+            "art": json.dumps(copy["artifact"], default=str), "rm": copy["render_mode"],
+            "cs": card.get("config_snapshot_id"), "tv": card.get("template_version"),
+            "rjc": copy.get("reject_code"), "rjd": copy.get("reject_detail"),
+            "abst": card.get("abstained_because"), "bsub": card.get("business_subject"),
+            "brole": card.get("relationship_role"), "bitem": card.get("unresolved_item"),
+            "bwhy": card.get("why_now"), "ckey": card.get("capability_key"), "cver": card.get("capability_version"),
+            "crev": card.get("capability_review_state"), "owin": card.get("outcome_window_days"),
+            "osig": card.get("success_signal"), "odnc": card.get("do_nothing_consequence"),
+            "cvec": json.dumps(card.get("confidence_vector") or {}, default=str),
+            "surf": card.get("surfaces") or ["app", "agent", "ask", "api"], "bver": card.get("builder_version"),
+            "lane": card.get("output_lane") or "unrouted", "lreason": card.get("lane_reason"),
+            **_gold_params(card)}
+
+
+def _gold_params(card: dict) -> dict:
+    """The gold card's columns (0221): the move whole, its alternative, when to stop — NULL on a card that names none."""
+    recommended = card.get("recommended")
+    return {"grec": json.dumps(recommended, default=str) if recommended else None,
+            "galt": card.get("alternative"), "gwait": card.get("wait_or_stop")}
+
 
 # CardStore — persistence + the queue state machine (§5.12). Every transition writes a timestamped
 # card_event with an enumerated cause; nothing moves without one. One card per signal (enforced by
@@ -125,6 +257,95 @@ class CardStore:
                 {"o": org_id, "signal": signal_id, "token": claim_token})
         return bool(result.rowcount)
 
+    def file_card(self, org_id: str, file_id: str | None):
+        """The card a file's next version goes to (`platform/card_lifecycle.file_card`), or None."""
+        if not file_id:
+            return None
+        with self._engine.connect() as c:
+            return card_lifecycle.file_card(c, org_id=org_id, file_id=str(file_id))
+
+    def version_card(self, card: dict, copy: dict, *, build_claim_token: str,
+                     file_card) -> tuple[str, int, bool, str] | None:
+        """Version the file's card (`file_card`) onto `card["signal_id"]` with these words (STEP-14, see above):
+        under the new signal's build lease, its authority re-proven as `insert_card` proves it, the card moved by
+        the one writer of its signal and its words written in place. Returns `(card_id, version, material,
+        change)`, or None — the lease lost, a blank card, an authority that no longer holds, or a card the
+        writer refuses (decided, held by an agent, at another version)."""
+        if file_card is None or file_card.held:
+            return None
+        with self._engine.begin() as c:
+            as_of = authority_time(card.get("_authority_time"))
+            lease = c.execute(text(
+                "select 1 from card_build_claims where org_id=:o and signal_id=:signal "
+                "and claim_token=:token and expires_at>:authority_time for update"),
+                {"o": card["org_id"], "signal": card["signal_id"],
+                 "token": build_claim_token, "authority_time": as_of}).first()
+            if lease is None:
+                return None
+            if (not str(copy.get("headline") or "").strip()
+                    or not str(copy.get("situation") or "").strip()):
+                return None
+            if not self._proves_authority(c, card, as_of):
+                return None
+            row = c.execute(text("select state, version, headline, situation, output_lane from cards "
+                                 "where org_id=:o and card_id=:id for update"),
+                            {"o": card["org_id"], "id": file_card.card_id}).first()
+            if row is None:
+                return None
+            said = c.execute(text(_LAST_WORDS), {"o": card["org_id"], "id": file_card.card_id}).scalar()
+            before = (VersionWords.from_mapping(said) if said else
+                      VersionWords(headline=row.headline, situation=row.situation, lane=row.output_lane))
+            version = version_of(before, _words_of(card, copy), version=int(row.version) + 1,
+                                 signal_id=card["signal_id"], reopened=row.state == "expired")
+            if not card_lifecycle.version_card(c, org_id=card["org_id"], card_id=file_card.card_id,
+                                               version=version, expires_at=card["expires_at"], at=as_of):
+                return None
+            c.execute(text(_VERSION_WORDS), {**_words_params(card, copy), "o": card["org_id"],
+                                             "id": file_card.card_id})
+            self._stamp_recipients(c, card["org_id"], file_card.card_id, card.get("co_recipients") or (),
+                                   owner=card.get("assignee"))
+        return file_card.card_id, version.version, version.material, version.change
+
+    @staticmethod
+    def _proves_authority(c, card: dict, as_of) -> bool:
+        """The new signal's authority, re-proven for a version exactly as `insert_card` proves it for a card: a
+        question by its question's authority (and only under its builder), a decision by the decision's."""
+        question = card.get("_question_authority") or {}
+        if card.get("builder_version") == QUESTION_CARD_BUILDER or question:
+            if not question or card.get("builder_version") != QUESTION_CARD_BUILDER:
+                return False
+            c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
+                      {"o": card["org_id"]})
+            return c.execute(text(
+                "select 1 from signals s " + QUESTION_SIGNAL_JOINS +
+                " where s.org_id=:o and s.signal_id=:signal and s.status='open' "
+                "and s.reasoning_run_id=:run and s.reasoning_decision_hash=:decision "
+                "and s.config_snapshot_id=:cfg and question_asked.question_id=:question "
+                "and " + QUESTION_SIGNAL_PREDICATE +
+                " for share of s, question_rr, question_ro, question_asked"),
+                {"o": card["org_id"], "signal": card["signal_id"],
+                 "run": question.get("reasoning_run_id"),
+                 "decision": question.get("reasoning_decision_hash"),
+                 "cfg": question.get("config_snapshot_id"), "question": question.get("question_id"),
+                 "authority_time": as_of}).first() is not None
+        authority = card.get("_authority") or {}
+        if not authority:
+            return False
+        c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
+                  {"o": card["org_id"]})
+        return c.execute(text(
+            "select 1 from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
+            " where s.org_id=:o and s.signal_id=:signal and s.status='open' "
+            "and s.reasoning_run_id=:run and s.reasoning_candidate_id=:candidate "
+            "and s.reasoning_decision_hash=:decision and s.config_snapshot_id=:cfg "
+            "and " + AUTHORITATIVE_SIGNAL_PREDICATE +
+            " for share of s, rr, ro, selected_rc, rcap, authority_ctx, "
+            "authority_cfg, authority_pack"),
+            {"o": card["org_id"], "signal": card["signal_id"],
+             "run": authority.get("reasoning_run_id"), "candidate": authority.get("reasoning_candidate_id"),
+             "decision": authority.get("reasoning_decision_hash"), "cfg": authority.get("config_snapshot_id"),
+             "authority_time": as_of}).first() is not None
+
     def log_event(self, card_id, org_id, kind, *, cause=None, actor="system", detail=None, conn=None):
         row = {"id": new_id("cev"), "cid": card_id, "o": org_id, "k": kind, "cause": cause,
                "a": actor, "d": json.dumps(detail or {}, default=str)}
@@ -175,6 +396,31 @@ class CardStore:
             if (not str(copy.get("headline") or "").strip()
                     or not str(copy.get("situation") or "").strip()):
                 return None, False, False
+            question = card.get("_question_authority") or {}
+            if card.get("builder_version") == QUESTION_CARD_BUILDER or question:
+                # A QUESTION CARD, held to its question's own authority — and only to it: a card that
+                # names the question builder without that authority, or carries it under another
+                # builder, is refused, as a decision card is without its own.
+                if not question or card.get("builder_version") != QUESTION_CARD_BUILDER:
+                    return None, False, False
+                c.execute(text(
+                    "select graph_version from graph_versions where org_id=:o for share"),
+                    {"o": card["org_id"]})
+                held = c.execute(text(
+                    "select 1 from signals s " + QUESTION_SIGNAL_JOINS +
+                    " where s.org_id=:o and s.signal_id=:signal and s.status='open' "
+                    "and s.reasoning_run_id=:run and s.reasoning_decision_hash=:decision "
+                    "and s.config_snapshot_id=:cfg and question_asked.question_id=:question "
+                    "and " + QUESTION_SIGNAL_PREDICATE +
+                    " for share of s, question_rr, question_ro, question_asked"),
+                    {"o": card["org_id"], "signal": card["signal_id"],
+                     "run": question.get("reasoning_run_id"),
+                     "decision": question.get("reasoning_decision_hash"),
+                     "cfg": question.get("config_snapshot_id"),
+                     "question": question.get("question_id"),
+                     "authority_time": as_of}).first()
+                if held is None:
+                    return None, False, False
             authority = card.get("_authority") or {}
             if authority:
                 c.execute(text(
@@ -209,11 +455,16 @@ class CardStore:
                 # ⛔ WHICH KIND OF OUTPUT THIS IS (0190). The surface reads THIS row, so a
                 # lane that stops at `signals` reached nobody.
                 "output_lane, lane_reason, "
+                # STEP-14 (0220): the file whose decisions and questions this card carries, or NULL.
+                "file_id, "
+                # STEP-14 (0221): the gold card's columns — the move whole, its alternative, when to stop.
+                "recommended, alternative, wait_or_stop, "
                 "state, expires_at) values (:id,:sig,:o,:asg,:dom,:lvl,:band,:head,:sit,:score,"
                 "cast(:sb as jsonb),cast(:act as jsonb),cast(:why as jsonb),:tags,"
                 "cast(:art as jsonb),:rm,:cs,:tv,:rjc,:rjd,:abst,"
                 ":bsub,:brole,:bitem,:bwhy,:ckey,:cver,:crev,:owin,:osig,:odnc,"
-                "cast(:cvec as jsonb),:surf,:bver,:lane,:lreason,'queued',:exp) "
+                "cast(:cvec as jsonb),:surf,:bver,:lane,:lreason,:file,"
+                "cast(:grec as jsonb),:galt,:gwait,'queued',:exp) "
                 # PRESENTATION ONLY. `state`, `created_at`, `snooze_until`, `resolved_at` and
                 # `expires_at` are the user's side of the row and are never touched here: a
                 # refresh improves what the card SAYS, never where it sits or what was decided
@@ -244,7 +495,18 @@ class CardStore:
                 # A refresh re-reads the signal, so a re-routed decision must be able to
                 # move its card between lanes. Carrying the old lane forward would show a
                 # founder a conclusion the engine has since withdrawn.
-                "output_lane=excluded.output_lane, lane_reason=excluded.lane_reason "
+                "output_lane=excluded.output_lane, lane_reason=excluded.lane_reason, "
+                "recommended=excluded.recommended, alternative=excluded.alternative, "
+                "wait_or_stop=excluded.wait_or_stop, "
+                # ⛔ A QUESTION CARD IS REVIVED (STEP-13 M36.C2.L-integration.V2.U11, `03` X04) — its builder's
+                # and only its: re-proven above on its question's authority, so its question is still open and
+                # asked — re-bound to the run asking it now — and a card that lapsed under it comes back, the
+                # same card, queued, its window the authority's. A decision card is rewritten in place and stays
+                # where its user's side of the row left it, as above.
+                "state=case when cards.state = 'expired' and excluded.builder_version = :question_builder "
+                "then 'queued' else cards.state end, "
+                "expires_at=case when cards.state = 'expired' and excluded.builder_version = :question_builder "
+                "then excluded.expires_at else cards.expires_at end "
                 # Same rule as `_REPLACEABLE`, spelled against `cards.` — an expired card is
                 # replaced whatever wrote it, a live one only when a newer builder has something
                 # better to say. The claim and the write must agree or a claimed signal silently
@@ -252,7 +514,7 @@ class CardStore:
                 "where (cards.state = 'expired' and cards.resolved_at is null) "
                 "or (cards.builder_version is distinct from excluded.builder_version "
                 "and cards.state in :refreshable and cards.resolved_at is null) "
-                "returning card_id, (xmax = 0) as inserted").bindparams(
+                "returning card_id, (xmax = 0) as inserted, version").bindparams(
                     bindparam("refreshable", expanding=True)),
                 {"id": card_id, "sig": card["signal_id"], "o": card["org_id"],
                  "asg": card["assignee"], "dom": card["domain"], "lvl": card["level"],
@@ -288,6 +550,9 @@ class CardStore:
                  "lane": card.get("output_lane") or "unrouted",
                  "lreason": card.get("lane_reason"),
                  "refreshable": list(self.REFRESHABLE_STATES),
+                 "question_builder": QUESTION_CARD_BUILDER,
+                 "file": card.get("file_id"),
+                 **_gold_params(card),
                  "exp": card["expires_at"]}).first()
             if inserted is None:
                 # The DO UPDATE's WHERE refused: a card exists and is NOT stale — either the
@@ -307,13 +572,18 @@ class CardStore:
                 # The row already existed and carried an older builder. Its identity is the HELD
                 # card_id, not the one minted above — returning the fresh id would name a row
                 # that was never written.
+                # STEP-14 (s14-F14): the words a refresh writes, kept — a card is judged on every version it showed.
                 self.log_event(inserted.card_id, card["org_id"], "card.rebuilt",
                                cause=card.get("resolved_rule"),
-                               detail={**detail, "builder_version": card.get("builder_version")},
+                               detail={**detail, "builder_version": card.get("builder_version"),
+                                       "version": inserted.version,
+                                       "words": _words_of(card, copy).as_mapping()},
                                conn=c)
                 return inserted.card_id, False, True
+            # STEP-14: the words the card showed first — what its first version (`card.versioned`) keeps as before.
             self.log_event(card_id, card["org_id"], "card.created",
-                           cause=card.get("resolved_rule"), detail=detail, conn=c)
+                           cause=card.get("resolved_rule"),
+                           detail={**detail, "version": 1, "words": _words_of(card, copy).as_mapping()}, conn=c)
         return card_id, True, False
 
     def transition(self, card_id, org_id, to_state, kind, *, cause=None, actor="system",
@@ -344,11 +614,8 @@ class CardStore:
           • wake snoozed cards past snooze_until → 'queued' (snooze was a black hole)."""
         now = eval_time or datetime.now(timezone.utc)
         with self._engine.begin() as c:
-            expired = c.execute(text(
-                "update cards set state='expired' where state in ('queued','surfaced','snoozed') "
-                "and expires_at < :now returning card_id, org_id"), {"now": now}).fetchall()
-            for r in expired:
-                self.log_event(r.card_id, r.org_id, "window.lapsed", cause="expired", conn=c)
+            # STEP-06: through the one writer of `expired`, keeping `window.lapsed` / `expired`.
+            expired = card_lifecycle.expire_lapsed(c, now=now)
             woken = c.execute(text(
                 "update cards set state='queued', snooze_until=null where state='snoozed' "
                 "and snooze_until is not null and snooze_until <= :now "
@@ -409,6 +676,19 @@ class CardStore:
                     "and k.expires_at > :authority_time and " + SITUATION_CARD_SQL),
                     {"id": card_id, "o": org_id, "authority_time": now,
                      "situation_builder": SITUATION_CARD_BUILDER}).mappings().first()
+            if r is None:
+                # A question card (QUESTION_CARD_SQL): live while the question its run asked is open,
+                # its signal bound to that run and the run's authority unexpired.
+                r = c.execute(text(
+                    "select k.*, s.candidate_steps, s.rejected_candidates, "
+                    "s.uncertainty as decision_uncertainty "
+                    "from cards k join signals s on s.signal_id=k.signal_id "
+                    "and s.org_id=k.org_id " + QUESTION_SIGNAL_JOINS +
+                    " where k.card_id=:id and k.org_id=:o and s.status='open' "
+                    "and k.state in ('queued','surfaced','snoozed','claimed','delivered') "
+                    "and k.expires_at > :authority_time and " + QUESTION_CARD_SQL),
+                    {"id": card_id, "o": org_id, "authority_time": now,
+                     "question_builder": QUESTION_CARD_BUILDER}).mappings().first()
         return dict(r) if r else None
 
     def get_by_signal(self, signal_id: str) -> dict | None:
@@ -451,10 +731,18 @@ class CardStore:
                            actor=actor_id, detail={"tag": matched_tag}, conn=c)
         return {"ok": True, "surfaced": True, "card_id": card_id}
 
+    def doors(self, org_id: str, *, eval_time=None) -> dict[str, tuple[str, ...]]:
+        """Which door each open file card passes now (STEP-14 M42.C3.L-interface.V3.U04): `decision` (the
+        decision's authority) or `question` (STEP-13's third door, keyed on the question builder's stamp a version
+        writes) — the doors the queue, the card detail and the actions read for a file's card (a P4 card, the
+        second door's, is no file's). Exactly one each: none and the card vanishes, two and it shows twice."""
+        with self._engine.connect() as c:
+            return file_card_doors(c, org_id, eval_time=eval_time)
+
     def queue(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
               states=("queued", "surfaced", "snoozed", "claimed"),
               record_impressions: bool = True, viewer: str | None = None,
-              strict_seat: bool = False) -> list[dict]:
+              strict_seat: bool = False, eval_time=None) -> list[dict]:
         """Dashboard read. admin sees all queues (incl. unrouted); a member sees only their own.
         Ranked by score desc — the morning's cards in priority order (§5.13 scenario 10).
 
@@ -471,6 +759,10 @@ class CardStore:
 
         Defaults to `assignee` so every existing caller — the digest, the tests, the agent
         lane — behaves exactly as it did.
+
+        `eval_time` — STEP-14 (`yc2_w27_s14` M42.C4.L-data.V0.U01, s14-D4): the instant the queue answers for — what
+        the app showed then, read by this very predicate, never a copy of it in a reader (the golden board counts
+        what the app queue showed at each sweep). The wall clock when none is given, as before.
         """
         # The APP surface, not every card the org holds. A rejected deal past its deadline
         # still answers "what happened with Antler?" — it just does not belong in a queue
@@ -488,9 +780,17 @@ class CardStore:
               "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at "
               "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id"
               + common + "and " + SITUATION_CARD_SQL)
+        # THE THIRD DOOR, for question cards only (QUESTION_CARD_SQL): the same states, surface, expiry
+        # and seat-visibility clauses, the question's own authority in place of the decision's.
+        qq = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
+              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at "
+              "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+              + QUESTION_SIGNAL_JOINS + common + "and " + QUESTION_CARD_SQL)
         params = {"o": org_id, "states": list(states),
-                  "authority_time": datetime.now(timezone.utc),
-                  "situation_builder": SITUATION_CARD_BUILDER}
+                  # The instant asked for — else this module's own clock, as before (a reader patches it).
+                  "authority_time": eval_time or datetime.now(timezone.utc),
+                  "situation_builder": SITUATION_CARD_BUILDER,
+                  "question_builder": QUESTION_CARD_BUILDER}
         if not admin and assignee is not None and strict_seat:
             # A MEMBER SEAT sees what is routed to it and nothing else (deliver/seat_access.py):
             # its assignment and its declared responsibilities. An unassigned card sits in the
@@ -498,6 +798,7 @@ class CardStore:
             from genios_engine.deliver.seat_access import SEAT_REACH_SQL
             q += " and " + SEAT_REACH_SQL
             sq += " and " + SEAT_REACH_SQL
+            qq += " and " + SEAT_REACH_SQL
             params["seat"] = assignee
         elif not admin and assignee is not None:
             # A seat- or agent-bound credential sees loops routed to IT plus the org's UNCLAIMED
@@ -518,10 +819,12 @@ class CardStore:
                      "and cr.card_id=k.card_id and cr.seat_id=:a))")
             q += reach
             sq += reach
+            qq += reach
             params["a"] = assignee
         q += (" order by selected_rc.final_utility_bp desc, k.created_at asc, k.card_id "
               "for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack")
         sq += " order by k.score desc, k.created_at asc, k.card_id for share of k,s"
+        qq += " order by k.score desc, k.created_at asc, k.card_id for share of k,s"
         with self._engine.begin() as c:
             # Impression and the exact authority projection it describes share one transaction.
             # Graph/config writers and card claims cannot interleave a revocation after SELECT but
@@ -530,10 +833,12 @@ class CardStore:
                       {"o": org_id})
             rows = [dict(r) for r in c.execute(text(q), params).mappings()]
             situation_rows = [dict(r) for r in c.execute(text(sq), params).mappings()]
-            if situation_rows:
+            question_rows = [dict(r) for r in c.execute(text(qq), params).mappings()]
+            if situation_rows or question_rows:
                 # One ranked list: a stable sort by score keeps the L4 utility order (score is
-                # its monotone rounding) and slots situation cards in by their own score.
-                rows = sorted(rows + situation_rows, key=lambda r: -(r.get("score") or 0))
+                # its monotone rounding) and slots situation and question cards in by their own score.
+                rows = sorted(rows + situation_rows + question_rows,
+                              key=lambda r: -(r.get("score") or 0))
             if rows and record_impressions:
                 c.execute(text(
                     "insert into card_events (id,card_id,org_id,kind,cause,actor_id) "
@@ -552,7 +857,7 @@ class CardStore:
             # nothing — an org-level key resolves to nothing and keeps the org-wide read.
             seat = self._viewer_seat(c, org_id, viewer if viewer is not None else assignee)
             rows = self._your_part(c, org_id, seat, rows)
-            rows = self._objective_order(c, org_id, seat, rows)
+            rows = self._objective_order(c, org_id, seat, rows, now=eval_time)
             return rows
 
     #: What the History tab answers: every card somebody (or the world) already closed. `expired`
@@ -562,9 +867,12 @@ class CardStore:
     OPEN_STATES = ("queued", "surfaced", "snoozed", "claimed", "delivered")
 
     #: Event kinds that describe what HAPPENED to a card, as opposed to it being shown. The newest
-    #: one is the history row's "last action" line.
+    #: one is the history row's "last action" line. ⛔ STEP-06 (03 F75): `card.resolved` (the team
+    #: lane) and `card.retired` (STEP-04's repair) were written and never shown, and `card.expired` is
+    #: every expiry that used to write nothing — a card that left that way showed no reason.
     _OUTCOME_KINDS = ("human.card_action", "ui.requeued", "agent.result", "human.override",
-                      "success.detected", "window.lapsed", "card.dismissed")
+                      "success.detected", "window.lapsed", "card.dismissed", "card.expired",
+                      "card.resolved", "card.retired")
 
     def history(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
                 states=HISTORY_STATES, since: datetime | None = None,
@@ -677,7 +985,7 @@ class CardStore:
         return rows
 
     @staticmethod
-    def _objective_order(conn, org_id: str, seat: str | None, rows: list[dict]) -> list[dict]:
+    def _objective_order(conn, org_id: str, seat: str | None, rows: list[dict], *, now=None) -> list[dict]:
         """Stable partition of a per-viewer queue by the viewer's declared objective domain.
 
         ONLY FOR A NAMED VIEWER. An admin reading the org queue and an org-level key have no
@@ -693,7 +1001,7 @@ class CardStore:
                 "join org_seats s on s.org_id = o.org_id and lower(s.email) = o.seat_key "
                 "where o.org_id = :o and s.seat_id = :a and s.active "
                 "and (o.valid_until is null or o.valid_until > :now) limit 1"),
-                {"o": org_id, "a": seat, "now": datetime.now(timezone.utc)}).scalar()
+                {"o": org_id, "a": seat, "now": now or datetime.now(timezone.utc)}).scalar()
         except Exception:      # noqa: BLE001 — a preference, never a reason to touch the queue
             return rows
         if not domain:

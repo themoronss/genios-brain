@@ -207,7 +207,11 @@ def test_the_l2_drain_reads_internal_kind() -> None:
     import inspect
 
     from genios_engine.context import runner
-    assert "se.internal_kind" in inspect.getsource(runner._pull)
+    # ⛔ RESTATED by yc2_w27_s18/M48.C2.L-data.V0.U04 (STEP-18 B12): the drain's columns moved out of
+    # `_pull`'s body into `ROAD_COLUMNS`, the one spelling `_pull` and `_rows_for_rebuild` both select —
+    # so the column is asserted where it is spelled, and `_pull` is asserted to select that spelling.
+    assert "se.internal_kind" in runner.ROAD_COLUMNS
+    assert "ROAD_COLUMNS" in inspect.getsource(runner._pull)
     assert "internal_kind" in inspect.getsource(runner._process_one)
 
 

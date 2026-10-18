@@ -1,9 +1,94 @@
-# HANDOFF · Harsh (CTO) — five items, in the order that unblocks the most
+# HANDOFF · Harsh (CTO) — ten items, in the order that unblocks the most
+
+⛔ **This title has now been wrong twice — "five" when there were eight, "eight" when `H9` landed.** A count in a title is a number that ages; it is corrected rather than removed because the count is what tells you whether you have read all of it.
+
+⛔ **The original note:** this said "five items" and there were eight. `H6` was added 2026-10-01, `H7` on
+2026-10-02 and `H8` on the same day, and each landed at the bottom of the file without the header
+being touched. *A list edited one line at a time accumulates the lines nobody edited.*
+
+---
+
+## ⛔ START HERE — what to do, in this order
+
+| | Item | Shape | ⛔ Why this position |
+|---|---|---|---|
+| **1** | 🔴 **`H1`** apply `0186`–`0190` | **deployment**, one window | ⛔ **`insert_card` FAILS ON WRITE without `0190`** right now. Masked only because nothing is routing. ⛔ **Do not apply `0190` without `0189`** — one adds the lane column the other's card write needs, and clearing one alone turns a silent outage into a loud one |
+| **2** | 🔴 **`H2`** the OCR stack | **deployment** — `pytesseract`+`Pillow` in requirements **and** `tesseract-ocr` apt in the image, **both together** | 1,696 rows become readable; an L1 receipt can go green. Either half alone does nothing |
+| **3** | ⛔ **`H8`** **four** read-only checks + one decision | ⛔ **~3 minutes of SQL, no deployment** | ⛔ **This is the cheapest item on the page and the only one that tells us what production actually HOLDS.** Nine write-only tables' size · two receipts that have never run anywhere · whether `merge_history` is empty |
+| **4** | ⛔ **`H7`** 27 learning tests that have never run | **one command** where a DB exists | ⛔ *A skip is not a pass.* Any failure is a **real finding**, not a regression |
+| **5** | ⛔ **`H6`** `tests/test_delivery_spine.py` | **one command** where a DB exists | gives `spine.recover_expired_claims` its **first tests ever** |
+| **6** | 🟠 **`H3`** backfill 60 → 365 days | config | benchmark prompts P3/P4 become answerable at all |
+| **7** | 🟠 **`H4`** a writer for `deal.status` | **product plumbing** | `core.relationship` → `core.impact` → `cost_vs_benefit`, a four-deep chain |
+| **8** | 🟡 **`H5`** an approval-workflow source | **product plumbing** | 6 fact paths, 2 units |
+
+⛔ **Items 3, 4 and 5 are read-only or one command.** If you only have twenty minutes, do `H1` and
+then those three — they cost almost nothing and they are the difference between *"we think"* and
+*"we measured"*.
+
+⛔ **`H1` is the only item on this page that is breaking something right now.** Everything else is
+either a capability nobody has yet or a number nobody has yet.
+
+### What we did on our side, so you are not repeating it
+
+```
+15,220 tests green · 0 failed · 42 receipts · 17 commits waiting on Rohit's push
+⛔ every number in this document was measured from the code or from production, and
+⛔ where production could not be reached, the document says so instead of guessing
+```
+
+The full record is `speedrun008/YCW27/07-LEDGER-every-step-what-why-how-outcome.md`; the plan these
+items sit inside is `21-PLAN-TO-PRODUCTION.md`, where they are **Phase 0** — ⛔ the phase that
+nothing else can substitute for, and that we own none of.
 
 > **Written:** 2026-10-01 · **by:** Claude, from the YCW27 programme
 > **Nothing here needs a code change in `genios-brain`.** Every item is a deployment, a dependency
 > or a connector. The code side of all five is built, tested and merged into the working tree.
 > **Read H1 first.** It is the only item that is actively breaking a write path.
+
+---
+
+## ⛔ 2026-10-01 · READ THIS BEFORE H1 AND H2 — they will not produce a card on their own
+
+Measured the same day: **L1, L2 and L3 wrote rows on 2026-09-30. L4 and L5 stopped on 09-25.**
+
+The cause is not a deploy and not a migration. `GENIOS_L4_LLM_DECISION_MAKER = true` for every
+org, the Anthropic spend limit has refused every call since 2026-09-25 11:09 UTC, and
+`reason/llm_decision_maker.py:20` says *"**Failure is DEFER, never the formula**"* — by design,
+with a stated reason. So every decision defers, nothing is selected, no signal is emitted, and the
+card pipeline is stopped.
+
+    the 8,044 candidates on the 2,681 runs since 09-29:
+      formula_utility  5,469   ✅ the deterministic scorer is HEALTHY
+      llm_utility          0   ⛔
+      final_utility_bp     0   ⛔      outcome_kind: decision ZERO
+
+⛔ **H1 and H2 are still worth doing and still unblock what their briefs say.** But neither
+produces a single card until **DECISION #5** is answered (`02-DECISIONS.md`) — raise the limit,
+flip the switch, or build the third path. That is Rohit's, it is one line, and it is not yours.
+
+**Full trace:** `layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md`.
+
+---
+
+## 2026-10-01 · H1 RE-VERIFIED AGAINST PRODUCTION
+
+Measured read-only, so this is not a reconstruction from the branch:
+
+```
+select version from schema_migrations order by 1 desc limit 1;
+  -> 0185_capture_policy_teams_default.sql     applied 2026-09-26 08:10:36 UTC
+
+select column_name from information_schema.columns
+ where table_name='cards' and column_name='lane';
+  -> ⛔ ZERO ROWS — the column the card writer names DOES NOT EXIST
+```
+
+`0186`–`0190` have still never run, five days on. ⛔ **`version` holds the full filename, not the
+number**, which is worth knowing before you write the check query.
+
+**The full end-to-end picture for L1, L2 and L3 — every number measured the same day — is
+`17-THE-THREE-LAYERS-end-to-end.md`. PART 7 of that document is this handoff expanded: what each
+item unblocks, how to know it worked, and the four things not to do.**
 
 ---
 
@@ -272,3 +357,465 @@ objects should gate.
 **Nothing in `genios-brain` is waiting on a decision from you.** The full suite is 14,534 passed,
 0 failed, and 21 of 29 production receipts pass. The 7 FAIL + 1 ERROR are exactly the items on this
 page and Rohit's list — every one a true statement about a real gap, none a mis-asked question.
+
+---
+---
+
+# ⛔ H6 · 🟠 ADDED 2026-10-01 · run `tests/test_delivery_spine.py` where a database exists
+
+**Not a deployment. A test run.** It takes one command and needs nothing built.
+
+```
+.venv/bin/pytest tests/test_delivery_spine.py -q
+```
+
+## What it is
+
+L5 `STEP-06` gave `deliver/spine.recover_expired_claims` its **first tests ever**. That function is
+the ambiguity-marker of the v2 delivery control plane:
+
+> *"An expired worker may have POSTed to a provider before dying; **we must never silently retry over
+> that ambiguity.**"*
+
+Four new tests cover it: an expired claim's unsettled attempt becomes `unknown`; a **live** claim's
+attempt is untouched; a **settled** attempt is never rewritten (`delivered` must not become
+`unknown`); and an attempt under a stale fence is *not* recovered — which pins a known blind spot
+rather than hiding it.
+
+## ⛔ Why I cannot run them
+
+The file proves the spine against **real PostgreSQL**, deliberately: its SQL uses
+`for update skip locked` and a partial-index `on conflict`, and *a fake cannot model that*. It runs
+inside one transaction and rolls back, leaving the database byte-identical — and it uses the
+**scratch** database when one is set, never the configured production one
+(`tests/conftest.py::live_test_database_url` enforces the ordering).
+
+**No database is configured in this checkout.** Result here:
+
+```
+7 skipped in 0.15s       # all 7 — including the 3 that predate this step
+```
+
+Collection succeeded, so the imports and the syntax are sound. ⛔ **The behaviour is unverified, and
+a skip is not a pass.** Five database-free tests in
+`tests/deliver/test_the_spine_cutover_cannot_be_taken_unguarded.py` assert the recovery's SQL
+contract structurally, which is weaker evidence than behaviour and is not zero.
+
+## What a failure would mean
+
+| Outcome | Reading |
+|---|---|
+| 7 passed | ⛔ the best case, and the one to report. The v2 claiming tier is now behaviourally proven |
+| any failure | ⛔ **a real finding** — the recovery has never run, so a failure is a defect in code nobody has executed, not a regression. Send the output; it goes into `layer-5-delivery/03-FINDINGS.md` |
+| still skipped | the scratch database is not reachable. ⛔ **Do not point it at production to make it run** — it writes, and the rollback is a property of the test, not a promise to the database |
+
+## Why it is worth your five minutes
+
+The v2 control plane is **un-cut-over**: nothing in production calls any of it, which is why none of
+this is urgent. But `outbox.py:838` records the hazard waiting at the other end — *"the moment it
+does, both workers could select the same one and double-send"* — and the day somebody takes that
+cutover, these four tests are the only thing that has ever exercised the step that prevents it.
+
+⛔ **Everything else on this page changes what production does. This one only changes what we know.**
+
+
+---
+---
+
+# ⛔ H7 · 🟠 ADDED 2026-10-02 · 27 learning tests have never run — and they are the two that matter
+
+**Same shape as `H6`, different layer.** Five minutes with a database, and it answers the one
+question the L6 pass could not.
+
+## What it is
+
+```
+$ .venv/bin/pytest tests/feedback -q -rs
+60 passed, 27 skipped
+
+14  tests/feedback/test_org_brain_filled_through_the_routes.py                    ENTIRELY skipped
+13  tests/feedback/test_behavior_and_adaptive_brains_filled_through_the_paths.py   ENTIRELY skipped
+--
+    every one: "GENIOS_TEST_DATABASE_URL not set — J4's org row / brain rows need real Postgres"
+```
+
+⛔ **Read the two filenames.** *"filled through the routes"* and *"filled through the paths"* — these
+are the tests that prove the **brains actually get filled end to end**. The 60 that pass are the
+deterministic ones: maps, taxonomies, attribution routing, property guards.
+
+## ⛔ Why this matters more than a skip count
+
+The L6 re-crosscheck measured that `feedback/` is guarded by **four receipts and all four are
+presence checks** — *"has the learning engine executed"*, *"has calibration executed"*. Every one is
+satisfied by a single successful tick. **Nothing in production asks whether what the loop wrote is
+correct.**
+
+So the only evidence that a brain value arrives intact is these 27 tests, **and they do not run.**
+
+> ⛔ **A skip is not a pass.** Two entire files of end-to-end evidence are currently reported as
+> neither passing nor failing, and no document in `layer-6-learning/` had mentioned them.
+
+## What to run
+
+```bash
+export GENIOS_TEST_DATABASE_URL='postgres://…'        # a scratch database, not production
+.venv/bin/pytest tests/feedback -q -rs
+```
+
+⛔ **`GENIOS_TEST_DATABASE_URL`, not `GENIOS_DATABASE_URL`** — the tests write. And ⛔ **do not set
+`GENIOS_ALLOW_PROD_WRITE`**: that variable is named for writes because it was written for writes.
+
+## What a failure would mean
+
+| | |
+|---|---|
+| **27 passed** | the brains fill correctly end to end, and L6's missing correctness receipts are a **monitoring** gap rather than a correctness one. That is a materially different plan |
+| **any failure** | a brain value does not arrive the way the deterministic tests say it should — and ⛔ **production has no receipt that would notice**, because all four are presence checks |
+
+## Why it is worth your five minutes
+
+It is the difference between *"the learning loop is unguarded"* and *"the learning loop is unguarded
+**and** untested where it touches the database."* ⛔ **I cannot tell those apart from this
+checkout**, and the plan for L6's correctness receipts (`U03`–`U05`) is shaped differently
+depending on the answer.
+
+→ `layer-6-learning/05-RECROSSCHECK-the-loop-that-runs-and-is-never-questioned.md` §6,
+`03-FINDINGS.md` §F15
+
+---
+---
+
+# H8 · 🟠 Four questions only the database can answer, and one decision that is yours
+
+⛔ **This heading said "Three" and `H8.5` was added on 2026-10-03.** Third stale count in this file
+in three days — the title, the item list, and now a subsection count. *A list edited one line at a
+time accumulates the lines nobody edited.*
+
+Added 2026-10-02 by the `context/` coverage audit. ⛔ **All four checks are read-only and take
+about three minutes together.** The decision at the end is a product/infra call, not a code change we
+should make on our own.
+
+## What we measured, and what we could not
+
+We measured every SQL statement in `genios_engine/` and `scripts/` — 2,867 of them — and
+cross-referenced each table against every reader, every writer and all 42 receipts. ⛔ **Nine
+tables are written by the product and read by nothing at all:**
+
+```
+contract_spend_attributions   context/correlation_resource.py
+source_identity_map           context/graph_store.py + context/merge.py
+situation_interpretations     context/interpretation_store.py
+learning_metrics              feedback/publisher.py
+human_events                  capture/events_store.py + deliver/actions.py
+card_feedback_revisions       api/intelligence_routes.py
+agent_metering                deliver/agent_api.py
+delivery_rate_windows         deliver/rate_limiter.py
+domain_requests               api/expertise_routes.py
+```
+
+⛔ **That is a statement about the CODE, which is all we can see from here.** Whether those tables
+are large, whether they are growing, and whether anything outside this repo reads them (a dashboard,
+a notebook, a cron you own) is a question about the deployment.
+
+---
+
+### H8.1 · How much are the nine costing, and is anything growing?
+
+```sql
+set transaction read only;
+
+select relname as table_name,
+       n_live_tup as approx_rows,
+       pg_size_pretty(pg_total_relation_size(relid)) as total_size
+  from pg_stat_user_tables
+ where relname in ('contract_spend_attributions','source_identity_map',
+                   'situation_interpretations','learning_metrics','human_events',
+                   'card_feedback_revisions','agent_metering','delivery_rate_windows',
+                   'domain_requests')
+ order by pg_total_relation_size(relid) desc;
+```
+
+**What the answer changes.** A table with a handful of rows is a tidy-up nobody is blocked on. ⛔ One
+with millions of rows and a live write path is paying storage and vacuum cost for a number no
+decision has ever used — and `learning_metrics` in particular receives a row from **every** one of
+the eleven weekly analysis units.
+
+---
+
+### H8.2 · ⛔ Two receipts have never once run against a real database
+
+`platform/receipts.py` now has **42** claims. Two of them have never been evaluated anywhere,
+because this checkout has no database configured:
+
+```sql
+set transaction read only;
+
+-- 1 · "a deleted tenant leaves nothing behind" — asks the DEPLOYED schema whether any org-scoped
+--     table outlives an erased tenant. It is the ONLY thing that can see a child table cascading
+--     through a parent, which no code-level list can show.
+select c.table_name
+  from information_schema.columns c
+  join information_schema.tables t
+    on t.table_schema = c.table_schema and t.table_name = c.table_name
+ where c.table_schema = 'public' and c.column_name = 'org_id'
+   and t.table_type = 'BASE TABLE'
+   and c.table_name not in ('llm_costs','credit_ledger','subscriptions','orgs_archive','orgs')
+   and exists (select 1 from orgs_archive)          -- only meaningful once a tenant was erased
+ limit 20;
+
+-- 2 · "no live row points at a node a merge absorbed" — the new one. Expected: 0.
+select count(*) from graph_facts t
+  join merge_history m on m.org_id = t.org_id and m.merged_node_id = t.subject_node_id
+ where not m.reversed;
+```
+
+**What the answer changes.** `merge.py`'s own comment is the claim: *"Missing one leaves rows
+pointing at a closed node — invisible in the UI, still returned by any query that joins on
+node_id."* ⛔ A non-zero count is live graph corruption after an entity merge, and `context/` had
+**two** receipts over 50,877 lines before this one, neither about merge.
+
+---
+
+### H8.3 · ⛔ Is `merge_history` empty? — because that decides whether the new receipt means anything
+
+```sql
+set transaction read only;
+select count(*) as merges, count(*) filter (where reversed) as reversed from merge_history;
+```
+
+**What the answer changes.** If no merge has ever run, the receipt above is **structurally green
+forever** and tells nobody anything — *a gate that is always green is a gate nobody reads*. Say so
+and we will gate it on the same marker pattern the learning receipts use, so it reads
+*"not yet exercised"* rather than *"passing"*.
+
+---
+
+### ⛔ H8.5 · How many connector kinds does any tenant actually have? — one query, and it moves a declared silence
+
+```sql
+set transaction read only;
+select org_id, count(distinct source_type) as kinds
+  from connections where status = 'connected' group by 1 order by 2 desc;
+```
+
+**What the answer changes.** `reason/runner.py` declares a gap it deliberately has **not** built —
+`LINEAGE_UNPROTECTED["cross_channel_quote"]`: one original assertion quoted across two or more
+channels counts as that many **independent** sources, which is exactly what the confidence ladder
+must not do. The reason is written in capitals — *"**NOT BUILT, ON PURPOSE.** A two-connector tenant
+cannot produce the case, and building a lineage system for an unreachable failure is the
+over-scaffolding this plan refuses"* — and the **mover is "the third connector"**.
+
+⛔ **The code already implements more than two connector kinds** (`calendar`, `drive`, `hubspot`,
+`linear`, `notion`, `composio`, `database`, `push_ingest`…). What nobody knows is whether a LIVE
+tenant has three **connected at once**. ⛔ **Any org at three or more means the case has become
+reachable and the declared silence has to become work** — real engineering, scoped by this one
+number.
+
+⛔ It is on your page rather than ours because the answer is in `connections`, and the entire point
+of the declaration is that we do not guess at it.
+
+---
+
+### H8.4 · ⛔ The decision: three tables survive a tenant `/reset`, and nothing says whether they should
+
+`api/account_routes.py` has two declared lists — `_ORG_SCOPED_TABLES` (what `/reset` erases, 102
+tables) and `RETAINED_AFTER_ERASURE` (what may outlive an erased account, 5). ⛔ **These three are
+in neither:**
+
+| table | writer | what it holds |
+|---|---|---|
+| `agent_metering` | `deliver/agent_api.py` | per-call metering for the Agent API |
+| `delivery_rate_windows` | `deliver/rate_limiter.py` | the rate limiter's window state |
+| `domain_requests` | `api/expertise_routes.py` | a tenant asking for a domain that does not exist yet |
+
+⛔ **For account DELETION this is fine** — migration `0033`'s foreign keys take everything that
+hangs off `orgs`, directly or through a parent, and we verified the four `reasoning_*` children
+reach `orgs` transitively. ⛔ **For `/reset` it is a question**: that endpoint promises *"wipe this
+org's learned graph + signals + cards (keeps the account, connections, tasks)"*, and whether
+metering, rate windows and unfulfilled domain requests belong on the "keeps" side has never been
+written down.
+
+**Our read:** metering and rate windows probably SHOULD survive a reset (they are accounting and
+abuse-control state, not tenant content), and `domain_requests` probably should too (it is a
+request to us, not data about them). ⛔ **If you agree, they belong in `RETAINED_AFTER_ERASURE` with
+that reasoning** — and the comment beside that list already says why it matters that the answer be
+written rather than implied: *"a comment cannot be asked"*, and the loop beside it *"runs with no
+try/except by design, so a name missing here leaks silently."*
+
+### Why it is yours and not ours
+
+⛔ We can measure which tables are in which list; we cannot decide what a tenant reset is **for**.
+Moving a name into `RETAINED_AFTER_ERASURE` changes what survives a customer pressing a destructive
+button in Settings, and it changes what we would tell a customer asking a data question. That is
+your call and Rohit's, not a tidy-up.
+
+→ `layer-3-context-graph/04-AUDIT-PLAN-the-worst-covered-package.md`,
+`genios_engine/platform/table_coverage.py` (the measurement, with its limits declared)
+
+
+---
+---
+
+# ⛔⛔ H9 · 🔴 ADDED 2026-10-03 · **Two queries that decide whether a signed contract can be overwritten by a weekly metric**
+
+## What it is
+
+`graph_facts.authority_rank` is one integer column carrying **two different scales**.
+
+| scale | range | where it comes from |
+|---|---|---|
+| the authority ladder | **0 … 6** | `capture/validate/authority.AUTHORITY_RANK` — dense, evenly spaced, no ties. `inferred` 0 · `chat_aside` 1 · `email_prose` 2 · `attachment` 3 · `structured_source` 4 · `company_canon` 5 · **`signed_document` 6** |
+| the derived default | **100** | `context/analytic/publish.DEFAULT_AUTHORITY_RANK`, and `FACT_TABLE = "graph_facts"` — the **same table, same column** |
+
+And `context/graph_store.fact_write_action` compares the raw integers and nothing else:
+
+```python
+if held_rank is not None and new_rank < held_rank:
+    return "discrepancy"      # lower authority disagrees -> flag, keep held
+return "supersede"
+```
+
+⛔⛔ **So a row sitting at 100 can never be superseded by anything**, and a **countersigned
+contract** (rank 6) arriving against one is returned a `discrepancy` and **discarded in favour of
+the derived value**.
+
+## ✅ What we already measured, and why it is still a question
+
+Two things keep the scales apart **today**:
+
+1. `publish_derived_fact` scopes its own lookup by `version_prefix`, so it never supersedes a row
+   it did not write.
+2. Across the whole engine the two writers share **no literal field name**. Observed writes
+   `deal.stage`, `party.role`, `thread.ball_in_court`, `commitment.due_at`…; derived writes
+   `derived.contract_spend.summary` and friends. **Intersection: none.**
+
+⛔ **But `write_fact`'s lookup is NOT prefix-scoped.** It takes the first active row for
+`(org_id, subject_node_id, field)` whoever wrote it. So the separation rests entirely on two field
+vocabularies never meeting, and **nothing enforces that**.
+
+⛔ **And our measurement states its own blind spot: 31 call sites pass a `field=` we could not
+evaluate statically** (10 in `write_fact`, 14 in `_write_fact`, 7 in `publish_derived_fact`). A
+static read cannot close this. **The database can, in two queries.**
+
+## ⛔ Why I cannot run them
+
+No database URL is configured in this checkout. And a reminder that holds for every query on this
+page: **a read runs inside `set transaction read only`, and `GENIOS_ALLOW_PROD_WRITE` is never set
+to run a report** — that variable is named for writes because it was written for writes.
+
+## What to run
+
+```sql
+-- H9.1 · do any active facts sit off the ladder at all?
+begin; set transaction read only;
+
+select authority_rank, count(*) as rows
+from graph_facts
+where valid_to is null and status = 'active'
+group by authority_rank
+order by authority_rank;
+
+-- H9.2 · THE ONE THAT MATTERS. Receipt 46, by hand: has a (node, field) ever held
+--        BOTH an on-ladder rank and an off-ladder one? This is the collision.
+select count(*) as colliding_pairs
+from (
+  select subject_node_id, field
+  from graph_facts
+  where valid_to is null and status = 'active'
+  group by subject_node_id, field
+  having bool_or(authority_rank <= 6) and bool_or(authority_rank > 6)
+) x;
+
+commit;
+```
+
+## What a failure would mean
+
+| result | what it means |
+|---|---|
+| `H9.2` returns **0** | ✅ the hazard has never fired. **Receipt 46 is green against production**, and `R16` is a design decision taken at leisure rather than an incident |
+| `H9.2` returns **> 0** | ⛔⛔ **it is live.** On those pairs, `write_fact` is already comparing incomparable numbers, and the higher-authority side has been losing. Each row is a fact where the engine preferred a derived weekly value over an observed one — possibly over a signed document. **This stops being `R16` and becomes an incident** |
+| `H9.1` shows ranks **other than 0-6 and 100** | ⛔ a **third** scale exists that nothing in the code accounts for, and `UNINTERPRETABLE_RANKS` is incomplete |
+
+## Why it is worth your five minutes
+
+It is the only question on this page where a static read genuinely cannot get the answer, and the
+two outcomes are **a roadmap item** and **a data incident**. ⛔ Receipt 46 will answer it
+automatically on every readiness run once a database is reachable — this is just the first reading,
+and the first reading is the one that decides whether anybody needs to hurry.
+
+⛔ **One more thing worth two minutes while you are in there**: `H9.1`'s distribution also settles
+whether rank **1** is doing two jobs in practice. `graph_store` promotes on `held.authority_rank == 1`
+exactly, and 1 is both `chat_aside` **and** what `write_fact` writes when the caller passes
+nothing. A large pile at rank 1 is not proof either way — but a pile at rank 1 whose `source` is
+null is, and that is `R17`'s evidence.
+
+
+---
+---
+
+# ⛔ H10 · 🟠 ADDED 2026-10-04 · **Two more receipts that have never been executed, and one of them is five seconds of work**
+
+## What it is
+
+`2.2` added **receipt 47** and **receipt 48**. Like all 48, neither has ever run — no database URL
+in the checkout, and the platform suite drives receipts through a fake engine. These two are the
+cheapest readings on this page and they answer questions a static read cannot.
+
+## What to run
+
+```sql
+begin; set transaction read only;
+
+-- H10.1 · RECEIPT 48 · is anybody connected to a source that feeds nothing?
+--   `database` and `mysql` are BUILDABLE with no coverage capability and no object mappings.
+--   A tenant can connect one, see the connect screen report success, and contribute to no
+--   pack's readiness.
+select org_id, source_type, status, count(*) as rows
+from connections
+where source_type in ('database', 'mysql')
+group by org_id, source_type, status
+order by rows desc;
+
+-- H10.2 · RECEIPT 47 · do freshly qualified signals carry their coverage verdict?
+--   The contract promises "a freshly gated event always carries a real bool", and nothing
+--   checked it. An OLD null is legitimate ("a pre-S4 row"), so the window matters: this is
+--   four sweep ticks at the default 6h interval.
+select count(*) filter (where coverage_ready is null)  as no_verdict,
+       count(*) filter (where coverage_ready is true)  as covered,
+       count(*) filter (where coverage_ready is false) as degraded,
+       count(*)                                        as total
+from qualified_signals
+where created_at > now() - interval '24 hours';
+
+-- H10.3 · and the distribution over all of history, for contrast. A big historical null
+--   pile is EXPECTED (pre-S4 rows); a null pile inside the window is the finding.
+select date_trunc('week', created_at) as week,
+       count(*) filter (where coverage_ready is null) as no_verdict,
+       count(*) as total
+from qualified_signals
+group by 1 order by 1 desc limit 8;
+
+commit;
+```
+
+## What a result would mean
+
+| result | what it means |
+|---|---|
+| `H10.1` returns **no rows** | ✅ nobody has connected a feed-nothing source. Receipt 48 is green and `R23` is a tidy-up taken at leisure |
+| `H10.1` returns rows with `status='connected'` | ⛔ **live.** Those tenants connected something, were told it worked, and it feeds no pack's coverage. That is a support conversation, not a backlog item |
+| `H10.2` `no_verdict` = **0** | ✅ the contract's promise holds. Receipt 47 is green against production |
+| `H10.2` `no_verdict` **> 0** | ⛔ the domain tagger is not running for some signals, and `None` reads as *"unknown"* exactly where L3 most wants a yes — so it compiles **full** expertise over domains nobody vouched for |
+| `H10.3` shows the null pile **stopping** at some week | ✅ that is the S4 cutover, and it is the evidence the window is drawn in the right place |
+| `H10.3` shows nulls **continuing** into recent weeks | ⛔ same as `H10.2` being non-zero, with a start date attached — which tells you what changed |
+
+## Why it is worth your five minutes
+
+`H10.1` is the one with a customer on the other end: somebody may have connected a database and
+been told it worked. ⛔ And `H10.3` is the cheap sanity check on my own receipt — if the historical
+null pile does **not** stop, then the window I derived is measuring the wrong thing and receipt 47
+needs redrawing before anybody trusts it.
+
+⛔ Same rule as every query on this page: **a read runs inside `set transaction read only`, and
+`GENIOS_ALLOW_PROD_WRITE` is never set to run a report.**

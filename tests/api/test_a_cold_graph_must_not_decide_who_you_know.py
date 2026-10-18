@@ -69,7 +69,10 @@ def test_a_stranger_is_still_a_stranger():
     Reading the `actor` instead — or dropping the seat check — would make every cold-caller and
     every newsletter a known counterparty and turn the N-codes off entirely."""
     sql = _normalised()
-    assert "org_seats" in sql, (
+    # STEP-04 (U07): the author check is "one of us" from `platform/self_identity` — bound as
+    # `:ours` — where it was the seats alone (`org_seats`), so mail from the founder's own address
+    # vouched for nobody. The check itself must still be there, in the WHERE of the sent half.
+    assert "lower(e.actor ->> 'email') = any(:ours)" in sql, (
         "the sender check is gone: any inbound mail would now mark its own sender known, which "
         "disables the whole noise gate")
     assert "actor" in sql and "'email'" in sql, (

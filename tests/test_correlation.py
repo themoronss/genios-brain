@@ -282,26 +282,97 @@ def test_the_structured_lane_correlates_before_committing() -> None:
     assert source.index("correlate_event(") < source.index("store.write_change(")
 
 
-def test_our_own_attendees_never_anchor_a_meeting() -> None:
-    """A calendar invite lists US as attendees. Anchoring on our own people would file
-    every meeting in the company into one enormous situation."""
-    import inspect
+def _handed_to_correlation(monkeypatch, **identity) -> set[str]:
+    """What `commit_structured` hands `correlate_event` for one invite, the store faked."""
+    from contextlib import nullcontext
+    from types import SimpleNamespace
 
-    from genios_engine.context.structured import commit_structured
-    source = inspect.getsource(commit_structured)
-    assert "internal_emails" in source
-    assert 'rel["node_type"] == "person" and key in internal' in source
+    from genios_engine.context import structured
+
+    handed: dict = {}
+    monkeypatch.setattr(structured, "correlate_event",
+                        lambda *_a, **kw: handed.update(kw["node_types"]) or [])
+    store = SimpleNamespace(
+        engine=SimpleNamespace(begin=lambda: nullcontext(None)),
+        bump_version=lambda *_a: 1, map_identity=lambda *_a, **_k: None,
+        find_or_create_node=lambda *_a, **kw: kw["canonical_key"],
+        write_fact=lambda *_a, **_k: None, write_edge=lambda *_a, **_k: None,
+        write_event_presence=lambda *_a, **_k: 0, write_change=lambda *_a, **_k: None)
+    people = ["founder@gmail.test", "ops@kitebird.test", "ira@northwind.test"]
+    structured.commit_structured(
+        store, org_id="o", event_id="e", source="gcal", source_object_id="m1",
+        structured_fields={}, node_type="meeting", occurred_at=NOW,
+        relations=[{"node_type": "person", "canonical_key": p, "edge_type": "attended"}
+                   for p in people], **identity)
+    return set(handed) - {"gcal:m1"}
+
+
+def test_our_own_attendees_never_anchor_a_meeting(monkeypatch) -> None:
+    """A calendar invite lists US as attendees. Anchoring on our own people would file
+    every meeting in the company into one enormous situation.
+
+    RESTATED AS BEHAVIOUR (STEP-05, `yc2_w27_s05 · M23.C3.L-logic.V2.U04`). This pinned the text
+    `rel["node_type"] == "person" and key in internal`; who is us is now the identity's answer, a
+    colleague at a declared domain included (`03` F70), so the claim is held by what reaches
+    correlation — and the second call is its control: with the exact addresses alone, the
+    colleague at our domain gets through, which is the gap this closed."""
+    from genios_engine.platform.self_identity import SelfIdentity
+
+    us = SelfIdentity.of(addresses=["founder@gmail.test"], domains=["kitebird.test"])
+    assert _handed_to_correlation(monkeypatch, self_identity=us,
+                                  internal_emails=us.addresses) == {"ira@northwind.test"}
+    assert _handed_to_correlation(monkeypatch, internal_emails=us.addresses) == {
+        "ops@kitebird.test", "ira@northwind.test"}
+
+
+def _noise_skips_grouping(source: str) -> bool:
+    """`process_event` calls `correlate_event` exactly once, as the else-branch of a conditional
+    whose test is `is_noise` (alone, or one operand of an `or`) and whose skip branch is `[]`."""
+    import ast
+    import textwrap
+
+    tree = ast.parse(textwrap.dedent(source))
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+             and getattr(n.func, "id", None) == "correlate_event"]
+    guarded = [n for n in ast.walk(tree) if isinstance(n, ast.IfExp) and n.orelse in calls]
+    if len(calls) != 1 or len(guarded) != 1:
+        return False
+    skip, test = guarded[0].body, guarded[0].test
+    operands = (test.values if isinstance(test, ast.BoolOp) and isinstance(test.op, ast.Or)
+                else [test])
+    return (isinstance(skip, ast.List) and not skip.elts
+            and any(isinstance(o, ast.Name) and o.id == "is_noise" for o in operands))
 
 
 def test_a_newsletter_never_joins_a_customers_situation() -> None:
     """A marketing blast naming one of your contacts must not become evidence in a live
     deal. The mention still creates the node and keeps every fact — only the grouping is
-    skipped, matching how noise already gets no network edges."""
+    skipped, matching how noise already gets no network edges.
+
+    RESTATED BY THE AST (STEP-05, `yc2_w27_s05 · M23.C3.L-logic.V2.U02`). This held the exact text
+    `[] if is_noise else correlate_event(`; an archive now skips the grouping too
+    (`is_noise or metadata_only`), so the spelling grew an operand and the claim did not. It now
+    holds what the text meant — and more: the call is the ONLY `correlate_event` in the function,
+    so a second, unguarded one fails it. The control below proves it still fails without the skip.
+    """
+    import inspect
+
+    from genios_engine.context.pipeline import process_event
+    assert _noise_skips_grouping(inspect.getsource(process_event))
+
+
+def test_the_restated_pin_fails_without_the_noise_skip() -> None:
+    """The negative control: the live source with `is_noise` taken out of the skip — and with
+    the skip gone altogether — must both fail the pin."""
     import inspect
 
     from genios_engine.context.pipeline import process_event
     source = inspect.getsource(process_event)
-    assert "[] if is_noise else correlate_event(" in source
+    live = "[] if (is_noise or metadata_only) else correlate_event("
+    assert source.count(live) == 1, "the live spelling moved; restate this control"
+    assert not _noise_skips_grouping(source.replace(
+        live, "[] if metadata_only else correlate_event("))
+    assert not _noise_skips_grouping(source.replace(live, "correlate_event("))
 
 
 def test_a_person_is_lifted_to_their_company_before_anchoring() -> None:

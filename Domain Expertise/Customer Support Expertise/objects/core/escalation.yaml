@@ -761,7 +761,7 @@ inference_patterns:
       path: thread.last_inbound
       op: '>='
       value:
-        baseline: reply_cadence
+        baseline: write_interval
         mult: 2
         floor: 3
     yields:

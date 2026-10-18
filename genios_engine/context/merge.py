@@ -61,6 +61,14 @@ _NODE_REFERENCES: tuple[tuple[str, str], ...] = (
 #     sharing the merged node would collide. Handled by _merge_proposals.
 _CORRELATION_HANDLED_SEPARATELY = ("context_correlations", "anchor_node_id")
 
+#: ⛔ `graph_edges` names a node TWICE, so it cannot join the generic loop above: the two
+#: columns need the self-edge close and the interaction-count dedup below, which a single
+#: `update … set {column}=:surv` cannot express. ⛔ DECLARED rather than spelled inline,
+#: because `platform/receipts` now DERIVES the "nothing points at an absorbed node" claim
+#: from these three constants — an inline tuple here would be a copy that drifts, which is
+#: the rule `_ILLEGAL_TRANSITION_SQL` follows for the learning lifecycle edges.
+_EDGE_NODE_COLUMNS: tuple[str, ...] = ("from_node_id", "to_node_id")
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -308,7 +316,7 @@ def apply_merge(conn, *, org_id: str, survivor_node_id: str, merged_node_id: str
         moved[f"{table}.{column}"] = conn.execute(text(
             f"update {table} set {column}=:surv where org_id=:o and {column}=:merged"),
             {"surv": survivor_node_id, "o": org_id, "merged": merged_node_id}).rowcount
-    for column in ("from_node_id", "to_node_id"):
+    for column in _EDGE_NODE_COLUMNS:
         moved[f"graph_edges.{column}"] = conn.execute(text(
             f"update graph_edges set {column}=:surv where org_id=:o and {column}=:merged"),
             {"surv": survivor_node_id, "o": org_id, "merged": merged_node_id}).rowcount

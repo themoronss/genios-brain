@@ -95,10 +95,11 @@ def test_an_unreadable_corpus_does_not_stop_the_shipped_packs(monkeypatch):
     assert len(BUILTIN_PACKS) == 4
 
 
-def test_today_the_three_corpora_are_all_hand_written():
-    """A live statement, not a fixture: every authored corpus currently has its own pack module,
-    so nothing is synthesised. When that stops being true this test says so."""
-    assert _corpus_packs() == []
+def test_today_one_corpus_is_synthesised_and_it_is_the_founder_office():
+    """A live statement, not a fixture. The three shipped corpora have their own pack modules; the
+    Founder Office (STEP-11, `06` D2) is the first authored corpus whose lane is synthesised — the
+    case `_corpus_packs` was written for. When another joins, this test says so."""
+    assert [pack["id"] for pack in _corpus_packs()] == ["founder_office"]
 
 
 def test_the_registry_registers_both_sets():

@@ -1,0 +1,21 @@
+STEP-08 check, 2026-10-07, speedrun008 @ 18b41f0f, scratch Postgres (fresh database s08_check_b)
+measure_resync.py over golden cases F01 F02 F03 F09 F16 F32 — cassettes only, no model spend.
+
+Each case is run through today's chain; the mail today's gate ARCHIVES is rewritten to the shape
+production holds for the 258 mails the old gate deleted (outcome dropped, no raw_payloads, no
+prepared_content, no attention tier). Then:
+
+                                   F01  F02  F03  F09  F16  F32   total
+archived by today's gate             1    4    3    1    1    3      13
+1 re-list as today: duplicate        1    4    3    2*   2*   3      15 (*the founder's own sent mail too)
+2 unread.set_aside frees             0    0    0    0    0    0       0   (it matches outcome='emitted' only)
+3 set aside + recover_orphans        emitted, 0 payloads — in every case (the hazard)
+4 key freed, outcome kept:
+    landed again                     1    4    3    1    1    3      13  all archived, all with payload
+5 finish: old rows superseded        1    4    3    1    1    3      13
+6 a second re-list: duplicate        all — nothing lands twice
+model misses                         0    0    0    0    0    0       0
+
+Without the company brief (STEP-07) every one of the 13 comes back ARCHIVED — kept, readable,
+not read. The brief's watchlist (the portal) and connector (the intro agent) are what make F01,
+F02, F03 and F09's mail come back DEEP, i.e. read.

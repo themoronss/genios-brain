@@ -86,9 +86,14 @@ def test_a_declared_dark_domain_is_not_flagged_as_a_surprise():
     """Sensitivity — the flag must distinguish, or it flags everything."""
     from genios_engine.reason.unroutable import tally_unroutable
 
+    # `general`, not `fundraising`: since STEP-11 (2026-10-09) fundraising maps to the Founder Office
+    # and is declared dark no more, so an unroutable fundraising row WOULD be a surprise.
     counts: dict = {}
-    tally_unroutable(counts, l2_domain="fundraising", situation_type="investor_contact")
+    tally_unroutable(counts, l2_domain="general", situation_type="relationship")
     assert "unroutable_undeclared" not in counts
+    counts = {}
+    tally_unroutable(counts, l2_domain="fundraising", situation_type="investor_contact")
+    assert counts["unroutable_undeclared"] == 1
 
 
 def test_the_sweep_calls_it_rather_than_incrementing_by_hand():

@@ -168,11 +168,105 @@ def test_a_lane_nobody_declared_is_counted_as_unrouted_not_dropped():
 
 # ── the receipt ───────────────────────────────────────────────────────────────────────────────
 
+def test_the_l5_receipt_count_is_six_and_they_are_the_measured_six():
+    """⛔ L4's OWN DOCSTRING PROMISED THIS GUARD EXISTED HERE, AND IT DID NOT.
+
+    `tests/platform/test_activation_changes_the_pass.py` argues for per-layer receipt counts
+    instead of a global total — *"the cheap fix for that is to bump the number, which is how a
+    decision gate becomes a rubber stamp"* — and ends: *"L5's own count is guarded in
+    `tests/deliver/test_nothing_dies_of_low_confidence.py`."* This file held only PRESENCE filters.
+    So the rule was stated and half-unenforced, and the sentence pointing here was stale.
+
+    ⛔ TWO -> FIVE ACROSS 2026-10-01, every one a decision rather than a bump:
+
+        the lane receipt            M13 STEP-01  (ERRORs until `0190` is applied)
+        decisions become tracked commitments                        pre-existing
+        no delivery attempt is left unsettled long enough to be ambiguous   STEP-06
+        no card outlives its own window in a live state                     STEP-10
+        a card parked for want of a channel is revived when one appears     STEP-10
+
+    ⛔ AND STEP-10 REJECTED TWO CANDIDATES FOR MEASURED REASONS, which is why this is five and not
+    seven: a delivery row with no attempt is structurally 0 while the v2 path writes nothing, and a
+    card delivered on an adapter-less channel is impossible because `outbox.py:935` parks it first.
+    **A receipt that cannot fail is not a gate.**
+
+    ⛔ FIVE -> SIX ON 2026-10-06, a decision: STEP-04 (`yc2_w27_s04 · M22.C6.L-logic.V2.U02`,
+    `speedrun008/YC-II W27/STEP-04` §8.4 C6) —
+
+        no open card's subject is one of us                                 STEP-04
+
+    and it can fail: `tests/platform/test_no_card_is_about_us.py` seeds an open card whose subject is
+    the founder's name, the org's name, `orgs.email`, a declared address, or an address at a declared
+    domain, and the receipt counts each. The count moved in the same session as the receipt and was caught by the next whole run,
+    not by the commit that added it — recorded so the next receipt moves this line in its own diff.
+
+    ⛔ SIX -> SEVEN ON 2026-10-07, a decision: STEP-06 (`yc2_w27_s06 · M24.C4.L-integration.V3.U01`,
+    `speedrun008/YC-II W27/STEP-06` §8.3–§8.4 C4) —
+
+        every expired card says why                                         STEP-06
+
+    and it can fail: `tests/platform/test_every_expired_card_says_why.py` expires a card by raw SQL
+    after STEP-06's migration and the receipt counts it, while one expired through
+    `platform/card_lifecycle` and one from before the migration (`06` D24) are not counted. Moved in
+    the unit's own diff, as the note above asks.
+
+    ⛔ SEVEN -> EIGHT ON 2026-10-16, a decision: STEP-16 (`yc2_w27_s16 · M47.C3.L-integration.V2.U03`,
+    `speedrun008/YC-II W27/STEP-16` §8.4 item 9) —
+
+        every verified card names what closed it                            STEP-16
+
+    and it can fail: `tests/platform/test_a_verified_card_names_what_closed_it.py` writes a verified
+    resolution naming no event (three shapes) and the receipt counts it; one resolved through
+    `platform/card_lifecycle.resolve_cards` names its event and passes, and none in scope is
+    NOT_EXERCISED. Moved by the guard run of its group, recorded as the note above asks.
+
+    ⛔ SCOPED TO L5, like L4's. A ninth means something was added without a decision.
+    """
+    from genios_engine.platform import receipts as R
+
+    l5 = [r.claim for r in R.receipts(None) if r.layer == "L5"]
+    assert len(l5) == 8, f"L5 receipt count moved: {l5}"
+    assert set(l5) == {
+        "every delivered card carries a lane, or is labelled unrouted",
+        "decisions become tracked commitments",
+        "no delivery attempt is left unsettled long enough to be ambiguous",
+        "no card outlives its own window in a live state",
+        "a card parked for want of a channel is revived when one appears",
+        "no open card's subject is one of us",
+        "every verified card names what closed it",
+        "every expired card says why",
+    }
+
+
+# ⛔ A SECOND TEST WAS WRITTEN HERE, RAN, AND WAS DELETED — recorded because the reason is the
+# useful part. It asserted that this file pins no GLOBAL receipt total, by scanning its own module
+# source for `len(receipts(None))`. **It failed on its own assertion string**: the forbidden text
+# appears in the `assert` line that forbids it, and excluding the line by value is the exact
+# blunt-grep family that has bitten this programme seventeen times.
+#
+# It cannot be written in that shape, and it does not need to be. The real guard is the count above,
+# which counts L5's receipts ONLY — so a global literal added here would not make it pass, it would
+# simply be a second, weaker assertion beside a correct one. L4's docstring already carries the
+# argument, and the full suite already caught the one time somebody (me, in STEP-06) added a global
+# literal anyway. **A convention is enforced by the guard that implements it, not by a test that
+# greps for its own prose.**
+
+
 def test_a_card_with_no_lane_at_all_has_a_receipt():
     from genios_engine.platform import receipts as R
 
-    found = [r for r in R.receipts(None) if "lane" in r.claim]
-    assert found, "no receipt asks whether a delivered card knows what kind of output it is"
+    # ⛔ THE EXACT CLAIM, AND THIS USED TO BE `if "lane" in r.claim` THEN `found[0]`.
+    # Three receipts contain the substring: this one, L6's *"the delivery control **p-lane** has
+    # run"* — `lane` inside `plane` — and, from 2026-10-03, L1's *"no warm-**lane** row is parked
+    # where nothing can see it"*. The test passed only because this one happened to come first in
+    # the list, and it broke the day a receipt was added above it. ⛔ *A grep hands over a sentence
+    # without its subject*, and a lookup that takes `[0]` of a substring match is that grep.
+    # `tests/platform/test_a_receipt_lookup_is_unambiguous.py` now fails on any such collision.
+    found = [r for r in R.receipts(None)
+             if r.claim == "every delivered card carries a lane, or is labelled unrouted"]
+    assert len(found) == 1, (
+        "the lane receipt's claim was reworded; name the new wording here rather than widening "
+        "the match back to a substring")
     receipt = found[0]
     assert receipt.layer == "L5"
     assert "output_lane is null" in receipt.sql
@@ -185,7 +279,8 @@ def test_the_receipt_treats_unrouted_as_an_answer():
     decision that, under the spend limit, no production row can currently have."""
     from genios_engine.platform import receipts as R
 
-    receipt = [r for r in R.receipts(None) if "lane" in r.claim][0]
+    receipt = next(r for r in R.receipts(None)
+                   if r.claim == "every delivered card carries a lane, or is labelled unrouted")
     assert "unrouted" not in receipt.sql
 
 

@@ -286,3 +286,221 @@ receipt has been failing with one number and no breakdown for the whole programm
 **State at handoff:** full suite **14,534 passed, 0 failed**. Production receipts **21 PASS, 7 FAIL,
 1 ERROR** of 29 — and not one of the failures is a mis-asked question. Every remaining red is a true
 statement about a real gap with a named mover, which is what makes this list short.
+
+---
+---
+
+# 2026-10-01 · FOUR MORE BRIEFS — L4 round 2
+
+⛔ **Read `speedrun008/YCW27/layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md` first.**
+`executive/` needs no build work; these four are about what it **built and never calls**, plus two
+findings one layer either side.
+
+⛔ **And none of them produces a card until DECISION #5 is answered.** They are worth building
+anyway — U1 most of all, because it is what makes the stop visible — but do not expect a card.
+
+## BRIEF A · the receipt that says the queue is empty, and why
+
+**File** `genios_engine/platform/receipts.py` — a 32nd claim.
+**Claim** *"no reasoning era selects zero candidates."*
+
+⛔ **A CONJUNCTION, NOT A COUNT.** A high defer rate is healthy: the old era deferred 8,208 times
+and still produced 1,157 decisions. The defect is `count(*) > 0 and count(selected_candidate_id) = 0`
+over a window.
+
+⛔ **The lower bound comes from a FUNCTION, never a literal.** `reason/unit_health.neutral_default_boundary()`
+is the pattern — a copied date goes stale and the receipt becomes a monument. See
+`tests/platform/test_the_frozen_formula_receipt_is_dated.py`.
+
+**Success condition** ⛔ the receipt goes **RED** against production today. "It goes green" is the
+wrong test — a receipt that is green on a stopped product is the thing it exists to prevent.
+
+## BRIEF B · `assignment.resolve_approver_seat` reaches a live path
+
+**Files** `genios_engine/executive/sweep.py` (`plan_commitments`) ·
+`genios_engine/executive/unreached.py` (delete the entry).
+
+Resolve the approver beside the owner when `context.requires_approval` is set.
+
+⛔ **Three outcomes, and only one may name anybody.** `AuthorityView.resolve` returns `enforced`
+(may name a seat), `suggested` (observed behaviour matched — a human must confirm) or
+`no_authority_rule` (the org holds no rule, which is **NOT** "anyone may approve"). Eight tests
+already pin this. **`None` stays `None`** and the card says *"sign-off needed"* naming nobody,
+which is correct.
+
+⛔ **Delete the `unreached.UNREACHED` entry in the SAME commit.**
+`tests/test_the_executive_says_what_it_does_not_call` checks both directions — an entry naming a
+function that is now called is as much a lie as a function unreached and undeclared. **That test
+going red is how you know you forgot.**
+
+## BRIEF C · the escalation names the step it is waiting on
+
+**Files** `genios_engine/executive/monitor.py` (tests first) ·
+`genios_engine/executive/escalation.py` (copy) · `unreached.py` (delete the entry).
+
+Today every stalled-commitment escalation says *"your Acme follow-up is stalled"*. It should say
+*"stuck on getting it approved"*. `escalation.py` and `deliver/` contain **zero** references to a
+blocking step — verified.
+
+⛔ **`monitor.blocking_action` has NO TESTS.** It is the only `UNREACHED` entry in that state.
+**Write them first.** Building on an untested function is how an untested function becomes a wrong
+one.
+
+⛔ **Timing does not move, and the plan stays immutable.** This is escalation **copy**, not ladder
+**policy** — day 1/3/7/14 and `max_rungs: 6` are untouched. And the field goes on the **rung**,
+never on the plan: execution objects are frozen and content-addressed so *"why did this escalate on
+day 7?"* stays answerable months later.
+
+## BRIEF D · two findings, one either side of L4
+
+| | Finding | File |
+|---|---|---|
+| **F9** | ⛔ `source_events.occurred_at` max = **2056-04-20** — a date 30 years in the future. Measure the blast radius first (how many reads order or window on it), then bound it at ingest. ⛔ **The bound is the unit; the row is the symptom** | `capture/` |
+| **F10** | 708 of 2,681 outputs carry no `ranking_weights_version` — exactly the `legacy.rule` + `legacy.score_gate` count. Either the lane records its weights or it **declares that it has none**, in `unit_health.py`'s shape: a reason and a mover | `reason/` |
+
+## ⛔ DO NOT BUILD
+
+| | Why |
+|---|---|
+| **G3 brief push** · **G4 preventive push** | both need a **product number** — *how many warnings a founder should see a day* — and `unreached.PULL_ONLY` spells out why a naive one-card-per-finding would spend the whole daily budget on warnings. Building the threshold by guessing it is building a guess |
+| the reporting line | ⛔ **not code.** `readiness.py:66` already says what to do: set `org_seats.manager_seat_id`, or file a dated `reports_to` responsibility. It is organisation data |
+| ⛔ a fallback inside `llm_decision_maker` | that is **option C of DECISION #5** and it **changes a declared doctrine**. It needs saying out loud, not slipping in |
+
+---
+---
+
+# ⛔ 2026-10-01 · L5 ROUND 2 — four rules that will fail your build, and three briefs
+
+`deliver/` now has a declared-silence module, and `executive/unreached.py` has a second resolver.
+**Both are enforced by tests.** If you touch either package, these four will fail your build before
+anything else does.
+
+## ⛔ R-L5-1 · every public function in `deliver/` that production does not call must be DECLARED
+
+`deliver/delivery_health.py` holds **25** entries in **three** tables, and
+`tests/deliver/test_the_delivery_layer_says_what_it_does_not_call.py` enforces all of it:
+
+```
+UNCUT_OVER      12   the v2 control plane — (tier, why, measured_by, mover)
+UNREACHED       11   deliberate, explained — (why, mover)
+KNOWN_UNWIRED    2   ⛔ DEFECTS — (what is wrong, STEP-NN)
+PULL_ONLY        1   reached and routed, never pushed — NOT in DECLARED
+```
+
+**What will fail you:**
+
+| | |
+|---|---|
+| adding a public function nothing calls | `undeclared()` is non-empty |
+| declaring a function that does not exist | ⛔ **both directions are checked** — `missing()` |
+| ⛔ **wiring a declared function and leaving its entry** | `now_called()` — L4 deleted `monitor.blocking_action` the moment it was wired |
+| putting a defect in `UNREACHED` or a decision in `KNOWN_UNWIRED` | the same function in two tables has two reasons and the build cannot say which is current |
+| a `KNOWN_UNWIRED` entry with no `STEP-NN` | ⛔ it is not a parking lot |
+| an entry whose reason or mover is under ~80/20 chars | an entry that explains nothing is paperwork |
+| claiming a tier 2, 3 or 4 is measured | only tier 1 is — `outbox.shadow_resolve_v2` |
+
+⛔ **Do not "fix" a failure by widening the guard.** If your function genuinely should be uncalled,
+write the reason and the mover. If it should be called, call it.
+
+## ⛔ R-L5-2 · use `qualified_call_counts`, never `called_names`, to ask whether something is reached
+
+`executive/unreached.called_names` counts by **name alone**, so every function sharing a name shares
+one count. It resolves aliases correctly and then collapses the module.
+
+```python
+# ⛔ WRONG — any method named `read` anywhere in the engine votes for this
+called_names(sources).get("read", 0)
+
+# RIGHT
+qualified_call_counts(sources).get(("readiness", "read"), 0)
+```
+
+Measured 2026-10-01: switching L4's own guard found **five** `executive/` functions that had read as
+reached and are not. `readiness.read` had **11** apparent callers and zero real ones.
+
+⛔ **Both resolvers stay, and the asymmetry is deliberate** — `called_names` is still correct for
+*"what names does this file call"*. **A call resolved by name alone is a call to any function with
+that name.**
+
+## ⛔ R-L5-3 · a measurement may never kill what it measures
+
+`deliver/pipeline.py`'s own rule, written for `collapse_unmeasured`: *"a receipt that can abort the
+thing it is a receipt for turns an accounting failure into a product failure."*
+
+So the recall guard at the end of `build_cards_for_org`:
+
+| | |
+|---|---|
+| unbalanced tally | recorded in `out`, **warned**, never raised |
+| the guard itself throws | `out["lane_recall_unmeasured"] = 1` |
+| ⛔ **and those two states must stay distinguishable** | *"I could not measure this"* and *"I measured it and it is wrong"* are different sentences. A mutation that collapsed them survived 12 tests until one assertion was added |
+
+## ⛔ R-L5-4 · no comment in `deliver/` may claim a declared-uncalled function is called
+
+`tests/deliver/test_a_comment_is_not_a_measurement.py` walks every COMMENT token in the package
+against all 25 declared entries, with a closed verb set (`fired by`, `called by`, `invoked by`,
+`triggered by`, …).
+
+⛔ **And `push.py`'s header must name every `push_*` entry point**, because it announces a count:
+*"Two flavours"* with one bullet is how a deleted bullet leaves its tail behind, parsing as English
+attached to the wrong bullet.
+
+---
+
+# ⛔ BRIEF E · `card_builder.resolved_person_name` — a measured defect, built and never wired
+
+`deliver/card_builder.py:610` carries its own measurement: ***"35 of 38 person cards named an address
+in the headline"***, and a `mention:person` observation carries the real name. Somebody measured 38
+cards, found 35 broken, wrote the resolver, and **never called it.**
+
+| | |
+|---|---|
+| **do** | call it on the person-card headline path. ⛔ The fallback **stays**: no `mention:person` observation → keep the address. **Null is an answer**; never invent a name |
+| ⛔ **the real risk** | `invention_ok` (`render.py:334`) refuses any name not in the grounded corpus. A `mention:person` observation **is** in the corpus, so this should pass — **assert it, do not predict it** |
+| ⛔ **the absolute rule** | if a resolved name fails `invention_ok`, **the fix is wrong, not the validator.** Never weaken a verify to make it pass |
+| **do not** | trust the 35. It predates M13's card rebuild and no signal has been routed since 2026-09-25. ⛔ The wiring is justified by the function being correct, **not** by the number |
+| **then** | delete its `KNOWN_UNWIRED` entry, or `now_called()` fails your build |
+
+Spec: `layer-5-delivery/STEP-08-TO-BUILD-the-headline-fix-nobody-wired.md`.
+
+---
+
+# ⛔ BRIEF F · `outbox.revive_undeliverable` — a stated product promise with no caller
+
+*"Re-open every row this org parked only because it had nowhere to send it… **This is the answer to
+'a card must become deliverable the moment a channel exists'.** The alternative designs were
+considered and rejected."* **Nothing calls it.**
+
+The failure has a shape: **a tenant registers Slack on Tuesday, and every card parked before Tuesday
+stays parked.**
+
+| | |
+|---|---|
+| ⛔ **measure first** | *when* does a channel come into existence? Three candidate triggers, different properties — read `STEP-15 §3` before writing a line |
+| ⛔ **the risk nobody has checked** | a revived card must not resurrect one whose `expires_at` has passed. `store.py:317` expires non-terminal cards and logs `window.lapsed` into **L6's ignore-rate** — so a careless revive feeds a different layer a delivery for a closed window |
+| **keep narrow** | *"only because it had nowhere to send it"* is a narrow predicate and must stay narrow. `outbox.py` records that conflating this with a terminal failure *"burned the card forever"* |
+
+Spec: `layer-5-delivery/STEP-15-TO-BUILD-a-card-must-become-deliverable.md`.
+
+---
+
+# ⛔ BRIEF G · nine packages have never been asked what they do not call
+
+**147 top-level public functions across the engine are unreached by production and declared
+nowhere** — 18 hidden by the old resolver, **129 visible to both resolvers all along**.
+
+```
+context 48 · reason 29 · platform 26 · feedback 17 · capture 8 · contracts 8 · mcp 5 · packs 3 · api 3
+```
+
+| | |
+|---|---|
+| ⛔ **147 is NOT 147 defects** | L5's 24 were 12 un-cut-over, 7 deliberate, **5** defects — and `deliver/` was unusual in carrying a second architecture. **Extrapolating is the mistake this brief exists to prevent** |
+| ⛔ **a level, not a unit** | one unit per package, in data-flow order. `capture/` (8) first — **not** because it is smallest, but because the generalised guard has never run against a package with no declaration module |
+| ⛔ **two exclusions must be settled first** | **25** functions are decorator-registered route handlers with no Python caller by design; and `scripts/` is outside the source set, so a CLI-only function reads as unreached. **Deciding that after writing 25 declarations is the expensive order** |
+| ⛔ **check the import direction** | `capture/` is layer 1 and cannot import `executive/` (5). The extraction target is `platform/` (CROSS_CUTTING) — **confirm, do not assume** |
+| **do not** | add a global receipt or declaration count. ⛔ Count guards are **per layer**: *"the cheap fix for that is to bump the number, which is how a decision gate becomes a rubber stamp"* |
+
+Audit: `18-AUDIT-the-engine-wide-reachability-gap.md`. Spec:
+`layer-5-delivery/STEP-17-TO-BUILD-nine-packages-nobody-asked.md`. ⛔ **It is the LAST thing in the
+programme, not the next** — L5's own steps 08–11 come first.

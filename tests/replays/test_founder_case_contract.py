@@ -1,0 +1,508 @@
+"""STEP-01 · the founder case is a type with rules, and an empty set fails.
+
+    pytest tests/replays/test_founder_case_contract.py -q
+
+The founder set is the second exam (`speedrun008/YC-II W27/` STEP-01 §1). Its cases are synthetic —
+invented names and text, modelled on the real items by sender and date only — and each one is judged
+against the real chain. These tests hold the contract the cases are written against, on cases built
+here, so the rules are proven before a single case is authored:
+
+  * a must-abstain case carries a WITNESS. Today nothing gets a card, so an abstain case without
+    one would pass on nothing — the "a pass over an empty table is not a pass" defect;
+  * what the engine cannot express yet (workstream, stage, lane, the brief) is DECLARED with its
+    reason, never silently skipped and never counted as a pass;
+  * no real person or organisation from the founder's mailbox appears anywhere in a case;
+  * an empty or missing set is an error, never "0 cases passed".
+"""
+from __future__ import annotations
+
+import copy
+import json
+from datetime import datetime, timezone
+
+import pytest
+
+from tests.replays import founder_case as fc
+from tests.replays.harness import load_specs
+
+
+def _case(**overrides) -> dict:
+    """The smallest valid must-detect case. Every test mutates one rule out of it."""
+    case = {
+        "case_id": "F90",
+        "title": "An investor asks for the deck before a partner meeting",
+        "kind": "must_detect",
+        "label_row": 10,
+        "labelled_by": "claude",
+        "replays": [],
+        "founder": {"name": "Arjun Rao", "email": "arjun@nimbuslabs.test",
+                    "company": "Nimbus Labs", "timezone": "Asia/Kolkata"},
+        "sweeps": ["2026-09-18T12:00:00Z"],
+        "objects": [{
+            "id": "ask", "source": "gmail", "sweep": 0,
+            "occurred_at": "2026-09-18T09:30:00Z",
+            "from": "Kavya Menon <kavya@lotusvc.test>", "to": ["arjun@nimbuslabs.test"],
+            "thread": "t-lotus", "subject": "Deck before Monday?",
+            "body": "Hi Arjun, could you send the latest deck before our partners meet on Monday?",
+            "labels": ["INBOX", "IMPORTANT"],
+        }],
+        "expected": {
+            "gate": {"ask": "emitted"},
+            "memory": {"ask": True},
+            "cards": [{"about": ["Kavya", "Lotus"], "min": 1, "max": 1,
+                       "mentions": ["deck"]}],
+            "workstream": "investor",
+            "lane": "decision",
+        },
+        "forbidden": {"names": [], "phrases": ["last chance"]},
+        "witness": None,
+        "not_expressible": {
+            "workstream": "STEP-09 — the engine forms no workstream yet",
+            "lane": "F10 — cards.output_lane is written NULL",
+        },
+    }
+    case.update(overrides)
+    return case
+
+
+def _abstain(**overrides) -> dict:
+    case = _case(case_id="F91", kind="must_abstain",
+                 title="A program newsletter is archived, never a card")
+    case["expected"] = {"gate": {"ask": "dropped"},
+                        "cards": [{"about": ["Lotus"], "min": 0, "max": 0}]}
+    case["not_expressible"] = {}
+    case["witness"] = {"stage": "gate", "objects": ["ask"]}
+    case.update(overrides)
+    return case
+
+
+def _parse(case: dict) -> fc.FounderCase:
+    return fc.parse_case(copy.deepcopy(case), source="test.json")
+
+
+# =================================================================================================
+# 1 · a valid case parses into the shape the runner and the marking read
+# =================================================================================================
+def test_a_valid_case_parses_with_its_instants_objects_and_expectations():
+    case = _parse(_case())
+    assert case.case_id == "F90" and case.kind == "must_detect"
+    assert case.sweeps == (datetime(2026, 9, 18, 12, 0, tzinfo=timezone.utc),)
+    (obj,) = case.objects
+    assert obj.object_id == "ask" and obj.source == "gmail" and obj.sweep == 0
+    assert obj.sender_email == "kavya@lotusvc.test"
+    assert case.expected_gate == {"ask": "emitted"} and case.expected_memory == {"ask": True}
+    (card,) = case.cards
+    assert card.min == 1 and card.max == 1 and card.about == ("Kavya", "Lotus")
+    assert card.mentions == ("deck",)
+    assert case.expressible("cards") and case.expressible("gate")
+    assert not case.expressible("workstream") and not case.expressible("lane")
+    assert "STEP-09" in case.not_expressible["workstream"]
+
+
+def test_a_gmail_object_becomes_the_message_the_provider_would_return():
+    """The runner hands the REAL connector mapping a provider-shaped message, so the header class —
+    labels, List-Unsubscribe, the attachment parts — is read by production code, not re-typed."""
+    raw = _case()
+    raw["objects"][0]["headers"] = {"List-Unsubscribe": "<mailto:u@lotusvc.test>"}
+    raw["objects"][0]["attachments"] = [{"filename": "deck.pdf", "mime": "application/pdf",
+                                         "fetch": "refused"}]
+    message = _parse(raw).objects[0].provider_message()
+    headers = {h["name"]: h["value"] for h in message["payload"]["headers"]}
+    assert headers["From"] == "Kavya Menon <kavya@lotusvc.test>"
+    assert headers["To"] == "arjun@nimbuslabs.test" and headers["Subject"] == "Deck before Monday?"
+    assert headers["List-Unsubscribe"] == "<mailto:u@lotusvc.test>"
+    assert message["labelIds"] == ["INBOX", "IMPORTANT"] and message["threadId"] == "t-lotus"
+    parts = message["payload"]["parts"]
+    assert parts[0]["mimeType"] == "text/plain"
+    assert parts[1]["filename"] == "deck.pdf" and parts[1]["body"]["attachmentId"]
+    assert message["messageTimestamp"] == "2026-09-18T09:30:00+00:00"
+
+
+def test_a_calendar_object_becomes_the_event_the_provider_would_return():
+    raw = _case()
+    raw["objects"].append({
+        "id": "call", "source": "gcal", "sweep": 0, "occurred_at": "2026-09-18T10:00:00Z",
+        "summary": "Nimbus x Lotus", "start": "2026-09-22T10:00:00Z",
+        "end": "2026-09-22T10:30:00Z", "organizer": "kavya@lotusvc.test",
+        "attendees": ["kavya@lotusvc.test", "arjun@nimbuslabs.test"]})
+    event = _parse(raw).objects[1].provider_event()
+    assert event["summary"] == "Nimbus x Lotus"
+    assert event["start"] == {"dateTime": "2026-09-22T10:00:00Z"}
+    assert {a["email"] for a in event["attendees"]} == {"kavya@lotusvc.test",
+                                                        "arjun@nimbuslabs.test"}
+    assert any(a.get("self") for a in event["attendees"]), "the founder's own entry is `self`"
+
+
+# =================================================================================================
+# 2 · the rules a case is written against
+# =================================================================================================
+def test_a_must_abstain_case_without_a_witness_is_refused():
+    with pytest.raises(fc.CaseError, match="witness"):
+        _parse(_abstain(witness=None))
+
+
+def test_a_must_abstain_case_with_a_witness_parses():
+    case = _parse(_abstain())
+    assert case.witness.stage == "gate" and case.witness.objects == ("ask",)
+    assert case.cards[0].max == 0
+
+
+def test_a_witness_names_a_stage_the_runner_reports():
+    with pytest.raises(fc.CaseError, match="stage"):
+        _parse(_abstain(witness={"stage": "vibes", "objects": ["ask"]}))
+
+
+def test_a_must_detect_case_expects_at_least_one_card():
+    raw = _case()
+    raw["expected"]["cards"][0]["min"] = 0
+    with pytest.raises(fc.CaseError, match="must_detect"):
+        _parse(raw)
+
+
+def test_what_the_engine_cannot_express_must_be_declared_with_its_reason():
+    raw = _case()
+    del raw["not_expressible"]["workstream"]
+    with pytest.raises(fc.CaseError, match="workstream"):
+        _parse(raw)
+
+
+def test_a_declared_gap_needs_a_reason():
+    raw = _case()
+    raw["not_expressible"]["lane"] = "  "
+    with pytest.raises(fc.CaseError, match="reason"):
+        _parse(raw)
+
+
+@pytest.mark.parametrize("where", ["body", "subject", "from", "title", "forbidden"])
+def test_no_real_name_from_the_mailbox_appears_anywhere(where):
+    raw = _case()
+    real = sorted(fc.REAL_NAMES)[0]
+    if where == "body":
+        raw["objects"][0]["body"] += f" Regards from {real.title()}."
+    elif where == "subject":
+        raw["objects"][0]["subject"] = f"Re: {real}"
+    elif where == "from":
+        raw["objects"][0]["from"] = f"Someone <x@{real.lower().replace(' ', '')}.com>"
+    elif where == "title":
+        raw["title"] = f"About {real}"
+    else:
+        raw["forbidden"]["names"] = [real]
+    with pytest.raises(fc.CaseError, match="real name"):
+        _parse(raw)
+
+
+def test_the_deny_list_matches_whole_words_not_fragments():
+    """`Sal` is on the list; `salary` and `Salesforce` are not that person."""
+    raw = _case()
+    raw["objects"][0]["body"] += " The salary band is attached."
+    assert "sal" in {n.lower() for n in fc.REAL_NAMES}
+    _parse(raw)
+
+
+def test_an_expectation_must_name_an_object_of_the_case():
+    raw = _case()
+    raw["expected"]["memory"] = {"nope": True}
+    with pytest.raises(fc.CaseError, match="nope"):
+        _parse(raw)
+
+
+def test_an_object_cannot_land_after_the_sweep_that_reads_it():
+    raw = _case()
+    raw["objects"][0]["occurred_at"] = "2026-09-18T12:00:01Z"
+    with pytest.raises(fc.CaseError, match="after"):
+        _parse(raw)
+
+
+def test_sweeps_are_ordered_and_timezone_aware():
+    with pytest.raises(fc.CaseError, match="order"):
+        _parse(_case(sweeps=["2026-09-18T12:00:00Z", "2026-09-17T12:00:00Z"]))
+    with pytest.raises(fc.CaseError, match="timezone"):
+        _parse(_case(sweeps=["2026-09-18T12:00:00"]))
+
+
+def test_who_labelled_it_is_one_of_two():
+    with pytest.raises(fc.CaseError, match="labelled_by"):
+        _parse(_case(labelled_by="intern"))
+
+
+def test_an_unknown_key_is_a_typo_not_an_extension():
+    with pytest.raises(fc.CaseError, match="expectd"):
+        _parse(_case(expectd={}))
+
+
+def test_a_gate_expectation_uses_the_capture_vocabulary():
+    raw = _case()
+    raw["expected"]["gate"] = {"ask": "kept"}
+    with pytest.raises(fc.CaseError, match="kept"):
+        _parse(raw)
+
+
+def test_a_case_can_expect_a_mail_archived_with_its_rule():
+    """STEP-03 (`yc2_w27_s03/M21.C5.L-contract.V0.U01`): the gate archives what it used to drop — kept,
+    read by no model — so a case can say exactly that, with the rule (`archived:N-02`)."""
+    raw = _case()
+    raw["expected"]["gate"] = {"ask": "archived:N-02"}
+    assert _parse(raw).expected_gate == {"ask": "archived:N-02"}
+    assert "archived" in fc.GATE_OUTCOMES
+
+
+def test_a_founder_can_have_other_addresses_and_declared_company_domains():
+    """STEP-04 (`yc2_w27_s04/M22.C5.L-contract.V0.U01`): production's founder writes from Gmail, has a
+    second address that only ever receives (`ceo@<company>`), and a company domain — the shape the
+    golden set did not have, which is why it showed none of the "who is us" defects."""
+    raw = _case()
+    raw["founder"] = {"name": "Meera Iyer", "email": "Meera.Iyer@gmail.com", "company": "Kitebird",
+                      "timezone": "Asia/Kolkata", "also": ["CEO@kitebird.test"],
+                      "domains": ["Kitebird.test"]}
+    raw["objects"][0]["to"] = ["meera.iyer@gmail.com"]
+    founder = _parse(raw).founder
+    assert (founder.email, founder.also, founder.domains) == (
+        "meera.iyer@gmail.com", ("ceo@kitebird.test",), ("kitebird.test",))
+    assert founder.addresses == ("meera.iyer@gmail.com", "ceo@kitebird.test")
+
+
+def test_a_founder_without_them_has_none():
+    founder = _parse(_case()).founder
+    assert (founder.also, founder.domains) == ((), ())
+    assert founder.addresses == ("arjun@nimbuslabs.test",)
+
+
+@pytest.mark.parametrize("field, value, message", [
+    ("also", ["not-an-address"], "address"),
+    ("domains", ["gmail.com"], "public"),
+    ("domains", ["@"], "domain"),
+])
+def test_a_bad_identity_declaration_is_refused(field, value, message):
+    raw = _case()
+    raw["founder"][field] = value
+    with pytest.raises(fc.CaseError, match=message):
+        _parse(raw)
+
+
+def test_a_message_may_name_the_mailbox_it_arrives_in():
+    """STEP-10 (`yc2_w27_s10/M29.C6.L-integration.V0.U01`, D40): the founder has two mailboxes, and
+    each lands through a connection of its own — what a file's coverage receipt names."""
+    raw = _case()
+    raw["objects"][0]["mailbox"] = "personal"
+    obj = _parse(raw).objects[0]
+    assert (obj.mailbox, obj.connection_id) == ("personal", "conn_golden_gmail_personal")
+    assert _parse(_case()).objects[0].connection_id == "conn_golden_gmail", "one mailbox by default"
+
+
+@pytest.mark.parametrize("name", ["Personal", "work mail", "x" * 17, "9inbox"])
+def test_a_mailbox_name_is_short_and_plain(name):
+    raw = _case()
+    raw["objects"][0]["mailbox"] = name
+    with pytest.raises(fc.CaseError, match="mailbox"):
+        _parse(raw)
+
+
+# =================================================================================================
+# 3 · the set: its own folder, never read by the Atlas loader, and never empty
+# =================================================================================================
+def test_an_empty_set_is_an_error_not_zero_cases(tmp_path):
+    with pytest.raises(AssertionError, match="no founder cases"):
+        fc.load_cases(tmp_path)
+
+
+def test_a_missing_set_is_an_error(tmp_path):
+    with pytest.raises(AssertionError, match="missing"):
+        fc.load_cases(tmp_path / "absent")
+
+
+def test_two_files_cannot_claim_one_case_id(tmp_path):
+    for name in ("a.json", "b.json"):
+        (tmp_path / name).write_text(json.dumps(_case()))
+    with pytest.raises(fc.CaseError, match="F90"):
+        fc.load_cases(tmp_path)
+
+
+def test_the_loader_reads_a_folder_of_cases_in_id_order(tmp_path):
+    (tmp_path / "z.json").write_text(json.dumps(_case()))
+    (tmp_path / "a.json").write_text(json.dumps(_abstain()))
+    assert [c.case_id for c in fc.load_cases(tmp_path)] == ["F90", "F91"]
+
+
+def test_the_founder_folder_is_not_read_by_the_atlas_loader():
+    """`load_specs` globs one level; the founder set lives one level down, so the twelve Atlas
+    replays stay exactly twelve however many founder cases are added."""
+    assert fc.FOUNDER_DIR.parent.name == "specs"
+    assert all(s.source and "/" not in s.source for s in load_specs())
+    assert len(load_specs()) == 12
+
+
+def test_a_known_gap_is_named_in_a_sentence():
+    assert _parse(_case(blocked_on="F04 — a meeting becomes a deadline that expires")).blocked_on
+    with pytest.raises(fc.CaseError, match="blocked_on"):
+        _parse(_case(blocked_on="todo"))
+
+
+# =================================================================================================
+# 4 · `yc2_w27_align` M34.C1.L-data.V0.U03 — the product's domain, a card that closes, a verified close
+# =================================================================================================
+def test_a_case_may_name_the_products_own_sending_domains():
+    """STEP-04 C5: the design partner's company domain is also the domain the product sends from — a
+    shape no case could hold, because production's default (`settings.platform_domains`) is a real
+    name a case may not carry."""
+    assert _parse(_case(platform_domains=["Relaygrid.test"])).platform_domains == ("relaygrid.test",)
+    assert _parse(_case()).platform_domains == ()
+
+
+@pytest.mark.parametrize("value, message", [(["not a domain"], "not a domain"),
+                                            (["gmail.com"], "public mail domain")])
+def test_a_bad_platform_domain_is_refused(value, message):
+    with pytest.raises(fc.CaseError, match=message):
+        _parse(_case(platform_domains=value))
+
+
+def _two_sweeps(**card) -> dict:
+    raw = _case(sweeps=["2026-09-18T12:00:00Z", "2026-09-19T12:00:00Z"])
+    raw["expected"]["cards"][0].update(card)
+    return raw
+
+
+def test_a_card_can_be_expected_closed_from_a_later_sweep():
+    """`09` G6: done means never raised again — from that sweep on, no card about the subject is open."""
+    assert _parse(_two_sweeps(closed_from=1)).cards[0].closed_from == 1
+    assert _parse(_case()).cards[0].closed_from is None
+
+
+@pytest.mark.parametrize("closed_from", [0, 2, "1", True])
+def test_a_closing_sweep_names_a_later_sweep_of_the_case(closed_from):
+    with pytest.raises(fc.CaseError, match="closed_from"):
+        _parse(_two_sweeps(closed_from=closed_from))
+
+
+# ── STEP-16 (`yc2_w27_s16` M47.C4.L-contract.V0.U01): how a card ends, and your acts ─────────────────────
+def test_a_card_can_be_expected_to_end_verified_by_an_object_of_the_case():
+    """`outcome` left `NOT_EXPRESSIBLE_TODAY`: a card's end is read (`context/file_outcomes`), so a case says how
+    its card ends and by what — `ended`, and `by` an object of the case."""
+    assert "outcome" not in fc.NOT_EXPRESSIBLE_TODAY
+    raw = _two_sweeps(closed_from=1, ended="verified", by="ask")
+    raw["expected"]["outcome"] = "verified by the signed NDA"
+    case = _parse(raw)
+    assert (case.cards[0].ended, case.cards[0].by) == ("verified", "ask")
+    assert case.expected_other["outcome"] == "verified by the signed NDA"
+
+
+@pytest.mark.parametrize("card, message", [
+    ({"ended": "settled"}, "ended"),
+    ({"ended": "open"}, "ended"),
+    ({"by": "ask"}, "names how it ended"),
+    ({"ended": "taken", "by": "ask"}, "verified or replied"),
+    ({"ended": "verified", "by": "nothing"}, "not an object"),
+])
+def test_an_end_is_one_the_engine_reads_and_its_proof_an_object_of_the_case(card, message):
+    with pytest.raises(fc.CaseError, match=message):
+        _parse(_two_sweeps(**card))
+
+
+def test_a_prose_outcome_needs_a_card_end_that_judges_it():
+    raw = _case()
+    raw["expected"]["outcome"] = "verified on 3 Sep by the signed NDA"
+    with pytest.raises(fc.CaseError, match="outcome"):
+        _parse(raw)
+
+
+def _acting(*acts) -> dict:
+    raw = _case(sweeps=["2026-09-18T12:00:00Z", "2026-09-19T12:00:00Z"])
+    raw["acts"] = list(acts)
+    return raw
+
+
+def test_a_case_may_carry_your_acts_after_a_sweep():
+    case = _parse(_acting(
+        {"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant",
+         "words": "Kavya wants the deck only after the partners meet.", "scope": "file"},
+        {"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "bad_timing"},
+        {"after_sweep": 0, "on": ["Kavya", "Lotus"], "correct": "Funds we met once get news on milestones only.",
+         "scope": "kind"}))
+    wrong, bare, correction = case.acts
+    assert (wrong.after_sweep, wrong.on, wrong.wrong, wrong.scope) == (0, ("Kavya", "Lotus"), "not_relevant", "file")
+    assert (bare.words, bare.scope) == (None, None)
+    assert (correction.correct, correction.wrong, correction.scope) == (
+        "Funds we met once get news on milestones only.", None, "kind")
+    assert _parse(_case()).acts == ()
+
+
+@pytest.mark.parametrize("act, message", [
+    ({"after_sweep": 2, "on": ["Kavya", "Lotus"], "wrong": "not_relevant"}, "sweep"),
+    ({"after_sweep": "0", "on": ["Kavya", "Lotus"], "wrong": "not_relevant"}, "sweep"),
+    ({"after_sweep": 0, "on": ["Somebody"], "wrong": "not_relevant"}, "a card the case expects"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "too_loud"}, "eleven reasons"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant", "words": "x", "scope": "team"},
+     "scope"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant", "scope": "file"}, "words"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"]}, "wrong or correct"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant", "correct": "x"}, "wrong or correct"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "correct": "  "}, "words"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant", "when": "now"}, "unknown key"),
+])
+def test_an_act_is_refused_at_load_when_it_could_not_be_played(act, message):
+    with pytest.raises(fc.CaseError, match=message):
+        _parse(_acting(act))
+
+
+def test_an_act_carries_no_real_name():
+    with pytest.raises(fc.CaseError, match="real name"):
+        _parse(_acting({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant",
+                        "words": "Theresa said so.", "scope": "file"}))
+
+
+# =================================================================================================
+# STEP-15 · a case's brief is an expectation like its cards (`yc2_w27_s15` M44.C5.L-contract.V0.U01)
+# =================================================================================================
+def _brief_only(**brief) -> dict:
+    case = _case()
+    case["expected"]["cards"] = [{"about": ["Kavya", "Lotus"], "min": 1, "max": 1}]
+    case["expected"]["brief"] = brief or {"says": "the deck, in today's five",
+                                          "lines": [{"section": "today", "about": ["Kavya", "Lotus"],
+                                                     "mentions": ["deck"]}]}
+    case["not_expressible"] = {**case["not_expressible"],
+                               "cards": "brief only — the founder's answer is a line in the morning brief (D12d)"}
+    return case
+
+
+def test_the_brief_is_expressible_now():
+    assert "brief" not in fc.NOT_EXPRESSIBLE_TODAY and "brief" in fc.EXPRESSIBLE_KEYS
+
+
+def test_a_brief_expectation_names_its_lines_section_subject_and_words():
+    case = _parse(_brief_only())
+    assert case.expressible("brief") and not case.expressible("cards")
+    (line,) = case.brief.lines
+    assert (line.section, line.about, line.min, line.max, line.mentions) == ("today", ("Kavya", "Lotus"), 1, 1,
+                                                                              ("deck",))
+    assert case.brief.says == "the deck, in today's five" and "brief" not in case.expected_other
+
+
+def test_a_brief_expectation_in_prose_alone_is_declared_not_expressible():
+    raw = _brief_only()
+    raw["expected"]["brief"] = "a line about the deck"
+    with pytest.raises(fc.CaseError, match="prose the marking cannot judge"):
+        _parse(raw)
+    raw["not_expressible"]["brief"] = "the line is not restated yet"
+    case = _parse(raw)
+    assert case.brief.says == "a line about the deck" and case.brief.lines == () and not case.expressible("brief")
+
+
+@pytest.mark.parametrize("brief, message", [
+    ({"says": "x", "lines": [{"section": "later", "about": ["Kavya"]}]}, "section"),
+    ({"says": "x", "lines": [{"section": "today", "about": []}]}, "about"),
+    ({"says": "x", "lines": [{"section": "today", "about": ["Kavya"], "min": 2, "max": 1}]}, "min and max"),
+    ({"says": "x", "lines": [{"section": "today", "about": ["Kavya"], "where": "top"}]}, "unknown key"),
+    ({"says": " ", "lines": [{"section": "today", "about": ["Kavya"]}]}, "says"),
+    ({"lines": [], "says": "x", "extra": 1}, "unknown key"),
+])
+def test_a_brief_expectation_that_is_not_one_is_refused(brief, message):
+    with pytest.raises(fc.CaseError, match=message):
+        _parse(_brief_only(**brief))
+
+
+def test_a_brief_line_defaults_to_exactly_one():
+    case = _parse(_brief_only(says="x", lines=[{"section": "watching", "about": ["Tara"]}]))
+    assert (case.brief.lines[0].min, case.brief.lines[0].max, case.brief.lines[0].mentions) == (1, 1, ())
+
+
+def test_a_case_with_no_brief_expectation_has_none():
+    assert _parse(_case()).brief is None

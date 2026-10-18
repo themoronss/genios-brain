@@ -57,7 +57,11 @@ def test_the_report_reads_the_compilers_own_rule_and_not_a_copy(catalog):
     """⛔ Two hand-kept copies of one rule drift. The report must call `_admission_reason`."""
     for domain, record in catalog.domains.items():
         expected_bad = sum(1 for c in record.capabilities.values() if _admission_reason(c))
-        expected_hollow = sum(1 for c in record.capabilities.values() if _hollow(c))
+        # A hollow capability is one that WAS admitted (`test_the_totals_close`): the report counts
+        # hollowness among the admitted, and so does this. The two only agreed by coincidence while
+        # every capability was admitted; STEP-11's stubs are hollow AND unadmitted.
+        expected_hollow = sum(1 for c in record.capabilities.values()
+                              if _hollow(c) and not _admission_reason(c))
         row = corpus_health(catalog)[domain]
         assert row.inadmissible == expected_bad
         assert row.hollow == expected_hollow
@@ -102,12 +106,22 @@ def test_the_measured_corpus_is_healthy_and_says_so(catalog):
     health = corpus_health(catalog)
     total = sum(r.total for r in health.values())
     admitted = sum(r.admitted for r in health.values())
-    assert total == 155, (
-        f"the corpus is {total} capabilities, not 155 — update the plan's denominator; "
+    # 160 since 2026-10-09: M30.C6.L-data.V2.U03 retired Sales' copy of investor relations, which
+    # moved to the Founder Office (one capability, not two).
+    assert total == 160, (
+        f"the corpus is {total} capabilities, not 160 — update the plan's denominator; "
         f"the 534 in the plan counted FILES, three per capability")
-    assert admitted == total, (
+    # 154 shipped, all admitted (155 until Sales' investor relations moved out); + the Founder
+    # Office's six (STEP-11), stamped one by one as Rohit accepts them (`06` D45). Nothing outside that
+    # domain may go dark.
+    founder = health["founder_office"]
+    # M30.C6.L-data.V1.U01 (investor relations) and M30.C6.L-data.V1.U02 (program applications)
+    # authored the first two: four stubs, and two unadmitted drafts awaiting the founder's review.
+    assert (founder.total, founder.admitted, founder.by_reason.get("stub"),
+            founder.by_reason.get("identity_status_not_stable")) == (6, 0, 4, 2)
+    assert admitted == total - founder.total, (
         f"{total - admitted} capabilities would go dark under require_admission=True; "
-        f"the plan's cutover cost is no longer zero")
+        f"the plan's cutover cost is no longer zero outside the Founder Office")
 
 
 # =================================================================================================
@@ -144,6 +158,26 @@ def test_a_draft_situation_is_reported_because_its_card_cannot_instruct(catalog)
     Measured 2026-09-24: **24 of 69**, and 16 of those are Customer Support's 20. A one-word edit
     per file, by an author. The report exists so somebody knows which twenty-four.
 
+    ⛔ **AND IT FELL TO 20 ON 2026-10-01 — three at once, and this message asked to be told so.**
+    `admin.sit.campaign_awaiting_reply`, `admin.sit.condition_awaiting_review` and
+    `admin.sit.organization_gone_quiet` went `draft -> stable` with `review_status: approved` and
+    `reviewed_by: rohit`. He was shown each one's description, what it fires on, the production row
+    count behind every predicate and how many times its L2 type has formed, and accepted all three.
+
+    ⛔ **The four below were checked against `pending_l2_types` BEFORE the flip, and none of the
+    three is in it.** That check is the whole safety of this edit: this docstring says four of
+    Admin's seven must not be flipped, and the registry names them —
+    `asset_in_custody`, `employee_lifecycle_event`, `goal_behind_pace`, `obligation_falls_due`,
+    `spend_against_a_commitment`. Admin's remaining draft count is therefore **4**, and
+    `_BASELINE_ADMIN_DRAFTS` moved 7 -> 4 with it.
+
+    ⛔ **A retraction that belongs here too.** An earlier pass this session called those declared
+    situations *"reviewed and nobody flipped the word"* and put five of them on the ALARMS table as
+    one-word edits waiting on a human. **That was wrong** — this docstring had already said they
+    must not be flipped, and one of them records that flipping it *"would cost a false assurance"*.
+    The validator check built on that false reading now reads the registry and reports zero; see
+    `tests/packs/test_a_review_that_was_never_flipped.py`.
+
     ⛔ **IT FELL TO 23 ON 2026-09-26, AND THIS MESSAGE ASKED TO BE TOLD SO.**
     `admin.sit.document_under_control` went `draft -> stable` and was re-stamped with
     `Domain Expertise/_tools/admit.py --accept`. It was the one draft situation whose block was a
@@ -165,10 +199,13 @@ def test_a_draft_situation_is_reported_because_its_card_cannot_instruct(catalog)
     health = corpus_health(catalog)
     total = sum(r.situations for r in health.values())
     unreviewed = sum(r.situations_unreviewed for r in health.values())
+    # M30.C6.L-data.V1.U01: + the Founder Office's two investor situations, moved as unreviewed drafts;
+    # M30.C6.L-data.V2.U03: − Sales' two, retired (stable and approved, so the unreviewed count holds).
     assert total == 69, f"the corpus has {total} authored situations, not 69 — update the plan"
-    assert unreviewed == 23, (
-        f"{unreviewed} authored situations cannot instruct, not 23. If this FELL, say so in the "
+    assert unreviewed == 22, (
+        f"{unreviewed} authored situations cannot instruct, not 22. If this FELL, say so in the "
         f"findings — it is the cheapest quality win in Layer 2 and it is authoring, not code")
+    assert health["founder_office"].situations_unreviewed == 2
     assert health["customer_support"].situations_unreviewed == 16, (
         "Customer Support carries two thirds of the gap and that concentration is the finding")
 
@@ -209,4 +246,4 @@ def test_the_situation_rule_is_read_and_not_reimplemented(catalog):
 #: `stable` and re-stamped, its binding having been verified rather than assumed. Of the seven that
 #: remain, four are declared `pending_l2_types` and must stay draft, and three are awaiting a named
 #: human reviewer. See the docstring above.
-_BASELINE_ADMIN_DRAFTS = 7
+_BASELINE_ADMIN_DRAFTS = 4

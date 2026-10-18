@@ -14,6 +14,12 @@ from genios_engine.platform.logging import get_logger
 
 _log = get_logger("genios.platform.wiring")
 
+# `06` D33 · a file's quiet window by its kind of work (a fund's 90 days), handed down to context,
+# which may not read the brief's kinds or the playbooks itself (`platform/kind_windows`).
+from genios_engine.platform import kind_windows as _kind_windows  # noqa: E402
+
+_kind_windows.install()
+
 # The switch between REAL and dev is here, driven entirely by .env — no code change.
 #   DATABASE_URL set   → Postgres/Supabase repo   (else in-memory)
 #   COMPOSIO keys set  → real Composio Gmail       (else fake connector)
@@ -281,6 +287,16 @@ def make_llm_client():
     return LLMClient(api_key=s.anthropic_api_key, model=s.anthropic_model)
 
 
+def make_company_brief_client():
+    """The company brief's drafter client (`reason/brief_drafter`, Sonnet-class — `06` D28), or None
+    with no key: then neither the script nor the weekly review calls a model at all."""
+    s = get_settings()
+    if not s.use_real_llm:
+        return None
+    from genios_engine.context.llm.client import LLMClient
+    return LLMClient(api_key=s.anthropic_api_key, model=s.company_brief_model or s.anthropic_model)
+
+
 def make_graph_store():
     """L2 context-graph store (Postgres). None in pure in-memory dev (needs the DB)."""
     s = get_settings()
@@ -326,7 +342,9 @@ def make_relevance_classifier(org_id: str | None = None, *, seat_id: str | None 
         if org_id:
             store = make_graph_store()
             if store is not None:
-                gate.bind_costs(store.record_cost, org_id, seat_id)
+                # The same act binds the tenant's company brief (STEP-07): the filter's
+                # prompts carry it, and the golden runner binds it the same way.
+                gate.bind_costs(store.record_cost, org_id, seat_id, brief_source=store)
         return gate
     if s.enable_l1_relevance:
         from genios_engine.capture.gate.relevance import DeterministicRelevanceClassifier
@@ -794,6 +812,10 @@ def make_semantic_lane(org_id: str, *, now: datetime | None = None, engine=_UNSE
     governor = make_cost_governor(org_id, engine=engine,
                                   prices=tier_prices_for_model(getattr(llm, "model", "")))
     cost_sink = _llm_cost_sink(engine, seat_id=seat_id)
+    # STEP-07 · the tenant's company brief, read ONCE for the lane: extraction and the relevance
+    # page of one sweep read the same brief. "" when the tenant has none (or it cannot be read),
+    # and then both prompts are exactly what they were before.
+    company_brief = _company_brief_block(engine, org_id)
     return SemanticLane(llm=llm, eval_time=now or datetime.now(timezone.utc),
                         cost_sink=cost_sink,
                         cache=make_extraction_cache(),
@@ -810,11 +832,22 @@ def make_semantic_lane(org_id: str, *, now: datetime | None = None, engine=_UNSE
                         # and it is the reason "the model sees under 5%" is a rate this process
                         # can actually report (`RelevancePage.stats.llm_share_bp`).
                         relevance_page=RelevancePage(llm=llm, governor=governor,
-                                                     cost_sink=cost_sink, org_id=org_id),
+                                                     cost_sink=cost_sink, org_id=org_id,
+                                                     company_brief=company_brief),
                         # P2 §3.3: a mail message already read off the seat's screen is not
                         # extracted twice. None (no database) switches the check off.
                         fingerprint_engine=engine,
-                        timezone=_org_timezone(engine, org_id))
+                        timezone=_org_timezone(engine, org_id),
+                        company_brief=company_brief)
+
+
+def _company_brief_block(engine, org_id: str) -> str:
+    """The tenant's company brief as its prompts carry it (STEP-07) — "" with no database, no
+    brief, or a brief that cannot be read (`platform/company_brief.current` fails open)."""
+    if engine is None:
+        return ""
+    from genios_engine.platform.company_brief import current
+    return current(engine, org_id).prompt_block()
 
 
 def _org_timezone(engine, org_id: str) -> str:

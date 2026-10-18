@@ -1,0 +1,37 @@
+yc2_w27_s02 QA record · STEP-02, the change gate · deterministic-qa · speedrun008 @ aaca7e67 (clean tree) · 2026-10-06 07:13–07:57 UTC
+scratch Postgres 17.11 in Docker, the database recreated EMPTY before every check that uses it;
+GENIOS_TEST_DATABASE_URL=postgresql+psycopg://…  Exit codes only; every command verbatim from
+tree.yaml (block yc2_w27_s02) and .github/workflows/ci.yml.
+
+1 · the tree, and every unit's own verify — 13 units                       exit 0
+      17 pass / 0 fail / 0 skip          (4 tree checks + 13 units)
+
+2 · the whole suite on the database                                        exit 0
+      17290 passed, 4 skipped, 102 xfailed in 1319.27s
+      The 4 skips are the same optional-package skips every database run has carried.
+
+3 · the golden-pg lane, as CI runs it (GENIOS_GOLDEN_REQUIRED=1)            exit 0
+      pytest -q tests/replays tests/test_golden_labels_sheet.py
+      398 passed, 100 xfailed in 202.26s — 0 skipped
+      (357 before STEP-02, plus the acceptance: 40 founder cases + its negative control)
+
+4 · the board, held to 03-FINDINGS.md §F.1                                 exit 0
+      matches the board recorded in speedrun008/YC-II W27/03-FINDINGS.md — the gate moved no verdict
+      golden tenants left in the database afterwards: 0
+
+5 · the hermetic job, as CI runs it                                         exit 0
+      pytest -q -m "not golden"
+      16087 passed, 1145 skipped, 88 deselected, 72 xfailed in 803.11s
+      The 1145 skips are the database tests; tier 2 ran them on Postgres.
+
+Against QA run 1, at ac021462 (07:13 UTC the same morning, 44 minutes earlier): three repo-wide
+guards failed in both the database suite and the hermetic job —
+  tests/test_no_missing_module_deps.py::test_every_imported_symbol_exists
+  tests/test_tree_ids_are_addressable.py::test_the_five_programme_blocks_are_present
+  tests/test_tree_ids_are_addressable.py::test_no_sixth_block_has_appeared_without_updating_this_guard
+— a tuple-unpacking assignment the first guard's static read cannot see as six names, and the new
+block the second guard pins. Fixed in aaca7e67; this run is the whole tier again, not the three.
+
+THE ACCEPTANCE, in tier 3: on all 40 founder cases, one more sweep 15 minutes after the case's last,
+bringing nothing new, makes 0 decider and 0 R-1 calls (before STEP-02: F13 2, F12/F25/F28 4, F07 5,
+F29 12), leaves the same cards, and every case keeps its verdict.

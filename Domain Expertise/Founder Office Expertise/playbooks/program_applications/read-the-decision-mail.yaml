@@ -1,0 +1,184 @@
+# A MOVE of program_applications: the exit from the spine's `decision` stage, as a procedure. No stages.
+#
+# outcome_window_days: 7 — practitioner judgement, unverified; for the founder's review. An offer
+# typically gives days, not weeks, to confirm; a rejection's re-application date is worth filing the
+# same week, while the feedback is fresh.
+identity:
+  id: founder_office.pb.program_applications.read_the_decision_mail
+  name: Read the decision mail for what it asks next
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.programs_and_applications.program_applications
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  aliases:
+    - Acceptance or rejection mail
+
+purpose:
+  statement: >
+    A programme's decision mail is two documents in one: a verdict, and a list of next steps with
+    dates. Accepted, the dates are the offer's — confirm, sign, send. Rejected, the date that matters is
+    the re-application window, and the line that matters is the feedback.
+  answers:
+    - Is this an offer, a rejection, a waitlist, or only the next round?
+    - What does it ask of us, and by when?
+    - If it is a no, when can we apply again, and with what different?
+  not:
+    - The papers an offer leads to — the documents move holds them.
+
+when_to_use:
+  signals:
+    - A programme's mail, or its portal's status, gives a decision on an application.
+  do_not_use_when:
+    - The mail invites the founders to a further round; that is the interview, not a decision.
+    - The mail announces the programme's next intake; nothing has been decided about this application.
+
+steps:
+  - order: 1
+    actor: agent
+    name: Class the decision
+    description: >
+      An offer, a rejection, a waitlist or a move to a later cohort — or an invitation to a further
+      round, which is no decision at all.
+    produces: The decision's class, with its date.
+    done_when: The mail is classed as one of those, with its date.
+  - order: 2
+    actor: agent
+    name: "Accepted: list everything it asks, with dates"
+    description: >
+      Confirmation, the programme's agreement or contract, the investment documents where it invests,
+      the entity it needs, any move. Google for Startups Accelerator India sends its final list "the
+      program contract to sign"; YC begins the investment process the day a company is accepted.
+    produces: Every ask in the offer, with its date and owner.
+    done_when: Every ask in the offer is on the file with its date and its owner.
+  - order: 3
+    actor: human
+    name: "Accepted: answer in writing before the offer's date"
+    description: >
+      Accept, or decline, in writing before the date the offer gives, and ask in the same reply for the
+      programme's complete onboarding list.
+    produces: A written answer to the offer.
+    done_when: A written acceptance or refusal has gone back before the offer's date.
+  - order: 4
+    actor: agent
+    name: "Rejected: find the re-application window"
+    description: >
+      Read the programme's own rule. SISFS takes a new application six weeks after a rejection; YC and
+      Techstars encourage applying again, YC to the following batch; Hub71 and NSRCEL take applications
+      for future cohorts.
+    produces: The re-application date, with its source.
+    done_when: The re-application date, or the next intake's deadline, is on the file with the page it came from.
+  - order: 5
+    actor: human
+    name: "Rejected: keep the feedback and decide what changes"
+    description: >
+      YC gives everyone it interviews detailed feedback on its decision; SISFS's six-week wait exists so
+      that applicants have "worked on the feedback received from incubators". Write down what will be
+      different — YC calls progress since the last application "a strong signal".
+    produces: The feedback and the change the next application will lead with.
+    done_when: The feedback, if any was given, and the change the next application will lead with are on the file.
+  - order: 6
+    actor: agent
+    name: "Waitlisted or deferred: put the new date on the file"
+    description: >
+      A waitlist or a move to a later cohort is a decision about timing. Keep the file at decision with
+      the programme's new date, and answer anything it asks meanwhile.
+    produces: The programme's new decision date.
+    done_when: The programme's new decision date is on the file.
+
+success_signal: >
+  The decision is answered: an offer accepted in writing before its date, or a rejection filed with
+  its re-application date and the change the next application will lead with.
+
+outcome_window_days: 7
+
+objects_used:
+  - founder_office.obj.program_applications.application
+
+outcomes:
+  - Every offer is answered in writing before its date, with the onboarding list requested.
+  - Every rejection carries its re-application date, its feedback and the change for next time.
+  - A waitlist carries the programme's new date instead of becoming an open-ended wait.
+
+failure_modes:
+  - Celebrating the offer and missing its reply-by date.
+  - >
+    Arguing with a rejection. The batch has been decided; the next application, with progress to show,
+    is the answer the programme invites.
+  - Filing the rejection with no date, so the next intake opens and closes unnoticed.
+  - Reading an invitation to a further round as the decision, and relaxing a round too early.
+
+limits:
+  - >
+    A decision a programme posts only on its portal is still a decision; read the portal as well as
+    the mailbox.
+  - >
+    The re-application rules quoted are the programmes' own, read on 9 October 2026; the next intake's
+    page decides.
+
+references:
+  - title: Apply to Y Combinator
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/apply
+    note: Read 9 Oct 2026. "we give everyone who interviews detailed feedback on our decision".
+  - title: Y Combinator FAQ
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/faq
+    note: >
+      Read 9 Oct 2026. About half of a typical batch applied more than once; "Having made progress since
+      your last application is a strong signal to us."
+  - title: YC Interview Guide
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/interviews
+    note: Read 9 Oct 2026. Feedback by email after an interview; re-applying the following batch is common.
+  - title: The Y Combinator Deal
+    kind: practitioner
+    author: Y Combinator (Kirsty Nathoo)
+    url: https://www.ycombinator.com/deal
+    note: Read 9 Oct 2026. The investment process begins the day a company is accepted.
+  - title: "Inside a Techstars Accelerator: The Application & Interview Process"
+    kind: practitioner
+    author: Techstars
+    url: https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process
+    note: Published 12 Jan 2026, read 9 Oct 2026. "we strongly encourage you to apply again".
+  - title: Startup India Seed Fund Scheme — F.A.Q.
+    kind: standard
+    author: DPIIT, Government of India
+    url: https://seedfund.startupindia.gov.in/faq
+    note: >
+      Read 9 Oct 2026. "you can apply to the SISFS again after 6 Weeks of receiving a rejection", so that
+      applicants have "worked on the feedback received from incubators".
+  - title: Hub71 FAQs
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/faqs
+    note: Read 9 Oct 2026. "Yes, you can apply to join our future cohorts."
+  - title: NSRCEL Launchpad
+    kind: practitioner
+    author: NSRCEL, IIM Bangalore
+    url: https://nsrcel.org/launchpad/
+    note: >
+      Read 9 Oct 2026. Re-applicants may apply again and should "highlight any additional information of
+      your progress since your application for a previous cohort".
+  - title: "Google for Startups Accelerator: India"
+    kind: practitioner
+    author: Google for Startups
+    url: https://startup.google.com/programs/accelerator/india/
+    note: Read 9 Oct 2026. "The final list of startups will receive the program contract to sign".
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
+  notes: >
+    The outcome window (7) is practitioner judgement, unverified; for the founder's review. The rules
+    quoted are each programme's own, read on 9 October 2026.

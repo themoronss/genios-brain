@@ -75,7 +75,7 @@ a scoped artifact or object when you are confident nothing else will load it.
 ```
 
 Ops, exactly: `"=" "!=" "IN" ">" ">=" "<" "<="`
-Values may be literals or `{baseline: reply_cadence, mult: 2.5, floor: 10}`.
+Values may be literals or `{baseline: write_interval, mult: 2.5, floor: 10}`.
 
 ## The substrate — what the pipeline can evaluate TODAY
 
@@ -90,7 +90,7 @@ Anything outside this makes a pattern `needs_signal`.
 `followup_sent` `introduction` `legal_review` `objection` `objection_price` `pricing_discussed`
 `proposal_sent` `security_review_started` `timeline_slip` `verbal_yes`
 
-**Baselines (1)** `reply_cadence`
+**Baselines (1)** `write_interval` — how often the person writes (the median gap between their own messages), never a reply time
 
 **Values in practice** `deal.status = open` · `thread.ball_in_court = us|them|nobody` ·
 `derived.*` are numbers (engagement/momentum ~0–1+, sentiment ~−1–1)

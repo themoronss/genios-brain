@@ -1,0 +1,126 @@
+# The fundraising domain's PERSON anchor, moved from Sales' investor relations with a new id.
+# `live-investor-relationship.yaml` is its account twin, and the split matters more here than
+# elsewhere: a fund is not the counterparty, a partner is. Money is committed by a person who has to
+# carry the case inside the fund, and what actually changes is that person's conviction. Its `matches`
+# are Sales' exactly, so routing does not change when the file moves.
+identity:
+  id: founder_office.sit.live_investor_contact
+  name: Live Investor Contact
+  domain: founder_office
+  owner_capability: founder_office.fundraising.investor_relations
+  version: 1.0.0
+  status: draft
+
+description: >
+  A named individual at an investor — a partner, a principal, an associate, an angel — read at the
+  PERSON level: where their conviction stands, what they last asked for, and whose move it is. The
+  counterparty here is not an organisation deciding; it is a person who has to take the case to a
+  partnership or an investment committee, and their engagement is the only reliable signal available
+  before a decision exists.
+
+
+  It is emphatically not a prospect relationship. Nobody is buying, there is no value to prove and no
+  close to drive toward; the currency is conviction and the sequence is theirs.
+
+
+  The failure this file exists to prevent is treating an associate's silence as a signal about the
+  fund. Associates go quiet because they are gathering internal support, because the partner meeting
+  is next week, or because the answer is no and nobody has said so — three readings with three
+  different next moves, and only the correspondence and the stage distinguish them. An associate has
+  no decision-making power of their own (Paul Graham, "How to Raise Money", note 5).
+
+matches:
+  l2_situation_types:
+    - investor_contact
+  # PERSON, not fund. `domain_spec` types a company-anchored fundraising situation
+  # `investor_relationship` and a person-anchored one `investor_contact`; the former is claimed by
+  # `founder_office.sit.live_investor_relationship` and deliberately not here.
+  scope: person
+  # The same one narrowing as the account twin, over the same claim the copy makes: no next date is on
+  # the record. Not gated on `derived.momentum`, for the same reason.
+  when:
+    - absent: commitment.due_at
+
+objects:
+  load:
+    - founder_office.obj.core.contact
+    - founder_office.obj.investor_relations.investor_conversation
+  optional:
+    - founder_office.obj.core.company
+    - founder_office.obj.core.next_action
+    - founder_office.obj.core.risk
+
+# Below the account-level twin, which reads the fund: when both fire, the fund-level read carries the
+# decision and the person-level one is the way into it.
+priority_bp: 4200
+
+# A prior: the same deal period as the account twin — 83 days on average to close (Gompers, Gornall,
+# Kaplan & Strebulaev, NBER Working Paper 22587, 2016, Table 9). The person is read for as long as the
+# conversation runs. Sales carried 30 with no source.
+typical_duration_days: 83
+
+signals_of_progress:
+  - next_step_agreed
+  - positive_reply
+  - meeting_request
+  - meeting_scheduled
+  - introduction
+  - intro_made
+  - diligence_started
+
+signals_of_decay:
+  - negative_reply
+  - pass_received
+  - decision_deferred
+  - meeting_cancelled
+  - timeline_slip
+
+do_nothing_consequence: >-
+  The person who would have carried the case inside the fund loses the thread, and the conviction
+  built so far decays without anyone ever saying no.
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its
+    own; the reader already knows time passed.
+
+    A fundraising conversation with a named individual. Nothing is being sold — never write about
+    pipeline stage, close date, budget, pricing or "the opportunity", and never describe a pass as a
+    lost deal in commercial terms.
+
+    Headline: name the person and say whose move it is. In fundraising that single fact is routinely
+    unclear to the founder, because investor correspondence is deliberately non-committal and silence
+    is the default state.
+
+    Situation: what they last asked for or committed to, and what dates it. If nothing dates it, say
+    so — an undated "let's reconnect" is the specific shape a fundraising conversation dies in, and
+    naming it as undated is more useful than inventing urgency.
+
+    Artifact: the reply that moves their conviction or gets a decision — answer the diligence
+    question, send the thing they asked for, or ask directly where it stands. Never a status chase,
+    and never a follow-up when the ball is on us.
+  fallback:
+    headline: "Set a next date with {entity}"
+    situation: >-
+      An open fundraising conversation with {entity} and no next date on the record —
+      last heard {last_heard_days} days ago.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Moved from Sales' investor relations (stable and approved there, 2026-08-29) with a new id, so it
+    is unreviewed here until the founder accepts it (`06` D45). Kept from Sales: `matches`,
+    `priority_bp` and the card copy. Changed: Founder Office objects only (Sales' optional stakeholder
+    object has no counterpart here; the contact object carries seniority and decision reach), no
+    `also_serves`, a sourced typical duration, the fundraising observation kinds in the signals, and
+    what doing nothing costs. typical_duration_days 83 is a prior: the average days to close a deal that
+    venture investors report (Gompers, Gornall, Kaplan & Strebulaev, NBER Working Paper 22587, 2016,
+    Table 9). What is still missing from the substrate is any notion of a round, a
+    committee or a decision date — `funding.round` has no writer, so the stage stays the expert's
+    judgment from the timeline (STEP-12).

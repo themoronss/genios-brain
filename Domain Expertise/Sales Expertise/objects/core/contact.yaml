@@ -367,7 +367,7 @@ states:
     - name: dormant
       description: Previously two-way, now silent well past this person's own reply cadence.
       entered_when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline:
-              reply_cadence, mult: 4.0, floor: 30}}]
+              write_interval, mult: 4.0, floor: 30}}]
       implies: >
         The relationship is not dead and the moment is. Re-approach needs a new reason, not a
         fifth follow-up on the old one.
@@ -385,7 +385,7 @@ states:
     - {from: contacted, to: engaged, when: [{path: thread.ball_in_court, op: "=", value: us}],
        reversible: false}
     - {from: engaged, to: dormant, when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {
-            baseline: reply_cadence, mult: 4.0, floor: 30}}], reversible: true}
+            baseline: write_interval, mult: 4.0, floor: 30}}], reversible: true}
     - {from: dormant, to: engaged, when: [{path: thread.ball_in_court, op: "=", value: us}],
        reversible: true}
     - {from: engaged, to: inactive, when: [has_obs: champion_change],
@@ -669,7 +669,7 @@ inference_patterns:
       statement: "Silent for four times this person's learned reply cadence, floored at thirty days."
       status: executable
       when:
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 4.0,
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 4.0,
             floor: 30}}
       yields: {confidence_bp: 7500, attribute: null}
       evidence_fields: [thread.last_inbound]
@@ -912,7 +912,7 @@ business_rules:
     statement: >
       A contact silent for four times their own learned reply cadence, floored at thirty days,
       is dormant and must not be counted as engaged pipeline.
-    when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult:
+    when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult:
             4.0, floor: 30}}]
     then: flag_dormant
     severity: warning
@@ -1033,7 +1033,7 @@ events:
 
   - id: contact.went_dormant
     name: Contact Went Dormant
-    emitted_when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence,
+    emitted_when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval,
           mult: 4.0, floor: 30}}]
     payload: [last_inbound_at, engagement_trend]
     severity: notable

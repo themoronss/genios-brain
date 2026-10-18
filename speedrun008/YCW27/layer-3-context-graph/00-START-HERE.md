@@ -1,7 +1,13 @@
 # Layer 3 — start here
 
-`context/` — 118 files, 49,713 lines. The largest package. It remembers what the company knows, and
-judges which of it is real enough to act on.
+`context/` — the largest package. It remembers what the company knows, and judges which of it is
+real enough to act on.
+
+⛔ **The size is a MEASUREMENT, not a sentence.** This line said *"118 files, 49,713 lines"* and was
+true when written; it is now 124 and 50,885. The number lives in
+[`05-AUDIT-context-file-by-file.md`](05-AUDIT-context-file-by-file.md), which is generated —
+`python scripts/context_coverage_report.py context`. *A hardcoded count in a document is wrong the
+next day.*
 
 In code it is called **Situation Intelligence**, deliberately: *"this layer's output is a SITUATION
 — assembled, judged by eight admission laws, and exposed only if admitted. Describing it as a graph
@@ -18,8 +24,10 @@ builder is how a card came to be wired to a signal while the situation layer was
 | 3 | [A hold that asks](STEP-03-DONE-hold-raises-a-need.md) | ✅ **done** · 27 tests | us |
 | 4 | [A met need clears its hold](STEP-04-DONE-need-clears-hold.md) | ✅ **done** · 22 tests | us |
 | 5 | [Residue reaches the sweep](STEP-05-DONE-residue-in-the-sweep.md) | ✅ **done** · 20 tests · wired | us |
+| ⛔⛔ **A** | [**The coverage audit** — the worst-covered package, and six of its own findings retracted](04-AUDIT-PLAN-the-worst-covered-package.md) | ✅ **done 2026-10-02** · 37 tests · **11/11 mutations** | us |
 
-**91 new tests. `tests/context` whole: 2,679 passed, 270 skipped, 0 failed.**
+**The suite's own numbers are a command, not a sentence:** `.venv/bin/pytest tests/context -q -rs`
+— ⛔ `-rs` is not optional, because a skip is not a pass.
 
 ## Read in this order
 
@@ -27,7 +35,9 @@ builder is how a card came to be wired to a signal while the situation layer was
 |---|---|
 | [`01-CROSSCHECK.md`](01-CROSSCHECK.md) | what was found before any code was written — **and one retraction** |
 | [`02-PLAN.md`](02-PLAN.md) | the plan: sections → functions → units, with *why* for every decision |
-| [`03-FINDINGS.md`](03-FINDINGS.md) | every finding in one place, with the numbers and their sources |
+| [`03-FINDINGS.md`](03-FINDINGS.md) | every finding in one place, with the numbers and their sources — ⛔ `C-F1`…`C-F10` are the audit's, and **six of them are retractions** |
+| ⛔⛔ [`04-AUDIT-PLAN-the-worst-covered-package.md`](04-AUDIT-PLAN-the-worst-covered-package.md) | why `S7`'s number pointed here, the seven resolver traps, and what the audit actually found |
+| [`05-AUDIT-context-file-by-file.md`](05-AUDIT-context-file-by-file.md) | ⛔ **generated** — every file, its size, its tests, the tables it writes and reads, and which of those no receipt covers |
 | the STEP files | one per step: what was expected, what happened, scenario → result |
 
 ⛔ **`02-PLAN.md` was written LATE — after the build, not before it.** Layer 1 was done properly
@@ -98,3 +108,20 @@ new one. Until then the queue is write-only and every need stays `open`.
 
 Nothing regresses: situations hold today anyway. But do not read `evidence_needs_filed > 0` as
 evidence that anything is being fetched.
+
+
+---
+
+## ⛔⛔ 2026-10-02 · What the coverage audit changed, in one paragraph
+
+`S7`'s *receipts per package* number put `context/` last: **2 receipts over 50,885 lines.** ⛔ The
+audit's first finding is that the headline is wrong — **306 test files import this package** and
+both of its receipts are CORRECTNESS receipts. What it lacked was any check that the **44 tables it
+writes** behave in production. ⛔⛔ And the audit then retracted **six of its own findings**, every
+one to a broadening of the measurement: a digit in a table name, a reader in `scripts/`, a mention
+that was prose, SQL held in a module constant, a table name passed as a function argument, and —
+the largest — **77 org-scoped tables that looked like a retention hole and are not one**, because
+`/reset` deliberately keeps the account while ACCOUNT erasure is done by foreign keys and already
+has a receipt. **Nine findings survived three broadenings. That is the only reason to believe
+them.** One new receipt (**42**, `context/`'s third and its first about entity merge) and one new
+declaration module, `platform/table_coverage.py`, which reports its own coverage beside its verdict.

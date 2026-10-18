@@ -1,0 +1,91 @@
+identity:
+  id: founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point
+  name: The deadline is the only fixed point
+  kind: heuristic
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.programs_and_applications.program_applications
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  aliases:
+    - Deadlines that do not move
+
+purpose:
+  statement: >
+    Names the one date in an application that the company cannot move, so that every other date is
+    planned from it rather than towards it.
+  answers:
+    - Which date in this application can we not negotiate?
+    - What is a missed deadline worth — a lost application, or a later one?
+
+heuristic:
+  statement: >
+    In an application, the programme's deadline is the one date that will not move for this company;
+    every other date in the plan is set backwards from it, on the programme's clock.
+  why: >
+    The deadline is published once, for every applicant, and kept. YC publishes "November 2 at 8pm PT"
+    and answers a request to mark a late application on time with "No, sorry"; Hub71 reads an
+    application that misses its cohort's deadline for the next cohort. Everything on the company's side —
+    the deck, the numbers, a co-founder's week — can move; the deadline cannot, so it is the only point a
+    plan can be anchored to.
+  confidence_bp: 8500
+  applies_when: A programme with a published deadline, before the deadline has passed.
+  breaks_down_when: >
+    A rolling programme has no deadline — SISFS takes applications on an ongoing basis — and its fixed
+    points are its eligibility rules on the day of application and its response clock. A programme can
+    extend its own window, and then the new date replaces the old one. And a late application is not
+    always a lost one: YC still reads late applications and says "We fund many companies that apply late
+    every batch", so for YC late moves the application to an unpromised date rather than out of the process.
+  reads:
+    - founder_office.obj.program_applications.application
+    - commitment.due_at
+
+objects_used:
+  - founder_office.obj.program_applications.application
+
+outcomes:
+  - Every application plan is written backwards from the programme's deadline, on its clock.
+  - A missed deadline is re-dated by the programme's own rule rather than treated as the end.
+
+failure_modes:
+  - Treating the founders' own target date as the deadline, or the deadline as a target.
+  - Writing off a late YC application that YC still reads.
+
+limits:
+  - It anchors the plan; it does not say whether the application is ready to go in.
+
+references:
+  - title: Apply to Y Combinator
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/apply
+    note: Read 9 Oct 2026. "The deadline to apply on-time is November 2 at 8pm PT".
+  - title: Y Combinator FAQ
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/faq
+    note: >
+      Read 9 Oct 2026. A late application is not marked on time ("No, sorry"); "We fund many companies that
+      apply late every batch".
+  - title: Hub71 Access Programme
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/program/access-programme
+    note: Read 9 Oct 2026. An application after a cohort's deadline is considered for the next cohort.
+  - title: Guidelines for Startup India Seed Fund Scheme
+    kind: standard
+    author: DPIIT, Ministry of Commerce and Industry
+    url: https://www.startupindia.gov.in/content/dam/invest-india/Templates/public/Guidelines%20for%20Startup%20India%20Seed%20Fund%20Scheme.pdf
+    note: >
+      Read 9 Oct 2026. §7.2: "An online call for applications shall be hosted on an ongoing basis";
+      §3.1: eligibility, including incorporation not more than two years before the application.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial

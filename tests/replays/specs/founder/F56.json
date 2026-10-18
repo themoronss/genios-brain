@@ -1,0 +1,134 @@
+{
+ "case_id": "F56",
+ "title": "A login vendor's renewal notice at a 32% higher price",
+ "kind": "must_detect",
+ "label_row": 56,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "arjun.rao@gmail.test"
+  ]
+ },
+ "sweeps": [
+  "2026-09-28T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "renewal",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-25T03:00:00Z",
+   "from": "Authwise Billing <billing@authwise.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Your Authwise Pro plan renews on 15 Oct",
+   "body": "Hi Arjun,\n\nYour Authwise Pro plan renews on 15 October 2026 at $1,320 per year (currently $1,000) - a 32% increase under our new pricing. To change or cancel, manage your plan before the renewal date.\n\nAuthwise Billing",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-authwise",
+   "read": {
+    "gate": "drop",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "vendor",
+      "renewal"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Authwise",
+       "entity_type": "organization",
+       "quote": "Authwise"
+      }
+     ],
+     "amounts": [
+      {
+       "minor_units": 132000,
+       "currency": "USD",
+       "as_written": "$1,320"
+      },
+      {
+       "minor_units": 100000,
+       "currency": "USD",
+       "as_written": "$1,000"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "thread.objective",
+       "subject": "thread",
+       "value": "the plan's renewal at a higher price",
+       "standing": "judgement",
+       "quote": "Your Authwise Pro plan renews on 15 October 2026 at $1,320 per year"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "15 October 2026",
+       "earliest": "2026-10-15T00:00:00+05:30",
+       "latest": "2026-10-15T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-25T03:00:00Z",
+       "quote": "15 October 2026"
+      }
+     ],
+     "exchange_intent": {
+      "category": "transactional",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "low",
+      "motive": "a renewal at a new price"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "renewal": "emitted"
+  },
+  "memory": {
+   "renewal": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Authwise"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "32%"
+    ]
+   }
+  ],
+  "workstream": "vendor - renews 15 Oct at 32% more; decide before then"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "cancelled",
+   "already renewed",
+   "reply to Authwise"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "the vendor kind of work - yc2_w27_align M34.C2.L-contract.V0.U01"
+ },
+ "model": {},
+ "notes": "09 G5, the Possibility Atlas's first card (a login vendor at +32%): a renewal with a price rise is work with a date and money; a plain receipt stays archived (F33). The junk filter's prompt says to drop 'subscription / plan / account notices', so a faithful reader drops this one.",
+ "blocked_on": "the junk filter's prompt drops 'subscription / plan / account notices', so the renewal is archived - in memory, read by no model, its only situation a support thread owed a first response; there is no vendor kind for the brief to name (yc2_w27_align C2.U01)"
+}

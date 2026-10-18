@@ -156,3 +156,25 @@ and where one of them turned out to be wrong the retraction is recorded at the p
 not here. For current status read
 [`../07-LEDGER-every-step-what-why-how-outcome.md`](../07-LEDGER-every-step-what-why-how-outcome.md)
 — or `../../07-LEDGER-...` from a plane folder.
+
+---
+
+## ⛔ 2026-10-01 · this file has a successor
+
+M13 was built from the findings above. **Re-measuring `deliver/` after that build found more**, and
+those findings are in a separate document rather than appended here, because a crosscheck's value is
+that it records what was known *before* the code was written:
+
+→ [`05-RECROSSCHECK-the-silences-of-the-delivery-spine.md`](05-RECROSSCHECK-the-silences-of-the-delivery-spine.md)
+
+**The four largest:** `deliver/` has **123 public functions, 24 unreached, 0 declared** (⛔ the
+re-cross-check first said 133 and 4; corrected in `06-AUDIT-the-measurement-that-corrected-itself.md`)
+and is the only
+large package with no declared-silence module · L5 carries **2 of 32 production receipts** (⛔ CORRECTED 2026-10-02: a LABEL, not a package — `deliver/` carried **5**, four of them working; [`08-CORRECTION-a-receipt-label-is-not-a-package.md`](08-CORRECTION-a-receipt-label-is-not-a-package.md)) for 9,431
+lines, and one of the two ERRORs · **three Atlas L5 badges are superseded**, two of them by this
+programme four days ago · and an entire six-module "Layer 5.2" architecture the Atlas names nowhere.
+
+⛔ **One finding in that document is a retraction of a finding I nearly wrote.**
+`spine.recover_expired_claims` looked like a live silent double-send. It is not: `spine.claim_due` is
+called by nothing in production either, so the v2 path is **un-cut-over**. *An uncalled function on an
+un-cut-over path is not a bug; it is an unguarded cutover.*

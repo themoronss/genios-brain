@@ -1,0 +1,255 @@
+{
+ "case_id": "F41",
+ "title": "Your own company address is never someone you wait on",
+ "kind": "must_abstain",
+ "label_row": 41,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Meera Iyer",
+  "email": "meera.iyer@gmail.com",
+  "company": "Kitebird",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "ceo@kitebird.test"
+  ],
+  "domains": [
+   "kitebird.test"
+  ]
+ },
+ "sweeps": [
+  "2026-09-02T12:00:00Z",
+  "2026-09-12T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "update",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-01T05:00:00Z",
+   "from": "Meera Iyer <meera.iyer@gmail.com>",
+   "to": [
+    "dev@harbourvc.test",
+    "ceo@kitebird.test"
+   ],
+   "subject": "Kitebird - August update",
+   "thread": "t-update",
+   "labels": [
+    "SENT"
+   ],
+   "body": "Hi Dev,\n\nAs promised, the August update: 14 clinics are live, revenue is up 30% month on month, and the scheduling assistant now books 61% of appointments without staff.\n\nMeera",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "investor update"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Dev",
+       "entity_type": "person",
+       "quote": "Dev"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high",
+      "motive": "the promised August update"
+     }
+    }
+   }
+  },
+  {
+   "id": "note",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-02T04:00:00Z",
+   "from": "Meera Iyer <meera.iyer@gmail.com>",
+   "to": [
+    "ceo@kitebird.test"
+   ],
+   "subject": "Notes for the board pack",
+   "thread": "t-notes",
+   "labels": [
+    "SENT"
+   ],
+   "body": "Notes for the board pack: hiring plan for two engineers, runway of 14 months, and the pilot list.",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "board pack"
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "low",
+      "motive": "notes for the board pack"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "ceo@kitebird.test"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "waiting longest",
+   "waiting on ceo"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "update"
+  ]
+ },
+ "not_expressible": {},
+ "notes": "STEP-04. Production: the founder's company address only ever receives his own mail; not known as his, it was typed a service, waited on forever and listed as 'waiting longest'. Built with the founder's real identity shape: a Gmail address, that second address, the company domain.",
+ "blocked_on": null,
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<harbourvc.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "On the first of September Meera sent Dev at harbourvc.test the August update she had promised: clinics live, revenue growth month on month, and the share of appointments the scheduling assistant books without staff.",
+       "evidence": [
+        "evt_6538e31a303d631d83ef2f8d"
+       ]
+      },
+      {
+       "claim": "The update asks Dev for nothing, and it is the only touch in the file.",
+       "evidence": [
+        "evt_6538e31a303d631d83ef2f8d"
+       ]
+      },
+      {
+       "claim": "Nothing has come back from Dev since the update.",
+       "evidence": [
+        "num:days_quiet",
+        "num:their_reply_time:dev@harbourvc.test"
+       ]
+      },
+      {
+       "claim": "The brief names no kind of work for harbourvc.test; the engine filed it under admin.",
+       "evidence": [
+        "sit:sit_2aa12d5eb2167672469a1cee"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Dev is an investor or close to the round: a promised monthly update with traction numbers is what an investor receives.",
+       "based_on": [
+        "fact:1"
+       ]
+      },
+      {
+       "claim": "Nothing is owed by either side: an update that asks nothing needs no answer, and quiet after it is the resting state.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [],
+     "hypotheses": [
+      {
+       "proposition": "Dev is an existing investor in Kitebird who asked for monthly updates.",
+       "needs": "The founder's word, or the earlier mail in which the update was promised."
+      },
+      {
+       "proposition": "Dev is a prospective investor following the company before deciding.",
+       "needs": "The founder's word on where the conversation with Dev stands."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Who Dev is to Kitebird — an investor already in, or one still deciding.",
+       "relevance": "An existing investor needs only the monthly update; a prospect may need a reason to talk, such as a milestone."
+      },
+      {
+       "question": "Where the update was promised, and whether a cadence was agreed.",
+       "relevance": "The promise is not in the file, so when the next update is due cannot be read from it."
+      }
+     ],
+     "frames": {
+      "primary": "A promised investor update, sent: your August numbers went to Dev, nothing was asked, and nothing is owed.",
+      "rivals": [
+       "A prospective investor being kept warm, where the update is a step in the raise rather than a report to a shareholder.",
+       "An update Dev was expected to answer — but the mail asks him for nothing."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "The founder's mail is the August update she promised Dev, with traction numbers, sent to a venture firm's address — the update an investor receives.",
+      "evidence": [
+       "evt_6538e31a303d631d83ef2f8d"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, the mail itself sets it: an update was promised, so it was due to go out.",
+      "actual": "It went out on the first of September as promised; it asked nothing, and nothing has come back."
+     },
+     "scenarios": {
+      "do_nothing": "Nothing is lost: an update needs no answer, and the next one goes out in its turn.",
+      "act": "Chasing Dev about an update that asked nothing would spend his attention for no reason.",
+      "best": "Dev reads it and comes back with a question or an introduction.",
+      "worst": "The update goes unread — and the remedy is the next update with fresh numbers, not a chaser.",
+      "signals_to_watch": [
+       "A question or a request to meet from Dev.",
+       "The date the next monthly update is due."
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The update went out as promised and asks nothing.",
+       "No open ask and no promise are outstanding in the file.",
+       "The next update is the natural next touch."
+      ]
+     },
+     "mode": "nothing",
+     "next_move": null,
+     "alternative": "If Dev writes back with a question, answer it the same day; otherwise send the next update when it is due.",
+     "wait_or_stop": "Nothing to wait for. Write again with the next monthly update, or sooner only with a real milestone.",
+     "done_when": "The promised update is sent — it is — and the next one goes out in its turn.",
+     "draft": null
+    }
+   }
+  ]
+ }
+}

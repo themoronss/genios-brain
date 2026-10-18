@@ -1,0 +1,91 @@
+# New on STEP-11 (M30.C6.L-data.V1.U01). The claim under the spine's `term_sheet` stage and under the
+# conditional deferral: what counts as a yes.
+identity:
+  id: founder_office.heu.investor_relations.only_an_offer_counts
+  name: Only an offer counts
+  kind: heuristic
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.fundraising.investor_relations
+  subdomain: fundraising
+  version: 1.0.0
+  status: draft
+  aliases:
+    - Hear no till you hear yes
+
+purpose:
+  statement: >-
+    Draws the line between interest and commitment, which a founder's hopes and an investor's
+    politeness both blur, so that the round is counted in money that will arrive rather than in warmth.
+  answers:
+    - They said they love it. Are they in?
+    - How much of the round is actually committed?
+
+heuristic:
+  statement: >-
+    Count an investor in only when they have made a definite offer — an amount and a valuation or cap,
+    with no conditions — and confirmed it in writing. Until then, treat them as a no, however warm they
+    sound.
+  why: >-
+    "Investors habitually seem more positive than they are", and some "use language that makes it sound
+    as if they're committing, but which doesn't actually commit them" (Graham). "We'd love to be part of
+    this", "we're in if you find a lead" and "we can do fifty to a hundred and fifty" are not offers: Y
+    Combinator's Handshake Deal Protocol defines an offer as an amount plus a valuation or cap and refuses
+    ranges and conditions, because a founder who keeps room for a conditional yes is the only party it
+    binds.
+  confidence_bp: 8000
+  applies_when: >-
+    An investor has expressed interest, or the founder is counting how much of the round is committed.
+  breaks_down_when: >-
+    An established investor's verbal yes on standard paperwork is rarely withdrawn — "Established ones
+    have learned to treat saying yes as like diving off a diving board" (Graham) — so the written
+    confirmation is a formality there, though still worth the email. And a term sheet is conditional by
+    design (diligence, documents); that is the term-sheet stage, not a contingent yes.
+  reads:
+    - founder_office.obj.investor_relations.investor_conversation
+
+objects_used:
+  - founder_office.obj.investor_relations.investor_conversation
+
+outcomes:
+  - >-
+    The round's committed total counts confirmed offers only.
+  - >-
+    Interest that is not yet an offer is worked as a live conversation, not banked as money.
+
+failure_modes:
+  - >-
+    Treating it as a reason to push for a commitment on a first call, which reads as desperation.
+  - >-
+    Saving room in the round for an investor whose yes was conditional, and turning away an unconditional
+    one to do it.
+
+limits:
+  - >-
+    It says what counts as committed, not how to get there; the spine's stages are how.
+
+references:
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. "Treat investors as saying no till they unequivocally say yes, in the form of a
+      definite offer with no contingencies"; "investors habitually seem more positive than they are".
+  - title: The Handshake Deal Protocol
+    kind: standard
+    author: Y Combinator
+    url: https://www.ycombinator.com/handshake
+    note: >-
+      An offer is an amount plus a valuation or cap (or no cap), confirmed in writing; a range is "an
+      offer to invest the bottom end of the range, plus an expression of interest in possibly investing
+      more"; conditions cannot be added to a handshake deal.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete

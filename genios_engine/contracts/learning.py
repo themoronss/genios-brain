@@ -264,9 +264,42 @@ class LearningObject:
                 "expires_at": self.expires_at}
 
 
+#: ⛔ The three states a policy's prohibition lists can be in — see `LearningPolicy
+#: .prohibitions_state`. Module constants rather than class attributes because `LearningPolicy` is
+#: a `slots=True` dataclass and this module already keeps its vocabularies at module level
+#: (`LEARNING_VERSION`, `TERMINAL_LEARNING_STATES`).
+PROHIBITIONS_LOADED = "loaded"
+PROHIBITIONS_ABSENT = "absent"
+PROHIBITIONS_MALFORMED = "malformed"
+PROHIBITIONS_STATES: frozenset[str] = frozenset(
+    {PROHIBITIONS_LOADED, PROHIBITIONS_ABSENT, PROHIBITIONS_MALFORMED})
+
+
 @dataclass(frozen=True, slots=True)
 class LearningPolicy:
-    """Versioned governance authority. Defaults are protective; a tenant can only narrow them."""
+    """Versioned governance authority. Defaults are protective.
+
+    ⛔ CORRECTED 2026-10-02 BY `S10` — THIS DOCSTRING USED TO END *"a tenant can only narrow
+    them"*, AND NOTHING ENFORCES THAT. `orchestrator.load_or_seed_policy` assigns every stored
+    column verbatim (`min_distinct_days=row["min_distinct_days"]`) with no clamp against these
+    defaults, and `migrations/0045_l6_learning.sql` gives the columns DEFAULTS with no CHECK — the
+    one locked constraint on the table is `learning_policies_knowledge_review_locked`. So a stored
+    revision CAN be weaker than the code default in every numeric field.
+
+    ⛔ IT IS LATENT, NOT LIVE, AND FOR A REASON THAT IS ALREADY WRITTEN DOWN ONE FILE OVER:
+    there is no policy-write surface, so every stored revision was seeded from these defaults.
+    `load_or_seed_policy` records the same shape for the prohibition lists — *"the moment a policy-
+    write surface exists it becomes a silent authority hole"*.
+
+    ⛔ WHY IT MATTERS MORE THAN A LOOSE FLOOR. `min_distinct_days` is the gate that keeps
+    `unit_recommendation_learning`'s durable ADAPTIVE proposal out of the brain — see
+    `feedback/target_policy.BLOCKED_BY_ARITHMETIC`. A tenant revision with `min_distinct_days = 1`
+    opens the declared authority violation without any code change, which is why the guard
+    asserts the DEFAULT and the loader's silence together.
+
+    *A stale comment reads as a measurement* — and a protective claim nothing enforces is the
+    kind that gets built on.
+    """
 
     org_id: str
     revision: int
@@ -283,6 +316,28 @@ class LearningPolicy:
     learning_enabled: bool = True
     blocked_targets: tuple[str, ...] = ()
     blocked_subject_prefixes: tuple[str, ...] = ()
+    #: ⛔ WHETHER THE PROHIBITION LISTS ABOVE CAN BE TRUSTED, and why this field exists at all.
+    #:
+    #: `()` means "nothing is blocked" — a DECISION. It cannot also mean "the list did not load",
+    #: which is an ABSENCE, and the two demand opposite behaviour: a decision admits, an absence
+    #: must refuse. `migrations/0045` keeps them distinct at the database (`blocked_targets jsonb`
+    #: is nullable and `orchestrator`'s seed writes `cast('[]' as jsonb)` precisely so that "an
+    #: empty prohibition list is a decision, NULL is an absence"), and until this field existed
+    #: **the distinction was destroyed the moment a row was read into this contract**, because a
+    #: tuple has no third state.
+    #:
+    #:   "loaded"     both columns came back as JSON arrays of non-empty strings
+    #:   "absent"     a stored revision had NULL where a list belongs — the policy did not load
+    #:   "malformed"  a stored revision held something that is not a list of non-empty strings
+    #:
+    #: ⛔ The default is `"loaded"` so that every policy constructed in code — including the
+    #: protective seeded default — is trusted. Only a policy RECONSTRUCTED from a row can be
+    #: untrustworthy, and only the loader can know that.
+    #:
+    #: ⛔ This constructor does NOT refuse an untrusted policy: it must be constructible in order
+    #: to represent the failure. `governance.preflight` refuses every proposal under one, and
+    #: `orchestrator.run_learning` blocks the pass before it claims the tenant's week.
+    prohibitions_state: str = PROHIBITIONS_LOADED
 
     def __post_init__(self) -> None:
         s = object.__setattr__
@@ -296,6 +351,19 @@ class LearningPolicy:
             raise ValueError("knowledge_requires_review cannot be disabled")
         s(self, "blocked_targets", tuple(self.blocked_targets))
         s(self, "blocked_subject_prefixes", tuple(self.blocked_subject_prefixes))
+        # An unknown state is itself a load failure: refusing it here would make the failure
+        # unrepresentable, and accepting it silently would make `prohibitions_loaded` lie.
+        if self.prohibitions_state not in PROHIBITIONS_STATES:
+            raise ValueError(f"unknown prohibitions_state: {self.prohibitions_state!r}")
+
+    @property
+    def prohibitions_loaded(self) -> bool:
+        """⛔ Whether `blocked_targets` / `blocked_subject_prefixes` may be relied on.
+
+        False means **the lists are empty because they could not be read**, not because the tenant
+        blocked nothing — so an empty list must not be read as permission.
+        """
+        return self.prohibitions_state == PROHIBITIONS_LOADED
 
     @property
     def policy_key(self) -> str:
@@ -305,6 +373,8 @@ class LearningPolicy:
 # Late import to avoid a cycle at module top; Mapping is only used in annotations/returns.
 from collections.abc import Mapping  # noqa: E402
 
-__all__ = ["ALLOWED_LEARNING_TRANSITIONS", "LEARNING_VERSION", "TERMINAL_LEARNING_STATES",
+__all__ = ["ALLOWED_LEARNING_TRANSITIONS", "LEARNING_VERSION", "PROHIBITIONS_ABSENT",
+           "PROHIBITIONS_LOADED", "PROHIBITIONS_MALFORMED", "PROHIBITIONS_STATES",
+           "TERMINAL_LEARNING_STATES",
            "BrainTarget", "LearningEvidence", "LearningObject", "LearningPolicy", "LearningState",
            "LearningTarget", "Visibility", "VisibilityScope", "learning_can_transition"]

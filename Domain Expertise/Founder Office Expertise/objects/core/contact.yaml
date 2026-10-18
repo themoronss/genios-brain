@@ -1,0 +1,238 @@
+# CORE — a person on the other side of founder work. Loaded today by investor relations only (expected
+# warning); programmes, introductions and hiring will load it. Not Sales' contact: the questions here
+# are what role this person plays in the work, whether they can decide, and whose move it is.
+identity:
+  id: founder_office.obj.core.contact
+  scope: core
+  name: Contact
+  domain: founder_office
+  subdomain: fundraising
+  owner_capability: founder_office.fundraising.investor_relations
+  version: 1.0.0
+  status: draft
+  aliases: ["Person", "Counterparty"]
+
+purpose:
+  statement: >-
+    A person the founder deals with in a piece of work — a partner or an associate at a fund, an angel,
+    a programme manager, a connector — held with the role they play in that work, whether they can decide,
+    and whose move it is.
+  discriminator: >-
+    The person is durable; their role is per piece of work — the same angel can be the investor in one
+    thread and the connector in another, which is why the role is read from the exchange, not stamped on
+    the person.
+  answers:
+    - Who is this, and what are they to this piece of work?
+    - Can they decide, or do they take it to someone who can?
+    - Whose move is it with them?
+  not:
+    - The organisation they belong to — the company's.
+    - Where a raise stands with their firm — the investor conversation's.
+
+attributes:
+  - name: reach
+    purpose: How to reach them and whether they answer.
+    type: composite
+    contains: [full_name, primary_email, last_inbound_at, last_outbound_at, ball_in_court,
+               reply_cadence_days]
+  - name: standing
+    purpose: What they are to the work and what they can decide.
+    type: composite
+    contains: [organisation_ref, title, seniority, decision_reach, role_in_work, introduced_by_ref]
+  - name: full_name
+    purpose: The name they sign with.
+    type: value
+    data_type: string
+  - name: primary_email
+    purpose: The address they write from. A machine address is never owed a reply.
+    type: value
+    data_type: string
+    required: true
+  - name: organisation_ref
+    purpose: The organisation they act for in this work.
+    type: reference
+    ref: founder_office.obj.core.company
+  - name: title
+    purpose: Their title as they sign it. Titles between associate and partner vary too much to read alone.
+    type: value
+    data_type: string
+  - name: seniority
+    purpose: Where they sit, read from the title and from what they say they can do.
+    type: value
+    data_type: enum
+    allowed_values: [partner, principal, associate, analyst, angel, programme_manager, founder, other,
+                     unknown]
+    default: unknown
+  - name: decision_reach
+    purpose: >-
+      Whether they decide, influence, or only source. "an associate is not a VC. They have no
+      decision-making power" (Graham, "How to Raise Money", note 5).
+    type: value
+    data_type: enum
+    allowed_values: [decides, influences, sources, none, unknown]
+    default: unknown
+  - name: role_in_work
+    purpose: What they are in this exchange, as Layer 2 records it.
+    type: value
+    data_type: enum
+    allowed_values: [counterparty, introducer, introduced, owner, approver, observer, machine]
+    source_paths: [party.role]
+  - name: introduced_by_ref
+    purpose: Who introduced them — the person to thank, update and ask again.
+    type: reference
+    ref: founder_office.obj.core.contact
+  - name: last_inbound_at
+    purpose: When they last wrote.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+  - name: last_outbound_at
+    purpose: When we last wrote to them.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_outbound]
+  - name: ball_in_court
+    purpose: Whose move it is with this person.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody, unknown]
+    source_paths: [thread.ball_in_court]
+  - name: reply_cadence_days
+    purpose: >-
+      Their own median reply time, once they have replied at least twice — their pace, measured, never a
+      profession's.
+    type: value
+    data_type: integer
+    source_paths: [party.reply_cadence_days]
+
+relationships:
+  - type: belongs_to
+    target: founder_office.obj.core.company
+    cardinality: zero_or_one
+    weight_bp: 9000
+    confidence_bp: 8000
+    description: The organisation they act for. An angel acts for themselves and has none.
+  - type: works_with
+    target: founder_office.obj.core.contact
+    cardinality: zero_or_many
+    weight_bp: 5000
+    confidence_bp: 6000
+    description: The connector who introduced them, and the colleagues they bring in.
+  - type: owns
+    target: founder_office.obj.core.next_action
+    cardinality: zero_or_many
+    weight_bp: 6000
+    confidence_bp: 6000
+    description: The next steps they have promised.
+
+inference_patterns:
+  deterministic:
+    - id: ct.introducer_not_the_counterparty
+      statement: >-
+        The person made the introduction. They are the connector, and the action belongs with the people
+        they introduced.
+      status: executable
+      when:
+        - {path: party.role, op: "=", value: introducer}
+      yields: {attribute: role_in_work, value: introducer, confidence_bp: 8500}
+      false_positive: >-
+        An angel who introduces a company to their co-investors may also invest; the role is per thread.
+    - id: ct.machine_sender
+      statement: >-
+        The sender is a machine — a portal, a newsletter, a bot. Nobody there is owed a reply.
+      status: executable
+      when:
+        - {path: party.role, op: "=", value: machine}
+      yields: {attribute: role_in_work, value: machine, confidence_bp: 9000}
+      false_positive: >-
+        A programme's portal sends machine mail whose content still asks something of the founder; the ask
+        is done on the portal, not by replying.
+    - id: ct.our_own_side
+      statement: The person works on our side of the work, and is not a counterparty.
+      status: executable
+      when:
+        - {path: party.role, op: "=", value: owner}
+      yields: {attribute: role_in_work, value: owner, confidence_bp: 8500}
+      false_positive: >-
+        A co-founder's personal address that the graph has not linked to the company.
+    - id: ct.turn_is_ours
+      statement: They wrote last, and the move is ours.
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields: {attribute: ball_in_court, value: us, confidence_bp: 9000}
+      false_positive: A courtesy close leaves the turn nominally ours with nothing owed.
+  heuristic:
+    - id: ct.seniority_from_signature
+      statement: Seniority read from the signature block and the title.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: party.title, owner_layer: L2,
+           note: "Signature blocks are read by Layer 1 and the title is not written to the graph."}
+      yields: {attribute: seniority, confidence_bp: 7000}
+
+evidence:
+  - source: email
+    strength_bp: 8000
+    decays: true
+    description: Who they are and whose turn it is, read from the correspondence.
+  - source: calendar
+    strength_bp: 7000
+    decays: true
+    independent_of: [email]
+    description: A meeting held with them is evidence they are engaged, and of who else attended.
+  - source: manual_entry
+    strength_bp: 9000
+    decays: false
+    description: The founder's brief, when it names the person's role.
+
+anti_patterns:
+  - id: ct.ap.associate_as_decider
+    statement: Treating the associate who replies as the person who decides.
+    why_it_happens: They are the one writing back, promptly and warmly.
+    cost: >-
+      A conversation that never reaches a partner converts at approximately nothing, however well it
+      reads.
+    instead: Ask who decides and how, and get the partner into the conversation.
+  - id: ct.ap.connector_as_investor
+    statement: Filing the connector as the investor.
+    why_it_happens: The connector's mail is the first and warmest in the thread.
+    cost: The next move is aimed at someone with no cheque, and the investor is never written to.
+    instead: Read the role from the exchange; act on the people introduced.
+    detectable_by: [ct.introducer_not_the_counterparty]
+
+examples:
+  - label: A partner who asks for the data room after a first call
+    kind: typical
+    note: seniority partner, decision_reach decides, ball_in_court us.
+  - label: An associate who sourced the company from a newsletter
+    kind: typical
+    note: seniority associate, decision_reach sources; the next move is to reach a partner.
+  - label: A founder who introduces the company to their own investor
+    kind: typical
+    note: role_in_work introducer; the action is with the investor, the thanks with the founder.
+  - label: A bot that schedules meetings on an investor's behalf
+    kind: misclassification
+    note: role_in_work machine, not the investor; nobody there is owed a reply.
+
+references:
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013, note 5 — associates "have no decision-making power"; titles between associate and
+      partner "vary too much to generalize".
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
+  notes: >
+    New for the Founder Office on STEP-11 (M30.C6.L-data.V1.U01), written for the founder's work rather
+    than copied from Sales' contact. Concise on purpose; the role vocabulary is Layer 2's own
+    (`party.role`).

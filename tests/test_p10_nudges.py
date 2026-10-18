@@ -216,9 +216,12 @@ def _in_3h() -> str:
     return (datetime.now(timezone.utc) + timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M")
 
 
-POPUP = {"work": True, "remember": True, "adds": "urgent_risk",
-         "items": [{**ASK_ITEM, "due": _in_3h(), "quote": "send the revised pricing"}],
-         "note": "Priya asked for this pricing on Monday too"}
+def _popup() -> dict:
+    """Built when the test runs (S17X-F3): its due is three hours from NOW, not from the import —
+    a run that spans three hours would otherwise hand the gate an overdue ask (`03` F142)."""
+    return {"work": True, "remember": True, "adds": "urgent_risk",
+            "items": [{**ASK_ITEM, "due": _in_3h(), "quote": "send the revised pricing"}],
+            "note": "Priya asked for this pricing on Monday too"}
 
 
 @pytest.mark.pg
@@ -267,7 +270,8 @@ def test_popup_actions_snooze_and_draft(client, monkeypatch):  # noqa: F811
         c.execute(text("update orgs set timezone='Asia/Kolkata' where id=:o"), {"o": org})
     client.get("/v1/seats/me/slice", headers=dev_h)            # the seat has a slice version
     monkeypatch.setattr(SP, "ensure_profile", lambda *a, **kw: None)
-    monkeypatch.setattr(SI, "llm_insight", lambda *a, **kw: dict(POPUP))
+    popup = _popup()
+    monkeypatch.setattr(SI, "llm_insight", lambda *a, **kw: dict(popup))
 
     m = _look(client, dev, [ASK]).json()
     (fu,) = _q("select * from screen_followups where org_id=:o", o=org)
@@ -336,7 +340,7 @@ def test_popup_actions_snooze_and_draft(client, monkeypatch):  # noqa: F811
     assert r.json() == {"text": "Hi Priya, sending the revised pricing by Friday evening."}
     assert seen["client"]["timeout"] == RD.TIMEOUT_S and seen["client"]["max_retries"] == 0
     prompt = seen["call"]["messages"][0]["content"]
-    assert POPUP["items"][0]["quote"] in prompt and "Priya Shah" in prompt
+    assert popup["items"][0]["quote"] in prompt and "Priya Shah" in prompt
     (cost,) = _q("select purpose, input_tokens, output_tokens from llm_costs where org_id=:o "
                  "and purpose='followup_draft'", o=org)
     assert (cost.input_tokens, cost.output_tokens) == (120, 18)
@@ -399,7 +403,11 @@ def test_the_weekly_profile_reads_only_the_seats_own_data(client, monkeypatch): 
                 "insert into screen_followups (id, org_id, seat_id, kind, text, who, topic_key, "
                 "created_at) values (:i, :o, :s, :k, 'n', :w, :t, :cr)"),
                 {"i": f"fu_p{i}{org[-6:]}", "o": org, "s": s, "k": kind, "w": who,
-                 "t": f"tp{i}", "cr": _ist(2026, 9, 14, 11) if s == seat and i == 0
+                 # ⛔ Was `_ist(2026, 9, 14, 11)` — the day this test was written. `seat_profile.WINDOW` is 30
+                 # days back from `now`, so on 14 Oct 2026 at 11:00 IST that seed left the window and Priya
+                 # counted 1: a time bomb, not a defect of the profile. Now inside the window by construction,
+                 # still a different instant from the others.
+                 "t": f"tp{i}", "cr": now - timedelta(days=3) if s == seat and i == 0
                  else now - timedelta(hours=2)})
         for s, t, w in [(seat, "site:naukri.com", False), (seat, "slack:ravi", True),
                         (other, "site:secret.example", False)]:
@@ -468,7 +476,9 @@ def test_graph_views_hide_another_seats_private_screen_data(client):  # noqa: F8
     from genios_engine.context.graph_store import GraphStore
     from genios_engine.platform.auth import AuthCtx
     ws = _workspace(client, capture=False)
-    n = _seed(ws)
+    # S17X-F1 (yc2_w27_s1718 M41.C1.L-integration.V1.U05): this module has no `_clock` of its
+    # own, so `test_moments_pg.NOW` is `None` when this file runs alone — pass our own instant.
+    n = _seed(ws, now=datetime.now(timezone.utc))
     org = ws["org"]
     o_mail, m_mail = ws["owner"]["email"].lower(), ws["member"]["email"].lower()
     # an edge learned from the owner's private screen: Priya ↔ Ravi

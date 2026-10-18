@@ -34,7 +34,16 @@ pytestmark = [pytest.mark.pg,
 
 GRANT = "urn:ietf:params:oauth:grant-type:device_code"
 _ORGS: list[str] = []
-NOW = datetime.now(timezone.utc)
+#: ⛔ Read when each test runs, never when this module is imported (`yc2_w27_s17`
+#: M41.C1.L-integration.V1.U02, `YC-II W27/03` F142): an instant taken at import is hours old by the
+#: time a long run — a sleeping laptop, a slow CI runner — reaches the test. Set by `_clock`.
+NOW: datetime = None  # type: ignore[assignment]
+
+
+@pytest.fixture(autouse=True)
+def _clock():
+    global NOW
+    NOW = datetime.now(timezone.utc)
 
 
 def _engine():
@@ -123,7 +132,12 @@ def _workspace(client, *, capture: bool = True) -> dict:
 
 
 # ── a small graph: two seats both talk to Priya @ Acme; the owner owes her a proposal ─────────
-def _seed(ws: dict) -> dict:
+def _seed(ws: dict, *, now: datetime | None = None) -> dict:
+    """`now` defaults to this module's own `NOW` (set by `_clock` for every test here). A caller
+    from another module (`yc2_w27_s1718` M41.C1.L-integration.V1.U05, S17X-F1) that has no
+    `_clock` of its own — `NOW` would still be `None` when the file runs alone — MUST pass its
+    own instant; `test_no_test_reads_the_clock_at_import.py` holds that cross-module import to it."""
+    now = now if now is not None else NOW
     org = ws["org"]
     o_mail, m_mail = ws["owner"]["email"].lower(), ws["member"]["email"].lower()
     n = {k: f"node_{k}_{uuid.uuid4().hex[:8]}" for k in
@@ -143,7 +157,7 @@ def _seed(ws: dict) -> dict:
              ("works_at", n["priya"], n["acme"]), ("about", n["deal"], n["acme"]),
              ("owns", n["me1"], n["cmt"]), ("attended", n["me1"], n["mtg"]),
              ("attended", n["priya"], n["mtg"])]
-    start = (NOW + timedelta(days=1)).replace(microsecond=0)
+    start = (now + timedelta(days=1)).replace(microsecond=0)
     facts = [(n["deal"], "deal.stage", "negotiation", None, None),
              (n["deal"], "deal.status", "open", None, None),
              (n["cmt"], "commitment.text", "send the revised proposal", None, None),
@@ -183,11 +197,11 @@ def _seed(ws: dict) -> dict:
                 "source_object_id, dedup_key, actor, occurred_at, visibility_scope, "
                 "visibility_principals) values (:e, :o, 'conn', 'screen_session', 'message', :e, "
                 ":e, '{}'::jsonb, :at, :scope, cast(:who as text[]))"),
-                {"e": ev, "o": org, "at": NOW - timedelta(days=days), "scope": scope, "who": who})
+                {"e": ev, "o": org, "at": now - timedelta(days=days), "scope": scope, "who": who})
             c.execute(text(
                 "insert into graph_observations (observation_id, org_id, subject_node_id, kind, "
                 "occurred_at, created_by_event_id) values (:i, :o, :s, 'event_presence', :at, :e)"),
-                {"i": "obs_" + ev, "o": org, "s": n["priya"], "at": NOW - timedelta(days=days),
+                {"i": "obs_" + ev, "o": org, "s": n["priya"], "at": now - timedelta(days=days),
                  "e": ev})
         ev_scr = f"evt_scr_{uuid.uuid4().hex[:8]}"
         c.execute(text(
@@ -196,11 +210,11 @@ def _seed(ws: dict) -> dict:
             "visibility_principals) values (:e, :o, :conn, 'screen_session', 'message', :e, :e, "
             "'{}'::jsonb, :at, 'private', cast(:who as text[]))"),
             {"e": ev_scr, "o": org, "conn": f"screen:{ws['owner']['seat_id']}",
-             "at": NOW - timedelta(days=2), "who": [o_mail]})
+             "at": now - timedelta(days=2), "who": [o_mail]})
         c.execute(text(
             "insert into graph_observations (observation_id, org_id, subject_node_id, kind, "
             "occurred_at, created_by_event_id) values (:i, :o, :s, 'mention:person', :at, :e)"),
-            {"i": "obs_" + ev_scr, "o": org, "s": n["ravi"], "at": NOW - timedelta(days=2),
+            {"i": "obs_" + ev_scr, "o": org, "s": n["ravi"], "at": now - timedelta(days=2),
              "e": ev_scr})
         c.execute(text("insert into graph_source_refs (source_ref_id, org_id, observation_id, "
                        "event_id) values (:r, :o, :i, :e)"),

@@ -205,6 +205,11 @@
         "type": "string"
       }
     },
+    "do_nothing_consequence": {
+      "type": "string",
+      "minLength": 1,
+      "description": "STEP-11. What happens if nobody acts on this situation, in one sentence a professional would say — what the decider reads instead of the template \"… is left unaddressed while its evidence compounds\"."
+    },
     "render": {
       "type": "object",
       "additionalProperties": false,

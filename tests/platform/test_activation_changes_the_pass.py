@@ -154,8 +154,27 @@ def test_the_l4_receipt_count_grew_by_exactly_three():
     test about L4 — and the cheap fix for that is to bump the number, which is how a decision gate
     becomes a rubber stamp. Counting L4's own receipts still fails on an undecided L4 addition, and
     stops failing on decisions taken elsewhere. L5's own count is guarded in
-    `tests/deliver/test_nothing_dies_of_low_confidence.py`."""
-    assert len([r for r in R.receipts("org_1") if r.layer == "L4"]) == 6
+    `tests/deliver/test_nothing_dies_of_low_confidence.py`.
+
+    ⛔ 6 -> 7 ON 2026-10-01, and it is a decision rather than a bump. The seventh is
+    `every action that needs sign-off can name who signs` — measured: 410 of 794 actions carry
+    `requires_approval` against **zero** rows in `authority_rules`, so every one of them announces
+    a requirement it cannot attribute and nothing counted it. It is L4's question because
+    *who signs, and with what right* is this layer's own; see
+    `speedrun008/YCW27/layer-4-executive/STEP-06-DONE-410-approvals-nobody-can-attribute.md`.
+
+    ⛔ AND IT IS WHAT CAUGHT THE AUTHOR OF THAT RECEIPT. Two drafts of its test pinned the GLOBAL
+    total instead, which is the pattern this docstring rejects — the full suite failed here, this
+    docstring explained why, and the global literal came out. The gate worked on the person who
+    did not know it existed, which is the only real test of a gate.
+
+    ⛔ 7 -> 8 ON 2026-10-07, a decision: STEP-06 (`yc2_w27_s06 · M24.C4.L-integration.V3.U02`,
+    `speedrun008/YC-II W27/STEP-06` §8.3–§8.4 C4) — *every admitted situation has a recorded end*.
+    What ended between admission and a decision was a counter in the compiled pass's log line; the
+    compiled lane now records it (`situation_outcomes`, 0194), and the receipt counts an admitted live
+    situation with none. It can fail: `tests/platform/test_every_admitted_situation_has_an_end_receipt.py`
+    seeds one and the receipt counts exactly it. L4's because the promise is `reason/`'s."""
+    assert len([r for r in R.receipts("org_1") if r.layer == "L4"]) == 8
 
 
 def test_no_receipt_claim_is_duplicated():

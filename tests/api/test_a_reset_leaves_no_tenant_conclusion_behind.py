@@ -51,9 +51,17 @@ SURVIVES_RESET: dict[str, str] = {
     "capture_policies": "what the admin allowed to be captured — a decision, not a conclusion",
     "seat_capture_settings": "same, per seat",
     "org_seats": "the people; wiping them would lock the tenant out",
+    "org_self_identities": "who the tenant IS — its declared addresses and domains (STEP-04, 0193): "
+                           "authored, like the seats; a reset that forgot them would make the "
+                           "founder's second address an outside person again",
     "org_members": "same",
     "org_invites": "an invite in flight",
     "seat_profiles": "the person's own profile",
+    "company_brief_lines": "the founder's company brief (STEP-07, 0195): authored and accepted line "
+                           "by line, like `org_self_identities` — what the tenant told us about "
+                           "itself, not something we concluded",
+    "company_brief_reviews": "the weekly review's claim on its week — bookkeeping for the brief "
+                             "that survives with it",
     "workspace_accounts": "the account itself",
     "orgs_archive": "the archive OF orgs — erasing it would erase the record of erasure",
     "audit_log": "must outlive the erasure it records, or the erasure cannot be proved",

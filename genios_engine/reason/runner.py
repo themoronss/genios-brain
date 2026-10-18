@@ -18,12 +18,16 @@ from genios_engine.packs.registry import PackRegistry
 from genios_engine.packs.wiring import (DEFAULT_PACK_ID, ensure_default, ensure_defaults,
                                         make_registry)
 from genios_engine.platform.config import get_settings, l1_seam_enabled
-from genios_engine.platform.funnel import CAPABILITY_RESOLVED, NO_CAPABILITY
+from genios_engine.platform.funnel import CAPABILITY_RESOLVED, DECISION_EMITTED, NO_CAPABILITY
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
+from genios_engine.platform.self_identity import identity_for
 
 from .baselines import build_baselines, load_node_metrics
 from .adapters import (legacy_capability_manifest, reason_legacy_rule,
                        reason_native_capability)
+from .adapters.legacy_context import legacy_context_snapshot
+from .adapters.native import native_context_snapshot
 from .audit import persist_execution
 from .authority import (AUTHORITATIVE_SIGNAL_JOINS, AUTHORITATIVE_SIGNAL_PREDICATE,
                         projected_score)
@@ -336,24 +340,28 @@ def _bulk_load_situations(store, org_id: str) -> dict[str, dict]:
     decision depend on write order.
     """
     from sqlalchemy import text
-    rows = store.engine.connect().execute(text(
-        "select distinct on (anchor_node_id) anchor_node_id, situation_id, situation_type, "
-        "domain, status, confidence_overall, confidence_evidence, confidence_freshness, "
-        "confidence_consistency, confidence_identity, coverage, missing, last_seen_at "
-        "from context_situations where org_id = :o "
-        # A CLOSED SITUATION MAY NOT WIN THIS. The pick is by CONFIDENCE, and a `resolved` or
-        # `archived` row with a higher score than the anchor's live one took the `distinct on`,
-        # was attached as `ctx.situation`, and was injected as a `situation.status` fact — so a
-        # rule reasoned over a situation the lifecycle had already ended. Dormancy is the only
-        # mechanism that stops a stale situation compiling into a card, and it was being computed
-        # correctly and then ignored one layer down.
-        #
-        # `dormant` is EXCLUDED TOO, and that is the point of it: 45 days without evidence is the
-        # lifecycle saying this is no longer live. `partial` stays — a partially-resolved
-        # situation is still open on the half nobody has closed.
-        "  and coalesce(status, 'active') in ('active', 'partial') "
-        "order by anchor_node_id, confidence_overall desc nulls last, situation_id"),
-        {"o": org_id}).mappings().all()
+    # ⛔ STEP-18 §8.3 s18-F1 (`yc2_w27_s18` M48.C2.L-data.V1.U10), `03` F65's twin on the live
+    # sweep path: this read opened its connection inside the expression and never closed it.
+    with store.engine.connect() as conn:
+        rows = conn.execute(text(
+            "select distinct on (anchor_node_id) anchor_node_id, situation_id, situation_type, "
+            "domain, status, confidence_overall, confidence_evidence, confidence_freshness, "
+            "confidence_consistency, confidence_identity, coverage, missing, last_seen_at "
+            "from context_situations where org_id = :o "
+            # A CLOSED SITUATION MAY NOT WIN THIS. The pick is by CONFIDENCE, and a `resolved`
+            # or `archived` row with a higher score than the anchor's live one took the
+            # `distinct on`, was attached as `ctx.situation`, and was injected as a
+            # `situation.status` fact — so a rule reasoned over a situation the lifecycle had
+            # already ended. Dormancy is the only mechanism that stops a stale situation
+            # compiling into a card, and it was being computed correctly and then ignored one
+            # layer down.
+            #
+            # `dormant` is EXCLUDED TOO, and that is the point of it: 45 days without evidence is
+            # the lifecycle saying this is no longer live. `partial` stays — a partially-resolved
+            # situation is still open on the half nobody has closed.
+            "  and coalesce(status, 'active') in ('active', 'partial') "
+            "order by anchor_node_id, confidence_overall desc nulls last, situation_id"),
+            {"o": org_id}).mappings().all()
     return {r["anchor_node_id"]: dict(r) for r in rows}
 
 
@@ -372,8 +380,8 @@ def _bulk_load_metrics(store, org_id) -> dict:
         metric, node_id = parts[0], parts[1]
         baselines, derived = out.setdefault(node_id, ({}, {}))
         v = float(r.value)
-        if metric == "reply_cadence":
-            baselines["reply_cadence"] = v
+        if metric == "write_interval":
+            baselines["write_interval"] = v
         elif metric == "contact_rate_per_account":
             baselines["contact_rate_per_account"] = v
         elif metric in ("momentum", "engagement", "contact_frequency"):
@@ -631,6 +639,130 @@ def _graph_version_guard(store, org_id: str, expected: int, *, pack_id: str | No
 _supp_batch = threading.local()
 
 
+# =================================================================================================
+# STEP-02 · THE CHANGE GATE, LEGACY AND NATIVE LANES (`yc2_w27_s02/M20.C4.L-integration.V3.U01`)
+#
+# The compiled lane's gate (`reason/domain_shadow._CompiledGate`) for the two lanes this module runs:
+# fingerprint the request a rule or a native capability is about to send, and skip it when
+# `reason/change_gate.should_skip` says nothing it depends on moved. A skip REPLAYS the last
+# decision's bookkeeping, so the lifecycle pass below resolves nothing a skip did not look at:
+#
+#   standing / emitted   the subject stays in `fired` — its open signal is kept
+#   deferred             it stays `indeterminate` — the card it found stands (M20.C5)
+#   suppressed / shadow  nothing — it kept nothing alive when it was decided either
+#
+# ⛔ A LEGACY CARD IS "STANDING" ONLY WHILE IT IS STILL SHOWING. A loop-gated rule whose card expired
+# from view while the ask is still open is re-surfaced by the regeneration path below once its
+# cooldown passes ("they asked, we never answered, and silence is not resolution"). The gate must not
+# skip that subject, so the open-signal index counts a signal as standing only while its card is in a
+# showing state.
+#
+# Fails open, as the compiled gate does: a gate that cannot load or fingerprint decides the subject.
+# =================================================================================================
+_LEGACY_STANDING = (
+    "select s.rule_id, s.subject_node_id, max(s.authority_expires_at) as expires_at "
+    "  from signals s join cards c on c.org_id = s.org_id and c.signal_id = s.signal_id "
+    " where s.org_id = :o and s.pack_id = :p and s.pack_version = :pv and s.status = 'open' "
+    "   and c.state in ('queued','surfaced','snoozed','claimed','delivered') "
+    " group by 1, 2")
+
+
+class _LaneGate:
+    """One legacy pass's change gate: loaded once, consulted per subject, written once."""
+
+    def __init__(self, *, stored=None, inputs=None, standing=None, ready: bool = False) -> None:
+        from genios_engine.reason.fingerprint_inputs import InputsIndex
+
+        self.stored = stored or {}
+        self.inputs = inputs or InputsIndex()
+        self.standing = standing or {}
+        self.ready = ready
+        self.decided: dict[str, tuple[str, str, str, str | None]] = {}
+        self.skipped: set[str] = set()
+
+    @classmethod
+    def load(cls, store, org_id: str, pack_id: str, pack_version: str) -> "_LaneGate":
+        from genios_engine.reason.fingerprint_inputs import read_inputs
+        from genios_engine.reason.fingerprint_store import load_all
+
+        try:
+            with store.engine.connect() as c:
+                standing = {(r.rule_id, r.subject_node_id): r.expires_at
+                            for r in c.execute(text(_LEGACY_STANDING),
+                                               {"o": org_id, "p": pack_id, "pv": pack_version})}
+                return cls(stored=load_all(c, org_id), inputs=read_inputs(c, org_id),
+                           standing=standing, ready=True)
+        except Exception:      # noqa: BLE001 — the gate fails open: every subject is decided
+            logger.exception("change gate unavailable for org=%s pack=%s — deciding every subject",
+                             org_id, pack_id)
+            return cls()
+
+    def check(self, *, key: str, rule_id: str, node_id: str, pack_id: str, capability, snapshot,
+              config_snapshot_id, mode, live: bool, eval_time):
+        """(fingerprint, verdict), or (None, None) when the gate cannot judge."""
+        from genios_engine.reason.change_gate import should_skip
+        from genios_engine.reason.fingerprint import material_fingerprint
+
+        if not self.ready:
+            return None, None
+        try:
+            fingerprint = material_fingerprint(
+                capability, snapshot(), config_snapshot_id=config_snapshot_id, mode=mode,
+                inputs=self.inputs.for_rule(pack_id, rule_id, node_id))
+        except Exception:      # noqa: BLE001 — unfingerprintable: decide it
+            logger.exception("change gate could not fingerprint %s", key)
+            return None, None
+        verdict = should_skip(self.stored.get(key), fingerprint, live=live,
+                              standing_expires_at=self.standing.get((rule_id, node_id)) if live
+                              else None, eval_time=eval_time)
+        return fingerprint, verdict
+
+    def replay(self, key: str, subject: tuple[str, str], fired: set, indeterminate: set) -> None:
+        """A skip does what the decision it skips did to the lifecycle's two sets."""
+        from genios_engine.reason import fingerprint_store as fs
+
+        outcome = self.stored[key].outcome
+        if outcome in (fs.STANDING, fs.EMITTED):
+            fired.add(subject)
+        elif outcome == fs.DEFERRED:
+            indeterminate.add(subject)
+        self.skipped.add(key)
+
+    def record(self, key: str, lane: str, fingerprint: str | None, outcome: str,
+               run_id: str | None = None) -> None:
+        if fingerprint is not None:
+            self.decided[key] = (lane, fingerprint, outcome, run_id)
+
+    def flush(self, *, store, org_id: str, eval_time, out) -> None:
+        from genios_engine.reason import fingerprint_store as fs
+
+        if not (self.decided or self.skipped):
+            return
+        try:
+            with store.engine.begin() as c:
+                for key, (lane, fingerprint, outcome, run_id) in self.decided.items():
+                    fs.record_decided(c, org_id=org_id, subject_key=key, lane=lane,
+                                      fingerprint=fingerprint, outcome=outcome, run_id=run_id,
+                                      decided_at=eval_time)
+                for key in self.skipped:
+                    fs.record_skipped(c, org_id=org_id, subject_key=key, checked_at=eval_time)
+        except Exception:      # noqa: BLE001 — a lost memory costs one re-decision next sweep
+            out["gate_write_failed"] += 1
+            logger.exception("change gate could not record the pass for org=%s", org_id)
+
+
+def _deferred_outcome(decision) -> str:
+    """A live run's DEFER, in the store's words: the decider's verdict may be skipped on unchanged
+    inputs; an unavailable decider (`llm_decision_unavailable:*`, the cap included) must be asked
+    again."""
+    from genios_engine.reason import fingerprint_store as fs
+    from genios_engine.reason.llm_decision_maker import LLM_UNAVAILABLE_REASON
+
+    unavailable = any(str(u).startswith(LLM_UNAVAILABLE_REASON)
+                      for u in (decision.uncertainty or ()))
+    return fs.INDETERMINATE if unavailable else fs.DEFERRED
+
+
 def _suppress(store, org_id, rule_id, node_id, reason, eval_time, detail=None) -> None:
     row = {"o": org_id, "r": rule_id, "n": node_id, "rc": reason,
            "d": json.dumps(detail or {}, default=str), "e": eval_time}
@@ -656,6 +788,29 @@ def _flush_suppress_batch(store) -> None:
             "reason_code, detail, eval_time) values (:o,:r,:n,:rc,cast(:d as jsonb),:e)"), rows)
 
 
+def _decision_payload(decision, selected) -> dict:
+    """The decision's own content a signal carries, from the decision itself."""
+    return {
+        "do_nothing_consequence": decision.do_nothing_consequence or None,
+        "uncertainty": list(decision.uncertainty or ()),
+        "outcome_window_days": decision.outcome_window_days,
+        # The candidates that LOST, with disposition and utility — the receipt that a
+        # choice happened. Before the wait-play landed this was structurally empty
+        # (one candidate per run, nothing ever eliminated); now it is the trace of the
+        # comparison every card claims to be the outcome of.
+        "rejected_candidates": [
+            {"play_id": cand.play_id, "disposition": cand.disposition.value,
+             "utility_bp": cand.utility_bp}
+            for cand in decision.candidates
+            if cand.play_id != selected.play_id],
+        "candidate_steps": list((selected.parameters or {}).get("steps") or ()),
+        # The lane the decider routed — a thing to do, or to watch — and why (`reason/output_lane`;
+        # STEP-13 `yc2_w27_s13` M36.C1.L-data.V0.U02, `03` F186): the signal carries it to its card.
+        "output_lane": decision.output_lane.value if decision.output_lane is not None else None,
+        "lane_reason": decision.lane_reason,
+    }
+
+
 def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot_id,
           reasoning_run_id, reasoning_candidate_id, reasoning_decision_hash,
           authority_expires_at, selected_play_id, authority_pack_revision,
@@ -672,10 +827,9 @@ def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot
             {"o": org_id, "r": rule.id, "n": node_id,
              "p": pack_id, "pv": pack_version}).fetchall()
         if retired:
-            c.execute(text(
-                "update cards set state='expired' where org_id=:o and signal_id=any(:ids) "
-                "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-                {"o": org_id, "ids": [item.signal_id for item in retired]})
+            # STEP-06: the card leaves with its reason — a newer signal replaced the one it carried.
+            card_lifecycle.expire_cards(c, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                        signal_ids=[item.signal_id for item in retired])
         row = c.execute(text(
             "insert into signals (signal_id, org_id, pack_id, pack_version, rule_id, "
             "rule_version, level, "
@@ -684,11 +838,12 @@ def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot
             "reasoning_decision_hash, authority_expires_at, authority_pack_revision, "
             "authority_binding_version, "
             "do_nothing_consequence, uncertainty, outcome_window_days, "
-            "rejected_candidates, candidate_steps) "
+            "rejected_candidates, candidate_steps, output_lane, lane_reason) "
             "values (:id,:o,:pack,:packv,:r,:v,:lv,:n,:s,cast(:si as jsonb),:rc,"
             "cast(:ev as jsonb),:play,:et,"
             ":cs,:rr,:candidate,:decision_hash,:expires,:pack_revision,1,"
-            ":dnc,cast(:unc as jsonb),:owd,cast(:rej as jsonb),cast(:steps as jsonb)) "
+            ":dnc,cast(:unc as jsonb),:owd,cast(:rej as jsonb),cast(:steps as jsonb),"
+            ":lane,:lane_reason) "
             "on conflict (org_id,pack_id,pack_version,rule_id,subject_node_id) "
             "where status='open' do nothing "
             "returning signal_id"),
@@ -705,6 +860,8 @@ def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot
              "owd": (decision_payload or {}).get("outcome_window_days"),
              "rej": json.dumps((decision_payload or {}).get("rejected_candidates") or []),
              "steps": json.dumps((decision_payload or {}).get("candidate_steps") or []),
+             "lane": (decision_payload or {}).get("output_lane"),
+             "lane_reason": (decision_payload or {}).get("lane_reason"),
              }).first()
     return row.signal_id if row else None
 
@@ -742,8 +899,108 @@ def _muted_rules(store, org_id: str, pack_id: str, pack_version: str) -> set[str
             {"o": org_id, "p": pack_id, "pv": pack_version})}
 
 
+# =================================================================================================
+# STEP-12 M33 · A PACK RULE STANDS DOWN FOR A FILE ITS REVIEW DECIDED
+# (tree `yc2_w27_s12` M33.C1.L-integration.V0.U14, `03` F173, under `06` D1)
+#
+# A file a valid review covers is decided ONCE, from that review, by the compiled lane
+# (`reason/domain_shadow`). Measured on the golden set's first decided re-record (12 Oct): beside the
+# file's card the general pack's `unanswered_email` stood on the person who wrote — the same matter,
+# the decider asked for it — on 15 of the 21 cases it failed. So `run` is handed what the files
+# DECIDED ON THE LIVE LANE explain (`explained`, a `reason/expert/cover.Covers`): a rule on one of
+# such a file's nodes — its anchor, one of its people, or a node no one owns — whose every fact it
+# reads came from events the review saw is not reasoned (no decider, no R-1); an open signal it left
+# is replaced by the file's decision, its cards REPLACED (STEP-06), and the stand-down is a
+# suppression row, counted (`covered_by_review`). A rule resting on a fact with no source event, or
+# on an event the review never saw, is reasoned as before. The shadow native lane
+# (`sales.deal_cooling`) names no fields: a subject every stored fact of which came from events the
+# review saw is not reasoned there either.
+# =================================================================================================
+
+#: The suppression reason, and the count, of a pack rule its file's review decided.
+COVERED_BY_REVIEW = "covered_by_review"
+
+#: Every fact's source events, for the facts of the nodes a decided file may explain — one read a pass.
+_FACT_EVENTS = (
+    "select fact_version_id, event_id from graph_source_refs "
+    " where org_id = :o and fact_version_id = any(:fvs) order by fact_version_id, event_id")
+
+#: The open signal a stood-down rule left on its subject — replaced by the file's decision.
+_STOOD_DOWN_RULE = (
+    "update signals set status = 'expired' where org_id = :o and pack_id = :p and pack_version = :pv "
+    "   and rule_id = :r and subject_node_id = :n and status = 'open' returning signal_id")
+
+
+def _rule_paths(rule) -> set[str]:
+    """Every fact path a rule reads: its conditions', its urgency's, and its evidence fields."""
+    paths = {str(c["path"]) for c in rule.when or () if isinstance(c, dict) and c.get("path")}
+    if isinstance(rule.urgency, dict) and rule.urgency.get("path"):
+        paths.add(str(rule.urgency["path"]))
+    return paths | {str(f) for f in rule.evidence_fields or ()}
+
+
+def _events_behind(ctx, rule, events_by_fact: dict[str, set[str]]) -> set[str]:
+    """The source events of every stored fact the rule reads on this subject. A derived fact has no
+    version, so no source event: a rule that reads one is never explained by events alone."""
+    behind: set[str] = set()
+    for path in _rule_paths(rule):
+        fact = ctx.facts.get(path)
+        if not isinstance(fact, dict):
+            continue
+        version = fact.get("fact_version_id")
+        if not version or not events_by_fact.get(str(version)):
+            return set()
+        behind |= events_by_fact[str(version)]
+    return behind
+
+
+def _node_events(ctx, events_by_fact: dict[str, set[str]]) -> set[str]:
+    """The source events of every stored fact the subject holds — what a native capability, which
+    names no fields of its own, rests on. A stored fact with no source event explains nothing."""
+    behind: set[str] = set()
+    for fact in ctx.facts.values():
+        version = fact.get("fact_version_id") if isinstance(fact, dict) else None
+        if not version:
+            continue
+        if not events_by_fact.get(str(version)):
+            return set()
+        behind |= events_by_fact[str(version)]
+    return behind
+
+
+def _fact_events(store, org_id: str, facts_by_node: dict, node_ids) -> dict[str, set[str]]:
+    """fact version → its source events, for every stored fact on `node_ids`, in one read."""
+    versions = sorted({str(f["fact_version_id"]) for n in node_ids
+                       for f in (facts_by_node.get(n) or {}).values()
+                       if isinstance(f, dict) and f.get("fact_version_id")})
+    out: dict[str, set[str]] = {}
+    if not versions:
+        return out
+    with store.engine.connect() as c:
+        for r in c.execute(text(_FACT_EVENTS), {"o": org_id, "fvs": versions}):
+            out.setdefault(str(r.fact_version_id), set()).add(str(r.event_id))
+    return out
+
+
+def _stand_down_rule(store, org_id: str, pack_id: str, pack_version: str, rule_id: str,
+                     node_id: str, cover, eval_time) -> int:
+    """A rule its file's review decided: its open signal replaced by the file's decision — its cards
+    REPLACED — and the stand-down recorded beside every other reason a rule did not emit."""
+    with store.engine.begin() as c:
+        retired = c.execute(text(_STOOD_DOWN_RULE), {"o": org_id, "p": pack_id, "pv": pack_version,
+                                                     "r": rule_id, "n": node_id}).fetchall()
+        if retired:
+            card_lifecycle.expire_cards(c, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                        signal_ids=[item.signal_id for item in retired])
+    _suppress(store, org_id, rule_id, node_id, COVERED_BY_REVIEW, eval_time,
+              {"file_id": cover.file_id, "fingerprint": cover.fingerprint,
+               "replaced": [item.signal_id for item in retired]})
+    return len(retired)
+
+
 def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
-        registry: PackRegistry | None = None, pack_id: str = DEFAULT_PACK_ID) -> dict:
+        registry: PackRegistry | None = None, pack_id: str = DEFAULT_PACK_ID,
+        explained=None) -> dict:
     eval_time = eval_time or datetime.now(timezone.utc)
 
     # L4 — resolve the tenant's effective config (rules + scoring + gate + budget + snapshot id).
@@ -874,23 +1131,23 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         # Every address that is US, not just `orgs.email`. A single-address check leaves the
         # owner's other identities — a second seat, the connected mailbox, an alias — reasoned
         # about as though they were counterparties, which produces cards telling the founder to
-        # chase himself. Same source of truth L2 uses, so the two layers cannot disagree about
-        # who the tenant is.
-        self_keys = {
-            (k or "").strip().lower()
-            for (k,) in c.execute(text(
-                "select lower(email) from orgs where id=:o and email is not null "
-                "union select lower(email) from org_seats "
-                "where org_id=:o and active and email is not null "
-                "union select lower(external_account_id) from connections "
-                "where org_id=:o and external_account_id like '%@%'"), {"o": org_id})
-            if k
-        }
+        # chase himself. The one answer (STEP-04): a declared address, an address at a declared
+        # domain and the company whose domain is ours are us too, and every caller asks the same
+        # `identity_for`, so no two layers can disagree about who the tenant is.
+        us = identity_for(c, org_id)
     # Pre-load the whole org's facts + observations in TWO org-wide queries instead of two per
     # node. The per-node reads were the runner's dominant cost (N×2 round-trips against a networked
     # pooler). Same data, same shape → identical NodeContext per node, so signals are unchanged.
     facts_by_node = _bulk_load_facts(store, org_id)
     obs_by_node = _bulk_load_obs(store, org_id)
+    # STEP-12 M33 · what the files decided on the live lane explain (see the block above `run`): the
+    # source events of the facts their nodes hold, read once — only when a file was decided.
+    events_by_fact: dict[str, set[str]] = {}
+    if explained:
+        from genios_engine.reason.expert.cover import MEMBERS_ONLY
+        members = {m for cover in explained for m in cover.members}
+        events_by_fact = _fact_events(store, org_id, facts_by_node, [
+            nd.node_id for nd in nodes if nd.node_id in members or nd.node_type not in MEMBERS_ONLY])
     metrics_by_node = _bulk_load_metrics(store, org_id)
     situations_by_node = _bulk_load_situations(store, org_id)
     # Who is away — every person.availability window in ONE org-wide read, so the reasoners'
@@ -913,8 +1170,10 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     with store.engine.connect() as _olc:
         open_loops_by_subject = open_loop_counts(_olc, org_id)
     _supp_batch.rows = []            # buffer suppressions for this sweep; one bulk INSERT at the end
+    gate = _LaneGate.load(store, org_id, effective["pack_id"], effective["version"])
+    out["gate_ready"] = int(gate.ready)
     for nd in nodes:
-        if (nd.canonical_key or "").strip().lower() in self_keys:
+        if us.is_us_node(nd.node_type, nd.canonical_key):
             out["self_excluded"] += 1                       # never reason about the account owner
             continue
         rules = rules_for_scope(all_rules, nd.node_type)
@@ -973,7 +1232,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             # somebody waiting on me" got "the event was not cancelled" and shipped a recap card
             # for a twenty-person cohort workshop.
             ctx.facts.update(_meeting_facts(nd.node_id, nbr_adj, nbr_node_types, nbr_fact_idx,
-                                            self_keys, ctx.obs, eval_time))
+                                            us.addresses, ctx.obs, eval_time))
         if need_neighbors:
             ctx.edge_count, ctx.neighbor_obs, ctx.neighbor_facts = \
                 _neighborhood(nd.node_id, nbr_adj, nbr_obs_idx, nbr_fact_idx)
@@ -999,6 +1258,29 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             break
         for capability in node_capabilities:
             native_rule = native_rule_id(capability.capability_id)
+            if explained:
+                # STEP-12 M33 · its file's review judged every fact this subject holds: the shadow
+                # native lane asks the decider nothing about it either.
+                cover = explained.explaining(nd.node_id, nd.node_type, _node_events(ctx, events_by_fact))
+                if cover is not None:
+                    _suppress(store, org_id, native_rule, nd.node_id, COVERED_BY_REVIEW, eval_time,
+                              {"file_id": cover.file_id, "fingerprint": cover.fingerprint,
+                               "native": True})
+                    out[COVERED_BY_REVIEW] += 1
+                    continue
+            native_key = f"native|{effective['pack_id']}|{capability.capability_id}|{nd.node_id}"
+            native_fp, native_verdict = gate.check(
+                key=native_key, rule_id=native_rule, node_id=nd.node_id,
+                pack_id=effective["pack_id"], capability=capability,
+                snapshot=lambda: native_context_snapshot(
+                    org_id=org_id, context=ctx, capability=capability,
+                    evaluation_time=eval_time, graph_version=graph_version),
+                config_snapshot_id=snapshot_id, mode=ExecutionMode.SHADOW, live=False,
+                eval_time=eval_time)
+            if native_verdict is not None and native_verdict.skip:
+                gate.replay(native_key, (native_rule, nd.node_id), fired, indeterminate)
+                out["skipped_unchanged"] += 1
+                continue
             try:
                 native_execution = reason_native_capability(
                     org_id=org_id,
@@ -1033,6 +1315,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                 # previous claim must not be retired as though it had cleared.
                 indeterminate.add((native_rule, nd.node_id))
                 out["native_failed"] += 1
+                gate.record(native_key, "native", native_fp, "indeterminate")
                 continue
             out[f"native_{native_execution.decision.outcome.value}"] += 1
             native_run_id = persisted_native["run"]["run_id"]
@@ -1044,6 +1327,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                            "outcome": native_execution.decision.outcome.value,
                            "uncertainty": list(native_execution.decision.uncertainty)})
                 indeterminate.add((native_rule, nd.node_id))
+                gate.record(native_key, "native", native_fp, "indeterminate", native_run_id)
                 continue
             publication = build_native_publication(
                 execution=native_execution, audit_bundle=persisted_native)
@@ -1058,10 +1342,14 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                            "execution_mode": native_execution.request.mode.value,
                            "live_delivery_enabled": capability.live_delivery_enabled})
                 out["native_suppressed"] += 1
+                gate.record(native_key, "native", native_fp, "shadow", native_run_id)
                 continue
             # An authorized decision keeps its subject alive for lifecycle even if budget or
             # cooldown stops it publishing this sweep — the claim is still true.
             fired.add((native_rule, nd.node_id))
+            # The native lane is pinned to SHADOW, so this is unreached today; when it opens, an
+            # authorized native decision is decided every sweep until its own gate is measured.
+            gate.record(native_key, "native", native_fp, "indeterminate", native_run_id)
             if _recent_signal(store, org_id, native_rule, nd.node_id,
                               publication.cooldown_hours, eval_time, snapshot_id,
                               effective["pack_id"], effective["version"]):
@@ -1075,6 +1363,32 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         for rule in rules:
             if rule.id in muted:                          # L6 auto-mute — rule is harmful, silence it
                 out["muted"] += 1
+                continue
+            if explained:
+                # STEP-12 M33 · its file's review decided this — before the gate, the decider and R-1.
+                cover = explained.explaining(nd.node_id, nd.node_type,
+                                             _events_behind(ctx, rule, events_by_fact))
+                if cover is not None:
+                    out["covered_signals_replaced"] += _stand_down_rule(
+                        store, org_id, effective["pack_id"], effective["version"], rule.id,
+                        nd.node_id, cover, eval_time)
+                    out[COVERED_BY_REVIEW] += 1
+                    continue
+            legacy_key = f"legacy|{effective['pack_id']}|{rule.id}|{nd.node_id}"
+            legacy_capability = legacy_capabilities[rule.id]
+            legacy_fp, legacy_verdict = gate.check(
+                key=legacy_key, rule_id=rule.id, node_id=nd.node_id,
+                pack_id=effective["pack_id"], capability=legacy_capability,
+                snapshot=lambda: legacy_context_snapshot(
+                    org_id=org_id, context=ctx, rule=rule, evaluation_time=eval_time,
+                    graph_version=graph_version),
+                config_snapshot_id=snapshot_id, mode=execution_mode,
+                live=(execution_mode == ExecutionMode.LIVE
+                      and legacy_capability.live_delivery_enabled),
+                eval_time=eval_time)
+            if legacy_verdict is not None and legacy_verdict.skip:
+                gate.replay(legacy_key, (rule.id, nd.node_id), fired, indeterminate)
+                out["skipped_unchanged"] += 1
                 continue
             try:
                 reasoned = reason_legacy_rule(
@@ -1099,6 +1413,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                           {"error_type": type(exc).__name__})
                 indeterminate.add((rule.id, nd.node_id))
                 out["reasoning_input_invalid"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "indeterminate")
                 continue
             # P2 + P2b: only pay for the full ~9-row audit bundle (its own transaction) when something
             # downstream actually reads it. The bundle's run_id is just the in-memory trace run id, so:
@@ -1157,9 +1472,11 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                "trace_run_id": reasoned.execution.trace.run_id})
                     indeterminate.add((rule.id, nd.node_id))
                     out["audit_failed"] += 1
+                    gate.record(legacy_key, "legacy", legacy_fp, "indeterminate")
                     continue
             else:
                 out["no_op_skipped"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "suppressed")
                 continue
             if reasoned.execution.decision.outcome in {
                     DecisionOutcome.FAILED, DecisionOutcome.INSUFFICIENT_CONTEXT}:
@@ -1170,6 +1487,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                            "run_id": reasoned.execution.trace.run_id})
                 indeterminate.add((rule.id, nd.node_id))
                 out[outcome] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "indeterminate", reasoning_run_id)
                 continue
             if reasoned.execution.decision.outcome == DecisionOutcome.BLOCKED:
                 _suppress(store, org_id, rule.id, nd.node_id, "reasoning_blocked", eval_time,
@@ -1179,8 +1497,10 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                       for check in candidate.checks
                                       if check.outcome.value == "eliminate"]})
                 out["below_gate"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "suppressed", reasoning_run_id)
                 continue
             if not reasoned.matched:
+                gate.record(legacy_key, "legacy", legacy_fp, "suppressed", reasoning_run_id)
                 continue
             out["detected"] += 1
             S, inputs = reasoned.score, reasoned.score_inputs
@@ -1212,14 +1532,36 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                "last_seen_at": str(sit.get("last_seen_at") or ""),
                                "reasoning_run_id": reasoning_run_id})
                     out["situation_dormant"] += 1
+                    gate.record(legacy_key, "legacy", legacy_fp, "suppressed", reasoning_run_id)
                     continue
             if not reasoned.execution.authorizes_delivery:
+                # ⛔ A DEFER IS NOT A SHADOW RUN (STEP-02, `yc2_w27_s02/M20.C5.L-logic.V0.U01`). A live,
+                # deliverable run that could not decide — the model's DEFER, the formula's
+                # (`below_confidence_floor`, `abstain_on_conflict`), or a model that was not there
+                # (`llm_decision_unavailable:*`, the daily cap included) — fails
+                # `authorizes_delivery` exactly as a shadow run does, and was suppressed as one:
+                # out of `fired`, out of `indeterminate`, so the lifecycle pass below resolved its
+                # open signal and expired the card. "I cannot decide this time" deleted what the
+                # founder had already been shown. It is indeterminate: the card stands.
+                _execution = reasoned.execution
+                if (_execution.request.mode == ExecutionMode.LIVE
+                        and _execution.request.capability.live_delivery_enabled
+                        and _execution.decision.outcome == DecisionOutcome.DEFER):
+                    _suppress(store, org_id, rule.id, nd.node_id, "deferred", eval_time,
+                              {"reasoning_run_id": reasoning_run_id,
+                               "uncertainty": list(_execution.decision.uncertainty)})
+                    indeterminate.add((rule.id, nd.node_id))
+                    out["deferred"] += 1
+                    gate.record(legacy_key, "legacy", legacy_fp,
+                                _deferred_outcome(_execution.decision), reasoning_run_id)
+                    continue
                 _suppress(store, org_id, rule.id, nd.node_id, "shadow", eval_time,
                           {"reasoning_run_id": reasoning_run_id,
                            "execution_mode": reasoned.execution.request.mode.value,
                            "live_delivery_enabled":
                                reasoned.execution.request.capability.live_delivery_enabled})
                 out["shadow"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "shadow", reasoning_run_id)
                 continue
             # ── the loop is open, or the card merely expired ─────────────────────────────
             #
@@ -1257,12 +1599,14 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     # Still true, only not re-said: it keeps its open signal through lifecycle
                     # retirement below, which resolves any (rule, subject) missing from `fired`.
                     fired.add((rule.id, nd.node_id))
+                    gate.record(legacy_key, "legacy", legacy_fp, "standing", reasoning_run_id)
                     continue
 
             selected = reasoned.execution.selected_candidate
             if selected is None:
                 indeterminate.add((rule.id, nd.node_id))
                 out["authority_invalid"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "indeterminate", reasoning_run_id)
                 continue
             S = projected_score(selected.utility_bp)
             # A shadow or non-deliverable run must not keep a prior live signal alive.  Only a
@@ -1272,29 +1616,18 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                 _suppress(store, org_id, rule.id, nd.node_id, "cooldown", eval_time,
                           {"reasoning_run_id": reasoning_run_id})
                 out["cooldown"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "standing", reasoning_run_id)
                 continue
+            # Ranked and spent after the loop. Recorded as emitted: a skip still needs the card it
+            # left to be open and showing, so a candidate the budget stopped is decided again.
+            gate.record(legacy_key, "legacy", legacy_fp, "emitted", reasoning_run_id)
             evidence = [{"field": f, "value": (ctx.facts.get(f) or {}).get("value")}
                         for f in rule.evidence_fields]
             # The DecisionObject's own content, captured HERE — the last point it exists in
             # memory. `signals` used to carry only score/reason_code/evidence/play, so the card
             # layer rebuilt its recommendation from the reason_code STRING through an API
             # if/elif chain: a parallel generator sharing nothing with this decision but a label.
-            _decision = reasoned.execution.decision
-            decision_payload = {
-                "do_nothing_consequence": _decision.do_nothing_consequence or None,
-                "uncertainty": list(_decision.uncertainty or ()),
-                "outcome_window_days": _decision.outcome_window_days,
-                # The candidates that LOST, with disposition and utility — the receipt that a
-                # choice happened. Before the wait-play landed this was structurally empty
-                # (one candidate per run, nothing ever eliminated); now it is the trace of the
-                # comparison every card claims to be the outcome of.
-                "rejected_candidates": [
-                    {"play_id": cand.play_id, "disposition": cand.disposition.value,
-                     "utility_bp": cand.utility_bp}
-                    for cand in _decision.candidates
-                    if cand.play_id != selected.play_id],
-                "candidate_steps": list((selected.parameters or {}).get("steps") or ()),
-            }
+            decision_payload = _decision_payload(reasoned.execution.decision, selected)
             candidates.append((
                 S, inputs, rule, nd.node_id, evidence, reasoning_run_id,
                 audit_bundle["output"]["selected_candidate_id"],
@@ -1304,6 +1637,11 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             ))
         if graph_drifted:
             break
+
+    # STEP-02 · the gate's memory for this pass, written once (see `_LaneGate`). Before the drift
+    # check on purpose: a drifted sweep publishes nothing, and a fingerprint recorded for it is safe
+    # — a skip needs the card the decision left to be open and showing.
+    gate.flush(store=store, org_id=org_id, eval_time=eval_time, out=out)
 
     if not graph_drifted and _graph_version(store, org_id) != graph_version:
         graph_drifted = True
@@ -1362,6 +1700,8 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     pack_authority_revision, effective["pack_id"], effective["version"],
                     decision_payload=decision_payload)
                 out["emitted" if sid else "duplicate_race"] += 1
+                if sid:
+                    out[DECISION_EMITTED] += 1          # the funnel's stage counts every lane
 
             # Native capabilities publish after the legacy rules and out of the same daily
             # reservation, which `_budget_used` re-reads from the signals table so the spend above
@@ -1398,6 +1738,8 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     pack_id=effective["pack_id"], pack_version=effective["version"],
                     authority_pack_revision=pack_authority_revision)
                 out["native_emitted" if native_sid else "native_duplicate_race"] += 1
+                if native_sid:
+                    out[DECISION_EMITTED] += 1
 
             # Recheck at the emission/composition boundary. The shared lock makes this invariant
             # stable in PostgreSQL; the explicit check also fails closed for test doubles and any
@@ -1418,6 +1760,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                         pack_id=effective["pack_id"], pack_version=effective["version"],
                         new_signal_budget=composite_budget)
                     out["composite"] += comp["emitted"]
+                    out[DECISION_EMITTED] += comp["emitted"]
                     out["composite_budget"] += comp.get("budget_held", 0)
                     out["composite_audit_failed"] += comp.get("audit_failed", 0)
                     for nid in comp["active"]:
@@ -1450,11 +1793,10 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                 "and signal_id=:id and status='open' returning signal_id"),
                                 {"o": org_id, "id": sig.signal_id}).first()
                             if resolved is not None:
-                                c.execute(text(
-                                    "update cards set state='expired' where org_id=:o "
-                                    "and signal_id=:id and state in "
-                                    "('queued','surfaced','snoozed','claimed','delivered')"),
-                                    {"o": org_id, "id": sig.signal_id})
+                                # STEP-06: the rule no longer holds on its subject — said so.
+                                card_lifecycle.expire_cards(
+                                    c, org_id=org_id, cause=card_lifecycle.RULE_CLEARED,
+                                    signal_ids=[sig.signal_id])
                                 out["resolved"] += 1
 
     _flush_suppress_batch(store)     # one bulk INSERT for every suppression buffered this sweep
@@ -1463,6 +1805,13 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                 "eval_time": eval_time.isoformat(), "retry_required": True,
                 "pack": {"pack_id": effective["pack_id"], "version": effective["version"],
                          "snapshot_id": snapshot_id, "graph_version": graph_version}}
+    # ⛔ A COMPLETED PASS WRITES ITS ZEROS. `out` is a Counter and `dict(out)` carries only the keys
+    # something incremented, so a pass that resolved or emitted nothing used to return no key at all
+    # — and the sweep's relay turned that missing key into NO ROW, which migration 0188 defines as
+    # "the stage did not run". It did run. Only this return materialises them: a pass that stopped
+    # early for a retry (the returns above) still reports nothing, because nobody finished looking.
+    out[CAPABILITY_RESOLVED] += 0
+    out[DECISION_EMITTED] += 0
     return {"nodes": len(nodes), "outcomes": dict(out), "eval_time": eval_time.isoformat(),
             "pack": {"pack_id": effective["pack_id"], "version": effective["version"],
                      "snapshot_id": snapshot_id}}
@@ -1539,11 +1888,32 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     # the failure mode is a tenant that compiles exactly as it does today.
     from genios_engine.platform.l3_activation import activated_domains
     l3_domains = activated_domains(engine, org_id)
+    # ── STEP-12 · THE EXPERT PASS, FIRST (`reason/expert/sweep`, tree `yc2_w27_s12`
+    # M32.C3.L-integration.V2.U04; moved ahead of the compiled lane by M33.C1.L-integration.V2.U07). A
+    # tenant with `expert_review` on has each file whose fingerprint moved, and that something touched
+    # (`05` §5), reviewed once — nearest deadline first, bounded per pass and by its own day's budget
+    # (`06` D7). FIRST, because under `06` D1 a valid review decides its file: the files it now covers
+    # are handed to the compiled lane below, which decides each once from its review and stands its
+    # situations down — in the sweep the file changed, not the one after. Wrapped: a pass that failed
+    # covers nothing, and the compiled lane decides every situation as it did before.
+    try:
+        from genios_engine.reason.expert.sweep import expert_pass
+        expert = expert_pass(store=store, org_id=org_id, now=eval_time)
+    except Exception:
+        logger.exception("the expert pass failed org=%s", org_id)
+        expert = {"error": True}
+    covered = (expert.get("covered") or {}) if isinstance(expert, dict) else {}
+    # …and who is in each covered file, so a situation on one of its people is its file's (U15).
+    people = (expert.get("people") or {}) if isinstance(expert, dict) else {}
+    compiled: dict = {}
     if live_compile or l3_domains or l1_seam_enabled(engine, org_id):
         try:
             from genios_engine.reason.domain_shadow import shadow_compile
-            shadow_compile(store=store, org_id=org_id, eval_time=eval_time, live=live_compile,
-                           live_domains=l3_domains)
+            # ⛔ THE PASS'S RESULT WAS THROWN AWAY HERE: nothing the compiled lane counted reached
+            # the sweep. Kept now for the change gate's counts below (STEP-02).
+            compiled = shadow_compile(store=store, org_id=org_id, eval_time=eval_time,
+                                      live=live_compile, live_domains=l3_domains,
+                                      covered=covered, people=people) or {}
         except Exception:
             logger.exception("domain-compiler pass failed org=%s live=%s domains=%s",
                              org_id, live_compile, sorted(l3_domains))
@@ -1553,10 +1923,25 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
             "select pack_id from tenant_packs where org_id=:o "
             "and state in ('active','shadow') order by pack_id"),
             {"o": org_id})]
+    # ── STEP-12 M33 · WHAT THE DECIDED FILES EXPLAIN, FOR EVERY PACK'S RULES (M33.C1.L-integration.V3.U15,
+    # `03` F173). Only the files the compiled lane decided on the LIVE lane — a file decided in shadow,
+    # or not decided at all, stands no pack rule down: its cards still come from today's path. Read
+    # once, wrapped: a read that failed explains nothing, and every rule is reasoned as before.
+    decided = (compiled.get("decided") or {}) if isinstance(compiled, dict) else {}
+    explained = None
+    if decided:
+        try:
+            from genios_engine.reason.expert.cover import covers_for
+            with store.engine.connect() as c:
+                explained = covers_for(c, org_id, decided, people) or None
+        except Exception:
+            logger.exception("the decided files could not be read org=%s", org_id)
+            explained = None
     combined: Counter = Counter()
     nodes = 0
     for pid in pack_ids:
-        res = run(org_id=org_id, store=store, eval_time=eval_time, registry=registry, pack_id=pid)
+        res = run(org_id=org_id, store=store, eval_time=eval_time, registry=registry, pack_id=pid,
+                  explained=explained)
         nodes = max(nodes, res["nodes"])
         for k, v in res["outcomes"].items():
             if k == CAPABILITY_RESOLVED:
@@ -1574,6 +1959,17 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
                 combined[k] = max(combined[k], v)
             else:
                 combined[k] += v
+    # ── STEP-02 · THE CHANGE GATE, COUNTED EVERY SWEEP IN EVERY LANE — ZERO INCLUDED
+    # (`yc2_w27_s02/M20.C6.L-interface.V4.U01`). `skipped_unchanged` is every subject a lane did
+    # not re-decide because nothing it depends on moved — legacy and native from `run` above, the
+    # compiled lane from its pass — and the compiled share is named on its own. `deferred` is a live
+    # DEFER that kept the card it found (the legacy lane; a compiled DEFER never touched its card).
+    # Not funnel stages: `platform/funnel.STAGES` is closed, and `no_new_evidence` sits here too.
+    compiled_skips = int(compiled.get("skipped_unchanged", 0) or 0) \
+        if isinstance(compiled, dict) else 0
+    combined["skipped_unchanged"] += compiled_skips
+    combined["skipped_unchanged_compiled"] = compiled_skips
+    combined["deferred"] += 0
     # ── Z4 / L4.5 · THE VOICE. Give the decisions this sweep just published their narrative.
     #
     # LAST, AND DELIBERATELY SO. Doc 05 §7 and doc 11 guard 5: a bundle is generated AFTER
@@ -1597,4 +1993,4 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
         narration = {"error": True}
 
     return {"nodes": nodes, "outcomes": dict(combined), "eval_time": eval_time.isoformat(),
-            "packs": pack_ids, "narration": narration}
+            "packs": pack_ids, "narration": narration, "expert": expert}

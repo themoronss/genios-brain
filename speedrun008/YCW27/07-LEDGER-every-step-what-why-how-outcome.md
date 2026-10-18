@@ -413,5 +413,729 @@ class names. The artefact was indistinguishable from a real finding until the ru
 ### State after the re-check
 
     30 receipts, fleet-wide   22 PASS · 7 FAIL · 1 ERROR     (was 21/7/1 of 29)
-    remaining Plane D gap     23 unreviewed situations — the designed refusal; gating is Rohit's
+    remaining Plane D gap     23 DRAFT situations, and they are TWO states: 18 draft+unreviewed
+                              (need a reader) and 5 draft+APPROVED (need one word). Corrected
+                              2026-10-01 — see 14-PLANE-D-AND-R; 'unreviewed' was wrong for 5
     remaining Plane R gap     core.signal_composition, 0 runs — ALARM A2, roster activation
+
+---
+---
+
+# 2026-10-01 · L4 RE-CROSSCHECK — the step with no build in it
+
+| | |
+|---|---|
+| **Task** | answer doc 17's PART 9 question: *is the 150 expired cards a delivery defect, or the downstream shadow of H2?* |
+| **Why it mattered** | it decides whether L4 needs building. Planning an L4 build on the wrong cause would have produced correct code for a problem that does not exist |
+| **Expected** | one of the two named causes, and then an L4 build plan |
+| **Outcome** | ⛔ **neither cause. Two blocks, at two different places, and L4 needs no build work at all.** Nothing was built, and that is the finding |
+
+## How it was done — measure which things STOPPED, never name a cause
+
+    1  the last timestamp of every stage
+         L1/L2/L3 wrote rows 2026-09-30 · L4 stopped 09-25 · L5 stopped 09-25
+         -> the OCR guess dies here: it would have starved L1, and L1 is running
+
+    2  decompose L4's own gate join by join
+         42 open signals survive joins 1-5, join 6 -> 0
+         join 6 = core.constraint completed on the run behind the signal
+
+    3  is it the status filter?
+         NO — all 2,681 core.constraint rows are 'completed'
+
+    4  then what?
+         the 98 runs behind every open signal have ZERO reasoner results of any kind
+         because reasoner results only began being written on 2026-09-29
+
+    5  so why did the new era emit no signals?
+         2,681 outputs · 8,044 candidates · 7,872 'eligible' · selected_candidate_id NULL on ALL
+         outcome_kind: defer 2,669 · blocked 12 · decision ZERO
+
+    6  read the component VALUES, not the key names
+         impact 7,351 · risk 1,758 · effort 6,610 · urgency 5,182 · success 6,658
+         formula_utility 5,469   ✅ THE DETERMINISTIC SCORER IS HEALTHY
+         llm_utility         0   ⛔ zero on all 8,044
+         final_utility_bp    0   ⛔ zero on all 8,044
+
+    7  ⛔ BEFORE CALLING IT A DEFECT — read the module
+         llm_decision_maker.py:20 "Failure is DEFER, never the formula."
+         GENIOS_L4_LLM_DECISION_MAKER = true, no allowlist -> every org
+
+    8  and re-run STEP-02's own diagnostic rather than assuming it was superseded
+         seats 1 ✅ · channels 1 ✅ · reporting_line 0 ⛔
+         466 escalations: day 1 ✅ · day 3 ✅ · day 7 -> 124 scheduled, 0 fired, 0 targeted
+
+**Step 7 is the whole step.** It was the **tenth** time in this programme that a state would have
+been named a defect before the declaration that created it was read — and the first nine are
+listed in doc 17 PART 4.4.
+
+## What it produced
+
+| | |
+|---|---|
+| **DECISION #5** | three options, one line, Rohit's. Recommendation: **B now, C as a unit, A when the budget allows** |
+| **F6–F12** | seven findings in `layer-4-executive/03-FINDINGS.md` |
+| **six units** | `layer-4-executive/02-PLAN.md` round 2 — four buildable, two blocked on a product number |
+| **a correction** | doc 17 PART 9's open question is answered; PART 8 raises R2 from 🟠 to 🔴 |
+| **a narrowing** | STEP-02's finding stands, scoped to the **ladder** rather than the queue's input |
+| **code written** | ⛔ **none** |
+
+## The doctrine rules this step produced
+
+> ⛔ **A deliberate refusal to degrade is still a stop.** The design was right that a measurement
+> must not be faked. What nothing declared is that **the measurement mode is the production mode**
+> — so a budget ceiling became a full product outage with six layers reporting healthy.
+
+> ⛔ **Measure which things stopped, never name a cause.** Both obvious explanations were refuted
+> by one query over thirteen tables' last timestamps.
+
+> ⛔ **A gate is decomposed, not read.** Ten joins, added one at a time, named the exact one. The
+> same gate read as prose would have suggested the authority predicate, which never ran.
+
+> ⛔ **Re-run the earlier step's own diagnostic instead of assuming it was superseded.** STEP-02
+> built `readiness.py` for exactly this question; running it turned "superseded" into "narrowed,
+> and it cost 124 escalations".
+
+> ⛔ **Read the component VALUES, not the key names.** All seven score components were present on
+> all 8,044 candidates. The presence check says healthy; the values say one is zero.
+
+---
+---
+
+# ⛔ L5 DELIVERY · the re-cross-check and five steps · 2026-10-01
+
+Read **reverse-chronological**: the newest step first, because *start at the newest row*. Folder:
+[`layer-5-delivery/`](layer-5-delivery/) — 25 files, 4,130 lines.
+
+**Entry point:** `05-RECROSSCHECK-the-silences-of-the-delivery-spine.md` → `06-AUDIT` → `07-AUDIT` →
+the step files. ⛔ The two audits **correct the re-cross-check's own numbers**, which is why they are
+read second rather than skipped.
+
+---
+
+## The shape of the whole layer, in one table
+
+| | |
+|---|---|
+| `deliver/` | **40 files · 9,431 lines** — the largest layer in the product |
+| public functions (top-level) | **123** |
+| ⛔ not called by production | **24** → **25 declared** after STEP-13 and STEP-14 moved two |
+| production receipts carrying L5 | **2 → 3**, and one of the three still **ERRORs** on `0190` |
+| Atlas L5 badges superseded | **3**, two of them by this programme four days earlier |
+| ⛔ architecture the Atlas never mentions | **Layer 5.2** — six modules, five phases |
+
+⛔ **The one-line verdict: `deliver/` is the most heavily built layer in the product and the most
+lightly guarded.** Nothing in it was wrong the way L4's queue was wrong; what it lacked was the
+machinery every sibling package already had for saying what it deliberately does not do.
+
+---
+
+## STEP-17 · nine packages nobody asked the question
+
+| | |
+|---|---|
+| **the task** | only `executive/` and `deliver/` had a reachability guard. **147** public functions across the other nine were unreached by production and declared nowhere — and *a guard that exists in two places out of eleven reads, from either of those two, as a solved problem* |
+| **expected** | a level: nine units, one per package, in data-flow order |
+| ⛔ **what came out** | **one guard over eleven packages, and a scope of 109 rather than 147.** A function is reached FOUR ways and only three can be measured: a call, a decorator, ⛔ **a reference** — 46 of them, `platform/auth.require_owner` has **35** references and zero calls — and ⛔ **duck-typed dispatch, which cannot be measured at all** |
+| ⛔ **46 entries would have been lies** | declaring the 123 without measuring references would have filed `require_owner`, twelve dispatch-table readers, twelve feedback units and five MCP tools as deliberate silences. **`mcp/` went to ZERO and needs no declaration module** |
+| ⛔ **and one rescue by hand** | `realtime.purge_expired` looked unreached and claimed *"(maintenance heartbeat)"* — **it is called** behind a `hasattr` at `api/routes.py:964`. Retention IS enforced, and I was one grep from a false *stale comment* finding. Sixteen other candidates were name collisions (`list.extend` 96, `Path.resolve` 74) |
+| ⛔ **the sharpest finding, already written down by the code** | `need_executor.py:125` names `context/evidence_need_store.read_open_needs` and adds *"which this layer may not import."* **`capture/` is layer 1, `context/` is 2 — the EvidenceNeed executor cannot read its own queue.** Four functions, one with **22 test callers**, broken at a layer boundary. The Atlas listed EvidenceNeed as VERIFIED MISSING when this programme began |
+| **code** | `platform/reachability.py` (shared, imports nothing from the engine) · **8 new declaration modules** · 2 existing pointed at it · **109 entries** · 71 tests |
+| ⛔ **why it moved to `platform/`** | not "a third user" — **the layer topology.** `capture/` is layer 1, so `capture/ -> executive/` is an UPWARD import the build fails over. *The eleventh package could not have imported it from where it was* |
+| ⛔ **three faults of mine** | the self-exclusion was a hand-maintained list I forgot to extend **within a minute** · the generic mover check failed on two CORRECT tables · and the decorator check took a union instead of going per module — **the same collision class the qualified resolver exists to fix** |
+
+---
+
+## STEP-11 · the Atlas does not know Layer 5.2 exists
+
+| | |
+|---|---|
+| **the task** | put L5 on the Atlas scorecard, date the superseded badges, and write down the architecture the document omits |
+| **expected** | *"a document correction, not code"* |
+| **what came out** | `08-ATLAS-SCORECARD-L1-to-L4.md` → **`-L1-to-L5.md`**, 35 → **45 claims**, 125 → **200 lines**. L5 contributes **5 superseded, 1 OMISSION, 2 imprecise** — the least accurate layer in the Atlas, and **three of the five supersessions were created by this programme four days earlier** |
+| ⛔ **the omission is the finding** | six modules, five phases, named **nowhere**: `presence` · `orchestrator` · `spine` · `tracker` · `units` · `analytics`. **A `gap` badge on built work costs a wasted unit; an OMISSION costs a rebuild**, because nothing tells you to look. L2 paid six units for one absent fact |
+| ⛔ **and it was not only a document correction** | `STEP-10`'s two receipts failed a test in `tests/executive/` — a directory **neither targeted run touched**. It asserted `sum("channel" in c for c in claims) == 1`: **it counted the WORD, not the QUESTION.** The two receipts are opposite-conditioned (`from org_channels`, passes > 0 · `from delivery_outbox`, passes == 0 and only counts when a channel exists) and cannot disagree |
+| ⛔ **rewritten stricter, not looser** | it now counts receipts whose **outer subject** is `org_channels`, catching a duplicate even if its claim never says "channel". **And my first attempt at that was substring-shaped too** — `"from org_channels" in r.sql` caught the new receipt via its `EXISTS`. Two substring guards in a row, the second mine |
+| **also** | doc 17's **live** pointer updated; `STATUS.md`'s **historical** row dated rather than rewritten — *a log records the state on the day it was written*, the rule that keeps `receipts.py:190`'s numbering correct forever |
+
+---
+
+## STEP-10 · two receipts for nine thousand lines
+
+| | |
+|---|---|
+| **the task** | L5 is **9,431 lines** and carried **2 of 33** receipts — 4,715 lines per guard against L4's 881 — and one of the two **ERRORs** until `0190` lands. So the layer that physically touches the customer had ONE working production guard |
+| ⛔ **CORRECTED 2026-10-02** | `L5` is a hand-written LABEL, not a package. `deliver/`'s four tables are guarded by **8** receipts (4 labelled `L5` + 4 labelled `L6`); before YCW27 by **5**, of which **4 worked**. **1,886** lines per guard, not 4,715 — and 1,886 was already true before this pass began. → [`08-CORRECTION-a-receipt-label-is-not-a-package.md`](layer-5-delivery/08-CORRECTION-a-receipt-label-is-not-a-package.md) |
+| **expected** | four candidates, *"each one gets a scope measurement before it is written"* |
+| ⛔ **what came out** | **two of five could not fail, and that is the valuable half.** A delivery row with no attempt is 0 forever while nothing calls `spine.materialize`; a card delivered on an adapter-less channel is impossible because the send path parks first; and the `UNDELIVERABLE`-vs-`failed_terminal` separation is a CODE property already guarded by a test |
+| ⛔ **the window was measured** | my instinct was one hour. `sweep_lifecycle` runs on the heavy tick, and `config.sync_interval_hours` is **6.0** — so one hour would have fired on every card that expired in the normal gap between ticks. **Latency reported as an alarm**, and *the fix for a false alarm is always to loosen the check.* Twelve hours = two cycles, asserted arithmetically |
+| ⛔ **and L4's docstring promised a guard that did not exist** | it ends *"L5's own count is guarded in `tests/deliver/test_nothing_dies_of_low_confidence.py`"* — that file held only presence filters. In `STEP-06` I read it and concluded there was no L5 count guard: **I was right and the docstring was wrong.** The guard now exists where it points |
+| ⛔ **eleven of my own references rotted** | inserting two receipts moved `STEP-06`'s from **#21 to #23**. Every test filtered by CLAIM and stayed green; eleven document cross-references and one filename did not. **But `receipts.py:190` quotes numbers under *"Measured 2026-10-01"* and is correct forever** — a snapshot's numbering is part of its measurement |
+| ⛔ **and a test failed on its own assertion string** | it scanned its module for `len(receipts(None))` to forbid a global total, and that text is in the `assert` forbidding it. **Seventeenth instance**, first where the match was the guard itself. Deleted with the reason recorded |
+| **code** | 2 receipts + the L5 count guard · 11 tests · 6 mutations · receipts **33 → 35**, L5 **3 → 5** |
+
+---
+
+## STEP-15 · a card must become deliverable the moment a channel exists
+
+| | |
+|---|---|
+| **the task** | call `outbox.revive_undeliverable` — *"the answer to 'a card must become deliverable the moment a channel exists'"*, with the alternative designs it rejected listed in its own docstring — which had **no caller** |
+| **why it mattered** | a tenant registers Slack on Tuesday, and every card parked before Tuesday — parked ONLY because there was nowhere to send it — stays parked forever |
+| **expected** | wire it at one of three candidate triggers, and **add an `expires_at` bound** |
+| ⛔⛔ **what came out** | **the bound would have caused harm, and the docstring had already said so**: *"Waking an old message and letting the authority check kill it is strictly better than leaving it dead, because the second option cannot tell 'we chose not to send' from 'we lost it'."* **Third retracted fix in the programme**, and like F9 and F10 it was caught by reading the thing being changed |
+| ⛔ **and the trigger had a trap** | `org_channels` has TWO writers. `platform/seats.py` writes the `in_app` PULL surface and says *"Making that row a transport is what produced production's entire delivery history: 3 rows, all `failed_terminal`."* So the gate is `deliverable_channels` — never a hand-written `if body.active`, because *"every historical delivery failure in this database is one of [its two conditions] being assumed rather than checked"* |
+| **code** | `api/channel_routes.set_slack` revives inside the upsert's transaction, count returned · 12 tests · 6 mutations |
+| ⛔ **the milestone** | **`KNOWN_UNWIRED` is EMPTY.** Five defects when `STEP-05` drew the table; `STEP-14` closed three (two by **reclassifying** them as build-time guards), `STEP-08` one, this step the last |
+| ⛔ **and a third membership list of mine broke** | written in `STEP-08` — **the step where I wrote the rule against it.** *A doctrine applied only to the instance that produced it is not a doctrine* |
+
+---
+
+## STEP-09 · the gate writes down why it refused
+
+| | |
+|---|---|
+| **the task** | call `gate.describe_decision` — *"the loggable record of one admission"* — which was in `__all__` and called by nothing |
+| **why it mattered** | `gate.admit` had written the purpose down years earlier: *"so the caller can put the resolved settings into the audit row. 'It was held because quiet hours' is only half an answer; '…and this tenant's quiet hours are 21:00-08:00 Asia/Kolkata' is the half that ends the support ticket."* |
+| **expected** | *"wire it or declare it"*, and the plan called it **the lowest severity of the four** |
+| ⛔ **what came out** | **a THREE-part unit, and the plan had none of the three right** |
+| ⛔ part 1 | both refusal paths are handed `(decision, context)` and wrote `{"reason": …}` — one key, not even the contract's name for it. ⛔ **And `_defer` took `context` and read nothing from it.** Neither candidate sink was right: `spine.log_delivery_event` is *the right table, the wrong call*; `store.log_event` is card-scoped. **The answer was `_mark_lifecycle`'s own `detail` dict, which the plan never listed** |
+| ⛔ part 2 | `describe_decision` was **not keeping its own docstring's third promise** — *"and the settings behind it"* read only `config_error`. The settings are `to_semantic_dict()`, which is literally `admit`'s worked example (`timezone: Asia/Kolkata`, `quiet 21→8`), 437 bytes. ⛔ **And it was already exposed on the PREVIEW endpoint** — a dry run could show a founder their quiet hours while the live refusal recorded none |
+| ⛔ part 3 | `GET /delivery/results/{id}` selected `kind, occurred_at, actor` and **not `detail`**. **Nothing in the engine read `delivery_events.detail`** — so the writer alone would have been decoration. **The reader is half the unit**, and it is one word in one SELECT |
+| **code** | `gate.py` + `outbox.py` (both paths) + `api/delivery_routes.py` · `UNREACHED` 11→10 · 13 tests · 6 mutations |
+| ⛔ **and the contract caught me** | a test built a `SUPPRESS` decision carrying a `not_before`. `DeliveryDecision` refused it — *"only a deferral carries a clock."* **The contract knew something my test assumed away** |
+
+---
+
+## STEP-08 · the headline fix nobody wired
+
+| | |
+|---|---|
+| **the task** | call `card_builder.resolved_person_name`, which carries its own measurement — *"35 of 38 person cards named an address in the headline"* — and had **zero callers anywhere, including tests** |
+| **why it mattered** | the headline spent its 60-character budget on `maria@alystventures.com` while the real name sat one join away on a `mention:person` observation |
+| **expected** | one line |
+| ⛔ **what came out** | **one line, and it needed two decisions the plan did not have.** The resolver must go **LAST** in a chain whose precedence is load-bearing (`outreach.counterparty` is a FACT; a mention is an OBSERVATION), and it must be **gated** on `node_type == "person"` — ungated, a **company** card is renamed after whichever of its people spoke first |
+| ⛔ **and a fifth stale statement** | the function's own docstring said *"the invention guard rejected any draft that wrote 'Maria'"*. It does not: `render._corpus` appends `q["name"]`, so the name is grounded. **The grounding half of the defect was already closed; only the headline half was open** |
+| ⛔ **the 35 was not re-measured** | no database URL in this checkout, and `GENIOS_ALLOW_PROD_WRITE` is never set to run a report. **The wiring is justified by the function being correct, not by the number** |
+| **code** | one line in `card_builder.py` + its docstring · `KNOWN_UNWIRED` 2→1 · 14 tests · 6 mutations |
+| ⛔ **a test of mine failed twice** | `test_the_defects_are_not_filed_as_decisions` hard-coded the defect list. The first repair **diagnosed it and left the names in**. Rewritten as an invariant — *a membership list shrinks every time the work succeeds; an invariant does not* |
+
+---
+
+## STEP-07 · four comments that read as measurements
+
+| | |
+|---|---|
+| **the task** | correct two stale comments and guard the general case |
+| **why it mattered** | `push.py:19` claimed an unreached function was *"fired by L5 when a card is emitted"*; the next person asking *"do agents get notified?"* read that parenthesis and answered yes |
+| **expected** | two edits, one test |
+| ⛔ **what came out** | **four** stale statements, and the fourth was in the **docstring of the test that guards the behaviour** — so anybody checking whether the claim was guarded found a test repeating it |
+| **also** | `push.py` announced *"Two flavours"* and listed **one**: a deleted bullet had left its tail behind, parsing as English attached to the wrong bullet |
+| **code** | 4 corrections · `test_a_comment_is_not_a_measurement.py`, 6 tests, 5 mutations · baseline 35, restore 35 |
+| ⛔ **not guarded** | correction #4. Restoring that docstring sentence would fail nothing, and that is written down rather than papered over |
+
+---
+
+## STEP-06 · the cutover nobody guards
+
+| | |
+|---|---|
+| **the task** | make it impossible to take the v2 spine cutover with its ambiguity-marker unwired |
+| **why it mattered** | `spine.recover_expired_claims` — *"we must never silently retry over that ambiguity"* — was exercised by **nothing: not production, not a test** |
+| **expected** | a guard, a receipt, and the recovery's first tests |
+| ⛔ **what came out** | the guard works — **mutation M4, one production call to `claim_due`, turned 4 tests red**. And the step's own claim that the cutover had *no* measurement was **wrong**: `outbox.shadow_resolve_v2` measures tier 1 of four |
+| ⛔ **the design decision** | the recovery joins the fence; `claim_due` rewrites it on reclaim — so the **permanently lost** orphans can never match. Receipt #21 is deliberately **fence-free** |
+| **code** | receipt #21 (L5 2→3) · 14 database-free tests · ⛔ **4 tests written and NOT RUN** |
+| ⛔ **honest gap** | `tests/test_delivery_spine.py` needs real PostgreSQL; all 7 of its tests skip here. **A skip is not a pass.** → `HANDOFF-HARSH.md` **H6** |
+
+---
+
+## STEP-14 · the recall guard nothing calls
+
+| | |
+|---|---|
+| **the task** | wire `lane_recall`, built on 2026-09-30 with 24 tests and imported by nothing |
+| **why it mattered** | `pipeline.py:516` was **reasoning about `recall_verdict`'s correctness** in a comment — the code was shaped around a verdict nobody computed |
+| **expected** | three unwired functions to wire |
+| ⛔ **what came out** | **one**. The other two take no production data at all — one takes **no arguments** — and the module header says *"PURE. No I/O, no clock, no model."* Wiring them would have re-derived a settled question on every org on every tick |
+| ⛔ **and my harness lied** | the mutation run never re-established a baseline, so a stale `STEP-05` assertion inflated every count — **and hid a surviving mutation** |
+| **code** | `recall_verdict` wired into `build_cards_for_org`, warning and never raising · 12 tests · `KNOWN_UNWIRED` 5→2 |
+
+---
+
+## STEP-13 · a call resolved by name alone
+
+| | |
+|---|---|
+| **the task** | promote the precise resolver and **re-derive L4's declaration against it** |
+| **why it mattered** | `queue.claim_due()` in `capture/` — a different function — made `deliver/spine.claim_due` read as reached, hiding a whole tier of the v2 path |
+| **expected** | *"nothing changes in L4"* |
+| ⛔ **what came out** | L4's existing 5 entries **were** clean — and **five more were missing.** `executive/readiness.py` is an **entirely unreached module**; `is_terminal`/`is_open`/`is_live` are **three** spellings of one closed set, two with no docstring, none called |
+| ⛔ **the largest finding in the programme** | **147** public functions engine-wide, unreached and declared nowhere — **18** hidden by the collision, **129** visible all along. Only two packages out of eleven have a guard |
+| **code** | `qualified_call_counts` + `_file_bindings` in `executive/unreached.py` · `UNREACHED` 5→10 · 9 tests |
+
+---
+
+## STEP-05 · `deliver/` declares what it does not call
+
+| | |
+|---|---|
+| **the task** | the declared-silence module `deliver/` was the only large package without |
+| **expected** | 4 unreached functions, one table |
+| ⛔ **what came out** | **24 unreached** — the "4" had counted `tests/` as callers — in **three** different kinds, so **three tables**: an un-cut-over architecture (12), deliberate silences (7), and ⛔ **defects** (5) |
+| ⛔ **the shape IS the finding** | collapsing them would file a broken product promise beside a shim that **raises on purpose**, under one word |
+| **code** | `delivery_health.py` · 16 tests · 8 mutations · and ⛔ **five steps the plan did not have** (13–17) |
+
+---
+
+## ⛔ The doctrine L5 produced — ten rules, each one paid for
+
+> ⛔ **Establish the baseline, or the harness is theatre.** A mutation run that never re-runs clean
+> cannot tell you what it caught. Mine hid a surviving mutation and I reported it as caught.
+
+> ⛔ **A call resolved by name alone is a call to any function with that name.** The reachability
+> form of the blunt grep, failing toward *declaring things reached* — the direction that reports
+> fewer problems. The shortest names are the least visible: `read` had 11 apparent callers.
+
+> ⛔ **A resolver that is merely stricter is not more correct.** My first fix reported two live
+> functions as dead because both are called through an alias.
+
+> ⛔ **A grep for a known-false phrase matches the record of its own correction.** A factual claim is
+> guarded by making the fact derivable and named in one place, never by forbidding its wrong form.
+
+> ⛔ **A guard must not inherit the blind spot of the thing it guards.**
+
+> ⛔ **A function that takes no data cannot be measuring production.**
+
+> ⛔ **An uncalled function on an un-cut-over path is not a bug; it is an unguarded cutover** — and
+> the two want opposite fixes.
+
+> ⛔ **A measurement can be present under a name you did not search for.** I searched for both-path
+> counters; this codebase calls it a `shadow`.
+
+> ⛔ **A finding's fix is the most likely place for the next instance of the same finding.** The unit
+> that closed *"a lane nothing reads"* produced *"a guard nothing calls"*.
+
+> ⛔ **A behavioural test that skips everywhere it is run is not a guard — and a skip is not a pass.**
+
+Also: *a comment that reasons about a guard's correctness is not evidence the guard runs* · *a
+declaration can be answering a question the tool cannot ask, and then nothing goes red* · *"I could
+not measure this" and "I measured it and it is wrong" are different sentences* · *no file imports
+itself* · *a receipt that cannot fail **yet** is not the same as one that cannot fail* · *a reachability
+number is meaningless without its source set* · *never pipe a suite run through `tail -5`*.
+
+---
+
+## What is left in L5
+
+| | Item | Whose |
+|---|---|---|
+| `08` | the headline fix nobody wired — *"35 of 38 person cards named an address"* | me |
+| `09` | `gate.describe_decision` — wire it or declare it, by measuring the sink | me |
+| `15` | `outbox.revive_undeliverable` — a stated product promise with no caller | me |
+| `10` | L5 receipts — 4 candidates, each measured before it is written | me |
+| `11` | the Atlas scorecard → `-L1-to-L5`, three badges dated, Layer 5.2 written down | me |
+| ⛔ `17` | **nine packages, 147 functions** — a level, and the **last** thing in the programme | me |
+| ⛔ `16` | is there a per-recipient hourly ceiling? | **Rohit** |
+| ⛔ `12` | `0190` — `insert_card` fails on write without it | **Harsh** |
+| ⛔ `H6` | run `tests/test_delivery_spine.py` where a database exists | **Harsh** |
+
+
+---
+---
+
+# ⛔ 2026-10-02 · L6's SECOND PASS, and the correction it forced on L5
+
+## ⛔ THE CORRECTION ON STEP-10 · a receipt's layer label is not a package
+
+| | |
+|---|---|
+| **the claim** | *"L5 is 9,431 lines and carried 2 of 33 receipts — 4,715 lines per guard — and one of the two ERRORs, so the layer that physically touches the customer had ONE working production guard."* |
+| **how it was made** | `[r for r in receipts(None) if r.layer == "L5"]`. ⛔ `Receipt.layer` is a **hand-written string**, and `genios_engine/LAYERS.py` warns in its docstring: *"Atlas 5.2 is our `deliver` (6), and Atlas 6 is our `feedback` (7) — so always name the package, never the digit alone."* |
+| **what is true** | resolved by the table each receipt queries, `deliver/` carried **5** receipts and **4** worked. **1,886** lines per guard — ⛔ **already true before the pass began.** Today: **8** receipts, **7** working, **1,252** |
+| **why the label is useless for counting** | it follows neither vocabulary: `L3` is `packs/`; `L2`, `L4` and `L5` each span **two** packages. `decisions become tracked commitments` is labelled `L5` and reads `executions` — `executive/`'s table |
+| **not retracted** | the two new receipts (each shown able to go red), the three rejections (structurally 0 forever, or already a code property), the 12-hour window from a measured 6.0-hour sweep |
+| **why it survived** | ⛔ **no assertion depended on it.** *A guard that asserts the label is correct cannot notice that the label means nothing* — second instance of *a guard must not inherit the blind spot of the thing it guards* |
+| **outcome** | 11 documents + 1 test docstring marked **in place**, not rewritten. ⛔ **No label touched** — `receipts(layer)` filters on it, so a relabel changes operator behaviour. Rohit's call |
+
+## ⛔⛔ L6 · the loop runs, and is never questioned
+
+| | |
+|---|---|
+| **the layer** | `feedback/` — **14 files · 3,111 lines**, the smallest in the product (12 · 2,737 at M14's crosscheck) |
+| **the status it carried** | `00-START-HERE.md` said **`COMPLETE`**. M14's three units ARE done; what was complete was **the milestone**, not the layer |
+| ✅ **it runs** | `run_learning_sweep` is **inside the heartbeat** (`api/routes.py:1274-1278`), calibration too (`:1247-1264`), org-rule discovery on upload. Weekly per-tenant PostgreSQL claim. **Eleven functions reached from outside the package.** ⛔ The opposite of L5's dead control plane — **so this is a reading pass, not a wiring pass** |
+| ⛔⛔ **the finding** | **4 receipts, all four PRESENCE checks** — `expect(0)` False. `deliver/` has **5 correctness of 8**; `feedback/` has **0 of 4**. All four are satisfied by one successful tick |
+| ⛔⛔ **and the evidence exists** | `feedback/` writes **19 tables**; **4 are read by nothing** — and each holds exactly the column a correctness receipt needs: `learning_transitions (from_state, to_state)` against the existing `ALLOWED_LEARNING_TRANSITIONS`; `learning_object_evaluations (run_id, policy_revision, sink_reason)`; `learning_input_rejections (seam, reason_code)`; `learning_metrics` |
+| ⛔ **two indexes for queries nobody wrote** | `learning_object_evaluations_replay` and `_by_run`. **An index is a statement that a query exists** |
+| ⛔ **the defect in its own docstring** | `record_refusal`: *"A refusal that lives only in a return value is indistinguishable from a candidate the model never produced."* The ledger it was promoted into **has no reader** |
+| ⛔ **the skips** | **27, and all the same thing**: two files entirely, both `GENIOS_TEST_DATABASE_URL`. *"filled through the routes"*, *"filled through the paths"* — **the two that prove the brains fill** → `H7` |
+| ⛔ **two near-misses of mine** | `counterfactual_ledger` *has no writer* — true, and it is a **VIEW**; and the reader scan **undercounts**, because `context/authority_view.py:55` reaches `authority_rules` through a name constant. ⛔ **A name-constant is a read** |
+| **the plan** | 10 units, `U01` measured on the day it was planned, **0 built**. `U03`–`U05` are each gated on *can this receipt fail?* → `layer-6-learning/06-PLAN-the-second-pass.md` |
+
+## ⛔ Doctrine this pass produced
+
+| Rule | What it cost |
+|---|---|
+| ⛔ **a receipt's layer label is its author's intent; the table it queries is what it guards** | STEP-10's headline number, in eleven documents |
+| ⛔ **"always name the package, never the digit alone" binds the COUNTER as much as the writer** | `LAYERS.py` said it; the count ignored it |
+| ⛔ **a name-constant is a read** | `authority_rules` read as 1 reader and has 3 |
+| ⛔ **a presence receipt cannot fail for the right reason** | four of them are one successful tick |
+| ⛔ **guards per line counts guards; it does not read them** | `feedback/` has the best ratio in the product and zero correctness guards |
+| **a number repeated in eleven documents was derived once** | repetition is not corroboration |
+| **a motivation number no step depends on is a number nobody checks** | — |
+| **an index is a statement that a query exists** | two of them, maintained on every insert |
+
+
+---
+
+## S2 · the North Star ledger has never had a writer
+
+| | |
+|---|---|
+| **the task** | *"a stale `value_state` string"* — `/v1/insights/stats` returned `value_state: "unavailable_no_counterfactual_ledger"` and commented the ledger *"does not exist"* |
+| **the gate** | *the fix for a wrong reason is the reason, not the answer* → **measure what is actually missing** before writing a new reason |
+| **what the gate found** | ⛔ step 1: nothing branches on the literal. ⛔ step 2: `counterfactual_ledger` **exists** (`0072`, with a receipt) and carries **no monetary column**. ⛔⛔ step 3: the table built for this number is **`macv_ledger`** (`0012`) — *"the North Star … the number the customer can verify"* |
+| ⛔⛔ **the finding** | **five occurrences repo-wide and not one is a read or a write** — the migration, the cascade FK, `api/account_routes.py`'s **deletion list**, the retention test, and `docs/LAYER_MAP.md`, which **claimed `feedback/` writes it.** The only code that touches it deletes it |
+| **what changed** | the comment (the measurement, quoting the old sentence so the record survives) · `value_state` → `unavailable_macv_ledger_has_no_writer` · ⛔ the **docstring**, stale in both halves · `docs/LAYER_MAP.md`'s `feedback/` cell |
+| **what did NOT change** | ⛔ `value_recovered_inr` stays `None`. Reading the empty ledger to report `0` is exactly the defect the handler's own first sentence exists to prevent |
+| **the guard** | 18 tests, and the teeth point at the reason: **add an `insert into macv_ledger` and it fails**, naming the three places to update together. ⛔ **6/6 mutations caught, baseline green before AND after** |
+| ⛔ **my own fault** | my first guard asserted the false sentence was ABSENT and **failed on the correct fix** — the correction quotes it. ⛔ **The rule was in the docstring directly above the assertion.** 18th instance. Repaired generally: **check attribution, not presence** |
+| ⛔ **measured consequence** | **104** source-text phrase-absence guards share that shape. ⛔ *"104 broken"* would be an overstatement — all are structurally vulnerable, which are actually at risk needs 104 readings → `S9` |
+| **outcome** | full suite **14,891 passed · 0 failed**. ⛔ **Rohit's:** the MACV writer is a product decision, not a quiet fix |
+
+
+---
+
+## S3 · a policy that did not load may not learn — Atlas gap #10 CLOSED
+
+| | |
+|---|---|
+| **the task** | Atlas Layer 7 `#10`'s residue: the `SELECT` had been fixed, the LOAD had not. `_as_tuple` returned `()` for `None`, a dict, a bare string and a list of integers alike |
+| ⛔⛔ **the defect** | **a fail-OPEN on an authority list.** A tenant's *"never learn about these targets"* list that failed to read was indistinguishable from *"nothing is blocked"*, and `preflight` returned **`admitted`** for the exact target they meant to forbid |
+| ⛔ **the comment that described the missing guard** | the seed writes `cast('[]' as jsonb)` *"so the guard below can tell a deliberate empty policy from one that failed to load."* **There was no guard below.** The database kept the two facts apart and the load collapsed them one line later |
+| ⛔ **why the fix could not go in `_as_tuple`** | it received only the value, never the revision, so it **could not** tell an absence from a decision. *A docstring can promise a behaviour the signature makes impossible* |
+| **how** | five units, bottom-up: ① `contracts/learning.prohibitions_state` — ⛔ a tuple has no third state ② the resolver that reports WHICH case ③ `preflight`, ⛔ **before** the block-list checks and shared by all three producers ④ `run_learning`, ⛔⛔ **before `_claim_week`** ⑤ ⛔ `run_learning_sweep`'s `skipped_by_reason` |
+| ⛔ **the sharpest detail** | **a fail-closed placed after the claim converts a policy problem into a LOST WEEK** — `on conflict (org_id, week_key) do nothing` means a claimed week stays claimed, so a policy fixed on Tuesday would wait until the following Monday. The harm appears only on the *second* tick, so it is asserted on the **AST** |
+| ⛔ **the second half nobody had asked for** | the sweep counted skips and never said why — consent-off, already-ran and a **crashed** tenant were one number. **A refusal nobody can see is a silent stop**, worse than the fail-open it replaces. *The reader is half the unit* |
+| **the guard** | 40 tests · ⛔ **8/8 mutations caught**, baseline green before AND after |
+| ✅ **a false finding refuted** | `knowledge_requires_review` is selected and overwritten with `True` — I began writing *"a column that configures nothing"*. `0045:37` holds `check (knowledge_requires_review)` and the comment *"CHECK-locked true"*. ⛔ **Sixth time verifying first prevented a false finding.** *A redundant read is not a lie* |
+| **what I could not measure** | ⛔ whether any stored row holds NULL **today** — the seed's comment implies it was changed, so legacy rows are possible. **That is why the fail-closed is a SKIP, not an exception**: no week is burned, and the tenant resumes once somebody backfills `[]` |
+| **outcome** | full suite **14,931 passed · 0 failed**. Atlas L7: **4 CLOSED · 3 PARTLY · 1 LIVE · 3 unmeasured** |
+
+
+---
+
+## S4 · a silent unit names its producer — Atlas gap #2 CLOSED by refutation
+
+| | |
+|---|---|
+| **the task** | Atlas Layer 7 `#2`, *"direct personalization evolution is missing"* — the **only fully LIVE** gap after `S3`. Gate: *"measure first: build, or DECLARE"* |
+| ⛔⛔ **what the gate found** | **neither.** Both components are built one package down — `packs/brains/behavior_distill.distill` (776 lines → `BEHAVIOR`) and `packs/brains/adaptive_lease.lease_proposals` (301 → `RUNTIME`, 7-day TTL) — and `brain_pipeline.brain_pipeline_proposals` appends both into the **same weekly run**, each in a savepoint, from the line after `run_all_units` |
+| ⛔ **why nobody saw it** | the stub (`365cf7a6`, 2026-08-08) **predates the implementation** (`ed1b10c3`, 2026-09-07) by a month, and `ALL_ANALYSIS_UNITS` — the list a reader scans for Layer 7 components — still shows a silent unit where a built one belongs |
+| ⛔⛔ **two readers, one wrong verdict** | the Atlas, and this programme, which filed #2 as *"LIVE — and now less visible"*. ⛔ **That note was itself wrong**: *"one step from recording this CLOSED"* — **it IS closed** |
+| ⛔ **and a grep made it worse** | `behavior_distill.py:551` reads *"NOTHING wires this adapter today"* — about the optional **LLM labeler**. **A grep hands over a sentence without its subject** |
+| **how** | DECLARED, not deleted: `target_policy.DELEGATED` = `{unit: (producer, target, why, mover)}`, with **five links** guarded — the producer exists · does work · the driver calls it · `run_learning` calls the driver · ⛔ **it still emits the declared TARGET** |
+| ⛔ **the blind spot it closed** | `S1`'s `durable_from_a_measurement()` reads `UNIT_TARGETS` — `units.py`'s registry — so *"which producer may write which brain"* was guarded for **eleven units** and **unguarded for the two that produce**. *A guard that stops at a package boundary catches nothing across it* |
+| ⛔ **a widening I did not make** | `unit_temporary_memory` returns `[]` and `adaptive_lease` writes its sink — but one wants an **explicit human directive** and the other **infers** from card verdicts. **Same sink, different input.** Recording it as a delegation would have been a lie about which capability exists |
+| **the guard** | 23 tests, 50 with `S1`'s. ⛔ **8/8 mutations caught**, baseline green before AND after |
+| ⛔ **an honest survival** | `M2` survived first time because I placed the stub **before** the real `def` — at module level the last definition wins, so it was dead code, not a stub. **An invalid mutation is not a surviving mutation**, and only a harness that reports the survival can tell them apart |
+| **outcome** | full suite **14,954 passed · 0 failed**. Atlas L7: **5 CLOSED · 3 PARTLY · ⛔ 0 LIVE · 3 unmeasured** — ⛔ **no Layer 7 gap is fully live any more** |
+
+
+---
+
+## S5 · the inbox landed, and nothing consumes it — Atlas gap #1 NARROWED
+
+| | |
+|---|---|
+| **the task** | Atlas `#1`'s residue: `unit_preference_learning` and `unit_temporary_memory` both `return []` with *"Empty until the inbox lands."* Gate: *declare, do not build* |
+| ⛔⛔ **what the gate found** | **the sentence was STALE.** `learning_event_inbox` (0046) exists, is written in production by `reason/moments/store.record_feedback` (via `api/moment_routes.py:746`), is loaded into EVERY weekly batch — and ⛔ **no unit reads it.** `run_learning` counts the rows it drops as `inbox_unconsumed` |
+| ⛔ **the comment's own prediction** | *"Empty at both ends today … **but the day something starts writing to that table**, rows would be read and dropped on the floor."* **That day had come.** The reasoning was right; the premise went stale |
+| ⛔ **the narrowing** | **the gap is a `kind`, not a table.** Every row is `payload.kind == "moment_feedback"`. A table is a migration; a `kind` is a **SURFACE** where a founder states a preference — ⛔ **Rohit's, and the Atlas's own P1** |
+| **what is already built** | `LearningTarget.RUNTIME` · `govern()` → `TEMPORARY` · `publish_runtime` → `temporary_memories` (`expires_at NOT NULL`) · `preflight`'s three expiry checks · `expire_leases` · the inbox's `lease_until`. **The missing input is the whole of the gap** |
+| ⛔ **and not a model** | the Atlas, now quoted in the code: *"adding a model directly to empty units would produce eloquent ungrounded preferences. First wire typed evidence"* |
+| ⛔⛔ **what was BUILT** | **the layer's first CORRECTNESS receipt.** `feedback/` had 4 receipts, all presence; `inbox_unconsumed` was written into `learning_runs.counts` and read by nothing. Receipts **35 → 36**, correctness **0 → 1** |
+| ⛔ **why that claim** | a receipt on `inbox_unconsumed > 0` would be red forever — `receipts.py`'s own rule: *a gate that is always red is a gate nobody reads.* So it guards whether the count is **recorded at all** |
+| **the guard** | 27 tests · ⛔ **8/8 mutations caught**, baseline green before AND after. `M4`/`M6` first reported *ANCHOR MISSING — COUNTS NOTHING* |
+| ⛔⛔ **my own fault, third of a class in one session** | `assert "batch.inbox" not in units` **failed on correct code** — the corrected docstring explains the inbox. ⛔ **A claim about CODE must be checked against the AST, not the text** — and an attribution window would have been the wrong tool |
+| **outcome** | full suite **14,981 passed · 0 failed**. Atlas L7: **5 CLOSED · 3 PARTLY · ⛔ 0 LIVE · 3 unmeasured** |
+
+
+---
+
+## S6 · the no-silent-drop contract, and an illegal lifecycle edge
+
+| | |
+|---|---|
+| **the task** | *"the four unread ledgers, demoted to monitoring"* |
+| ⛔⛔ **what asking them found** | **two LIVE defects.** (1) all three refusal paths in `run_learning` discarded a reason the callee had computed — `ok, _ = validate_learning(...)` — so a refused proposal was **counted and never named**, and `learning_object_evaluations` recorded only successes. (2) `publisher.publish` wrote **`governed → published`** on every brain publish, and `ALLOWED_LEARNING_TRANSITIONS[GOVERNED]` is `(temporary, human_review, promoted, rejected)` |
+| **the Atlas** | *"Every rejected or deferred candidate must retain … **reason code** … A weekly sweep that returns zero objects without this accounting is operationally indistinguishable from broken wiring."* And `L7-30` for the skipped `PROMOTED` hop |
+| ⛔ **why nobody saw either** | both ledgers are written and read by **nothing**. `ALLOWED_LEARNING_TRANSITIONS` existed from the start; nothing checked it on that path |
+| ⛔ **no migration needed** | `learning_object_evaluations` already carried every field the Atlas asks for, `migrations/0046` **names the held case itself**, and `learning_id` has no FK — so a proposal that never reached `persist` can still be recorded. Checked before writing |
+| **how** | three refusal paths record their reason · the missing `governed → promoted` hop · ⛔ `log_transition` **refuses** an illegal edge and an unknown state (`from_state=None` exempt) · two correctness receipts, the legal pairs **derived** from the contract |
+| ⛔ **six callers enumerated before the raise** | one — the API review route — uses raw SQL for a deterministic idempotency id; both its edges are legal and a test asserts it from source. **An unguarded writer checked at build time is not an unguarded writer** |
+| ⛔⛔ **a retraction I owed** | `07-ATLAS-CHECK` §3 had **retracted** `U03` because the SECOND writer was the repaired approval path. The **first** writer was the one emitting the illegal edge. ⛔ **Un-retracted.** *A retraction needs its own measurement, not a neighbouring one* — fifth retraction, first of a retraction |
+| **the guard** | 46 tests · ⛔ **9/9 mutations caught**, baseline green before AND after. ⛔ `M6` — widening the map so the bug becomes legal — is caught by **three** tests |
+| **outcome** | receipts **36 → 38**, `feedback/` correctness **1 → 3**, unread ledgers **4 → 2**. Full suite **15,027 passed · 0 failed** |
+
+
+---
+
+## S7 · the count becomes data, and a lost seam gets a name
+
+| | |
+|---|---|
+| **the task** | two halves: (b) the unread ledgers' last question, (a) guards per package as DATA |
+| ⛔ **(b) what the gate found** | the refusal RATIO was already complete — `org_rule_discovery_runs.counters` holds `candidates`/`admitted`/`refused` per run, in a table that IS read. **The gap was the ledger's other writer**: `store._read_optional_seam` quarantines a failed read, records it, and returned `()` — so a LOST seam reached `run_learning` identical to an EMPTY one (`L7-29`: *expose the empty reason*) |
+| ⛔⛔ **(b) a second defect in the same block** | `degraded_seams` read `getattr(batch, "deliveries", ())` and the field is `delivery`, so the delivery seam was reported degraded on **every run, forever**, and `degraded` was always True. *A flag that is always set is a flag nobody reads* |
+| ⛔⛔ **(a) the number, derived** | `context/` **50,877 lines / 2 guards = 25,438** — ⛔ **5.4x worse than the 4,715 that triggered `STEP-10`**, which was spent on `deliver/`; `deliver/` is now third-best at 1,431. `packs/` has one PRESENCE receipt and zero correctness |
+| **(a) why declared, not parsed** | an outer-`from` resolver fails on **4 of 40** receipts (derived tables), and two earlier parsing attempts produced confident wrong answers. ⛔ Plus a third category, `READINESS`, for claims no package can repair |
+| ⛔ **the second direction, twice** | I built the declaration from a dump truncated at 62 chars; direction one called two keys undeclared and direction two called them stale — **both halves of one mistake** |
+| ⛔⛔ **a harness defect** | `S7(a)`'s baseline-after failed with a layer `L8` present nowhere in source: **a stale `__pycache__` made a restored file read as the mutant**, biasing toward FALSE KILLS. **All seven harnesses re-run** with caching off — `6·0 8·0 8·0 8·0 9·0 9·0 8·0`, ⛔ **every count identical.** Known only because the harness asserts its baseline AFTER as well as before |
+| ✅ **a guard forced its own update** | `S6`'s declared-silence test failed on cue when `S7` gave its ledger a reader, so the `F11` tally moved **deliberately** |
+| ⛔ **and one mistake of mine** | I killed a healthy suite run at 64%, reading post-cache-wipe slowness as a stall. **Slow is not stalled** |
+| **outcome** | receipts **38 → 40**, `feedback/` correctness **3 → 5**, unread ledgers **2 → 1**. Full suite **15,101 passed · 0 failed** |
+
+
+---
+
+## S8 · the scorecard reaches the learning layer
+
+| | |
+|---|---|
+| **the task** | `08-ATLAS-SCORECARD-L1-to-L5.md` → `L1-to-L6`, claim by claim against the master coverage matrix's eleven `L7 Learning` rows |
+| ⛔ **the gate caught my own numbering** | I planned it as *"`L1-to-L7`"*. **This scorecard numbers `deliver/` as L5**, so the learning layer is **L6** here, while the matrix labels the same rows `L7 Learning`. ⛔ **Third time the programme has paid for that collision** — after `STEP-10`'s count and the three `L5`-labelled receipts I added to `deliver/` |
+| **the result** | 45 → **56** claims · **4 EXPIRED · 4 PARTLY · 3 still true** |
+| ⛔⛔ **the direction** | **all four expirations run the same way: the Atlas calls built things stubs.** `L6-06` — *"Behavior cohort builder returns `[]`"* — against a **776-line component wired into the weekly run** |
+| ⛔⛔ **four cells hid a defect the Atlas did not name** | `L6-01` the health gate was BROKEN · `L6-09` an illegal lifecycle edge on every brain publish · `L6-10` the module's stated reason is now false · `L6-11` the North Star ledger has no writer. ⛔ **Three of the four sit under badges that read as reassuring** |
+| ⛔ **the new defect** | `feedback/reset.py` justified not superseding Behavior with *"an unwired stub … there is no live Behavior Brain content to decay"* — **true when written, false now**. ⛔ **Corrected, not repaired**: the supersession is a governed decision and Rohit's. A **cross-package guard** now ties the prose to the fact, checked by **attribution** because the correction quotes what it corrects |
+| **the guard** | 21 tests · ⛔ **2/2 mutations caught**, baseline green before AND after. `M1` survived first time because I removed one marker while two others remained in the window — ⛔ **fourth invalid mutation refused rather than rounded up** |
+| ⛔ **paperwork rot** | `08-PLAN-v2`'s order block needed **rebuilding**, like `19-PENDING`'s table (`F33`): eight incremental edits left the v1 `S3` and `S9` lines behind plus a doubled `← next`. *A list edited one line at a time accumulates the lines nobody edited* |
+| **outcome** | full suite **15,102 passed · 0 failed**. Scorecard **56** Atlas claims verified or refuted |
+
+
+---
+
+## S9 · the paperwork, and a finding of mine refuted by its own gate
+
+| | |
+|---|---|
+| **the task** | `F16` the status counts · `F17` the mover convention · `F18` `wipe_org_data` · `F22`/`F32` the 104 absence guards |
+| ⛔⛔ **`F17` RETRACTED** | **my own false finding.** `MOVES WITH` appears **29 times across nine of the thirteen** declaration modules against 115 `MOVES WHEN` — a **convention**, saying what `MOVES WHEN` cannot (*"moves when its PAIR moves"*). ⛔ The gate *"measure the distribution before touching either side"* stopped me tightening a guard onto **29 correct entries**, and `F17`'s own closing line was *"do not tighten one to make it fail"* |
+| ⛔ **the mutation executes the refutation** | narrowing `MOVER_FORMS` to `("MOVES WHEN",)` fails **9 modules** |
+| ⛔ **a third form DID exist** | one `MOVES ON` in `context_health.py`, normalised. A new guard (+10 tests) rejects a third form ⛔ **without demanding a mover** — three tables correctly have none, and demanding one is the mistake the guard above it records making |
+| ⛔⛔ **the 104 guards: the rule, not the rewrite** | a resolver meant to check each guard's phrase against its own target file **resolved 1 of 104** (`inspect.getsource(<function>)` needs an import, not a parse). ⛔ **A resolver that answers for 1 of 104 answers nothing** — an earlier version reported *"0 at risk"* from that sample. The rule is in `tests/README.md`: **prose → attribution, code → AST, SQL construct → text is fine** |
+| `F18` closed | `wipe_org_data.py` blamed MATERIALIZED views; `0072` is a **plain** view and says why. ⛔ **No second cause invented** — not recoverable from the file. The fix is right independently: `table_type='BASE TABLE'` excludes every non-table, present and future |
+| `F16` closed | three counts, three meanings, none wrong when written. ⛔ **The fix is the date, not the number** — and the command, with `-rs`, because the 27 skips are `H7` |
+| **outcome** | +10 tests · **2/2 mutations caught**, baseline green before AND after. Full suite **15,112 passed · 0 failed** |
+
+
+---
+
+## S10 · the three gaps nobody had measured — the LAST unit of `M14.C2`
+
+| | |
+|---|---|
+| **the task** | Atlas Layer 7 `#3` outcome reconciliation · `#5` permitted-use propagation · `#6` company reset — the three marked *"not measured"* |
+| **the method** | ⛔ measurement FIRST, plan second: there was nothing to plan against until they were measured. Pinned to the Atlas v2 source, claim by claim |
+| ⛔⛔ **`#3`** | two clauses already closed — `unique (org_id, execution_id)` makes *"counted once"* a **database guarantee**, `label_class` keeps `unknown` neutral; the third is **blocked behind `#1`**. ⛔⛔ **THE REAL FINDING: the durable ADAPTIVE path is unreachable by ARITHMETIC** (`distinct_days=1` vs a floor of 2, validated **before** governance) — **and the obvious repair springs it.** A tripwire, not a fix: ADR-10 is Rohit's |
+| ⛔ **`#5`** | enforcement **PROVEN** on the decision path (audience ⊆ principals; fail-closed on an unknown scope). The rendered surface drops visibility but is **unreached** — all three durable producers declare `ORGANIZATION`. Declared as a PAIR + receipt **41** for the approval path only the data can answer. ⛔ The `VisibilityScope` ↔ `SCOPES` bijection was unguarded |
+| ⛔ **`#6`** | the reset **propagates into delivery**, which the Atlas does not credit. Two seat callers are **deliberate**, justified in writing — candidate retired. ⛔⛔ **My own declaration was wrong**: the reader is one layer DOWN and the duplication is **forced by the topology** |
+| ⛔⛔ **cost** | **four of my own guards failed their mutations** — a word inside a cited path, `all` vs `any`, a call under `if False`, and a line scan a split SQL string defeats. ⛔ The repair of an existing guard was gated on a **negative control** |
+| **outcome** | 69 tests · **27/27 actionable mutations caught** · receipts 40 → **41** · `feedback/` correctness 5 → **6** · ⛔⛔ **0 of 11 Atlas gaps unmeasured** · full suite **15,182 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## L3 · the `context/` coverage audit — the worst-covered package, and six retractions
+
+| | |
+|---|---|
+| **the task** | `S7` made *receipts per package* data and it pointed at `context/`: 2 receipts, 50,885 lines, 124 files — never audited |
+| ⛔ **the headline was wrong** | `context/` is heavily tested — **306 test files** import it, only 2 modules of 100+ lines are named by no test (both live and reached), and **both** receipts are CORRECTNESS receipts. The gap is that nothing checks the **44 tables it writes** in production |
+| **the method** | every SQL statement in `genios_engine/` **and** `scripts/` — 2,867 — cross-referenced against readers, writers and all 42 receipts, with table-name constants substituted |
+| ⛔⛔ **six retractions** | each from a BROADENING: a digit in a table name · a reader in `scripts/` · a mention that was prose · SQL in a module constant · a name constant passed as an ARGUMENT · a printed query that is not a read. **Nine findings survived three broadenings** |
+| ⛔⛔ **the near-catastrophe** | 77 org-scoped tables in neither erasure list read as a retention hole including verbatim customer mail. ⛔ **It is not one** — `/reset` keeps the account by contract, ACCOUNT erasure is foreign keys, and a receipt already asks the deployed schema. **Read the endpoint's contract before calling a list incomplete** |
+| **what shipped** | `platform/table_coverage.py` (9 write-only tables declared, 2 retractions recorded, `resolution()` reporting 639 unresolved of 2,867) · **receipt 42**, derived from `merge.py`'s own constants · `scripts/context_coverage_report.py` and the generated `05-AUDIT-context-file-by-file.md` · `HANDOFF-HARSH.md` §H8 |
+| **outcome** | 37 tests · **11/11 mutations caught** · receipts 41 → **42** · `context/` correctness 2 → **3** · full suite **15,220 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## 2026-10-03 · the plan to production, and the audit of all eleven packages
+
+| | |
+|---|---|
+| **the task** | Rohit: *"plan bana ke do ki kya kya bacha hai, steps wise list do… make everything at production level… write notes to harsh and detailed auditing report"* |
+| ⛔⛔ **the crux** | everything is **built**, almost nothing is **live**, and the three things between them — `H1` migrations, `R1` the spend limit, `R2` activation — are **not mine**. Said plainly rather than buried under a list of my own work |
+| **the definition** | ⛔ *production level* got **seven checkable conditions**, each from a defect this programme failed to catch. **By them nothing qualifies today**, because the migration and activation conditions fail for everything |
+| **the audit** | all **eleven** packages, generated — `20-AUDIT-every-package/`. ⛔ `api/` is the worst on three columns at once and ⛔ **never appeared in `S7`'s ranking**, because *lines per receipt* with a zero denominator does not sort. `contracts/` is the control: 0 receipts **and** 0 tables written |
+| ✅ **a list closed** | the original brief's eight VERIFIED-MISSING items: **7 built, 1 declared unnecessary** |
+| ⛔ **four defects in my own paperwork** | a declaration column that read 0 for four packages (the module name was derived from the directory) · context-specific prose in a reusable tool · a total added instead of measured, **twice**, the second breaking a correct file count · `164` unreceipted tables where the number is **141** |
+| **for Harsh** | the handoff said *"five items"* and has **eight**; it now opens with a do-this-in-this-order table and names the three that are read-only or one command |
+| **for Rohit** | `R1`–`R15`, `D1`/`D2`, `P` — stable ids, introduced in the plan and mirrored into `19-PENDING`, because the same item was named four ways across four files |
+| **outcome** | 94 affected tests green · `resolution()` 639 of 2,872 (0.222) · plan, audit index and ten new audit pages written · ⛔ **no source behaviour changed** — one report generator was corrected |
+
+
+---
+
+## 1.1 · the `api/` audit — eleven candidates, eleven retirements, one real finding
+
+| | |
+|---|---|
+| **why first** | `20-AUDIT-every-package` ranked on *tables written that no receipt asks anything of*, and `api/` led with **28** over a package with **zero receipts**, in the layer a customer touches. ⛔ It never appeared in `S7`'s ranking: a ratio with a zero denominator does not sort |
+| ⛔⛔ **eleven retirements** | `decisions` (the route binds the envelope it returned) · `approvals_queue` and `policy_routes.evaluate` (**already declared**, and the declaration is sharper than the candidate) · `learning_objects`' third writer (state only, `for update`, 404+409) · `api_keys`' four writers · `card_events`' eight · `agent_registry` (left as a measurement) · ⛔⛔ **`api/`'s "thin" declarations — my own mis-signal, 25 route handlers are decorator-excluded by design** · the zero-receipts filing (reasoned) · the two "no test names it" columns |
+| ✅ **the survivor** | **`learning_objects` is write-once except `state`, and nothing asserted it.** `publisher.persist` states it in its first line and keeps it; the engine holds exactly two updates and both set `state` |
+| **the repair** | `platform/table_coverage.WRITE_ONCE_TABLES` + `illegal_column_updates()`, guarded both ways — a value column fails **and** a third updater fails. The producer's half is behavioural, with a double that records every statement. ⛔ **No receipt, deliberately**: the data cannot answer it without reimplementing `semantic_hash` in SQL |
+| ⛔ **one mutation survived** | a paren-depth split whose removal changed no answer, because an identifier filter catches the same wreckage. ⛔ **The branch was deleted and the filter named as the safeguard** — a branch whose mutation cannot fail is complexity |
+| **outcome** | 22 tests · **10/10 mutations caught** · one audit-index correction · full suite **15,242 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## 1.2 · the `platform/` audit — fifteen retirements, and a park the health check excludes
+
+| | |
+|---|---|
+| **why second** | one receipt over 12,651 lines, 18 writers, 25 unreceipted tables — and ⛔ **the package every other package imports**, so one wrong invariant travels furthest |
+| ⛔⛔ **fifteen retirements** | `pipeline_counters` (read through `funnel`'s own accessor) · the four activation tables (⛔ a cross-layer ordering would have to be **invented** — declined) · `use_domain_compiler` (kept in capitals, deliberately) · `org_run_leases` (self-healing, 120 s heart-beaten) · `presence_leases` / `warm_lane_slots` / `rate_counters` / `auth_sessions` / `seat_slice_versions` / … (read through their own modules) · ⛔⛔ **Atlas `L2-02`, which was mine and wrong five minutes after I wrote it** — `LINEAGE_UNPROTECTED` declares it with a reason and a mover |
+| ✅ **the survivor** | **`warm_lane` parks a row "for a human" and every reader excludes it.** `_OPEN`, the backlog count and the staleness warning all filter `parked_at is null`; nothing selects a parked row; the prune only removes finished ones. ⛔ A stuck tenant reports a clean lane, and the invisible set **grows** |
+| **the repair** | **Receipt 43** — *"no warm-lane row is parked where nothing can see it"* — predicate **derived** from `warm_lane._OPEN`, with the builder asserting the shape so it cannot drift. ⛔ A **precedent**: L1 already makes this claim for `parked_events`, and a test pins that the precedent exists |
+| ⛔ **what it handed on** | the mover of a declared silence became a **one-line query** — `H8.5`: how many connector kinds does any live tenant have? **Three or more and `LINEAGE_UNPROTECTED` becomes work** |
+| ⛔ **the receipt broke a test** | and the break was the **test's** defect: `[r for r in receipts(None) if "lane" in r.claim][0]` matched three claims, one of them `lane` **inside `plane`**. ⛔ The rule, not the rewrite — one site named its claim, and a guard now fails on any future collision. ⛔⛔ **The guard needed three corrections of its own**, each a rule already written: the AST not the text, a lookup is not an assertion, and a surviving mutation fixed by extracting a pure function rather than deleting the check |
+| **outcome** | 23 tests · **16/16 mutations caught** · receipts 42 → **43** · `platform/` 1 → **2** · three stale counts corrected in `HANDOFF-HARSH.md` · full suite **15,266 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## 1.3 · the `reason/` audit — twenty retirements, no receipt, and a column deleted
+
+| | |
+|---|---|
+| **why third** | 41,363 lines, 21 writers, **29** unreceipted tables, and the most Atlas claims still open |
+| ⛔ **twenty retirements** | `signals`' idempotency is a **partial unique index** matching its own `on conflict` — and my two follow-ups were both wrong (a single-line grep; then a flattened read that missed `0034`'s drop-and-recreate) · 16 of 23 reasoning units ARE exercised by `parametrize("unit", ALL_UNITS)` · `signal_suppression_log` IS read by `executive/explain` · a silent unit is already receipted |
+| ⛔ **no receipt, deliberately** | every derivable claim was already enforced or receipted. After 42 and 43, both taken from a module's own sentence, this package had no sentence left — *a gate derived from an invented claim is a gate nobody reads* |
+| ⛔⛔ **the finding was the measurement** | the *"no test names it"* column was wrong **19 of 33 times** across three audits. **Six repairs, every one over-correcting**; the worst being that **the guard written for the column named two functions in its own docstring**, making the module it asserted was untested read as named. ⛔ **Deleted** — section, five helpers and the per-file cell — with the reasoning on every page and a parametrised guard against each heuristic returning. Generator: **minutes → 1.6 s** |
+| ⛔ **a second drift** | `00-INDEX.md` is hand-written over generated pages and kept three stale `platform/` numbers. A guard now compares every row with its page and fails if a row stops parsing |
+| **what survived** | two live modules with no test — `api/identity_routes.py` (five routes) and `reason/team/away.py` — named in the plan as `1.3b` rather than left as table rows |
+| **outcome** | 26 tests · two guards · receipts unchanged at **43** · full suite **15,292 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## 1.3b · the two untested modules — and one was guarding health information
+
+| | |
+|---|---|
+| **why these two** | they survived all six repairs to the audit's naming column **and** a hand check. The other nineteen entries were false |
+| ⛔⛔ **the finding** | `reason/team/away.py` promises *"no leave reason ever leaves this module — the `sick` kind is reported as `leave`"* and **nothing asserted it**. One line changed, or one new `AVAILABILITY_KINDS` member unmapped, and every seat learns why a colleague is off |
+| **how it is guarded** | ⛔ the emitted vocabulary is **derived** from `AVAILABILITY_KINDS`/`ABSENT_KINDS`/`_PUBLIC_KIND`, one parametrised case per kind, so the newest kind is covered without an edit · the mapping must **transform, not suppress** · the row carries only who and when, proved with a fixture that really holds a `cover` |
+| ⛔ **the second module** | `api/identity_routes.py`'s node-set gate is the only thing stopping a human merging two nodes **no proposal names** — *"it rewrites who every fact and edge is about"*. ⛔ **The test asserts `apply_merge` was never CALLED**, because a gate placed after the act still returns 422; the mutation that moves the merge above the gate fails four tests |
+| ⛔ **one test of mine was theatre** | it set the field under test with a no-op expression. Repaired to assert the fixture carries it before asserting the row does not |
+| **outcome** | 32 tests · **17/17 mutations caught** · no receipts (neither claim is answerable from data) · full suite **15,324 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## 1.4 · the `capture/` audit — "why did I never see X?" becomes a receipt · PHASE 1 CLOSED
+
+| | |
+|---|---|
+| **what it arrived with** | the strongest receipt set in the product — **five, all correctness**. So the nineteen uncovered tables were checked for a DIFFERENT gap, and ⛔ every one is read inside `capture/` by the module that owns it |
+| ⛔⛔ **the claim** | `journey.py`'s own first sentence: *"a system that discards 92% of what a founder was sent has to be able to answer 'why did I never see X?' in one query"* — and its record that *"every layer wrote its refusal down. **Nothing ever joined them**"* |
+| **receipt 44** | ✅ the join is reachable; ⛔ **nothing checked that every event HAS an answer.** Five derivations, nothing spelled: `TRACE_STOPPING` · `_LEDGERS` minus `_PER_SIGNAL_LEDGERS` (⛔ a per-signal refusal cannot name an event that produced no signal) · `qualified_signals` as the success test · **4 × the declared sweep tick**. ⛔ The multiplier is the one judgement and is named in the docstring; the builder **refuses rather than guesses** when `_LEDGERS` changes shape |
+| ⛔ **two survivors, both emptiness** | emptying `_PER_SIGNAL_LEDGERS` made a loop assertion **vacuous** — repaired by asserting non-emptiness first. The second was **invalid** (a phrase in three places, one changed), and a third was a **no-op** (`() or (x,)`) |
+| ⛔ **the harness itself** | a missing file **crashed** it and lost the run; a repeated phrase could not be changed deliberately. Both repaired |
+| **outcome** | 12 tests · **10/10 mutations** · receipts 43 → **44** · capture/ 5 → **6**, all correctness · full suite **15,337 passed · 0 failed · 11:39** |
+| ✅ **PHASE 1 CLOSED** | five steps · ⛔ **52 candidates raised, 52 retired** · 3 receipts · 6 guard suites · 0 failed at every step. **Next: `2.1` Atlas L2's nine** |
+
+
+---
+
+## 2.1 · Atlas Layer 2 — nine claims, two receipts, eleven corrections
+
+| | |
+|---|---|
+| **what it arrived with** | nine claims graded six weeks ago, two of which nobody had ever located in code. ⛔ The rule says the Atlas check comes FIRST, so all nine were re-measured against today's code before a unit was drawn |
+| ⛔⛔ **L2-11, located** | `expertise.py:1463` takes `domain_ids[0]` from a `tuple(sorted(selected_domains))` over a **set** — the **alphabetically first** domain. It becomes `CapabilityManifest.domain`, and `domain_shadow.py:1169` uses that to pick **which tenant pack the reasoning reads**; `runner.py:760` gates on it. ⛔ Nothing records the choice, while the package's own citation tags carry every domain. ✅ `domain_hints` already returns them all. **Receipt 45** |
+| ⛔⛔ **L2-01, located** | `graph_facts.authority_rank` holds a dense `0..6` ladder AND `DEFAULT_AUTHORITY_RANK = 100`. `fact_write_action` compares raw integers, so 100 is unsupersedable and a **signed document** against it is returned a `discrepancy` and dropped. Plus three ranks that do not say how they were decided (floor 0 = `inferred`; bare defaults 1 = `chat_aside`, 2 = `email_prose`) — and rank 1 is **load-bearing**, `graph_store` promotes on `== 1`. **Receipt 46** + `UNINTERPRETABLE_RANKS` |
+| ✅ **measured as not firing** | the derived writer is `version_prefix`-scoped and the two writers share no literal field name. ⛔ But `write_fact`'s lookup is NOT prefix-scoped, and **31 `field=` arguments could not be resolved statically** — stated beside the verdict, because a measurement that hides its blind spot reads as a proof |
+| ✅ **L2-03 was wrong** | closed in code both ways: the writer marks `contended`, the reader excludes it and refuses on 2+, and a third function keeps *"nobody"* and *"several"* apart. ⛔ I nearly inverted it — the law is at the WRITE, and the read is one line |
+| ✅ **L2-09 measured** | `relationships`/`dependencies` really are **0 mentions in 2,133 lines**, and declared twice. But *"0 derived facts"* has a census with a **reader** — the half I expected to find unread |
+| ⛔ **L2-04** | partly expired: `authority` is built and imported in production. ⛔⛔ And `authority_view.py`'s *"the eighth view over the one graph"* is **uncheckable** — one occurrence engine-wide, no list anywhere. Attributed, not counted |
+| ⛔⛔ **eleven corrections** | nine to my own first reading, including **a second writer I had missed**, **the wrong class** (two `to_semantic_dict` in one module), and a declaration that **falsified its own count** the moment it was written |
+| ⛔ **two invalid mutations** | M17 mutated the test's own threshold (a test cannot catch a weakening of itself); M9's label said citation and it stripped reasoning. Both re-run correctly and caught — ⛔ and M9 still found a real hole, which is why an invalid mutation is read |
+| **outcome** | 50 tests · **49/49 mutations** · receipts 44 → **46** · 9 claims: 1 expired, 2 located, 1 partly expired, 1 measured, 4 Rohit's, ⛔ **0 unmeasured** · full suite **15,389 passed · 0 failed · 11:40** |
+| **next** | `2.2` — Atlas L1's five open claims |
+
+
+---
+
+## 2.2 · Atlas Layer 1 — five claims, two receipts, and three holes in my own guards
+
+| | |
+|---|---|
+| **what it arrived with** | five open claims (`L1-01`, `L1-07`…`L1-10`), re-measured against today's code before a unit was drawn |
+| ⛔⛔ **two rows carried FALSE evidence** | `L1-08`'s said *"zero declare a `visibility` field"* — **all three declare one**, optional. `L1-07`'s said *"no roles contract"* — `RoleAssertion` exists and the contract records when it landed. ⛔ Both were graded by re-reading the Atlas rather than the code |
+| ✅ **L1-08's consequence is closed four times** | derive → **gate PARKS `visibility_unknown`** → re-drain `STILL_BLOCKED` → 5 of 6 columns NOT NULL, 6th paired to a `'private'` default. ⛔ The finding is the **five readers in `context/`** that treat a missing audience as permitted or org-wide, safe only by that chain and declared nowhere. Found by AST — grep found 5 of 8 sites, and the 3 extra are **fail-closed**, asserted against `can_view` |
+| ⛔⛔ **L1-09 went much deeper** | the contract's own rule is *"a dead field … invites a consumer to trust a seam that carries nothing"*, and **five of its 21 fields break it**. Worst: `degraded_compile`, whose own comment calls this defect FIXED — the fix put it on `GatedEvent` and stopped, and L2 reads the STORED signal, which has no column. ⛔ `coverage_ready` IS a column, so half the verdict crosses the boundary. **Receipt 47** holds the other promise, bounded by 4 sweep ticks because an old null is legitimate |
+| ⛔ **L1-01's number** | **7 → 9.** Folded by the declared `aliases` field instead of by reading names. And `database`/`mysql` are **buildable with no capability and no object types** — **receipt 48**. The registry's own `hubspot` example had expired; the correction names nobody and the eleven are counted in a test |
+| ⛔⛔ **three holes in my own guards** | a missing converse grade check · **a declaration that satisfied the test that its own source exists** · a correction whose names nothing checked against the measurement. All three passed the suite first and were found by mutation. ⛔ And `len() > N` came back one step after `2.1` replaced it |
+| **outcome** | 48 tests · **51/51 mutations** (1 surviving by design, recorded) · receipts 46 → **48** · 5 claims: 2 false rows corrected, 1 partly expired, 2 Rohit's, ⛔ **0 unmeasured** · full suite **15,437 passed · 0 failed · 12:15** |
+| **next** | `2.3` — re-measure the scorecard once Phase 0 is live |
+
+
+---
+
+## 3.1 · the unresolved SQL — the number this step was scoped around was the wrong number
+
+| | |
+|---|---|
+| **what it arrived with** | a plan sentence: *"the 639 unresolved SQL statements (22%) — a table name passed through a function argument needs dataflow… the share is asserted so it cannot grow silently."* ⛔ Three of those four clauses are wrong |
+| ⛔ **it is 645, not 639** | and the clause crediting the safeguard is the evidence it does not work: the assertion was `unresolved/statements <= 0.30` against **22.4%** — about **220 statements of headroom** |
+| ⛔⛔ **92% is not about tables** | **49** of 645 had a hole where a TABLE belongs; **596** were predicates and column lists from shared fragment constants. ⛔ **17 of those were `_org_filter`'s own output**, counted as unresolved SQL one module from the measurement |
+| ⛔⛔ **3 were the instrument** | `_VERBS` interpolates `_TABLE`, the table-name REGEX, into four SQL-shaped templates. Excluded by DECLARATION — a character-class heuristic would hide real `check` constraints |
+| **three hops, 49 → 16** | imported constants (✅ **recovered 16 attributions** — `HISTORY_TABLE` is one import from its fifteen uses) · own regexes · local aliases (⛔ **recovered ZERO**, said plainly: every aliasing module already referenced its table in a literal). Ambiguity **refused, not guessed** |
+| ⛔ **the observer problem, checked** | every dependent finding captured before and compared after: `known_tables`, `table_usage`, `written_and_unread`, `undeclared_unread_writes`, unreceipted-per-package, `deletion_list` — **all identical. No verdict moved**, ⛔ and that was luck: a table referenced only through an import would have read write-only |
+| **16 declared, with a category** | `resolved-elsewhere` 1 · `resolvable-deferred` 4 · `runtime` 3 · `not-a-table` 1 · already declared 2. ⛔ The deferred four are a **deliberate refusal** — a fourth hop has a 102-table blast radius and gets its own unit (`3.1b`) |
+| ⛔⛔ **and my own guards** | **2 real holes**: `STATEMENT_FLOOR` read from the constant the test asserted against, so lowering it weakened the test; and an `or` that let half the evidence go — the **fourth** time. Plus the self-witness family's fourth variant: a quoted example counted as real |
+| **outcome** | 29 tests · **20/20 mutations** · `unresolved_table` **49 → 16** · a ratchet that is absolute and has no slack · full suite **15,466 passed · 0 failed · 12:16** |
+| **next** | `3.1b` the fourth resolver hop, or `3.2` the always-green receipts. ⛔ `2.3` stays blocked on Phase 0 |
+
+
+---
+
+## 3.1b · a delete is not a read — the fourth hop, and the bug it amplified 102-fold
+
+| | |
+|---|---|
+| **what it arrived with** | `3.1`'s own deferral, in writing: *"a fourth resolver hop with a 102-table blast radius is its own unit with its own baseline."* ⛔ That sentence is the whole value of this step |
+| ⛔⛔ **the bug** | `_VERBS["read"]` was `(?:from|join) (…)`, so **`delete from X` was counted as a read of X** — latent since the module existed. The loop hop amplified it through `api/account_routes.py`'s erasure loop over **102 tables**, and **four tables stopped being reported write-only.** ✅ The before/after comparison is the only reason four CORRECT declarations were not retired |
+| ⛔ **what the fix revealed** | `(?<!delete )` removes **139 spurious read facts across 106 tables**, and **five tables lose their ONLY read attribution** — ⛔ **`macv_ledger`** among them, mechanically proving what `19-PENDING` records. ✅ A subquery's `from` is still a read, tested |
+| ⛔ **the naive hop was rejected, measured** | expanding the statement list takes `statements` 2,885 → **3,036** and makes `unresolved` **rise** 621 → 631. ⛔ `statements` is the share assertion's denominator. **Attribution expands; the count does not** |
+| ⛔ **9 → 9, members turned over** | `source_identity_map` left (its retracted entry had **predicted its own retraction**) and `warm_lane_slots` arrived — ⛔ **hidden by its own delete**, and write-only **by design**: a lease read through `RETURNING` and `rowcount`, ⛔ **a fifth blind spot no verb pattern can express** |
+| ⛔ **3.1's entry was misfiled** | `scripts/rebuild_graph.py` was `not-a-table` describing a statement `_SQL_SHAPE` never counted; the counted one is a plain delete of eight real tables. Both emptied categories retired, and the test guarding one **deleted with it** |
+| ⛔ **the guard had drifted** | two implementations of one question; `open_table_holes()` is now the single answer |
+| ⛔ **mutations** | **17 caught** · ⛔ **1 real hole** — a test whose NAME promised a tuple target and whose body had none · 1 **dead clause** removed · 5 invalid by label, each named · ✅ and one survivor turned into a **cross-file proof** rather than a claim |
+| **outcome** | 56 tests (28 + 28) · `unresolved_table` **16 → 7**, ceiling 7, slack 0 · full suite **15,494 passed · 0 failed · 12:44** |
+| **next** | `3.2` — the always-green receipts |
+
+
+---
+
+## 3.2 · a pass over an empty table is not a pass — and the surface would have crashed
+
+| | |
+|---|---|
+| **what it arrived with** | *"receipt 42 is structurally green forever. Gate it on a marker the way the learning receipts are."* ⛔ The intent was right and the mechanism was the opposite one: a marker prevents a false RED, this is a false GREEN |
+| **the mechanism** | a **witness** beside each correctness receipt — a second query whose non-zero result means the claim was exercised — and a **fourth status**, `NOT_EXERCISED`. **31 of 32 are DERIVED** from the receipt's own outer `from`, with its own scoping; 3 exceptions declared |
+| ⛔⛔ **a witness IS a presence receipt** | three already exist **byte-identical** (`expertise_packages`, `delivery_outbox`, `learning_runs`). *"Was this exercised"* and *"has this layer run"* are one question. ⛔ It made a test unanswerable three times, and the fixture that settled it hit the collision twice itself |
+| ⛔⛔ **and the CLI would have crashed** | `{"PASS": …, "FAIL": …, "ERROR": …}[status]` raises `KeyError` on a new status. The endpoint's docstring promises the two surfaces *"cannot drift apart"* — ⛔ they had drifted in SHAPE, which a promise about content does not catch. `RECEIPT_STATUSES` is now the one answer for all three |
+| ⛔⛔ **`ready` requires EXERCISED** | the endpoint exists because *"a skip read as a pass"*, and an unexercised receipt counted as ready IS that skip. ⛔ A visible behaviour change: sparse tenants now read `ready: false`. **`R24`** on Rohit's page with the alternative spelled out |
+| ✅ **the ratchet caught its own author** | `witness_sql` derives a table from a regex, so `unresolved_table` hit 8 against a ceiling of 7 and the build failed. Declared, ceiling raised 7 → 8 **in the same diff**, `statements` 2,885 → 2,888 deliberately |
+| ⛔ **two real holes** | a **test double that misclassified its inputs** (witness by suffix; many receipts end the same way) so a test passed for the wrong reason · and **a case the real set cannot provide** (fleet-wide scoping), now constructed |
+| ⛔ **the checklist broke three times and caught all three** | the sixth `or`-over-a-token-list, rejecting a CORRECT entry · the fifth self-witness variant, a comment quoting the code it replaced · and rule 12, caught by the ratchet |
+| ⛔ **a process error** | the platform suite was run concurrently with the mutation harness, which edits files in place. One artefact failure. ✅ Sequential: 784 passed |
+| **outcome** | 25 tests · **19/19 mutations** · statuses 3 → 4 · the views blind spot declared (exactly one view, and it is live) · full suite **15,519 passed · 0 failed · 12:45** |
+| **next** | ⛔ `3.3`/`3.4` blocked on `H1` (`0190`) · `3.5` is Rohit's · `2.3` blocked on Phase 0 |

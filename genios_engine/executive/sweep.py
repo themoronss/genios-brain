@@ -474,7 +474,8 @@ def _process_one(conn, row: Mapping[str, Any], *, now: datetime,
                           reason_code=decision.reason_code,
                           next_check_at=decision.next_check_at, urgency=decision.urgency,
                           escalation_day=decision.escalation_day,
-                          facts=reminder_facts(execution, decision, now))
+                          facts=reminder_facts(execution, decision, now,
+                                               report=report))
     return _Step(f"reminded_{decision.reason_code}", reminded=1, escalated=fired,
                  transitioned=transitions)
 

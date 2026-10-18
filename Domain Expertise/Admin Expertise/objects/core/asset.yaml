@@ -700,7 +700,7 @@ inference_patterns:
       when:
         - {path: thread.ball_in_court, op: "=", value: them}
         - {fn: days_since, path: thread.last_inbound, op: ">=",
-           value: {baseline: reply_cadence, mult: 3, floor: 7}}
+           value: {baseline: write_interval, mult: 3, floor: 7}}
       yields: {confidence_bp: 7000, attribute: recovery_state, value: chased}
       evidence_fields: [thread.ball_in_court, thread.last_inbound]
       false_positive: >

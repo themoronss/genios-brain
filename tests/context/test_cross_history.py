@@ -39,10 +39,15 @@ SCHEMA = (
     "first_event_at timestamp, last_event_at timestamp)",
     "create table execution_outcomes (outcome_id text primary key, org_id text, "
     "subject_ref text, label text, closed_at timestamp)",
-    "create table signals (signal_id text primary key, org_id text, subject_node_id text)",
+    # `eval_time` and `situation_id` place an ending in its file's generation (`03` F113): the
+    # signals below name no situation, as four of the five writers' do not, so their time does.
+    "create table signals (signal_id text primary key, org_id text, subject_node_id text, "
+    "eval_time timestamp, situation_id text)",
     "create table cards (card_id text primary key, org_id text, signal_id text)",
     "create table card_feedback_verdicts (feedback_id text primary key, org_id text, "
     "card_id text, cause text, reason text, occurred_at timestamp)",
+    "create table context_situations (situation_id text primary key, org_id text, "
+    "correlation_id text)",
 )
 
 
@@ -128,7 +133,8 @@ def test_the_prior_outcome_is_reached_through_the_signal(conn):
     it straight to the anchor would have returned zero rows on every tenant, silently."""
     generation(conn, "n1", 1, first=NOW - timedelta(days=200), last=NOW - timedelta(days=190))
     generation(conn, "n1", 2, first=NOW - timedelta(days=2), last=NOW)
-    conn.execute(text("insert into signals values ('sig1', :o, 'n1')"), {"o": ORG})
+    conn.execute(text("insert into signals values ('sig1', :o, 'n1', :at, null)"),
+                 {"o": ORG, "at": NOW - timedelta(days=195)})       # emitted in the prior generation
     conn.execute(text(
         "insert into execution_outcomes values ('out1', :o, 'signal:sig1', 'succeeded', :t)"),
         {"o": ORG, "t": NOW - timedelta(days=185)})
@@ -170,7 +176,8 @@ def test_the_last_card_verdict_carries_its_reason(conn):
     `not_relevant` does not."""
     generation(conn, "n1", 1, first=NOW - timedelta(days=200), last=NOW - timedelta(days=190))
     generation(conn, "n1", 2, first=NOW - timedelta(days=2), last=NOW)
-    conn.execute(text("insert into signals values ('sig1', :o, 'n1')"), {"o": ORG})
+    conn.execute(text("insert into signals values ('sig1', :o, 'n1', :at, null)"),
+                 {"o": ORG, "at": NOW - timedelta(days=195)})       # emitted in the prior generation
     conn.execute(text("insert into cards values ('card1', :o, 'sig1')"), {"o": ORG})
     conn.execute(text(
         "insert into card_feedback_verdicts values ('fb1', :o, 'card1', 'wrong', "
@@ -184,7 +191,8 @@ def test_doing_it_themselves_is_not_recorded_as_wrong(conn):
     "they handled it" is not "we were wrong"."""
     generation(conn, "n1", 1, first=NOW - timedelta(days=200), last=NOW - timedelta(days=190))
     generation(conn, "n1", 2, first=NOW - timedelta(days=2), last=NOW)
-    conn.execute(text("insert into signals values ('sig1', :o, 'n1')"), {"o": ORG})
+    conn.execute(text("insert into signals values ('sig1', :o, 'n1', :at, null)"),
+                 {"o": ORG, "at": NOW - timedelta(days=195)})       # emitted in the prior generation
     conn.execute(text("insert into cards values ('card1', :o, 'sig1')"), {"o": ORG})
     conn.execute(text(
         "insert into card_feedback_verdicts values ('fb1', :o, 'card1', 'do_it_myself', "
@@ -196,7 +204,8 @@ def test_doing_it_themselves_is_not_recorded_as_wrong(conn):
 def test_the_most_recent_verdict_wins(conn):
     generation(conn, "n1", 1, first=NOW - timedelta(days=200), last=NOW - timedelta(days=190))
     generation(conn, "n1", 2, first=NOW - timedelta(days=2), last=NOW)
-    conn.execute(text("insert into signals values ('sig1', :o, 'n1')"), {"o": ORG})
+    conn.execute(text("insert into signals values ('sig1', :o, 'n1', :at, null)"),
+                 {"o": ORG, "at": NOW - timedelta(days=195)})       # emitted in the prior generation
     conn.execute(text("insert into cards values ('card1', :o, 'sig1')"), {"o": ORG})
     for n, (cause, at) in enumerate((("wrong", 190), ("run_play", 150))):
         conn.execute(text(

@@ -9,6 +9,30 @@ from typing import Any
 _EXEC_TIMEOUT_S = 90.0
 
 
+class ProviderRefused(RuntimeError):
+    """Composio answered, and the answer was "no".
+
+    Composio reports a tool failure IN the envelope — `{"successful": false, "error": …}` — rather
+    than by raising. Read as data, that envelope has no messages and no next page, which is exactly
+    what a provider that has run out of mail returns: `run_sync` then files the sweep as finished
+    and empty (`cursor_exhausted=True`, no error), and an expired login reads as a quiet inbox. A
+    refusal therefore raises, so the run is retried and, failing that, recorded with its error —
+    UNKNOWN, never absent.
+    """
+
+    def __init__(self, slug: str, error: Any) -> None:
+        self.slug = slug
+        self.error = error
+        super().__init__(f"composio {slug} refused: {error or 'no detail'}")
+
+
+def raise_if_refused(slug: str, res: Any) -> Any:
+    """`res` unchanged, unless it is Composio's failure envelope — then `ProviderRefused`."""
+    if isinstance(res, dict) and res.get("successful") is False:
+        raise ProviderRefused(slug, res.get("error"))
+    return res
+
+
 class ComposioExec:
     """Shared Composio client + execute for every source connector. Composio sits
     BEHIND our SourceConnector interface (auth + data delivery only). Returns the
@@ -47,6 +71,7 @@ class ComposioExec:
             res = ex.submit(self._raw_execute, slug, arguments).result(timeout=_EXEC_TIMEOUT_S)
         finally:
             ex.shutdown(wait=False)
+        raise_if_refused(slug, res)
         if isinstance(res, dict):
             return res.get("data", {}) if isinstance(res.get("data"), dict) else res
         return {}

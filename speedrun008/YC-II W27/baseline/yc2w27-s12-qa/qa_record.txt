@@ -1,0 +1,61 @@
+yc2_w27_s12 QA record · STEP-12, the expert pass — M32 and M33 · deterministic-qa · speedrun008 · 2026-10-12
+scratch Postgres 17 in Docker, the SECOND scratch server (genios-yc2w27-pg2, 127.0.0.1:55433, /dev/shm 1 GB):
+the first (55432) holds ~1,359 databases and crashed creating another on 12 Oct (PG 17's statistics in a
+64 MB /dev/shm). Every check that uses a database runs on a database CREATED for it — auto mode refuses to
+drop databases, and a database nobody has used is as empty as a recreated one. Exit codes only; every
+command verbatim from tree.yaml (block yc2_w27_s12) and .github/workflows/ci.yml, the unit verifies pointed
+at their own fresh database. The full suite runs ALONE (03 F115); the golden lane, the board and the
+hermetic job then run side by side, each on a database of its own. Drivers, beside this file: run_s12.sh,
+qa_block_nodrop.py. The Mac on AC power and awake throughout (pmset -g log: its last sleep 11 Oct 20:37 IST,
+a full wake on AC at 20:40; the run 12 Oct 06:24–09:07 IST).
+
+RUN 1 · at c97155cd (code tree clean: 0 changed under genios_engine/ scripts/ tests/ tree.yaml
+'Domain Expertise/'), 00:54–03:37 UTC — GREEN on every tier, on the first run
+
+1 · the tree, and every unit's own verify — M32 and M33, 60 units            exit 0
+      64 pass / 0 fail / 0 skip          (4 tree checks + 60 units)
+      report: .trace/reports/qa-yc2_w27_s12-units-20261012T005417Z.json
+      Three verifies (M32.C1.L-contract.V0.U02, U07, U08) read "229 passed, 1 skipped": the skip is
+      0080_l1_extraction_results.sql, the declared exception of
+      tests/platform/test_the_code_can_always_be_rolled_back.py — the same skip as tier 2's.
+      The live-pass dry run (M33.C3.L-integration.V0.U01): 97 expert model calls · 444,185 tokens in ·
+      119,131 out · ≈ $2.08 for one live pass on claude-sonnet-5 — counted, nothing spent (06 D50).
+
+2 · the whole suite on the database                                        exit 0
+      20569 passed, 4 skipped, 86 xfailed, 1627 warnings in 3252.74s (0:54:12)
+      db=g12_qa_full_005417. With -rs in the same run, its four skips are the known four, for the same
+      reasons as STEP-08 to STEP-11: could not import 'docx'
+      (tests/capture/transcripts/test_transcript_units.py), an empty parameter set
+      (tests/contracts/test_l1_contracts.py), 0080 a declared exception
+      (tests/platform/test_the_code_can_always_be_rolled_back.py), internal auth not wired in this
+      harness (403) (tests/test_health_memory.py).
+      (STEP-11's run 2: 19284 passed, 90 xfailed; the 1,285 more are the alignment block's and STEP-12's.)
+
+3 · the golden-pg lane, as CI runs it (GENIOS_GOLDEN_REQUIRED=1)            exit 0
+      pytest -q -rs tests/replays tests/test_golden_labels_sheet.py
+      1401 passed, 84 xfailed, 2 warnings in 2079.68s (0:34:39) — 0 skipped
+      db=g12_qa_golden_005417; golden tenants left in the database afterwards: 0
+      (794 after STEP-11; the 607 more: the first-connect door on all 58 cases, the expert's authored
+      answers measured, every covered file decided once, a replay that asks no model.)
+
+4 · the board, held to 03-FINDINGS.md §F.1                                 exit 0
+      scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+      matches the board recorded in speedrun008/YC-II W27/03-FINDINGS.md
+      founder golden set   must-detect  21/45 (12 not expressible)   must-abstain  13/13 (0 not exercised)   forbidden outputs  0
+      atlas replays 01–07  passing  6/80   blocked  1/80   not expressible  73
+      must-detect cases lost at:  gate 1  reasoning 9
+      model answers:  ideal_reader (06-DECISIONS D12c)
+      STEP-12's move, recorded in §F.1 before this run: must-detect 13 → 21, must-abstain 12 → 13,
+      forbidden outputs 8 → 0, Atlas 4 → 6 — and four cases (F05, F06, F12, F25) that show two cards
+      about one file (03 F176, STEP-14's).
+
+5 · the hermetic job, as CI runs it (no database)                           exit 0
+      pytest -q -m "not golden"
+      17781 passed, 2092 skipped, 710 deselected, 72 xfailed, 1627 warnings in 1152.35s (0:19:12)
+      Its skips, grouped by reason: 2,088 name a missing database (tier 2 ran every one of them); the
+      other four are the known four of tier 2.
+
+Before this run: every unit was committed after its own tests, its own mutation run and the repo's guards
+(root tests/*.py + tests/platform + the folders it touched, on databases created for them), and every step
+of the alignment block (M34) before it was QA'd the same way. The crosscheck of STEP-12
+(.trace/reports/crosscheck-yc2_w27_s12-20261012T005517Z.md) gave SHIP AFTER QA.

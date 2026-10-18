@@ -29,6 +29,13 @@ investor-named doctrine and nothing else. This file proves that, and keeps provi
 **all three** corpora, so a route is a CHOICE nobody has made. `general` is dark from ambiguity;
 `fundraising` is dark from a stale sentence. One code comment said "no corpus was authored" for
 both.
+
+⛔ **2026-10-09 — THE FUNDRAISING HALF ENDED** (STEP-11, `06` D2, M30.C1.L-logic.V1.U02). The doctrine
+moved out of Sales into the Founder Office corpus, `_L2_TO_L3_DOMAIN` maps `fundraising` there, and
+the candidate route is retired with its reason. Its three tests here — the Sales doctrine is admitted,
+every fundraising type would land on it, the route is not armed — were about a route that no longer
+exists, and are replaced by `tests/reason/test_fundraising_is_founder_work.py`, which holds the same
+safety property against the Founder Office. `general` is still dark, for its own reason, below.
 """
 from __future__ import annotations
 
@@ -42,52 +49,6 @@ def catalog():
     from genios_engine.packs.compiler.authoring import ExpertBrainCatalog
 
     return ExpertBrainCatalog("Domain Expertise")
-
-
-def test_the_investor_doctrine_exists_and_is_admitted(catalog):
-    """If this ever goes red, the candidate route below must go with it."""
-    from genios_engine.packs.compiler.capability_resolver import situation_admission_reason
-
-    sales = catalog.domains["sales"]
-    for sid in ("sales.sit.live_investor_relationship", "sales.sit.live_investor_contact"):
-        doc = sales.situations.get(sid)
-        assert doc is not None, f"{sid} is gone; the fundraising candidate route rests on it"
-        assert situation_admission_reason(doc.content) is None, (
-            f"{sid} is no longer admissible, so a card built from it could not instruct")
-
-
-def test_every_fundraising_type_would_land_on_investor_doctrine_only(catalog):
-    """⛔ **THE SAFETY PROPERTY, AND THE WHOLE ARGUMENT.** The map's objection is that borrowing a
-    corpus puts the wrong doctrine on a situation. It cannot happen here, and this is why."""
-    from genios_engine.context.domain_spec import spec_for
-    from genios_engine.reason.domain_shadow import CANDIDATE_ROUTES
-
-    sales = catalog.domains["sales"]
-    for situation_type in set(spec_for("fundraising").situation_types.values()):
-        route = sales.routes.get(situation_type)
-        assert route, f"sales claims no route for {situation_type}"
-        situations = tuple(route.get("situations") or ())
-        assert situations, f"{situation_type} routes to no situation"
-        assert all("investor" in s for s in situations), (
-            f"{situation_type} would reach {situations} — generic sales doctrine on a "
-            f"fundraising situation is the defect that made six VCs into sales opportunities")
-    assert CANDIDATE_ROUTES["fundraising"].corpus == "sales"
-
-
-def test_the_candidate_route_carries_its_evidence_and_is_not_armed():
-    """⛔ DECLARED, COUNTED, AND ONE LINE FROM LIVE — the same shape as L2-2's OBSERVE laws.
-
-    Arming it makes every fundraising situation activatable at once, and nobody has counted them
-    on the pilot. A route that flips itself on a measurement nobody took is how a cutover looks
-    like a breakage.
-    """
-    from genios_engine.reason.domain_shadow import CANDIDATE_ROUTES, _L2_TO_L3_DOMAIN
-
-    candidate = CANDIDATE_ROUTES["fundraising"]
-    assert candidate.evidence, "a candidate route with no evidence is a guess"
-    assert "ENDS WHEN" in candidate.evidence
-    assert _L2_TO_L3_DOMAIN["fundraising"] is None, (
-        "the candidate route was armed without the pilot count — see the findings")
 
 
 def test_general_is_dark_for_ambiguity_and_says_so(catalog):

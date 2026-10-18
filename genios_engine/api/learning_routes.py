@@ -318,4 +318,24 @@ def _iso(row: dict) -> dict:
     return {k: (v.isoformat() if isinstance(v, datetime) else v) for k, v in row.items()}
 
 
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+@router.get("/v1/learning/scorecard")
+def scorecard(week: str | None = Query(None), ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """The owner's view of a week (STEP-16 `yc2_w27_s16` M47.C3.L-interface.V6.U02; `feedback/scorecard`): was it
+    useful, what was held back and why, what was read, what ended verified, what each correction changed. `week` is
+    an ISO week in UTC, `YYYY-Www` — absent, this week, read so far. Read only; owner-level, as review is."""
+    from genios_engine.feedback.scorecard import Week, scorecard_for
+    _db()
+    now = _now()
+    try:
+        asked = Week.of(week) if week else Week.containing(now)
+    except ValueError as exc:
+        raise HTTPException(400, {"error": "invalid_week", "why": str(exc)}) from exc
+    with _graph.engine.connect() as c:
+        return scorecard_for(c, ctx.org_id, asked, now=now).as_dict()
+
+
 __all__ = ["router"]

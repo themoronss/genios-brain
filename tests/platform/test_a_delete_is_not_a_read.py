@@ -1,0 +1,814 @@
+"""⛔⛔ STEP 3.1b · the fourth resolver hop — and the pre-existing bug it amplified 102-fold.
+
+`3.1` deferred this hop in writing: *"a fourth resolver hop with a 102-table blast radius is its
+own unit with its own baseline."* Doing it found two things larger than the hop.
+
+⛔⛔ **`delete from X` WAS COUNTED AS A READ OF X.** `_VERBS["read"]` was `(?:from|join) (…)` and
+`delete from cards` contains `from cards`. Latent for as long as the module has existed; the loop
+hop amplified it a hundredfold, because `api/account_routes.py`'s erasure loop runs
+`delete from {tbl}` over 102 tables. ⛔ **Four tables stopped being reported write-only on the
+strength of it**, and the baseline comparison this step committed to in writing is the only reason
+that was caught before four correct declarations were retired.
+
+⛔ **And the naive implementation of the hop was wrong.** Expanding each loop statement into one
+per table inflates `statements` 2,885 → 3,036 and makes `unresolved` **rise** — a real improvement
+reading as a regression, on a number the share assertion divides by. So the loop map feeds
+attribution only.
+
+```
+unresolved_table    16 → 7      ceiling re-ratcheted, slack 0
+statements           2,885      ✅ unchanged, and that is the measured decision
+written_and_unread   9 → 9      ⛔ SAME COUNT, MEMBERS TURNED OVER
+```
+"""
+
+from __future__ import annotations
+
+import ast
+import re
+
+from genios_engine.platform import table_coverage as TC
+
+
+def _const(name: str) -> str:
+    return getattr(TC, name)
+
+
+# ------------------------------------------------------- U02b · a delete is not a read
+
+def test_a_delete_is_not_counted_as_a_read():
+    """⛔⛔ THE BUG. `delete from cards` must attribute a delete and nothing else."""
+    sql = "delete from cards where org_id=:o"
+    hits = {verb: re.findall(pattern, sql) for verb, pattern in TC._VERBS.items()
+            if re.findall(pattern, sql)}
+    assert hits == {"delete": ["cards"]}, hits
+
+
+def test_a_real_read_is_still_a_read():
+    sql = "select 1 from cards where org_id=:o"
+    assert re.findall(TC._VERBS["read"], sql) == ["cards"]
+    assert re.findall(TC._VERBS["read"], "select 1 from a join cards on a.id=cards.id") \
+        == ["a", "cards"]
+
+
+def test_a_subquerys_from_inside_a_delete_IS_still_a_read():
+    """⛔ The lookbehind must block only the `from` immediately after `delete `. A reader nested in
+    a delete's predicate is a genuine read, and losing it would trade one mis-attribution for
+    another."""
+    sql = "delete from a where x in (select 1 from b)"
+    hits = {verb: re.findall(pattern, sql) for verb, pattern in TC._VERBS.items()
+            if re.findall(pattern, sql)}
+    assert hits == {"delete": ["a"], "read": ["b"]}, hits
+
+
+def test_the_lookbehind_is_in_the_pattern_and_not_only_in_its_effect():
+    """⛔ By source: a future refactor that reproduced the effect another way is fine, but one that
+    deleted the guard and happened to pass these three cases is not."""
+    assert "(?<!delete )" in TC._VERBS["read"], TC._VERBS["read"]
+
+
+def test_the_fix_is_explained_where_the_pattern_is():
+    source = (TC._ROOT / "genios_engine" / "platform" / "table_coverage.py") \
+        .read_text(encoding="utf-8")
+    assert "load-bearing" in source.split('"read": rf')[0].rsplit("_VERBS", 1)[-1] \
+        or "`(?<!delete )`" in source, (
+        "the lookbehind carries no explanation at the pattern; the next person to simplify it has "
+        "nothing to read")
+
+
+# --------------------------------------------------------------- U02a · the loop hop and its bounds
+
+def _loops(src: str) -> dict[str, tuple[str, ...]]:
+    return TC._loop_table_targets(src, TC._known_tables())
+
+
+def test_a_loop_over_literal_table_names_resolves():
+    assert _loops('for t in ("cards", "signals"):\n    q = f"select 1 from {t}"\n') \
+        == {"t": ("cards", "signals")}
+
+
+def test_a_loop_over_a_module_constant_resolves():
+    assert _loops('TABLES = ("cards", "signals")\nfor t in TABLES:\n    pass\n') \
+        == {"t": ("cards", "signals")}
+
+
+def test_a_loop_over_an_IMPORTED_constant_resolves_through_the_earlier_hops():
+    """⛔ One hop for the loop, and the iterable itself resolves through the three hops `3.1`
+    built. No further."""
+    src = ("from genios_engine.api.account_routes import _ORG_SCOPED_TABLES\n"
+           "for tbl in _ORG_SCOPED_TABLES:\n    pass\n")
+    got = _loops(src)
+    assert "tbl" in got and len(got["tbl"]) >= 100, {k: len(v) for k, v in got.items()}
+
+
+def test_a_MIXED_collection_answers_for_NOTHING():
+    """⛔⛔ ALL OR NOTHING, and it is the most important bound. A collection holding one name we do
+    not recognise is as likely to be columns, statuses or file names — and half-resolving it would
+    attribute real tables out of a list that happens to share a word with one."""
+    assert _loops('for t in ("cards", "not_a_table_at_all"):\n    pass\n') == {}
+    assert _loops('for t in ("status", "cards"):\n    pass\n') == {}
+
+
+def test_an_empty_collection_answers_for_nothing():
+    """⛔ An empty iterable makes the loop vacuous -- the `1.4` hole, in a new place."""
+    assert _loops("for t in ():\n    pass\n") == {}
+    assert _loops("for t in []:\n    pass\n") == {}
+
+
+def test_a_non_literal_element_is_refused_even_beside_literals():
+    """⛔ `("cards", SOMETHING)` has two elements and one literal; counting the literal would be
+    answering for a collection we cannot see all of."""
+    assert _loops('X = "signals"\nfor t in ("cards", X):\n    pass\n') == {}
+
+
+def test_the_FIRST_element_of_a_tuple_target_resolves_and_the_second_does_not():
+    """⛔ `for table, when in _LEDGERS` — which position holds the table is not knowable from the
+    shape, so only the first is taken and the second is never guessed.
+
+    ⛔⛔ FOUND BY A SURVIVING MUTATION, AND THE TEST'S OWN NAME WAS THE FALSE WITNESS. The first
+    version of this test asserted a `zip(...)` case and a plain `Name` case — **it never tested a
+    tuple target at all**, so guessing the second element passed it. The name said `tuple target`
+    and the body did not contain one. *Assert the thing the name claims.*
+    """
+    src = ('PAIRS = (("cards", "created_at"), ("signals", "at"))\n'
+           'for table, when in PAIRS:\n'
+           '    q = f"select 1 from {table} order by {when}"\n')
+    got = _loops(src)
+    assert "table" in got, got
+    assert got["table"] == ("cards", "signals"), got
+    assert "when" not in got, (
+        "the SECOND element of the tuple target resolved. Which position holds the table is not "
+        "knowable from the shape, so taking both attributes `created_at` and `at` as tables the "
+        "moment either happens to match a real name")
+
+
+def test_zip_stays_out_of_bounds():
+    """⛔ A separate test, because the one above used to carry this case and hide the gap."""
+    assert _loops('P = ("cards", "signals")\nfor a, b in zip(P, P):\n    pass\n') == {}
+
+
+def test_a_plain_name_target_over_a_constant_resolves():
+    assert _loops('P = ("cards", "signals")\nfor a in P:\n    pass\n') \
+        == {"a": ("cards", "signals")}
+
+
+def test_a_comprehension_resolves_and_a_while_does_not():
+    assert _loops('q = [f"select 1 from {t}" for t in ("cards",)]\n') == {"t": ("cards",)}
+    assert _loops('t = "cards"\nwhile t:\n    break\n') == {}
+
+
+def test_enumerate_and_dict_items_are_out_of_bounds():
+    """⛔ Declared bounds, tested so they stay bounds rather than becoming an oversight."""
+    assert _loops('P = ("cards",)\nfor i, t in enumerate(P):\n    pass\n') == {}
+    assert _loops('D = {"cards": 1}\nfor k, v in D.items():\n    pass\n') == {}
+
+
+# --------------------------------------------- U02a · the statement count is the measured decision
+
+def test_the_statement_count_did_NOT_move():
+    """⛔⛔ THE WHOLE DESIGN. Measured before building: the naive expansion takes `statements`
+    2,885 → 3,036 and makes `unresolved` RISE from 621 to 631, because expanding one statement
+    into five leaves five each still carrying the other holes.
+
+    `statements` is the denominator of the share assertion and a number
+    `scripts/context_coverage_report.py` prints. ⛔ A number other things read does not change
+    meaning for a resolver improvement.
+    """
+    r = TC.resolution()
+    assert r["statements"] == 3_250, (
+        f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
+        "that moves this number deliberately -- but if the loop hop started expanding the "
+        "statement LIST, that is the design this unit measured and rejected")
+    # ⛔ MOVED 2,885 → 2,888 by `3.2`, deliberately: `receipts.witness_sql` and
+    # `WITNESS_EXCEPTIONS` add three real SQL statements to the engine. That is the engine gaining
+    # SQL, which is ordinary; what this test exists to catch is the loop hop EXPANDING the
+    # statement list, which would have added 151 at once.
+    # ⛔ MOVED 2,888 → 2,902 on 2026-10-05, deliberately, by the `origin/harsh/mvp` merge
+    # (YC-II W27 STEP-00). Measured per file on a pre-merge archive and on the merge: +2
+    # `api/routes.py` (the known-sender read from the sent folder, `48768ca7`, two statements by
+    # design), +1 `platform/warm_lane.py` (the lapsed-plan gate, `7075014c`), +11
+    # `scripts/pipeline_health.py` (`5ebfef8e`). Fourteen real statements; the loop hop expanded
+    # nothing.
+    # ⛔ MOVED 2,902 → 2,908 the same day by `scripts/workstream_funnel.py` (STEP-00's baseline
+    # probe): six SELECTs, each a literal at its own `sql()` call site.
+    # ⛔ MOVED 2,908 → 2,910 by yc2_w27/M17.C2.U02 (STEP-18 B20/B18):
+    # `capture/screen/fingerprint._without_set_aside_claims` reads which claiming events were set
+    # aside and deletes their claims — one SELECT, one DELETE, both literals at their own call.
+    # ⛔ MOVED 2,910 → 2,913 by yc2_w27/M17.C2.U05 (STEP-18 B20): the disconnect-with-wipe in
+    # `api/routes.integration_disconnect` deletes the fingerprints of the events it deletes. ONE
+    # statement, counted three times: the template walk records each prefix of its
+    # `"…" + mine + ")"` concatenation, exactly as it counts the `raw_payloads` delete beside it.
+    # ⛔ MOVED 2,913 → 2,918 by yc2_w27/M17.C2.U03 (STEP-18 B18): `capture/landing/unread` reads
+    # parked extractions again under a ladder — its selector, the settle update, the ladder's
+    # read and update, and the give-up update. Five statements, each a literal.
+    # ⛔ MOVED 2,918 → 2,920 by yc2_w27/M17.C3.U03 (STEP-18 B19): `scripts/requeue_refused_attachments.py`
+    # — the SELECT of the refused dead letters and the UPDATE that re-queues them.
+    # ⛔ MOVED 2,920 → 2,923 by yc2_w27_s02/M20.C2.L-data.V1.U02 (STEP-02, the change gate):
+    # `reason/fingerprint_store.py` — a tenant's rows, the run's upsert and the skip's update.
+    # Three statements, each a literal at its own call.
+    # ⛔ MOVED 2,923 → 2,925 by yc2_w27_s02/M20.C1.L-data.V1.U02 (STEP-02): `reason/fingerprint_inputs.py`
+    # — a tenant's pack revisions, and its card verdicts joined to the signal each is about. Two
+    # SELECTs, each a literal at its own call.
+    # ⛔ MOVED 2,925 → 2,926 by yc2_w27_s02/M20.C3.L-integration.V2.U02 (STEP-02): the compiled lane's
+    # change gate reads, once per pass, when each open signal loses its authority
+    # (`reason/domain_shadow._OPEN_SIGNAL_EXPIRY`). One SELECT, a literal.
+    # ⛔ MOVED 2,926 → 2,927 by yc2_w27_s02/M20.C4.L-integration.V3.U01 (STEP-02): the legacy lane's
+    # gate reads, once per pass, which open signals still have a card showing
+    # (`reason/runner._LEGACY_STANDING`). One SELECT, a literal.
+    # ⛔ MOVED 2,927 → 2,930 by yc2_w27_s02/M20.C6.L-interface.V4.U02 (STEP-02): the health check that
+    # the change gate runs and saves (`scripts/pipeline_health.check_the_change_gate_skips_what_did_not_change`)
+    # — sweeps in the window, subjects looked at, subjects skipped. Three SELECTs, each a literal.
+    # ⛔ MOVED 2,930 → 2,932 by yc2_w27_s03/M21.C4.L-logic.V4.U04 (STEP-03, the gate keeps
+    # everything): the receipt "every archived mail can still be read" in `platform/receipts.py`.
+    # ONE statement, counted twice: the template walk records both prefixes of its
+    # `"…" f"…" "…" + _org_filter(org, "se")` concatenation, exactly as it counts the judged-drop
+    # receipt beside it.
+    # ⛔ MOVED 2,932 → 2,934 by yc2_w27_s03/M21.C6.L-interface.V5.U01 (STEP-03): the health check
+    # that nothing was deleted at the gate (`scripts/pipeline_health.check_nothing_was_deleted_at_the_gate`)
+    # — the tenant's first archived mail, and the drops since by code. Two SELECTs, each a literal.
+    # ⛔ MOVED 2,934 → 2,935 by yc2_w27_s04/M22.C1.L-data.V1.U03 (STEP-04, who is us):
+    # `platform/self_identity.identity_for` — the four sources of who we are, ONE statement.
+    # ⛔ MOVED 2,935 → 2,936 by yc2_w27_s04/M22.C1.L-interface.V2.U04: `scripts/declare_self_identity.py`
+    # — the one INSERT a tenant's declaration is, a literal.
+    # ⛔ MOVED 2,936 → 2,937 by yc2_w27_s04/M22.C6.L-logic.V2.U02: the receipt "no open card's
+    # subject is one of us" (`platform/receipts._CARD_ABOUT_US_SQL`), one literal.
+    # ⛔ MOVED 2,937 → 2,948 by yc2_w27_s04/M22.C4.L-interface.V4.U01: `scripts/repair_self_identity.py`
+    # — seven SELECTs (our nodes, the org's names, threads, a thread's parties, open signals, open
+    # cards, situations) and four writes (the rename, the signal expiry, the card retirement, its
+    # card_event). Eleven statements, each a literal at its own call.
+    # ⛔ MOVED 2,948 → 2,942 by yc2_w27_s04 C2 (STEP-04, eighteen callers ask ONE answer), each
+    # measured on its own branch and the sum re-measured on the merge: −1 `context/runner.
+    # _internal_emails` (U01, its inline union); −2 `context/backfill` (U09, the rebuild's and the
+    # deal backfill's seat reads) +1 (U18, the naming sweep's candidates query replacing its party
+    # subquery); −1 `context/support_situations` (U10, its `orgs` read); −1 each `reason/runner`
+    # (U02), `packs/brains/org_discovery` (U04), `deliver/pipeline` (U05), `reason/moments/
+    # engagement` (U11) — inline unions gone; U06/U07/U08 replaced one statement with one; U03's
+    # union was a subquery inside one statement. +1 `context/pipeline` (U20): the anchor pool asked
+    # once more by each node's own key. Removing SQL that re-derived "us" is the point of the step.
+    # ⛔ MOVED 2,942 → 2,941, measured per file against the commit before (scratchpad
+    # `stmt_per_file.py`): −1 `reason/meetings/prep` (U24, its seats read), −1 `api/moment_routes`
+    # (U25, `_seat_emails`), +1 `platform/self_identity` (C6.U03: the union became `identity_sql`, an
+    # f-string the template walk counts at two prefixes), ±0 `platform/receipts` (its literal now
+    # embeds `identity_sql("c.org_id")` instead of restating the sources).
+    # ⛔ MOVED 2,941 → 2,944 by yc2_w27_s04/M22.C6.L-interface.V3.U01: `scripts/pipeline_health.
+    # check_we_are_never_the_subject` — the org's names, its open cards, its thread labels. Three
+    # SELECTs, each a literal at its own call (measured per file: 16 → 19).
+    # ⛔ MOVED 2,944 → 2,945 by yc2_w27_s04/M22.C3: `deliver/pipeline._tenant_identities` reads the
+    # display name each address of ours carries in the graph — the name a card's subject chain
+    # meets ("Mr Rohit Swerashi"). One SELECT, a literal (measured per file: 14 → 15).
+    # ⛔ MOVED 2,945 → 2,946 by yc2_w27_s05/M23.C2.L-data.V1.U01 (STEP-05, every kept item enters
+    # memory): `context/runner._pull` is now `"select …" + PENDING_FROM + "order by …"` — the
+    # drain's question spelled once, which `api/routes._pending_count` puts its own count in front
+    # of. ONE statement, counted three times by the template walk (once per prefix) where its
+    # f-string was counted twice; the count's statement replaced one with one (measured per file:
+    # runner 13 → 14, routes 124 → 124).
+    # ⛔ MOVED 2,946 → 2,948 by yc2_w27_s05/M23.C6.L-logic.V2.U01: the receipt "every kept event has
+    # entered memory" (`platform/receipts._KEPT_OUTSIDE_MEMORY_SQL`). ONE statement, counted twice:
+    # the template walk records both prefixes of its f-string, as it does the archive receipt's
+    # (measured per file: receipts 87 → 89).
+    # ⛔ MOVED 2,948 → 2,951 by yc2_w27_s05/M23.C4.L-logic.V2.U01: `capture/landing/unread.queue_unread`
+    # — the kept mail nothing read (a SELECT), filed into the ladder (an INSERT) or its recovered
+    # park re-opened (an UPDATE). Three statements, each a literal (measured per file: 9 → 12).
+    # ⛔ MOVED 2,951 → 2,953 by yc2_w27_s05/M23.C4.L-logic.V2.U02: `capture/landing/promote` — the
+    # mail one rule archived (a SELECT) and its promotion back to kept (an UPDATE). Two statements,
+    # each a literal (measured per file: 0 → 2).
+    # ⛔ MOVED 2,953 → 2,952 by yc2_w27_s05/M23.C4.L-integration.V3.U03: `capture/landing/unread.
+    # find_unread` is gone with its one SELECT — mail captured while L1 was off joins the one ladder
+    # through `queue_unread` (measured per file: unread 12 → 11).
+    # ⛔ MOVED 2,952 → 2,955 by yc2_w27_s05/M23.C6.L-interface.V3.U02: `scripts/pipeline_health.
+    # check_every_kept_event_entered_memory` — the receipt's population split by cause, the calendar
+    # events with no meeting, the ladder's backlog. Three SELECTs, each a literal (19 → 22).
+    # ⛔ MOVED 2,955 → 2,958 by yc2_w27_s06/M24.C1.L-contract.V0.U01: `platform/card_lifecycle` — the
+    # one writer of a card's `expired` state: the targeted update, the lapse sweep's update and the
+    # `card_events` insert, three literals (a new file: 0 → 3).
+    # ⛔ MOVED 2,958 → 2,944 by yc2_w27_s06/M24.C1 (V1.U01–V2.U03): the twelve expiries now call that
+    # writer, so their own SQL is gone — `reason/runner` −2, `reason/composer` −4, `reason/publication`
+    # −1, `reason/domain_shadow` −1, `feedback/calibrate` −1, `deliver/store` −1 (the lapse update),
+    # `api/intelligence_routes` −2 and `scripts/repair_self_identity` −2 (each an update and its event
+    # insert). Measured per file against HEAD.
+    # ⛔ MOVED 2,944 → 2,946 by yc2_w27_s06/M24.C2.L-data.V1.U01: `reason/situation_outcome_store` —
+    # the upsert of a situation's end and the unchanged pass's clock, two literals in a new file.
+    # ⛔ MOVED 2,946 → 2,947 by yc2_w27_s06/M24.C2.L-logic.V2.U02: `reason/situation_end` — the one
+    # read of every active situation with its admission, its outcome, its gate rows and its cards.
+    # ⛔ MOVED 2,947 → 2,949 by yc2_w27_s06/M24.C5.L-data.V1.U01: `capture/parked/drain` — the unlimited
+    # count of the rows another drain owns: one f-string, which the resolver reads twice (its
+    # `{where_org}` hole and the literal before it), as it already reads `parked_aging`'s.
+    # ⛔ MOVED 2,949 → 2,950 by yc2_w27_s06/M24.C5.L-data.V1.U02: `capture/landing/unread` — the rows
+    # the ladder gives up on, a whole statement of their own now that the due read leaves them out.
+    # ⛔ MOVED 2,950 → 2,951 by yc2_w27_s06/M24.C3.L-logic.V1.U01: `capture/journey` — the event's
+    # memory run, the one hop past Layer 1 the walk did not read.
+    # ⛔ MOVED 2,951 → 2,955 by yc2_w27_s06/M24.C4.L-integration.V3.U01-U02: `platform/receipts` — the
+    # two STEP-06 receipts' queries, each an f-string the resolver reads twice (its hole and the
+    # literal before it).
+    # ⛔ MOVED 2,955 → 2,967 by yc2_w27_s07/M25.C1 and M25.C2.L-interface.V2.U01: the company brief.
+    # `platform/company_brief_store` — its one writer: the proposal insert, the same-line read, the
+    # row it decides (`for update`), accept, reject and remove, the founder's line (a read and an
+    # insert), the accepted lines and the pending ones — ten literals in a new file (0 → 10);
+    # `platform/company_brief` — the org's name and company (0 → 1); `api/company_brief_routes` — the
+    # accepted lines the screen lists (0 → 1). Measured per file against HEAD.
+    # ⛔ MOVED 2,967 → 2,984 by yc2_w27_s07/M25.C3 (V2.U01, V4.U04) and M25.C2.L-interface.V2.U02
+    # (the line first said 2,983; the five files below sum to +17, and the pin it moved said 2,984):
+    # `reason/brief_patterns` — the drafter's patterns: the org's name, the inbound and outbound
+    # correspondents and the mail copying other people (three f-strings over one shared filter, each
+    # read twice: its hole and the literal before it), the introducer facts, the meetings, the
+    # deadline commitments and the thread objectives (0 → 11); `reason/brief_review` — the tenants
+    # with a brief, the week's claim and its finish (0 → 3); `platform/company_brief.last_review` —
+    # the latest review (1 → 2); `scripts/company_brief.py` — the accepted lines `show` lists
+    # (0 → 1); `scripts/pipeline_health.check_the_company_brief_exists_and_is_current` — the
+    # proposals waiting, read with the check's own tenant filter (22 → 23). Measured per file
+    # against HEAD.
+    # ⛔ MOVED 2,984 → 2,989 by yc2_w27_s08/M26.C1.L-data.V0.U01 (STEP-08, the deleted mail comes
+    # back): `capture/landing/resync` — the update that frees a deleted message's key, the freed rows
+    # with their replacement, the supersede, the trace insert and the tenant's Gmail window. Five
+    # literals in a new file (0 → 5), measured per file against HEAD.
+    # ⛔ MOVED 2,989 → 2,990 by yc2_w27_s08/M26.C2.L-data.V0.U01: `capture/landing/pg_repository.
+    # kept_child_exists` — has an attachment of this message landed kept? One SELECT, a literal
+    # (measured per file: 2 → 3).
+    # ⛔ MOVED 2,990 → 2,995 by yc2_w27_s08/M26.C3.L-interface.V1.U01 and M26.C4 (V1.U01, V1.U02):
+    # `scripts/resync_deleted_mail.py` — the deleted messages it can free, what the re-sync has done
+    # so far, and the attachments of the deleted messages (0 → 3); `capture/journey` — the deleted row
+    # an event replaced, read from that row's re-sync trace (7 → 8); `scripts/pipeline_health.
+    # check_every_gmail_message_in_the_window_has_its_content` — the messages in the window with no
+    # content and no stated reason (23 → 24). Each a literal; measured per file against HEAD.
+    # ⛔ MOVED 2,995 → 2,999 by yc2_w27_s09/M27.C1 (STEP-09, a file for every piece of work):
+    # `context/introductions` — who a connector introduced, and the nodes the brief names connectors
+    # (0 → 2); `context/pipeline._in_their_files` — the anchors of a thread's files (8 → 9);
+    # `context/correlation._the_parties_files` — the same, to narrow a thread of several files (10 →
+    # 11). Each a literal SELECT; measured per file against HEAD.
+    # ⛔ MOVED 2,999 → 3,006 by yc2_w27_s09/M27.C4.L-logic.V1.U01: `context/workstreams` — the read
+    # model's seven SELECTs (the files' members, nodes, who works at them, their turns, their open
+    # asks, who a connector introduced, the named counterparties' mail), each a literal (0 → 7).
+    # The health check beside it reads that answer and adds none (`pipeline_health` 24 → 24).
+    # ⛔ MOVED 3,006 → 3,007 by yc2_w27_s09/M27.C4 (the follow-up): `context/workstreams` counts a
+    # connector's introductions filed under the connector — one SELECT, a literal (7 → 8).
+    # ⛔ MOVED 3,007 → 3,008 by yc2_w27_s10/M29.C4.L-logic.V0.U02 (STEP-10, the connector's rate):
+    # `context/workstreams._CONNECTOR_RATE` — everyone a connector introduced, and whether they then
+    # wrote to us and met us — one SELECT, a literal (8 → 9). The rest of STEP-10 so far adds none:
+    # `context/waiting` 3 → 3 (the timeline's join and the reply time reuse its statements),
+    # `context/correlation_history` 3 → 3, `contracts/measured` 0. Measured per file against 567049fc.
+    # ⛔ MOVED 3,008 → 3,010 by yc2_w27_s10/M29.C2.L-logic.V2.U01: `context/workstream_timeline` —
+    # a file's touches (its correlations' mail and meetings) and which of its meetings the calendar
+    # now says are cancelled: two SELECTs, each a literal (0 → 2).
+    # ⛔ MOVED 3,010 → 3,014 by yc2_w27_s10/M29.C5 (the coverage receipt): `capture/coverage/window`
+    # — one mailbox's `connections` row and its sync runs (1 → 3); `context/coverage_receipt` — the
+    # tenant's connections and a mailbox's last sync (0 → 2). Each a literal SELECT; measured per
+    # file against the commit before them. `sync_runner` 0 → 0, `api/routes` 124 → 124.
+    # ⛔ MOVED 3,014 → 3,015 by yc2_w27_s10/M29.C3.L-logic.V1.U02 (a bounce on the file):
+    # `context/delivery._SENT_IN_THREAD` — the mail we sent in the report's thread — one literal
+    # SELECT (0 → 1). `capture/gate/rules` and `context/pipeline` unchanged in count.
+    # ⛔ MOVED 3,015 → 3,017 by yc2_w27_s10/M29.C3.L-logic.V2.U03 (a bounce ends the wait):
+    # `context/waiting` — the latest bounce filed on each node, and who our last mail in a bounced
+    # thread went to — two literal SELECTs (3 → 5).
+    # ⛔ MOVED 3,017 → 3,019 by yc2_w27_s10/M29.C2.L-logic.V2.U04 (the file's numbers):
+    # `context/workstream_numbers` — the file's people, and the numbers written on them and on the
+    # tenant — two literal SELECTs (0 → 2). `waiting._TIMELINE` gained two columns, not a statement.
+    # ⛔ MOVED 3,019 → 3,020 by yc2_w27_s10/M29.C6.L-interface.V3.U03: `scripts/pipeline_health.
+    # check_every_normal_says_its_n` — the normals written on a tenant's nodes, one literal SELECT
+    # (24 → 25). Its failure line was first worded " with no n", which this counter took for a CTE
+    # (`03` F100, again) — reworded rather than counted.
+    # ⛔ MOVED 3,020 → 3,022 by yc2_w27_s10/M29.C4.L-logic.V2.U01 (a wave is one object):
+    # `context/correlation_conversation` `_MAIL` (our sends, their subjects and recipients) and
+    # `_FAILED_DELIVERIES` — two literal SELECTs (1 → 3). The gate and connector units (C3 U04, U05)
+    # add none.
+    # ⛔ MOVED 3,022 → 3,023 by yc2_w27_s10/M29.C3.L-logic.V2.U06 (a bounce shown while it stands):
+    # `context/workstream_numbers._LATEST_BOUNCE` — the latest report behind each person's
+    # `delivery.status`, read through its references because a second report only corroborates the
+    # first one's fact — one literal SELECT (2 → 3; `_FACTS` no longer reads the bounce). The
+    # savepoints of C5 V1.U06 / V2.U05 move the coverage reads into closures, not into new
+    # statements (`window` 3 → 3, `coverage_receipt` 2 → 2), and the runner units none.
+    # ⛔ MOVED 3,023 → 3,033 on 2026-10-09 by merging `origin/harsh/mvp` (`649208f2`) into
+    # `speedrun008`, measured per file against `5aff2ce5`: +10 `scripts/screen_flow_report.py`, Harsh's
+    # read-only screen report — ten SELECTs, each a literal in its QUERIES list; `capture/gate/gate`
+    # 0 → 0 and `reason/moments/screen_insight` 4 → 4 for the two other commits. The loop hop expanded
+    # nothing.
+    # ⛔ MOVED 3,033 → 3,034 by yc2_w27_align/M34.C2.L-logic.V1.U02 (`06` D33 in code): one SELECT,
+    # `platform/kind_windows._NODE` — the anchor node a file's quiet window is read for. A literal.
+    # ⛔ MOVED 3,034 → 3,035 by yc2_w27_align/M34.C2.L-interface.V1.U04 (STEP-08's reach, measured):
+    # one SELECT in `scripts/pipeline_health.check_memory_reaches_the_window`. A literal.
+    # ⛔ MOVED 3,035 → 3,038 by yc2_w27_align/M34.C2.L-interface.V1.U16 (`03` F148's stored half):
+    # `scripts/reframe_stored_dates.py` — its rows, the org's zone, and the one UPDATE. Three literals.
+    # ⛔ MOVED 3,038 → 3,039 by yc2_w27_align/M34.C2.L-logic.V0.U10 (a programme is never decided as
+    # an investor): one SELECT, `reason/domain_shadow._ANCHOR_KEYS` — the anchors' keys the brief's
+    # kinds of work are read by. A literal.
+    # ⛔ MOVED 3,039 → 3,041 by yc2_w27_align/M34.C2.L-interface.V1.U08 (STEP-09's two numbers): two
+    # SELECTs in `scripts/pipeline_health.check_every_piece_of_work_has_one_file` — the files' people's
+    # keys, and the mail a piece of work's counterparty is in. Two literals.
+    # ⛔ MOVED 3,041 → 3,045 by yc2_w27_s12/M32.C2.L-data.V0.U02 (STEP-12, what was judged before):
+    # four SELECTs in `context/file_judgments.py` — one file's reviews, the cards on its people (each
+    # with its events and verdicts), its situations with their ends, and its history facts. Four
+    # literals, one per part; the loop hop expanded nothing.
+    # ⛔ MOVED 3,045 → 3,046 by yc2_w27_s12/M32.C2.L-data.V0.U07 (a file's situations' lifecycle): one
+    # SELECT, `context/workstreams._SITUATIONS` — the situations anchored on one file. A literal.
+    # ⛔ MOVED 3,046 → 3,047 by yc2_w27_s12/M32.C2.L-logic.V1.U04 (the dossier): one SELECT,
+    # `reason/expert/dossier._PROMISES` — the promises one file's own events wrote. A literal.
+    # ⛔ MOVED 3,047 → 3,046 by yc2_w27_s12/M32.C4.L-logic.V0.U02 (R-6 retired, `06` D51): R-6's
+    # evidence-ref resolver, `reason/domain_shadow._resolve_evidence_refs`, left with its consult. One
+    # literal fewer.
+    # ⛔ MOVED 3,046 → 3,049 by yc2_w27_s12/M32.C3.L-data.V1.U03 (the review store): three statements in
+    # `reason/expert/store.py` — the once-per-fingerprint INSERT … ON CONFLICT, the read of one
+    # fingerprint's row, and the latest valid review of a file. Three literals, each its own `text()`.
+    # ⛔ MOVED 3,049 → 3,050 by yc2_w27_s12/M32.C3.L-data.V1.U10 (a review keeps its inputs): one SELECT,
+    # `reason/expert/store._LATEST_STANDING` — what the last judgment of a file saw. A literal.
+    # ⛔ MOVED 3,050 → 3,054 by yc2_w27_s12/M32.C3.L-interface.V3.U06 (the expert's health): four
+    # SELECTs in `scripts/pipeline_health.check_the_expert_says_why_and_stays_in_budget` — the day's
+    # reviews by status, the refusals with no reason, today's R-7 spend on the ledger, the refusals by
+    # what they said. Four literals, each at its own `sql()` call.
+    # ⛔ MOVED 3,054 → 3,055 by yc2_w27_s12/M32.C3.L-integration.V2.U04 (fix, `03` F158): one SELECT in
+    # `reason/expert/sweep.expert_pass` — the company and the founder as the tenant records them, so a
+    # file NAMED for us is never reviewed. A literal.
+    # ⛔ MOVED 3,055 → 3,058 by yc2_w27_s12/M33.C1.L-integration.V1.U02 (STEP-12): a covered file decides
+    # once (`reason/domain_shadow`) — the run behind a standing signal (`_RUN_TRIGGER`), each covered
+    # file's home situation (`_FILES_HOME`), and the expiry of what its stood-down situations left
+    # open (`_STOOD_DOWN_SIGNALS`). Three statements, each a literal at its own call.
+    # ⛔ MOVED 3,058 → 3,059 by yc2_w27_s12/M33.C1.L-integration.V1.U09 (`03` F104): the compiled lane
+    # reads every anchor's measured baselines once a pass (`domain_shadow._ANCHOR_BASELINES`). A literal.
+    # ⛔ MOVED 3,059 → 3,061 by yc2_w27_s12/M33.C1.L-integration.V2.U12 (`03` F174, F175): a file keeps
+    # ONE decision (`reason/domain_shadow`) — `_RUN_TRIGGER` retired (−1) for its open decisions read in
+    # every pack (`_FILE_DECISIONS`), replaced in every pack (`_RETIRE_FILE_DECISIONS`) and cleared when
+    # a review names no move (`_CLEAR_FILE_DECISIONS`) (+3). Each a literal at its own call.
+    # ⛔ MOVED 3,061 → 3,062 by yc2_w27_s12/M33.C1.L-integration.V2.U13 (`03` F173): a file with no
+    # situation of its own is filed under one it stood down (`domain_shadow._STOOD_DOWN_HOME`). A literal.
+    # ⛔ MOVED 3,062 → 3,064 by yc2_w27_s12/M33.C1.L-integration.V0.U14 (`03` F173): a pack rule stands
+    # down for a decided file (`reason/runner`) — the source events of the facts its subjects hold
+    # (`_FACT_EVENTS`, read once a pass) and the open signal a stood-down rule left (`_STOOD_DOWN_RULE`).
+    # Two literals, each at its own call.
+    # ⛔ MOVED 3,064 → 3,065 by yc2_w27_s13/M35.C1.L-contract.V1.U03 (0200, a review keeps its check): one
+    # UPDATE, `reason/expert/store._CHECK` — the check written onto a standing row. A literal.
+    # ⛔ MOVED 3,065 → 3,067 by yc2_w27_s13/M36.C1.L-integration.V1.U06 (no signal without a lane): two
+    # SELECTs in `scripts/pipeline_health.check_every_new_signal_has_a_lane` — the day's signals, and those
+    # with no lane by the rule that wrote them. Two literals, each at its own call.
+    # ⛔ MOVED 3,067 → 3,073 by yc2_w27_s13/M36.C2.L-data.V1.U02 (the questions a file asks you):
+    # `context/founder_questions` — a question by id, a file's open one, the answers it holds (three
+    # SELECTs), the retirement and the answer (two UPDATEs), the asking (one INSERT). Six literals, each
+    # at its own call.
+    # ⛔ MOVED 3,073 → 3,079 by yc2_w27_s13/M36.C2.L-integration.V2.U03 (a held file asks): in
+    # `reason/domain_shadow`, the file's open question signal (a SELECT), its re-binding to the run asking
+    # now, its replacement and its retirement (three UPDATEs), the question signal itself (an INSERT); in
+    # `context/founder_questions.ask`, the same question re-bound to that run (an UPDATE). Six literals.
+    # ⛔ MOVED 3,079 → 3,099 by yc2_w27_s13/M36.C2.L-interface.V2.U09 (+15) and V3.U05 (+5), the question
+    # card. Five statements, counted as the extractor has always counted a concatenation — each prefix
+    # that already reads as SQL is a render of its own (`_statements` walks every `BinOp`). U09, in
+    # `deliver/store`: the tenant's graph-version lock on the question path (one literal), the insert's
+    # check of the question's authority (five renders: three literals around `QUESTION_SIGNAL_JOINS`
+    # and `QUESTION_SIGNAL_PREDICATE`), the card read's third door (four) and the queue's (five). U05, in
+    # `deliver/pipeline._QUESTIONS_WITHOUT_CARDS`, the open questions with no live card (five).
+    # ⛔ MOVED 3,099 → 3,106 by yc2_w27_s13/M36.C2.L-interface.V4.U06 (your answer): in
+    # `deliver/actions.ingest_action`, the question card's door (five renders around
+    # `QUESTION_SIGNAL_JOINS` and `QUESTION_CARD_SQL`), the answered card's `resolved_at` (an UPDATE), and
+    # its signal acted (an UPDATE, the same words as the decision path's own, at its own call). Seven.
+    # ⛔ MERGED 12 Oct: STEP-17's three moves below were measured on its own branch (3,064 → 3,071, net +7);
+    # on top of STEP-13's 3,106 they make 3,113 — re-measured on the merge, not added by hand.
+    # ⛔ MOVED 3,064 → 3,063 by yc2_w27_s17/M40.C1.L-logic.V1.U03 (STEP-17 S17-F1): `scripts/
+    # slice_weight.py` dropped its own copy of the sweep's situation read — the copy named a column
+    # `context_situations` does not have — and reads `reason/domain_shadow._ACTIVE_SITUATIONS` (−1).
+    # ⛔ MOVED 3,063 → 3,070 by yc2_w27_s17/M40.C3.L-contract.V0.U01 (STEP-17 §3.4): seven health
+    # checks count the population they judge, so an empty one says NO DATA, not PASS — seven SELECTs,
+    # each a literal at its own `_scalar` call in `scripts/pipeline_health.py`.
+    # ⛔ MOVED 3,070 → 3,071 by yc2_w27_s17/M40.C3.L-logic.V0.U02 (`03` F24): the two LLM checks name
+    # the lanes that called this week and not in the window (`_silent_lanes`) — one SELECT, a literal.
+    # ⛔ MERGED 12 Oct: STEP-18's moves below were measured on its own branch, 3,079 → 3,080 → 3,078 →
+    # 3,077 → 3,078 → 3,079 (net 0); on top of 3,113 the merge re-measures 3,113.
+    # ⛔ MOVED 3,113 → 3,120 at the integration (12 Oct; STEP-17's census refused `context/runner.ROAD_COLUMNS`,
+    # a column list that began with `select` and had no FROM): the constant is now the columns alone and
+    # each reader writes `"select " + ROAD_COLUMNS + …`, so this counter renders the drain's and the
+    # rebuild's two statements again (STEP-18 B12 had left them Name-led, rendered by nothing): +7.
+    # ⛔ MOVED 3,120 → 3,130 by yc2_w27_s14/M42.C1.L-data.V1.U03 (STEP-14, the one writer of a card's signal):
+    # `platform/card_lifecycle` reads which card a file's next version goes to (`_FILE_CARD`) and versions it
+    # (`_VERSION`) — two statements, each assembled from the shared `_HELD` and `_UNDECIDED` predicates, so the
+    # template walk records each prefix of each `+` chain: 3 → 13 in that module, measured per file against
+    # 6650b1c4 (nothing else moved). STEP-15 and STEP-16 move this on their own branches; the merge re-measures.
+    # ⛔ MOVED 3,130 → 3,131 by yc2_w27_s14/M42.C2.L-interface.V3.U04 (`03` F164): a meeting's title, read from its
+    # meeting node (`reason/expert/dossier._MEETING_TITLES`) — one literal. Committed without this move; found
+    # measuring the next unit, and moved here.
+    # ⛔ MOVED 3,131 → 3,147 by yc2_w27_s14/M42.C3.L-data.V1.U02 (`CardStore.version_card`): its lease, the card
+    # row it versions, its last words (`_LAST_WORDS`), the words written in place (`_VERSION_WORDS`) and the
+    # authority re-proven as an insert proves it (`_proves_authority`, the question's and the decision's, each
+    # assembled from the authority joins) — 69 → 85 in `deliver/store.py`, measured per file against the
+    # branch's head (nothing else moved).
+    # ⛔ MOVED 3,147 → 3,149 by yc2_w27_s14/M42.C3.L-integration.V2.U03 (one file, one card): the end of the
+    # pipeline's pass reads the file cards no version reached (`_ORPHANED_FILE_CARDS`) and measures the files with
+    # two open cards (`_FILES_WITH_TWO_OPEN_CARDS`) — two literals, `deliver/pipeline.py` 20 → 22.
+    # ⛔ MOVED 3,149 → 3,156 by yc2_w27_s14/M42.C3.L-interface.V3.U04 (the doors agree): `CardStore.doors` reads
+    # the open file cards and each of the two doors a file card may pass — three statements assembled from the
+    # doors' own predicates, so the template walk records their prefixes: +7 in `deliver/store.py`.
+    # ⛔ MOVED 3,159 → 3,166 by yc2_w27_s14 (the doors' fix, 13 Oct): `CardStore._FILE_CARDS` became the module
+    # constant `deliver/store._FILE_CARDS`, so `platform/statement_plans` resolves the three door statements (the
+    # run-time ratchet back at 272) — and the template walk now renders the constant's own `+` chain as well:
+    # 92 → 99 in `deliver/store.py`, measured per file against the merge 360766a3. No SQL added.
+    # ⛔ MOVED 3,166 → 3,181 by yc2_w27_s14/M43.C4.L-integration.V2.U05 (the health check says what the founder
+    # sees), measured per file against the branch's head: +1 `platform/card_refusals.py` (the one INSERT of
+    # `card_refusals`, 0222) and +14 `scripts/pipeline_health.py` 42 → 56 — seven real statements: two literals
+    # (the cards that name a file, the refusals of 7 days) and five assembled from `_EXPERT_CARD` or `_SINCE_0220`
+    # (the open file cards, the files with two, the file cards replaced since 0220, the live expert cards and those
+    # of them with no app surface), whose prefixes the template walk records as well. The run-time ratchet did
+    # not move (272).
+    # ⛔ MOVED 3,079 → 3,080 by yc2_w27_s18/M48.C1.L-data.V0.U02 (STEP-18 B4, a review object waits for
+    # review): one UPDATE, `feedback/publisher._rest_for_review` — the weekly road's review object rests at
+    # `human_review`. A literal at its own call.
+    # ⛔ MOVED 3,080 → 3,078 by yc2_w27_s18/M48.C2.L-data.V0.U04 (STEP-18 B12), measured per file with
+    # NO SQL removed: `context/runner._pull`'s SELECT was counted THREE times — the whole `"select …" +
+    # PENDING_FROM + "order by …"`, its inner sum and its column literal, each a node `_statements`
+    # walks. Its columns are now ONE constant, `ROAD_COLUMNS`, read by `_pull` and by the new
+    # `_rows_for_rebuild` (over `ROADS_FROM`), and each select is a Name-led sum the counter does not
+    # render: 3 → 1 for the drain, 0 for the rebuild. The instrument's over-count is `03` F100's kind.
+    # ⛔ MOVED 3,078 → 3,077 by yc2_w27_s18/M48.C2.L-integration.V1.U05 (STEP-18 B12): one SELECT
+    # removed, `scripts/rebuild_graph._pull_all` — the script's own pull of `source_events`; it replays
+    # the drain's rows (`context/runner._rows_for_rebuild`) instead. A literal.
+    # ⛔ MOVED 3,077 → 3,078 by yc2_w27_s18/M48.C2.L-data.V0.U06 (STEP-18 B13): one UPDATE,
+    # `reason/moments/screen_memory._retire` — a changed follow-up's previous observation superseded.
+    # A literal; the follow-up's own UPDATE gained a column, not a statement.
+    # ⛔ MOVED 3,078 → 3,079 by yc2_w27_s18/M48.C3.L-data.V0.U11 (STEP-18 B20's second half): one
+    # DELETE, `scripts/gmail_l1.py` — the gmail events' `message_fingerprints`, before the events. A
+    # literal in its statement list.
+    # ⛔ MERGED 12 Oct: STEP-15's moves below were measured on its own branch (3,113 → 3,122, net +9); merged with
+    # the integration line at 6650b1c4 (its own 3,113 → 3,120, the STEP-13 fixes) they make 3,129 — re-measured on
+    # the merge, not added by hand.
+    # ⛔ MOVED 3,113 → 3,114 by yc2_w27_s15/M44.C2.L-data.V0.U01 (STEP-15, every file's current judgment):
+    # one SELECT, `reason/expert/store._CURRENT` — each file's newest standing review and the change gate's
+    # record of its decision, for the whole tenant in one read. A literal.
+    # ⛔ MOVED 3,114 → 3,116 by yc2_w27_s15/M44.C2.L-data.V0.U03 (STEP-15, your desk): two SELECTs in
+    # `context/your_desk` — every sender's newest mail as of the instant (`_LAST_BY_SENDER`, which are ours is asked
+    # of the identity) and the names of who asked (`_NAMES`). Two literals.
+    # ⛔ MOVED 3,116 → 3,120 by yc2_w27_s15/M44.C2.L-data.V0.U04 (STEP-15, the meetings of a day): four SELECTs in
+    # `context/meeting_days` — the seat's meetings, their attendees, the titles a series shares, the mail to them.
+    # Each one literal: the seat-visibility predicate is written into each, not concatenated from a constant,
+    # which the census would have counted as one render per prefix (measured: 10, and four new holes).
+    # ⛔ MOVED 3,120 → 3,122 by yc2_w27_s15/M44.C2.L-data.V0.U05 (STEP-15, your promises due): two SELECTs in
+    # `context/promises_due` — every promise with its due date, status, owner, maker and mail, and the people its
+    # mail went to. Two literals.
+    # ⛔ MOVED 3,129 → 3,130 by yc2_w27_s15/M44.C2.L-data.V0.U02 (STEP-15, every open question): one SELECT,
+    # `context/your_desk._OPEN_QUESTIONS` — every open question with the open card its asking run raised. A literal.
+    # ⛔ MOVED 3,130 → 3,136 by yc2_w27_s15/M44.C4.L-data.V0.U01 (STEP-15, the brief kept): six statements in
+    # `executive/morning_store` — the keep (an INSERT … on conflict do nothing), a day's brief and the last before a
+    # day (two SELECTs), the brief a line stands in (a SELECT), the mark (an INSERT … on conflict update) and the
+    # marks of a brief (a SELECT). Six literals.
+    # ⛔ MOVED 3,136 → 3,139 by yc2_w27_s15/M44.C3.L-logic.V0.U02 (STEP-15, the day): three SELECTs in
+    # `executive/morning_day` — the seat and its org, the files' people, the org's timezone. Three literals.
+    # ⛔ MOVED 3,120 → 3,128 by yc2_w27_s16/M46.C2.L-data.V1.U02 (STEP-16, the one writer of a verdict),
+    # measured per file: `api/intelligence_routes.py` 62 → 58 — its four ledger statements (the verdict's
+    # INSERT, UPDATE and SELECT, the revision's INSERT) moved byte for byte into `deliver/verdicts.py`,
+    # which holds 12: those four, and the two authority reads a verdict is bound by (a decision's, a
+    # question's), each counted four times — the template walk records every prefix of its
+    # `"…" + JOINS + "…" + PREDICATE` concatenation, as it counts the route's own authority SELECT. Two
+    # real statements; the loop hop expanded nothing.
+    # ⛔ MOVED 3,128 → 3,129 by yc2_w27_s16/M46.C3.L-data.V0.U05 (a question you call wrong is not asked
+    # again): one SELECT, `context/founder_questions.called_wrong_for` — the file's questions retired
+    # `CALLED_WRONG`. A literal at its own call.
+    # ⛔ MOVED 3,129 → 3,133 by yc2_w27_s16/M46.C3.L-data.V1.U02 (your corrections, kept): four statements,
+    # `context/founder_corrections` — `by_id`, `correct`'s insert, `withdraw`'s update and `standing_for`'s
+    # read. Each a literal at its own call.
+    # ⛔ MOVED 3,133 → 3,134 by yc2_w27_s16/M46.C3.L-interface.V2.U03 (your door on a file): one SELECT,
+    # `api/workstream_routes._CARD_OF_THE_FILE` — the card a seat corrects a file through. A literal.
+    # ⛔ MOVED 3,134 → 3,136 by yc2_w27_s16/M46.C5.L-data.V1.U02 (the brief keeps what you corrected):
+    # `platform/company_brief_store` — `propose`'s read of the line a proposal replaces, and `accept`'s
+    # removal of it. Two literals; `pending`'s read gained a self-join, not a statement.
+    # ⛔ MOVED 3,136 → 3,137 by yc2_w27_s16/M46.C5.L-logic.V2.U03 (the expert may propose correcting an
+    # accepted kind): one SELECT, `reason/expert/kind_proposal._PEOPLE_KEYS` — the file's people's keys, which
+    # the line giving the file its kind may name. A module constant.
+    # ⛔ MOVED 3,120 → 3,119 by yc2_w27_s18/M48.C2.L-integration.V2.U16 (crosscheck S18-X06): one SELECT
+    # removed, `scripts/rebuild_graph.main`'s `count(distinct event_id) from l1_extraction_results` —
+    # the cache count behind the "may cost LLM" estimate; no road calls a model, so the estimate, the
+    # refusal and the count are gone. A literal. (M48.C3.L-data.V1.U17 moved `gmail_l1`'s seven
+    # statements into one tuple and counts the same: net 0.)
+    # ⛔ MOVED 3,119 → 3,121 by yc2_w27_s18/M48.C1.L-data.V1.U14 (crosscheck S18-X09): the one-off
+    # `scripts/rest_stuck_reviews.py` — its SELECT of the review objects stuck at `governed` (`STUCK`) and
+    # its UPDATE back to `human_review` (`REST`). Two literals, each a constant.
+    # ⛔ MOVED 3,106 → 3,108, deliberately, by two literals at their own call sites: STEP-13
+    # M36.C2.L-logic.V2.U10's fix (`fb45cfd1`), `reason/expert/asks._names_us_for` reads the org's own
+    # names from `orgs` so a question that names us is never asked in those words (one SELECT); and
+    # M35.C4.L-integration.V2.U04 (`1e53d896`), `scripts/golden_eval._checked` reads each case's
+    # `expert_reviews` so the live pass says what the check made of a real model's reviews (one SELECT).
+    # ⛔ Both commits left this pin red: neither ran tests/platform before it was committed.
+    # ⛔ MERGED 13 Oct: STEP-13's 3,106 → 3,108 above, on top of the integration's 3,121, re-measured on
+    # the merge: 3,123 (`table_coverage.resolution()`), the same two SELECTs.
+    # ⛔ MERGED 13 Oct: the integration line (3,123) into STEP-16's line (3,137), re-measured on the merge (`table_coverage.resolution()`): 3,140.
+    # ⛔ MOVED 3,108 → 3,110, deliberately, by two literals at their own call sites: STEP-13
+    # M36.C2.L-interface.V4.U07 (the second crosscheck G11, one lock order) — `context/founder_questions.lock_file`'s
+    # advisory lock on the file's question (one SELECT), and `deliver/actions.ingest_action`'s read, with no lock,
+    # of whose question card a press is on (one SELECT), so the press takes the file's lock before any row.
+    # ⛔ MERGED 13 Oct: STEP-13's second fix wave (its 3,108 → 3,110, G11's two advisory-lock literals) into
+    # the integration line (3,123), re-measured on the merge (`table_coverage.resolution()`): 3,125.
+    # ⛔ MOVED 3,125 → 3,129 by yc2_w27_s1718/M48.C2.L-data.V2.U21 (G-2, second crosscheck): the
+    # one-off `scripts/retire_duplicate_screen_observations.py` — `DUPLICATES` (one SELECT),
+    # `ACTIVE_FOR_FOLLOWUP` (one SELECT), `SUPERSEDE` (one UPDATE) and `NAME_SURVIVOR` (one UPDATE).
+    # Four literals, each a constant at its own call site.
+    # ⛔ MERGED 13 Oct: the integration line at 884f0ea4 (3,125 — the fix wave's two G11 literals on 3,123) into
+    # yc2w27-s14 (3,181 — STEP-14's moves above, on 3,123), re-measured on the merge (`table_coverage.resolution()`):
+    # 3,183 — the same two literals; nothing else moved. The run-time ratchet stays 272.
+    # ⛔ MERGED 16 Oct: STEP-14 (its own moves above, to 3,183 over 3,125) into the integration line (3,129, with
+    # STEP-17/18's follow-ups), re-measured on the merge (`table_coverage.resolution()`): 3,187 = 3,183 + 4.
+    # ⛔ MOVED 3,187 → 3,188 by yc2_w27_s14/M42.C3.L-interface.V4.U06 (the STEP-14 crosscheck's finding 2, your
+    # answered card stays where you see it): `scripts/pipeline_health.check_every_file_card_passes_one_door` reads the
+    # database's clock (`select now()`, one literal) — the doors' own statements moved from `CardStore.doors` into
+    # `deliver/store.FILE_CARD_DOORS` unchanged. Committed without this move (b580112c); found measuring the next
+    # unit, and moved here. The run-time ratchet did not move (272).
+    # ⛔ MOVED 3,188 → 3,189 by yc2_w27_s14/M43.C4.L-integration.V1.U06 (the STEP-14 crosscheck's finding 3, a refused
+    # version leaves the card where it was): `check_what_the_card_contract_refused` reads which file cards wait on their
+    # last words behind a refused version — one literal; `platform/card_refusals._INSERT` is still one statement (an
+    # insert-select, kept once per writer, card and rule). The run-time ratchet did not move (272).
+    # ⛔ MOVED 3,189 → 3,191 by yc2_w27_s14/M42.C1.L-data.V1.U04 (the STEP-14 crosscheck's finding 6, a claimed card is
+    # held only by a live claim): `check_no_card_is_claimed_by_nobody` counts the claimed cards and reads those with no
+    # live claim — two literals; `card_lifecycle._HELD` lost its state arm (no statement added). Ratchet 272.
+    # ⛔ MOVED 3,191 → 3,193 by yc2_w27_s14/M43.C4.L-integration.V1.U09 (the STEP-14 crosscheck's finding 14, a refused
+    # card is not rebuilt every pass): `deliver/pipeline._REFUSED_RECENTLY` (the signals refused within a day) and
+    # `platform/card_refusals._AGAIN` (the same refusal moves its row's time) — two literals; the end of the pass's
+    # orphan read gained a column, not a statement. Ratchet 272.
+    # ⛔ MERGED 13 Oct: the integration line (3,123) into STEP-15's line (3,139), re-measured on the merge (`table_coverage.resolution()`): 3,142.
+    # ⛔ MOVED 3,142 → 3,146 by yc2_w27_s15/M44.C3.L-logic.V1.U04 (STEP-15, what changed since your last brief):
+    # four SELECTs in `executive/morning_day.read_changes` — the reviews since an instant, who sent the mails a
+    # trigger names, the states of the questions and of the cards a gone line named. Four literals. (U03's template
+    # had a false fifth: the literal `" with "` opens on `with`, the census's own SQL shape — rewritten `", with "`,
+    # so the pin the merge measured, 3,142, held at U03's head only by its omission; measured per file here.)
+    # ⛔ MOVED 3,146 → 3,147 by yc2_w27_s15/M44.C4.L-integration.V1.U02 (STEP-15, compose): one SELECT,
+    # `executive/morning._OWNERS` — each org's account owner's seat. A literal.
+    # ⛔ MOVED 3,147 → 3,148 by yc2_w27_s15/M44.C4.L-interface.V2.U04 (STEP-15, GET /v1/executive/morning): one
+    # SELECT, `api/executive_routes._brief_seat` — an owner-level key's brief is the account owner's seat. A literal.
+    # ⛔ MOVED 3,148 → 3,149 by yc2_w27_s15/M45.C3.L-integration.V0.U01 (STEP-15, compose writes through the
+    # writer): one SELECT, `executive/morning._FOUNDER_NAME` — the founder's own name (`orgs.name`), read once
+    # per compose so `write_brief` can hold "you" against it; a second query rather than a new field on `Day`,
+    # since `Day` is M44's own contract and this unit's artifact is `morning.py` alone. A literal.
+    # ⛔ MERGED 16 Oct: STEP-14 and the integration line (3,187) into STEP-15's line (3,149), re-measured on the
+    # merge (`table_coverage.resolution()`): 3,213 = 3,187 + 26 — STEP-15's own moves above (3,149 over the
+    # integration's 3,123), each a literal at its own call site. The merge fix (s15-F19 to F23) added none: a
+    # field on an item, a branch in `read_changes`, a column in `store._CURRENT`'s existing select list.
+    # ⛔ MERGED 16 Oct (the integration line `yc2w27-int16`): STEP-14 with its crosscheck fix wave (3,193) and STEP-15's
+    # line (3,213, which already held STEP-14's 3,187), re-measured on the merge (`table_coverage.resolution()`): 3,219 =
+    # 3,193 + 26 — STEP-15's own moves, nothing else. The run-time ratchet stays 272.
+    # ⛔ MERGED 16 Oct: STEP-14's line at 9d469efb (3,187) into STEP-16's line (3,140), re-measured on the merge (`table_coverage.resolution()`): 3,204 = 3,187 + STEP-16's 17
+    # (3,140 − 3,123); nothing else moved. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,204 → 3,205 by yc2_w27_s16/M46.C3.L-integration.V3.U04 (the card's wrong with your words): one SELECT,
+    # `context/founder_corrections._FILE_OF_CARD` — the file a card is about. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,205 → 3,206 by yc2_w27_s16/M46.C4.L-logic.V4.U07 (what your correction changed): one SELECT,
+    # `reason/expert/correction_delta._REVIEWS` — every valid review of the files a correction reached. The run-time
+    # ratchet stays 272.
+    # ⛔ MOVED 3,206 → 3,205 by yc2_w27_s16/M47.C1.L-data.V0.U01 (one way to resolve a card): +1 UPDATE,
+    # `platform/card_lifecycle._RESOLVE`, and −2, the team lane's two literal `update cards set state='resolved'`
+    # statements, which now go through it (`reason/team/emit`). The run-time ratchet stays 272.
+    # ⛔ MOVED 3,205 → 3,206 by yc2_w27_s16/M47.C1.L-integration.V1.U02 (an answered ask resolves its card): one
+    # SELECT, `reason/domain_shadow._CLEARED_CARDS` — each cleared decision's card, the ask its last version names,
+    # how that ask closed. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,206 → 3,210 by yc2_w27_s16/M47.C1.L-data.V2.U03 (how each decision of a file ended): four SELECTs in
+    # `context/file_outcomes` — `_CARDS`, `_ENDINGS`, `_PRESSED`, `_VERDICTS`. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,210 → 3,211 by yc2_w27_s16/M47.C2.L-logic.V3.U01 (your numbers for a kind of work): one SELECT,
+    # `context/kind_numbers._STAGES` — each valid review's stage. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,211 → 3,212 by yc2_w27_s16/M47.C2.L-logic.V4.U02 (the dossier says what came of it): one SELECT,
+    # `reason/expert/dossier._ASKS_CLOSED` — the file's asks closed since its last review. The run-time ratchet stays
+    # 272.
+    # ⛔ MOVED 3,212 → 3,216 by yc2_w27_s16/M47.C3.L-logic.V5.U01 (the week, measured), measured per file:
+    # `feedback/scorecard` 0 → 2 (`_CHECKED`, `_QUESTIONS`) and `context/founder_corrections` 5 → 7
+    # (`made_between`'s one f-string SELECT, counted twice by the template walk, as `{_COLUMNS}` prefixes are).
+    # The run-time ratchet stays 272.
+    # ⛔ MOVED 3,216 → 3,218 by yc2_w27_s16/M47.C3.L-integration.V2.U03 (every verified card names what closed it): the
+    # receipt's SELECT and its witness, both written as whole literals (the lifecycle's words inlined, never formatted
+    # in, so the run-time ratchet stays 272).
+    # ⛔ MERGED 16 Oct (the integration line `yc2w27-int16`): STEP-16's line (3,218, on STEP-14's 3,187) into STEP-14's fix
+    # wave and STEP-15 (3,219), re-measured on the merge (`table_coverage.resolution()`): 3,250 = 3,219 + STEP-16's 31
+    # (3,218 − 3,187); nothing else moved. The run-time ratchet stays 272.
+
+
+def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
+    """⛔ Measured, not asserted: 16 → 7 table holes, and the nine still carry `{column}`-shaped
+    holes, so they move buckets rather than disappearing."""
+    r = TC.resolution()
+    # ⛔ 7 → 8 by `3.2`: `witness_sql` derives a table from a regex over another receipt's SQL,
+    # which is a genuinely runtime name. Declared in `TABLE_HOLES_NOT_CLOSED` and the ceiling was
+    # raised in the same diff. ✅ The ratchet caught its own author.
+    assert r["unresolved_table"] == 8, r
+    assert r["unresolved_table"] + r["unresolved_fragment"] == r["unresolved"]
+
+
+# ----------------------------------------------------------- U03 · the two declarations that moved
+
+def test_the_stale_declaration_was_retired_and_says_who_retired_it():
+    """⛔ `source_identity_map` was declared write-only and `context/merge.py` has always read it,
+    inside the loop this hop resolves."""
+    assert "source_identity_map" not in TC.UNREAD_WRITES
+    reason = TC.RETRACTED_UNREAD_WRITES["source_identity_map"]
+    assert "3.1b" in reason and "merge.py" in reason
+    assert sorted(f.replace("genios_engine/", "")
+                  for f in TC.readers_of("source_identity_map")) == ["context/merge.py"]
+
+
+def test_the_newly_visible_write_only_table_is_declared():
+    """⛔⛔ `warm_lane_slots` was HIDDEN BY ITS OWN DELETE: `platform/warm_lane.py` deletes its own
+    rows, and `delete from` read as a read, so the table looked read by its writer."""
+    assert "warm_lane_slots" in TC.UNREAD_WRITES
+    writer, why, mover = TC.UNREAD_WRITES["warm_lane_slots"]
+    assert writer == "platform/warm_lane.py"
+    assert TC.readers_of("warm_lane_slots") == frozenset()
+    assert "returning" in why.lower() and "rowcount" in why.lower(), (
+        "the entry must record HOW the state is read -- through `returning` and `rowcount`, which "
+        "no verb pattern here can express. Without that it reads as a gap rather than a design")
+
+
+def test_the_lease_table_is_graded_by_design_and_not_as_a_gap():
+    """⛔ Its mover must say never. A `select` over a lease table is a race: the answer is stale
+    before the caller acts on it, which is why the claim is a conditional write."""
+    _w, why, mover = TC.UNREAD_WRITES["warm_lane_slots"]
+    assert "BY DESIGN" in why
+    assert mover.startswith("MOVES WHEN never"), mover
+
+
+def test_the_declarations_are_clean_in_both_directions():
+    assert TC.undeclared_unread_writes() == ()
+    assert TC.stale_unread_declarations() == ()
+
+
+def test_the_write_only_count_held_while_its_MEMBERSHIP_turned_over():
+    """⛔⛔ THE FINDING A BARE COUNT WOULD HAVE HIDDEN. Nine before, nine after — and one left and
+    one arrived. A step that reported only the count would have reported *no change*."""
+    now = set(TC.written_and_unread())
+    assert len(now) == 9, sorted(now)
+    assert "source_identity_map" not in now
+    assert "warm_lane_slots" in now
+
+
+# ---------------------------------------------- U01 · two categories retired, and a misfiled entry
+
+def test_both_emptied_categories_are_gone():
+    """⛔ An empty category makes every assertion over it vacuous -- the `1.4` hole. `not-a-table`
+    had one misfiled member and `resolvable-deferred` had its whole membership closed."""
+    categories = {category for category, _why, _mover in TC.TABLE_HOLES_NOT_CLOSED.values()}
+    assert categories == {"runtime"}, sorted(categories)
+
+
+def test_the_misfiled_entry_is_gone_and_the_correction_is_recorded_somewhere():
+    """⛔ `3.1` filed `scripts/rebuild_graph.py` as `not-a-table`, describing a `create table`
+    statement that was never counted. The counted one was a plain `delete` of eight real tables."""
+    assert "scripts/rebuild_graph.py" not in TC.TABLE_HOLES_NOT_CLOSED
+    source = (TC._ROOT / "genios_engine" / "platform" / "table_coverage.py") \
+        .read_text(encoding="utf-8")
+    assert "RETIRED 2026-10-04" in source, (
+        "the retired categories carry no record of why; a reader finding `runtime` alone cannot "
+        "tell a deliberate retirement from a category nobody thought of")
+
+
+def test_only_the_three_runtime_sites_remain_and_each_is_genuinely_unknowable():
+    # ⛔ FOUR now, not three: `3.2` added `platform/receipts.py`, where `witness_sql` derives a
+    # table from a regex over another receipt's SQL. ✅ The ratchet caught its own author and the
+    # ceiling moved 7 → 8 in the same diff, which is what its message demands.
+    expected = {"api/home_routes.py", "capture/connectors/database.py",
+                "platform/receipts.py", "scripts/wipe_org_data.py"}
+    assert set(TC.TABLE_HOLES_NOT_CLOSED) == expected, sorted(TC.TABLE_HOLES_NOT_CLOSED)
+
+
+# ---------------------------------------------------------------------------- U04 · the ratchet
+
+def test_the_ceiling_TRACKS_the_actual_in_both_directions():
+    """⛔ A ceiling only ratchets while it sits on the actual. Leaving it at 16 after the hop took
+    the figure to 7 would be nine statements of headroom -- the exact failure `3.1` fixed.
+
+    ⛔ RENAMED 2026-10-04. This was `test_the_ceiling_came_DOWN_with_the_actual`, and then `3.2`
+    raised it 7 → 8 for a declared reason — so the name asserted a direction the code no longer
+    had. *Assert the thing the name claims*, which is that the ceiling TRACKS the actual, either
+    way. ⛔ `3.1b`'s mutations produced that rule from a test whose name promised a tuple target
+    and whose body had none; this is the same rule applied to a name that aged.
+    """
+    ceiling, why = TC.RESOLUTION_CEILINGS["unresolved_table"]
+    assert TC.resolution()["unresolved_table"] == ceiling, (
+        f"ceiling {ceiling} against an actual {TC.resolution()['unresolved_table']}. Any gap is "
+        "headroom, and headroom is how the number grew unnoticed before `3.1`")
+    assert "FOUR resolver hops" in why
+    assert "RAISED 7 → 8" in why, (
+        "a ceiling that moved without saying why is a number somebody edited to go green")
+
+
+# ------------------------------------------------- the redundancy this hop created, measured
+
+def test_merges_name_constant_declaration_is_now_redundant_and_that_is_known():
+    """⛔ Measured: removing `context/merge.py` from `NAME_CONSTANT_TABLE_SITES` loses **zero**
+    facts, because the loop hop provides everything it did and the `read` verb it missed.
+
+    ✅ It is KEPT, because its prose states something a generic resolver does not — that merge
+    repoints every node reference — and this test exists so a future reader meets the redundancy
+    as a measured fact rather than discovering it as dead code. ⛔ If the hop ever stops providing
+    those facts, the declaration becomes load-bearing again and this test fails, which is the
+    notification wanted.
+    """
+    assert "context/merge.py" in TC.NAME_CONSTANT_TABLE_SITES
+
+    def snapshot() -> dict[str, dict[str, frozenset[str]]]:
+        for fn in (TC._table_usage, TC._exported_table_constants, TC.resolution,
+                   TC.open_table_holes):
+            fn.cache_clear()
+        return {t: {v: frozenset(f) for v, f in d.items()} for t, d in TC.table_usage().items()}
+
+    whole = snapshot()
+    original = dict(TC.NAME_CONSTANT_TABLE_SITES)
+    try:
+        TC.NAME_CONSTANT_TABLE_SITES = {k: v for k, v in original.items()
+                                        if k != "context/merge.py"}
+        without = snapshot()
+    finally:
+        TC.NAME_CONSTANT_TABLE_SITES = original
+        for fn in (TC._table_usage, TC._exported_table_constants, TC.resolution,
+                   TC.open_table_holes):
+            fn.cache_clear()
+
+    unique = {t: sorted(v for v, files in verbs.items()
+                        if files - without.get(t, {}).get(v, frozenset()))
+              for t, verbs in whole.items()}
+    unique = {t: v for t, v in unique.items() if v}
+    assert unique == {}, (
+        f"`context/merge.py`'s name-constant declaration is load-bearing again for {unique}. The "
+        "loop hop has stopped providing those facts -- find out why before trusting either")

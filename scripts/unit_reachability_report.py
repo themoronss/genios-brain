@@ -54,6 +54,7 @@ import argparse
 import json
 import sys
 from collections import Counter
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -148,7 +149,7 @@ class Reachability:
     units: dict[str, UnitRow] = field(default_factory=dict)
     plan_hash_mismatches: tuple[str, ...] = ()
     unregistered_sources: tuple[str, ...] = ()
-    counts: dict[str, int] = field(default_factory=dict)
+    counts: dict[str, int | dict[str, int]] = field(default_factory=dict)
 
     def row(self, unit_id: str) -> UnitRow:
         return self.units.setdefault(unit_id, UnitRow(unit_id))
@@ -300,7 +301,11 @@ def collect(*, database_url: str, org_id: str, at: datetime, limit: int) -> Reac
                 limit=limit, live=False)
         finally:
             domain_shadow.reason_native_capability = original
-        report.counts = {str(key): int(value) for key, value in counts.items()}
+        # `shadow_compile` returns int tallies AND, since 22d598b1, two int-valued breakdowns
+        # (`no_route_by_reason`, `no_route_by_type`). Coerce each to its own shape.
+        report.counts = {str(key): ({str(k): int(v) for k, v in value.items()}
+                                    if isinstance(value, Mapping) else int(value))
+                         for key, value in counts.items()}
         report.situations = report.counts.get("situations", 0)
     finally:
         engine.dispose()

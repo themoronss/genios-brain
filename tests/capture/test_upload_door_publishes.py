@@ -66,9 +66,19 @@ DOC = (f"{SECTION}\n"
 PRICED: tuple[int, ...] = (1_000_000, 1_500_000, 2_500_000, 3_800_000, 4_500_000,
                            5_500_000, 7_000_000, 9_000_000, 20_000_000)
 
-#: When the priced history happened. Inside L1.6.7-U2's window relative to the upload, and stated
-#: as a constant rather than read off a clock so two runs of this file see the same baseline.
-HISTORY_AT = datetime.now(timezone.utc) - timedelta(days=30)
+#: When the priced history happened: thirty days before the upload, inside L1.6.7-U2's window
+#: relative to it. ⛔ CORRECTED (`yc2_w27_s17` M41.C1.L-integration.V1.U02, `YC-II W27/03` F142): the
+#: comment here called this "a constant rather than read off a clock", and it was the clock, read at
+#: import. The upload is stamped when the test runs, so the history is placed relative to THAT —
+#: read when each test runs, by `_clock`.
+HISTORY_AT: datetime = None  # type: ignore[assignment]
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _clock():
+    global HISTORY_AT
+    HISTORY_AT = datetime.now(timezone.utc) - timedelta(days=30)
+
 
 _TABLES = ("qualified_signals", "qualification_drops", "signal_lifecycle",
            "publication_rejections", "l1_extraction_results", "prepared_content",

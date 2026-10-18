@@ -90,6 +90,78 @@ def registry_staleness(computed: list[str], stored: list[str]) -> str | None:
             " — run `_tools/index.py` to regenerate (it is the only writer)")
 
 
+def review_done_but_not_flipped(docs: dict[str, dict],
+                                protected: set[str] | None = None) -> list[str]:
+    """Documents a named human has APPROVED that still say `identity.status: draft`.
+
+    ⛔ THE STATE THIS NAMES, AND IT HAS HAPPENED BEFORE IN THIS REPO. `capability_resolver.
+    situation_admission_reason` requires BOTH `identity.status == "stable"` AND
+    `metadata.review_status == "approved"`. A document with the second and not the first is not
+    unreviewed and not incomplete — **the review is done and nobody flipped the word.** Commit
+    `90f8edf0` is titled, exactly, *"Six situations were finished and nobody flipped the word"*.
+    Six were found by hand then. Measured 2026-10-01, there are five more, all
+    `reviewed_by: harsh` with `reviewed_at == last_updated`, so the approval covers the current
+    bytes.
+
+    ⛔ IT WARNS, IT DOES NOT FLIP. `identity.status` is the authoring lifecycle and the author owns
+    it; `review_status` is the human ceremony. The gate wants both precisely so that neither alone
+    can grant production authority, and a tool that flipped the first on the strength of the second
+    would be the forgery the ceremony exists to prevent. So this reports, names the mover, and
+    stops.
+
+    ⛔ AND IT REPORTS THE STALE CASE SEPARATELY, because the two need opposite actions. If the file
+    was edited after it was reviewed, the approval does not cover what is in it now: the answer is
+    another review, never a flip.
+
+    ⛔ **AND IT CRIED WOLF ON FIVE CORRECT FILES, WHICH IS WHY `protected` EXISTS.** The first
+    version of this check reported every draft+approved situation, and all five it found are
+    declared in a registry's `pending_l2_types` — `admin.sit.asset_in_custody`,
+    `employee_lifecycle_event`, `obligation_falls_due`, `spend_against_a_commitment` and
+    `customer_support.sit.issue_under_diagnosis`. For those, draft+approved is not a half-state at
+    all: **the content is approved and the lifecycle is deliberately held because the L2 type the
+    situation needs does not exist.** One of them records that flipping it *"would cost a false
+    assurance"*, and `tests/packs/test_the_corpus_states_its_own_health.py` says in its own words
+    that they **MUST NOT be flipped**.
+
+    > A document in two states is not automatically in a half-state. Check whether somebody
+    > declared the combination before calling it an oversight.
+
+    `protected` is passed in from the domain registry rather than listed here, so the exemption
+    cannot drift from the declaration that creates it.
+
+    A pure function for the reason `registry_staleness` states: a guard that has to modify the
+    corpus in order to prove it works cannot be trusted in CI.
+    """
+    protected = protected or set()
+    out: list[str] = []
+    for doc_id, data in sorted(docs.items()):
+        identity = data.get("identity") or {}
+        meta = data.get("metadata") or {}
+        if str(meta.get("review_status") or "") != "approved":
+            continue
+        if str(identity.get("status") or "") == "stable":
+            continue
+        if doc_id in protected:
+            # Declared `pending_l2_types`: approved content, lifecycle held on purpose.
+            continue
+        who = str(meta.get("reviewed_by") or "").strip() or "nobody named"
+        reviewed_at = str(meta.get("reviewed_at") or "")
+        updated = str(meta.get("last_updated") or "")
+        if reviewed_at and updated and updated > reviewed_at:
+            out.append(
+                f"{doc_id}: review_status=approved by {who} on {reviewed_at}, but the file was "
+                f"edited {updated} — the approval does not cover these bytes. Needs ANOTHER "
+                f"REVIEW, not a status flip")
+        else:
+            out.append(
+                f"{doc_id}: reviewed and approved by {who}"
+                + (f" on {reviewed_at}" if reviewed_at else "")
+                + f", and identity.status is still '{identity.get('status')}' — it cannot instruct. "
+                  f"The review is done; the word was never flipped. Mover: the author or "
+                  f"{who}, one word per file")
+    return out
+
+
 def short(path: Path) -> str:
     p = path.parts
     return "/".join(p[-3:]) if len(p) >= 3 else path.name
@@ -613,6 +685,18 @@ def main(strict: bool = False) -> int:
         deferred = deferrals(droot)
         ledger = droot / "deferrals.yaml"
         routed_caps: set[str] = set()
+        # ⛔ Reviewed by a human and still `draft` — see `review_done_but_not_flipped`. The
+        # registry's `pending_l2_types` are excluded there: for those the combination is declared.
+        # ⛔ Loaded from THIS domain's registry, not from a name in scope: `registry` here is a
+        # loop variable holding oid->path, and reading it gave an empty exemption that let the
+        # check keep crying wolf on five correct files. Named explicitly so it cannot happen again.
+        _smap = droot / "registry" / "situation-capability-map.yaml"
+        _pending_map = ((load_yaml(_smap) or {}).get("pending_l2_types") or {}
+                        ) if _smap.exists() else {}
+        _protected = {sid for _v in _pending_map.values()
+                      for sid in ((_v or {}).get("situations") or [])}
+        for note in review_done_but_not_flipped(situations, _protected):
+            warn(droot, note)
         for sid, s in situations.items():
             owner = (s.get("identity") or {}).get("owner_capability")
             if owner in deferred:

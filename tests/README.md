@@ -133,3 +133,59 @@ The `slow` and `llm` lanes are bounded by a model, not by CPU. Running the golde
 `-n auto` multiplies spend without shortening the wall clock much, and the extraction cache —
 the thing that makes an unchanged re-run cost nothing — is keyed per content, so N workers
 racing on the same corpus can each miss the same key. Run those serially, on purpose.
+
+## ⛔ Asserting that something is ABSENT from source — the three shapes, and which check each needs
+
+**Added 2026-10-02 after the same defect broke three guards in one session.** All three asserted a
+forbidden string was missing from a file, and all three **failed on correct code** — because the
+fix that removed the forbidden thing also *documented* it.
+
+| | What broke |
+|---|---|
+| 1 | `assert "<false sentence>" not in src` — ⛔ the correction **quotes** the sentence in order to say it is false |
+| 2 | the same, in a test whose **own docstring** carried the rule it then broke |
+| 3 | `assert "batch.inbox" not in units` — ⛔ the corrected docstring **explains** that the inbox is *"loaded into every weekly batch as `batch.inbox`"* |
+
+> ⛔ **A docstring that explains a gap contains the words of the gap.** A log is append-only and
+> corrections are new lines, so a guard that forbids the words cannot tell a correction from a
+> relapse.
+
+### The rule, by what the claim is ABOUT
+
+**A claim about PROSE → check ATTRIBUTION, not presence.** Allow the phrase; require a marker
+within a few lines identifying it as the old wording (`CORRECTED`, `used to read`, `said … until
+<date>`). A relapse adds an **unmarked** occurrence and fails. See
+`tests/api/test_the_value_is_withheld_for_the_right_reason.py` and
+`tests/feedback/test_a_quarantined_seam_is_not_an_empty_one.py`.
+
+**A claim about CODE → check the AST.** ⛔ An attribution window would *pass* here and would be the
+**wrong tool**: the question is not *"who said this"* but *"does any unit read this attribute"*, and
+only the AST answers it. Walk for the attribute access **and** for `getattr(obj, "name", …)` — the
+second form is how the orchestrator reaches `batch.inbox`, and a guard that knew only the first
+would miss it. See `test_no_analysis_unit_consumes_the_inbox`.
+
+**A claim about a SQL CONSTRUCT** (*"this module never writes"*) → a text check on the module's own
+source is usually fine, because `insert into` is unlikely to appear in prose that is not quoting a
+query. Lowest risk of the three, and still worth a comment saying so.
+
+### The measured state of the suite, 2026-10-02
+
+```
+584   assert "..." not in <anything>
+104   assert "..." not in src|code|source|text|blob|content|body     ← source-text guards
+       78 CODE-shaped · 13 SQL-shaped · 13 that look like prose, most of them
+          code fragments (`import calendar`, `if done or affected:`, `raise …`)
+```
+
+⛔ **"104 broken guards" would be an overstatement, and so would "0".** Every one is *structurally*
+vulnerable — the moment somebody documents the forbidden thing, including to explain why it is
+forbidden, the guard fires on correct code. ⛔ **Which of them is at risk today is not knowable
+statically**: a resolver that tries to find each guard's target file from the source resolves **1 of
+104**, because the dominant form is `inspect.getsource(<an imported function>)` and the function's
+defining module can only be found by importing it. *A resolver that answers for 1 of 104 answers
+nothing.*
+
+⛔ So they are **not** being converted wholesale: 78 mechanical rewrites with no measured defect
+behind them is speculative work, and each conversion is a chance to change what a guard means. The
+three that broke are fixed and pinned with regression tests. **This section is the rule for the
+next one.**

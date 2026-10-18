@@ -102,7 +102,7 @@ def test_a_ratio_threshold_that_is_not_whole_basis_points_is_refused():
      "rule_elapsed_predicate_unsupported"),
     ({"neighbor_fact": "deal.status", "op": "=", "value": "open"},
      "rule_neighbor_fact_unsupported"),
-    ({"path": "deal.value", "op": ">=", "value": {"baseline": "reply_cadence", "mult": 2}},
+    ({"path": "deal.value", "op": ">=", "value": {"baseline": "write_interval", "mult": 2}},
      "rule_baseline_threshold_unsupported"),
     ({"something": "else"}, "rule_predicate_form_unsupported"),
 ])

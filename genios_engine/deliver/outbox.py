@@ -10,8 +10,10 @@ card_events row, so delivered/failed is queryable state, not a log line.
 
 Dispatch policy (mirrors the card pipeline's push law without touching it): HIGH and
 CRITICAL band cards notify; STANDARD stays a dashboard rotation. The daily digest goes
-once per org per UTC day under a synthetic card id — same dedup machinery, zero
-special cases.
+once per org per LOCAL day under a synthetic card id — same dedup machinery, zero
+special cases — and since STEP-15 it IS the morning brief the account owner's seat kept
+(its one line and today's five), claimed once the brief is kept; it was a count of signals
+at the heavy tick's UTC day.
 
 Admission (Layer 5.2) sits between the claim and the send. Enqueue *materialises* the
 delivery object onto the row — recipient, band, channel class, interrupt — and `drain`
@@ -29,7 +31,7 @@ share` locks across an outbound POST, and it produces three outcomes rather than
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import bindparam, text
 
@@ -51,6 +53,7 @@ from genios_engine.deliver.gate import (
     candidate_from_row,
     channel_class_for,
     defer_until,
+    describe_decision,
 )
 from genios_engine.executive.communication import may_interrupt
 from genios_engine.executive.execution import execution_config
@@ -310,17 +313,31 @@ def digest_card_id(day) -> str:
     return f"digest:{day.isoformat()}"
 
 
-def _current_digest_payload(engine, org_id: str, evaluation_time: datetime) -> dict:
-    """Build a non-actionable digest from current authority immediately before send."""
-    from genios_engine.executive.summary import build_summary
+def _current_digest_payload(engine, org_id: str, evaluation_time: datetime,
+                            for_date: date | None = None) -> dict:
+    """The digest a channel is sent: the morning brief the account owner's seat KEPT — its one line and today's five,
+    as kept (STEP-15, M45.C3.L-integration.V0.U03; `03` s15-F4) — never a count of signals. Read immediately before
+    send, for the local day the row was queued for (`for_date`; without it, the local day of `evaluation_time`): a
+    retry after midnight sends the day it was queued for, not the day it was drained on. A day with no kept brief
+    RAISES — the drain retries it on its backoff and never sends a fallback in its place."""
+    from genios_engine.contracts.morning_brief import TODAY
+    from genios_engine.executive.morning import kept_brief
 
-    class _SummaryStore:
-        pass
+    brief = kept_brief(engine, org_id, now=evaluation_time, local_date=for_date)
+    if brief is None:
+        raise LookupError(f"no morning brief is kept for org={org_id} on {for_date or 'its local day'}")
+    return format_digest_message({"one_line": brief.one_line,
+                                  "top_items": [{"line": l.words} for l in brief.section(TODAY)]})
 
-    store = _SummaryStore()
-    store.engine = engine
-    return format_digest_message(
-        build_summary(store, org_id, "one_minute", eval_time=evaluation_time))
+
+def _digest_day(row: dict) -> date | None:
+    """The local day a queued digest was claimed for — its intent's `for_date` — or None on a row without one."""
+    raw = row.get("payload")
+    intent = raw if isinstance(raw, dict) else json.loads(raw) if raw else {}
+    try:
+        return date.fromisoformat(str(intent.get("for_date")))
+    except ValueError:
+        return None
 
 
 # ── channel resolution ────────────────────────────────────────────────────────────
@@ -766,11 +783,17 @@ def enqueue_agent_lane(engine, org_id: str, *, agents: list[str],
 
 def enqueue_digest(engine, org_id: str, channel: str,
                    eval_time: datetime | None = None) -> int:
-    """Claim one daily digest slot.
+    """Claim one daily digest slot — once the morning brief is KEPT, and not before (STEP-15,
+    M45.C3.L-integration.V0.U03; `03` s15-F4).
 
-    The row is only a delivery intent.  Its authority-sensitive content is regenerated from the
-    current executive projection in ``drain`` so a queued digest can never send yesterday's
-    revoked recommendation after a graph/config/pack change.
+    The digest is the brief the account owner's seat kept (`executive/morning.kept_brief`): its one line
+    and today's five. Until it is kept there is nothing to send, so this returns 0 WITHOUT taking the
+    day's slot (``last_digest_date``) — the next pass claims it the moment the brief is there. The slot
+    is the brief's LOCAL day (the org's timezone), not the UTC day of the tick it ran on.
+
+    The row is only a delivery intent (its ``for_date`` names the day).  Its content is read from the
+    kept brief in ``drain`` immediately before send, so a retry after midnight still sends the day it
+    was queued for — and a tenant with only the pull surface reads the same brief on the dashboard.
 
     ``channel`` is required (see the block comment above ``enqueue_pending``). The existence
     check below reads ``org_channels`` for this exact channel, so the old "slack" default made
@@ -783,7 +806,12 @@ def enqueue_digest(engine, org_id: str, channel: str,
     the second silently suppressing the first.
     """
     now = eval_time or datetime.now(timezone.utc)
-    today = now.date()
+    from genios_engine.executive.morning import kept_brief
+    brief = kept_brief(engine, org_id, now=now)
+    if brief is None:
+        return 0            # STEP-15: the digest IS the kept brief — until it is kept there is nothing to send, and
+        #                     the day's slot (`last_digest_date`) stays free for the moment it is
+    today = brief.local_date            # the org's LOCAL day the brief belongs to, not the UTC day of the tick
     payload = {"kind": "daily_digest_intent", "for_date": today.isoformat()}
     with engine.begin() as c:
         row = c.execute(text(
@@ -1070,7 +1098,7 @@ def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: da
                 continue
         else:
             try:
-                payload = _current_digest_payload(engine, r["org_id"], now)
+                payload = _current_digest_payload(engine, r["org_id"], now, for_date=_digest_day(r))
             except Exception as exc:  # noqa: BLE001 - never send stale fallback bytes
                 delay = next_attempt_delay(r["attempts"] + 1)
                 _finish(engine, r, now, ok=False,
@@ -1132,8 +1160,14 @@ def _defer(engine, row: dict, decision, context, now: datetime, out: dict) -> No
             "gate_unit=:u, gate_reason=:r where id=:i and status='queued'"),
             {"na": defer_until(decision, now), "u": decision.unit,
              "r": decision.reason_code, "i": row["id"]})
+        # ⛔ AND `context` WAS A PARAMETER THIS FUNCTION ACCEPTED AND NEVER READ.
+        #
+        # `_defer(engine, row, decision, context, now, out)` took the resolved context and used
+        # nothing from it — presence without effect, in the signature. A deferral is the verdict a
+        # founder is most likely to ask about ("why is it 09:00 and I still have not seen it?"),
+        # and the answer is the tenant's own window, which was sitting in `context` unread.
         _mark_lifecycle(c, row, "deferred", "deferred", now,
-                        {"reason": decision.reason_code})
+                        describe_decision(decision, context))
     out["deferred"] += 1
 
 
@@ -1154,8 +1188,19 @@ def _suppress(engine, row: dict, decision, context, out: dict) -> None:
             "update delivery_outbox set status='suppressed', gate_unit=:u, gate_reason=:r, "
             "last_error=:e where id=:i and status='queued'"),
             {"u": decision.unit, "r": decision.reason_code, "e": note[:300], "i": row["id"]})
+        # ⛔ THE SETTINGS BEHIND THE VERDICT, NOT JUST THE VERDICT.
+        #
+        # This wrote `{"reason": decision.reason_code}` — the thinnest possible record — while
+        # `admit` had already handed both halves over and said what they were for: *"Returns the
+        # context alongside the verdict so the caller can put the resolved settings into the audit
+        # row. 'It was held because quiet hours' is only half an answer; '…and this tenant's quiet
+        # hours are 21:00–08:00 Asia/Kolkata' is the half that ends the support ticket."*
+        #
+        # `gate.describe_decision` is the function that builds that record, and until 2026-10-01
+        # nothing called it: `decision.detail` and the whole resolved context were dropped on the
+        # floor at the one seam where both were in hand.
         _mark_lifecycle(c, row, "suppressed", "suppressed",
-                        datetime.now(timezone.utc), {"reason": decision.reason_code})
+                        datetime.now(timezone.utc), describe_decision(decision, context))
     out["suppressed"] += 1
 
 

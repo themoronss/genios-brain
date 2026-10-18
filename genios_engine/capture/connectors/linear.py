@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
+from .base import InferredInstant
 from .base import RawObject, SourceBatch
 from .composio_base import ComposioExec
 
@@ -33,7 +34,7 @@ def _parse_ts(v: Any) -> datetime:
             return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
         except ValueError:
             pass
-    return datetime.now(timezone.utc)
+    return InferredInstant.now_utc()      # no readable time: say so (GeniOS-008 L1 A3)
 
 
 def _pick(v: Any, *keys: str) -> str | None:

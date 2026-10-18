@@ -15,7 +15,10 @@ This module turns those rows into graph memory WITHOUT another AI read:
                one named → the manager's own node (their seat email's person);
     what       one observation per item, kind `screen.<item kind>`, evidence = the model's note,
                who, due and quote (never more screen text);
-    once       `graph_written_at` marks the row, so a later promotion never writes it twice.
+    once       `graph_written_at` marks the row, so a later promotion never writes it twice;
+               and when the item CHANGES (its words, date or person — `followups.upsert`
+               clears the mark) the new observation retires the one before, named on the
+               row (`observation_id`, 0211): one follow-up, one active observation.
 
 No AI call, no credit charge.
 """
@@ -75,7 +78,8 @@ def write_items(engine, *, org_id: str, seat_id: str, seat_email: str | None,
     try:
         with engine.begin() as c:
             rows = c.execute(text(
-                "select id, kind, text, who, due_at, quote, created_at from screen_followups "
+                "select id, kind, text, who, due_at, quote, created_at, observation_id "
+                "from screen_followups "
                 "where org_id = :o and seat_id = :s and thread_key = :t "
                 "and graph_written_at is null order by created_at, id limit :n "
                 "for update skip locked"),
@@ -87,19 +91,38 @@ def write_items(engine, *, org_id: str, seat_id: str, seat_email: str | None,
                   if me_key else None)
             for r in rows:
                 node = _person(c, org_id=org_id, who=r.who) if r.who else me
-                store.write_observation(
+                if r.observation_id:
+                    _retire(c, org_id=org_id, observation_id=r.observation_id)
+                observation_id = store.write_observation(
                     c, org_id=org_id, subject_node_id=node, kind=KIND_PREFIX + r.kind,
                     confidence=CONFIDENCE, occurred_at=aware(r.created_at), event_id=event_id,
                     evidence={"followup_id": r.id, "text": r.text, "who": r.who,
                               "due_at": iso(aware(r.due_at)), "quote": r.quote},
                     source=SOURCE)
                 c.execute(text(
-                    "update screen_followups set graph_written_at = :now, subject_node_id = :n "
-                    "where id = :i"), {"now": now, "n": node, "i": r.id})
+                    "update screen_followups set graph_written_at = :now, subject_node_id = :n, "
+                    "observation_id = :obs where id = :i"),
+                    {"now": now, "n": node, "obs": observation_id, "i": r.id})
             return len(rows)
     except Exception:      # noqa: BLE001 — memory is retried on the next promotion
         _log.exception("screen memory: items not written org=%s seat=%s", org_id, seat_id)
         return 0
+
+
+def _retire(conn, *, org_id: str, observation_id: str) -> None:
+    """The follow-up's previous observation stops being current: it said what the item USED to say.
+
+    ⛔ STEP-18 B13 (`yc2_w27_s18` M48.C2.L-data.V0.U06). `followups.upsert` clears `graph_written_at`
+    when an item's words, date or person change, and every write minted a fresh observation — so
+    each version stayed ACTIVE beside the next, and a reader counting a person's evidence counted one
+    ask as many. `superseded`, as a replaced fact is: every reader of observations selects
+    `status = 'active'`, and the old one stays readable as history. By the id the row names (0211);
+    a row written before 0211 names none, and its first rewrite leaves that one observation as it was.
+    """
+    conn.execute(text(
+        "update graph_observations set status = 'superseded' "
+        "where org_id = :o and observation_id = :obs and status = 'active'"),
+        {"o": org_id, "obs": observation_id})
 
 
 __all__ = ["KIND_PREFIX", "name_part", "write_items"]

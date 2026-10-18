@@ -31,7 +31,11 @@ from sqlalchemy import text
 from genios_engine.platform.db import get_engine
 
 
-from genios_engine.platform.receipts import evaluate, receipts  # noqa: E402,F401
+from genios_engine.platform.receipts import (  # noqa: E402,F401
+    RECEIPT_STATUSES, evaluate, receipts)
+
+#: Four characters each, so the columns line up whatever the status is.
+_MARKS = {"PASS": "PASS", "FAIL": "FAIL", "ERROR": "ERR ", "NOT_EXERCISED": "N/EX"}
 
 
 def run(org: str | None, as_json: bool) -> int:
@@ -53,16 +57,25 @@ def run(org: str | None, as_json: bool) -> int:
             if r["layer"] != layer:
                 layer = r["layer"]
                 print(f"\n{layer}")
-            mark = {"PASS": "PASS", "FAIL": "FAIL", "ERROR": "ERR "}[r["status"]]
+            # ⛔ FOUR MARKS, AND THE SET COMES FROM `RECEIPT_STATUSES`. This was a literal
+            # `{"PASS": …, "FAIL": …, "ERROR": …}[status]`, which RAISES `KeyError` on a status it
+            # has not met — so `3.2`'s `NOT_EXERCISED` would have crashed the release gate rather
+            # than disagreed with it.
+            mark = _MARKS.get(r["status"], r["status"][:4].upper())
             print(f"  [{mark}] {r['claim']:<52} = {r['value']}")
             if r["status"] != "PASS" and r["detail"]:
                 print(f"         {r['detail']}")
-        failed = sum(1 for r in rows if r["status"] != "PASS")
+        failed = sum(1 for r in rows if r["status"] in ("FAIL", "ERROR"))
+        unexercised = sum(1 for r in rows if r["status"] == "NOT_EXERCISED")
         print("\n" + "=" * 78)
-        print(f"{len(rows) - failed}/{len(rows)} receipts pass"
-              + (f" — {failed} FAILING" if failed else ""))
+        print(f"{len(rows) - failed - unexercised}/{len(rows)} receipts pass"
+              + (f" — {failed} FAILING" if failed else "")
+              + (f" — ⛔ {unexercised} NOT EXERCISED (a pass over an empty table is not a pass)"
+                 if unexercised else ""))
 
-    return 1 if any(r["status"] != "PASS" for r in rows) else 0
+    # ⛔ READY IS THE TABLE'S ANSWER, NOT THIS SCRIPT'S. The release gate and `/readiness` read the
+    # same `RECEIPT_STATUSES`, which is what the endpoint's docstring promises.
+    return 0 if all(RECEIPT_STATUSES.get(r["status"], (False, ""))[0] for r in rows) else 1
 
 
 def main() -> int:

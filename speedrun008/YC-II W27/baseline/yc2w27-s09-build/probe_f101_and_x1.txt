@@ -1,0 +1,12 @@
+--- before the fix (57a664f6):
+live: []
+incremental backfill: {'events_seen': 1, 'events_correlated': 1} ['editor@letters.test']
+rebuilt: ['editor@letters.test']
+live: digest anchors [] | observations ['mention:person', 'email_noise:newsletter', 'event_presence']
+rebuilt: digest anchors ['kestrelcap.test']
+--- after the fix (HEAD + the working tree):
+live: []
+incremental backfill: {'events_seen': 0, 'events_correlated': 0} []
+rebuilt: []
+live: digest anchors [] | observations ['mention:person', 'email_noise:newsletter']
+rebuilt: digest anchors []

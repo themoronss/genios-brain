@@ -30,7 +30,7 @@ is also what makes it testable without a fixture.
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Sequence
 from datetime import timedelta
 from typing import Any
 
@@ -165,11 +165,20 @@ def merged_coverage(signals: Sequence[Any]) -> dict[str, Any]:
 
     The window is the widest the members span: a claim about the group covers the whole period the
     group occupies, and narrowing it would overstate what was searched.
+
+    ⛔ THE TYPED BLOCK AND ITS ROW, ALIKE (STEP-10, `yc2_w27_s10 · M29.C5.L-logic.V2.U04`). A signal in
+    memory carries the frozen `SignalCoverage` the publisher built; one read back from its row
+    carries `as_dict()` of it. While coverage was NULL on every signal (`STEP-18` B5) only `None`
+    ever arrived here — and the day it was written, `.get` on the typed block lost every bundle of
+    a covered signal ("could not group … published signal(s)"). Both are read through the row's
+    shape.
     """
     per_source: dict[str, dict[str, Any]] = {}
     starts, ends = [], []
     for signal in signals:
-        block: Mapping[str, Any] = getattr(signal, "coverage", None) or {}
+        block = getattr(signal, "coverage", None) or {}
+        if hasattr(block, "as_dict"):
+            block = block.as_dict()
         if block.get("window_from") is not None:
             starts.append(block["window_from"])
         if block.get("window_to") is not None:

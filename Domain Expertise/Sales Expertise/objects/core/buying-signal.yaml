@@ -451,7 +451,7 @@ inference_patterns:
       statement: "Their last inbound arrived well inside their own usual reply cadence."
       status: executable
       when:
-        - {fn: hours_since, path: thread.last_inbound, op: "<=", value: {baseline: reply_cadence, mult: 0.5,
+        - {fn: hours_since, path: thread.last_inbound, op: "<=", value: {baseline: write_interval, mult: 0.5,
             floor: 2}}
       yields: {confidence_bp: 6800, attribute: category, value: engagement}
       evidence_fields: [thread.last_inbound]

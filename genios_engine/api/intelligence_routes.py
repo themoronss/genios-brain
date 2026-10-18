@@ -13,12 +13,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from genios_engine.deliver import verdicts
 from genios_engine.deliver.actions import WRONG_REASONS
 from genios_engine.deliver.seat_access import SEAT_REACH_SQL, may_touch_card
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org, require_scope,
                                          require_workspace_user)
 from genios_engine.platform.cache import get_cache
 from genios_engine.platform.config import get_settings
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.canonical import stable_id
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
@@ -744,8 +746,16 @@ def list_insights(limit: int = 50, state: str = "open",
 
 @router.get("/v1/insights/stats")
 def insight_stats(days: int = 7, org_id: str = Depends(get_current_org)) -> dict:
-    """Dashboard ActionsCard — honest counts from the cards + card_events ledger (ROI / intervention
-    rate stay null until the feedback→L6 loop of Phase 4 records outcomes)."""
+    """Dashboard ActionsCard — honest counts from the cards + card_events ledger.
+
+    ⛔ CORRECTED 2026-10-02. This docstring said *"ROI / intervention rate stay null until the
+    feedback→L6 loop of Phase 4 records outcomes"* and **both halves were stale**:
+    `intervention_rate` is computed from `acted / fired` whenever anything has fired, and
+    `outcomes_recorded` is a real `count(*)` over `execution_outcomes`. Only `value_recovered_inr`
+    is still null, and the reason is in the comment above the `return` — a different one from the
+    reason that was recorded there. **A docstring describing two fields that have since been
+    implemented reads as a measurement of today.**
+    """
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     with _graph.engine.connect() as c:
@@ -772,11 +782,37 @@ def insight_stats(days: int = 7, org_id: str = Depends(get_current_org)) -> dict
             {"o": org_id}).scalar() or 0)
 
     # `0` and "we have no way to know yet" are different claims, and returning 0 for both is how
-    # an absent measurement becomes a reported result. Value attribution needs the counterfactual
-    # ledger (L7-12), which does not exist — so this says so rather than inventing a number.
+    # an absent measurement becomes a reported result.
+    #
+    # ⛔ THAT PRINCIPLE IS RIGHT AND THE CITATION WAS WRONG. This comment used to read "value
+    # attribution needs the counterfactual ledger (L7-12), which does not exist". It does exist:
+    # `counterfactual_ledger` is created by migration 0072, joins signal → card → card_events →
+    # verdict → delivery_outbox → executions → execution_outcomes → llm_costs one row per
+    # recommendation, and carries a production receipt asserting the join reaches end to end. It
+    # answers "did this recommendation lead to anything" — NOT "how much money". It has no
+    # monetary column, and neither does `execution_outcomes` or `llm_costs` (tokens only).
+    #
+    # ⛔ THE TABLE BUILT FOR THIS NUMBER IS `macv_ledger` (migration 0012), whose own comment calls
+    # it "the North Star … the number the customer can verify" and gives it `period`, `deal_id`,
+    # `amount`, `resolved_signal_id`. MEASURED 2026-10-02 across the whole repository: it appears
+    # in five places — the migration that creates it, the cascade FK (0033),
+    # `api/account_routes.py`'s deletion list, `tests/test_reasoning_retention.py`'s table list,
+    # and `docs/LAYER_MAP.md`. ⛔ NOTHING EVER INSERTS A ROW AND NOTHING EVER SELECTS ONE: the only
+    # code that touches the North Star ledger deletes it.
+    #
+    # So `None` stays. ⛔ Reading the empty ledger to report `0` would be precisely the defect the
+    # first sentence of this comment exists to prevent, which is why this is a reason change and
+    # not a value change. `tests/api/test_the_value_is_withheld_for_the_right_reason.py` binds the
+    # `value_state` string to that measurement: add a writer for `macv_ledger` and it fails.
     return {"insights_fired": fired, "actions_taken": acted, "outcomes_recorded": outcomes,
             "value_recovered_inr": None,
-            "value_state": "unavailable_no_counterfactual_ledger",
+            # ⛔ RENAMED 2026-10-02 from "unavailable_no_counterfactual_ledger", which named the
+            # wrong ledger and told a founder a false cause. Measured first: nothing in this
+            # repository branches on the literal — the only occurrence was this writer — and
+            # `value_state` has only ever had one value, so no client can be switching on a set.
+            # ⛔ A client OUTSIDE this checkout cannot be measured from here; one that string-matches
+            # falls through to its default, which is strictly better than displaying a false cause.
+            "value_state": "unavailable_macv_ledger_has_no_writer",
             "intervention_rate": (round(acted / fired, 3) if fired else None),
             "headline": (f"{fired} insight(s) surfaced" if fired else "No insights yet")}
 
@@ -904,7 +940,8 @@ class FeedbackBody(BaseModel):
     #: `not_relevant`, so `bad_timing` — the card was right and the MOMENT was wrong — was
     #: unsayable, and every timing complaint arrived as a quality complaint that counted against
     #: a correct rule. Optional, and absent still means `not_relevant`, so an older client's
-    #: bytes mean exactly what they meant before.
+    #: bytes mean exactly what they meant before. (The vocabulary is eleven since the card learned
+    #: to name a layer, and both ledgers keep all eleven since `migrations/0210` — STEP-18 B3.)
     reason: str | None = None
 
 
@@ -915,9 +952,12 @@ class FeedbackBody(BaseModel):
 _FB_CAUSE = {"thumbs_up": "do_it_myself", "edit": "do_it_myself",
              "thumbs_down": "wrong", "never_show": "wrong", "snooze": "snooze"}
 _FB_REASON = {"thumbs_down": "not_relevant", "never_show": "not_relevant"}
-#: The closed vocabulary, read off the delivery lane's own constant rather than respelled — the
-#: database CHECK and the card surface already agree on these three, and a fourth spelling here
-#: would be a value the ledger refuses discovered at INSERT time, inside a human's write.
+#: The closed vocabulary, read off the delivery lane's own constant rather than respelled — a
+#: spelling of its own here would be a value the ledger refuses discovered at INSERT time, inside a
+#: human's write. ⛔ CORRECTED 2026-10-12 (STEP-18 B3, `yc2_w27_s18` M48.C1.L-contract.V0.U01): this
+#: said the database CHECK and the card surface "agree on these three". The card offered eleven
+#: (`contracts/learning_attribution.ALL_REASONS`) while `0034`'s CHECK kept three, so eight of them
+#: were a 500 here; `migrations/0210` holds both ledgers to the eleven.
 _FB_WRONG_REASONS = WRONG_REASONS
 
 
@@ -1021,69 +1061,25 @@ def intelligence_feedback(
                 changed = inserted is not None
             else:
                 reason = detail.get("reason") if cause == "wrong" else None
-                # `occurred_at` IS `as_of`, not the database's own `clock_timestamp()`. One
-                # request evaluates at one instant: `as_of` is what the authority SELECT above
-                # judged the card against and what `lease_from_card_feedback` below counts its
-                # cohort up to. Leaving the column default in place stamped the row a few
-                # milliseconds AFTER `as_of` — from a different clock, at that, since one is the
-                # app process and the other the database — so the verdict that triggered the
-                # lease evaluation fell outside its own cohort's `until` and was not counted.
-                # A founder's fourth click then earned a lease on the strength of the first
-                # three, and on a host whose clocks drifted the other way it would have counted
-                # itself. Neither is a decision anybody made; both disappear when the request has
-                # one instant.
-                inserted = c.execute(text(
-                    "insert into card_feedback_verdicts "
-                    "(feedback_id,org_id,card_id,pack_id,pack_version,authority_pack_revision,"
-                    "capability_id,"
-                    "capability_version,rule_id,cause,reason,detail,actor_id,verdict_version,"
-                    "occurred_at) "
-                    "values (:id,:o,:card,:p,:pv,:pr,:cap,:capv,:r,:cause,:reason,"
-                    "cast(:d as jsonb),:actor,1,:as_of) "
-                    "on conflict (org_id,card_id) do nothing returning verdict_version"),
-                    {"id": fid, "o": org_id, "card": body.insight_id,
-                     "p": card.pack_id, "pv": card.pack_version,
-                     "pr": int(card.authority_pack_revision),
-                     "cap": card.capability_id, "capv": card.capability_version,
-                     "r": card.rule_id, "cause": cause, "reason": reason,
-                     "d": encoded_detail, "actor": actor_id, "as_of": as_of}).first()
-                if inserted is not None:
-                    verdict_version = int(inserted.verdict_version)
-                    changed = True
-                else:
-                    updated = c.execute(text(
-                        "update card_feedback_verdicts set cause=:cause,reason=:reason,"
-                        "detail=cast(:d as jsonb),actor_id=:actor,"
-                        "verdict_version=verdict_version+1,occurred_at=:as_of "
-                        "where org_id=:o and card_id=:card and "
-                        "(cause,reason,detail) is distinct from "
-                        "(:cause,:reason,cast(:d as jsonb)) returning verdict_version"),
-                        {"o": org_id, "card": body.insight_id, "cause": cause,
-                         "reason": reason, "d": encoded_detail, "actor": actor_id,
-                         "as_of": as_of}).first()
-                    if updated is not None:
-                        verdict_version = int(updated.verdict_version)
-                        changed = True
-                    else:
-                        existing = c.execute(text(
-                            "select feedback_id,verdict_version from card_feedback_verdicts "
-                            "where org_id=:o and card_id=:card"),
-                            {"o": org_id, "card": body.insight_id}).first()
-                        if existing is None:
-                            raise RuntimeError("feedback verdict disappeared while card was locked")
-                        fid = existing.feedback_id
-                        verdict_version = int(existing.verdict_version)
+                # ⛔ THE ONE WRITER (STEP-16, `yc2_w27_s16` M46.C2.L-data.V1.U02, `s16-F1`): this route's
+                # two statements — the verdict and its revision — moved byte for byte into
+                # `deliver/verdicts.record`, which the dashboard's door writes through too, so what you say
+                # on a card reaches every reader of this ledger whichever door you said it by. Bound to the
+                # authority the SELECT above just proved and locked; `occurred_at` is still `as_of`, the
+                # request's one instant — the instant that SELECT judged the card against and the lease
+                # below counts its cohort up to (a database default stamped it a few milliseconds later, from
+                # another clock, and the verdict that triggered the lease fell outside its own cohort).
+                recorded = verdicts.record(
+                    c, org_id=org_id, card_id=body.insight_id, binding=verdicts.Binding(
+                        pack_id=card.pack_id, pack_version=card.pack_version,
+                        authority_pack_revision=int(card.authority_pack_revision),
+                        capability_id=card.capability_id, capability_version=card.capability_version,
+                        rule_id=card.rule_id),
+                    cause=cause, reason=reason, detail=detail, actor=actor_id, as_of=as_of,
+                    feedback_id=fid)
+                fid, verdict_version, changed = (recorded.feedback_id, recorded.verdict_version,
+                                                 recorded.changed)
                 if changed:
-                    revision_id = stable_id("fbrev", {
-                        "feedback_id": fid, "verdict_version": verdict_version})
-                    c.execute(text(
-                        "insert into card_feedback_revisions "
-                        "(revision_id,feedback_id,org_id,card_id,verdict_version,cause,reason,"
-                        "detail,actor_id) values (:rid,:fid,:o,:card,:v,:cause,:reason,"
-                        "cast(:d as jsonb),:actor)"),
-                        {"rid": revision_id, "fid": fid, "o": org_id,
-                         "card": body.insight_id, "v": verdict_version, "cause": cause,
-                         "reason": reason, "d": encoded_detail, "actor": actor_id})
                     # THE ADAPTIVE LEASE, IMMEDIATELY. A `bad_timing` verdict is not a complaint
                     # about the card's quality — it says the card was right and the moment was
                     # wrong, which is a statement about NOW with a clock already on it. That is a
@@ -1152,16 +1148,11 @@ def dismiss_insight(insight_id: str,
             raise HTTPException(409, "insight is no longer actionable")
         if not may_touch_card(c, ctx, insight_id, card.assignee):
             raise HTTPException(403, "insight is assigned to a different seat")
-        c.execute(text(
-            "update cards set state='expired' where card_id=:card and org_id=:o"),
-            {"card": insight_id, "o": org_id})
-        event_id = stable_id("cev", {"org_id": org_id, "card_id": insight_id,
-                                     "kind": "card.dismissed"})
-        c.execute(text(
-            "insert into card_events (id,card_id,org_id,kind,cause,actor_id,detail) "
-            "values (:id,:card,:o,'card.dismissed','extension',:actor,"
-            "'{\"via\":\"extension\"}'::jsonb) on conflict (id) do nothing"),
-            {"id": event_id, "card": insight_id, "o": org_id, "actor": actor_id})
+        # STEP-06: through the one writer of `expired`, keeping `card.dismissed` / `extension`. The
+        # locked select above proved the card open, so it moves exactly once.
+        card_lifecycle.expire_cards(c, org_id=org_id, card_ids=[insight_id],
+                                    cause=card_lifecycle.EXTENSION, kind=card_lifecycle.DISMISSED,
+                                    actor=actor_id, detail={"via": "extension"})
     return {"ok": True, "dismissed": True}
 
 

@@ -1,0 +1,1055 @@
+"""The dossier for ONE file — everything the expert is shown, in one fixed order, with what it may cite (STEP-12).
+
+`speedrun008/YC-II W27/` STEP-12 §3.1 and §8.3 N6, tree `yc2_w27_s12` M32.C2.L-logic.V1.U04. The parts
+existed and were unbounded or unread by file; this puts them in front of the expert, in an order that
+never moves, each bounded and each cut COUNTED:
+
+  brief          the company brief as every judging prompt carries it (STEP-07);
+  file           the counterparty, the kind of work the brief gives it and its role, its open asks;
+  timeline       the newest touches WHOLE — who, when, which way, the words memory holds for each
+                 (`context/workstream_timeline`, an archive's words never read) — older touches one line
+                 each, the rest counted; the meetings booked; the gaps, with the usual one and its n;
+  promises       the promises made in the file's own mail, ours and theirs, each due when it says —
+                 and a *"soon"* is no deadline (`06` D56): the expert judges whether soon has passed;
+  numbers        each person's reply time and yours with their n (STEP-10) — yours on every answer,
+                 not split by who wrote first, as decided (D52) — and the waves they were sent;
+  coverage       every mailbox the file's mail came through, and whether "no reply" may be said;
+  playbook       the kind's playbook, reviewed or labelled *"playbook not yet reviewed"* (D3): its stages
+                 (the closed list the file's stage is named from), moves, claims, stop rule and what
+                 doing nothing costs, every duration a labelled prior (STEP-11);
+  situations     each situation anchored on the file against the quiet window its kind holds it to;
+  judged_before  the expert's own past reviews of the file, the cards about its people with their
+                 events and the founder's verdicts, how its situations ended, and its own history;
+  what_if        what 3, 7 and 14 days of nothing do to it (`06` D39).
+
+WHAT IT MAY CITE. Every item the expert may point at is printed with its id in brackets — an event id,
+`loop:`, `promise:`, `num:`, `wave:`, `pb:`, `sit:`, `review:`, `card:`, `hist:`, `whatif:` — and the
+`catalogue` (`contracts/expert_review.DossierCatalogue`) holds exactly those ids, every number written
+anywhere in the dossier, and the playbook's stages. `validate` holds a review to it.
+
+BOUNDED BY CONSTRUCTION. Each part has its own limit (the constants below), so a dossier cannot outgrow
+`DOSSIER_CHARS` — the budget the expert's per-call ceiling was sized for (`reason/bundle/budget.OWN_
+BUDGETS`) — and a test holds a maximal one under it. What a limit leaves out is counted per section,
+never silent. A screen capture is no touch of a file (D53), as built.
+
+`build_dossier` is pure over its parts; `read_parts` reads them for one file; `dossier_for` is both.
+
+WHAT THE CHECK READS BACK (STEP-13, tree `yc2_w27_s13` M35.C2.L-logic.V0.U01). `reason/expert/verify` holds
+each claim to the lines it cites, so the dossier is read back by id: `lines_by_id` maps every id the text
+prints to each place it is printed — the line, the item it belongs to (a head line and the lines indented
+under it: a touch's words, a person's numbers) and, for a touch, its words. `people_of` says who the file's
+mail shows, who is us, and which connector introduced its counterparty — whom a draft may go to — named as
+the person it is (`connector_of`, M35.C2.L-logic.V0.U13).
+
+STEP-14 (`yc2_w27_s14` M42.C2.L-interface.V3.U04). A file's card lives (`migrations/0220`): what was judged before
+prints each of its cards with its VERSIONS under it — the advice the expert gave each time, what changed, when
+(`context/file_judgments`) — where it used to see a replaced card beside a new one. And a meeting is named by its
+title, read from its meeting node (`03` F164: "a meeting at …" named no meeting) — beside the words the check reads
+a meeting by (`verify._MET`), which do not move.
+"""
+from __future__ import annotations
+
+import hashlib
+import re
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any
+
+from sqlalchemy import text
+
+from genios_engine.contracts.expert_review import DossierCatalogue, number_tokens
+from genios_engine.platform.self_identity import PUBLIC_MAIL_DOMAINS, SelfIdentity
+
+DOSSIER_VERSION = "dossier.v1"
+
+#: The sections, in the one order a dossier is ever written in.
+SECTIONS: tuple[str, ...] = ("brief", "file", "timeline", "promises", "numbers", "coverage",
+                             "playbook", "situations", "judged_before", "what_if")
+#: A section printed only when it has something to say — and the section it follows (or, when that one is not
+#: printed either, the one before it). A file with none of them is printed byte for byte as before (STEP-13: the
+#: founder's answers, M36.C2.L-data.V2.U07; STEP-16: your corrections, M46.C4.L-logic.V2.U03).
+OPTIONAL: Mapping[str, str] = {"answers": "timeline", "corrections": "answers"}
+TITLES: Mapping[str, str] = {
+    "brief": "THE COMPANY BRIEF", "file": "THE FILE", "timeline": "WHAT HAPPENED",
+    "answers": "WHAT YOU TOLD US", "corrections": "WHAT YOU CORRECTED",
+    "promises": "PROMISES IN ITS MAIL", "numbers": "ITS NUMBERS", "coverage": "WHAT WAS CHECKED",
+    "playbook": "WHAT A PROFESSIONAL KNOWS ABOUT THIS WORK", "situations": "ITS SITUATIONS",
+    "judged_before": "WHAT WAS JUDGED BEFORE", "what_if": "IF NOTHING HAPPENS"}
+
+TOUCHES_WHOLE = 8          # the newest touches, shown with their words
+TOUCHES_LISTED = 30        # the older ones after them, one line each; the rest counted
+PEOPLE_LIMIT = 10
+WAVES_LIMIT = 5
+PROMISES_LIMIT = 10
+MOVES_LIMIT = 10
+CLAIMS_LIMIT = 20
+#: The most a dossier can be, in characters — measured on a maximal one, not cut to.
+DOSSIER_CHARS = 60_000
+
+#: The words that make a promise's time RELATIVE (`DateCertainty.RELATIVE`): never a deadline (D56).
+RELATIVE_WORDS: tuple[str, ...] = ("soon", "shortly", "in a while", "in a bit", "at some point",
+                                   "in due course")
+
+_DIRECTION = {"in": "they wrote", "out": "we wrote", "meeting": "a meeting"}
+#: A situation still open (`context/workstreams.OPEN_STATUSES`): an outcome on it was a decision.
+_OPEN = ("active", "partial")
+_WINDOW_FROM = {"kind": "the file's kind of work", "domain": "its domain's clock",
+                "engine": "the engine's default"}
+_NO_PLAYBOOK = {"no_kind": "the brief names no kind of work for it",
+                "unknown_kind": "its kind of work is not one the corpus knows",
+                "no_capability_for_kind": "no capability is written for its kind of work yet",
+                "capability_not_authored": "its capability is not authored yet",
+                "no_playbook_declares_stages": "no playbook of its capability declares its stages",
+                "several_playbooks_declare_stages": "several playbooks claim to be its spine"}
+
+
+# ── the parts ──────────────────────────────────────────────────────────────────────────────────
+
+@dataclass(frozen=True, slots=True)
+class Promise:
+    """A promise made in the file's own mail: who made it, what, and when it is due — if it is."""
+    promise_id: str
+    words: str
+    quote: str | None
+    due_at: datetime | None
+    status: str | None
+    owner: str | None
+    ours: bool | None
+    event_id: str | None
+
+    @property
+    def relative(self) -> str | None:
+        """The word that makes its time relative — a *"soon"* is no deadline (`06` D56) — read as a
+        whole word from its words and its quote, or None."""
+        said = f"{self.words} {self.quote or ''}".lower()
+        return next((w for w in RELATIVE_WORDS if re.search(rf"\b{re.escape(w)}\b", said)), None)
+
+
+@dataclass(frozen=True, slots=True)
+class DossierParts:
+    org_id: str
+    file_id: str
+    as_of: datetime
+    brief: Any                 # contracts/company_brief.CompanyBrief, or None
+    file: Any                  # context/workstreams.WorkFile
+    timeline: Any              # context/workstream_timeline.FileTimeline
+    numbers: Any               # context/workstream_numbers.FileNumbers, or None
+    playbook: Any              # packs/compiler/playbook_reader.PlaybookAnswer
+    judgments: Any             # context/file_judgments.FileJudgments
+    lifecycle: Any             # context/workstreams.Lifecycle
+    what_if: tuple = ()        # reason/simulation.TimePasses, one per step
+    promises: tuple[Promise, ...] = ()
+    promises_cut: int = 0
+    #: The questions this file asked the founder and the founder answered (`context/founder_questions`,
+    #: STEP-13 M36.C2.L-data.V2.U07) — newest answer first. Printed only when there is one.
+    answers: tuple = ()
+    #: Each meeting's title as its calendar gives it (`read_meeting_titles`), by its event (STEP-14, `03` F164).
+    meeting_titles: Mapping[str, str] = field(default_factory=dict)
+    #: STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V2.U03): your standing corrections of this file and of its kind of work
+    #: (`context/founder_corrections.standing_for`), newest first, bounded — and how many more stand.
+    corrections: tuple = ()
+    corrections_cut: int = 0
+    #: STEP-16 (`yc2_w27_s16` M47.C2.L-logic.V4.U02): how each card the dossier shows ended (`context/file_outcomes`), the
+    #: asks of the file closed since its last review (answered, or only replied to — by which event), and your own
+    #: numbers for its kind of work (`context/kind_numbers`) — outputs, never fingerprint inputs.
+    outcomes: tuple = ()
+    asks_closed: tuple = ()
+    kind_numbers: Any = None
+
+
+@dataclass(frozen=True, slots=True)
+class Section:
+    name: str
+    text: str
+    cut: int = 0               # the items this section's limit left out
+
+
+@dataclass(frozen=True, slots=True)
+class Dossier:
+    org_id: str
+    file_id: str
+    as_of: datetime
+    sections: tuple[Section, ...]
+    catalogue: DossierCatalogue
+    digest: str
+    version: str = DOSSIER_VERSION
+
+    @property
+    def text(self) -> str:
+        head = f"DOSSIER {self.version} — file {self.file_id}, as of {_when(self.as_of)}"
+        return "\n\n".join([head, *(f"## {TITLES[s.name]}\n{s.text}" for s in self.sections)])
+
+    @property
+    def cut(self) -> dict[str, int]:
+        return {s.name: s.cut for s in self.sections}
+
+
+# ── writing ────────────────────────────────────────────────────────────────────────────────────
+
+def _when(at: datetime | None) -> str:
+    if at is None:
+        return "unknown"
+    at = at.astimezone(timezone.utc) if at.tzinfo else at.replace(tzinfo=timezone.utc)
+    return at.strftime("%Y-%m-%d %H:%M UTC")
+
+
+def _n(value: Any) -> str:
+    if value is None:
+        return "unknown"
+    value = float(value)
+    return str(int(value)) if value.is_integer() else f"{value:g}"
+
+
+def _says(measured: Any) -> str:
+    return measured.says() if measured is not None else "not measured"
+
+
+class _Ids:
+    """Every id the dossier prints — and so every id the expert may cite."""
+
+    def __init__(self) -> None:
+        self.seen: set[str] = set()
+
+    def __call__(self, ref: str) -> str:
+        self.seen.add(ref)
+        return f"[{ref}]"
+
+
+def _brief(p: DossierParts, cite: _Ids) -> Section:
+    block = p.brief.prompt_block().strip() if p.brief is not None and p.brief else ""
+    return Section("brief", block or "No company brief is accepted for this tenant.")
+
+
+def _again(ask: Any) -> datetime | None:
+    """When an open ask was asked AGAIN — the ledger's `last_seen_at`, when it is later than the ask was
+    opened (a follow-up repeating it, or an ask after our reply that reopened it) — else None (STEP-13
+    M35.C2.L-logic.V1.U17)."""
+    last, opened = getattr(ask, "last_seen_at", None), ask.opened_at
+    return last if last is not None and opened is not None and last > opened else None
+
+
+def _file(p: DossierParts, cite: _Ids) -> Section:
+    f = p.file
+    lines = [f"Counterparty: {f.counterparty} <{f.counterparty_key}> ({f.counterparty_type})",
+             f"Kind of work: {f.work_kind or 'not named by the brief'}",
+             f"Its role in the brief: {f.kind or 'none'}"
+             + (f" — the brief says: “{f.line}”" if f.line else "")]
+    if f.introduced_by:
+        lines.append(f"Introduced by: {f.introduced_by}")
+    lines.append(f"Domains: {', '.join(f.domains) or 'none'}")
+    # From the timeline — touches up to the dossier's as-of — never a meeting booked ahead (`03` F159).
+    touched = p.timeline.touches
+    lines.append(f"First touch {_when(touched[0].at if touched else None)}; "
+                 f"last touch {_when(touched[-1].at if touched else None)}")
+    lines.append(f"Whose move: {f.whose_move or 'not written'}")
+    if f.introductions is not None:
+        lines.append(f"People it introduced: {_says(f.introductions)} {cite('num:introductions')}; "
+                     f"of them wrote to us: {_says(f.replied)} {cite('num:replied')}; "
+                     f"met us: {_says(f.calls)} {cite('num:calls')}")
+    if f.open_asks:
+        lines.append("Open asks:")
+        for a in f.open_asks:
+            # WHEN IT WAS LAST ASKED, when it was asked again (M35.C2.L-logic.V1.U17): a reply before that
+            # answered nothing — the asking again says so. An ask asked once is printed as before.
+            again = _again(a)
+            lines.append(f"- {cite('loop:' + a.loop_id)} {a.kind}, "
+                         + ("they wait on us" if a.owed_by == "us" else "we wait on them")
+                         + f", open since {_when(a.opened_at)}"
+                         + (f", last asked {_when(again)}" if again is not None else ""))
+    else:
+        lines.append("Open asks: none")
+    return Section("file", "\n".join(lines))
+
+
+def _timeline(p: DossierParts, cite: _Ids) -> Section:
+    tl = p.timeline
+    newest = list(reversed(tl.touches))
+    whole, listed = newest[:TOUCHES_WHOLE], newest[TOUCHES_WHOLE:TOUCHES_WHOLE + TOUCHES_LISTED]
+    cut = len(newest) - len(whole) - len(listed)
+    lines = [] if newest else ["No touch yet."]
+    for t in whole:
+        head = (f"- {cite(t.event_id)} {_when(t.at)} · {_DIRECTION.get(t.direction, t.direction)} · "
+                f"{t.who_name or t.who or 'unknown'}")
+        if t.outcome and t.outcome != "emitted":
+            lines.append(head + f" · {t.outcome} — its words are not read")
+            continue
+        lines.append(head)
+        title = p.meeting_titles.get(t.event_id) if t.direction == "meeting" else None
+        if title:
+            lines.append(f"  {_CALLED} “{title}”")
+        if t.words:
+            lines.append(f"  “{t.words}”" + (f" … ({t.words_cut} characters cut)"
+                                              if t.words_cut else ""))
+        else:
+            # A title is the calendar's, never the meeting's words: memory still holds none, and says so.
+            lines.append("  (memory holds no words for it)")
+    for t in listed:
+        lines.append(f"- {cite(t.event_id)} {_when(t.at)} · {_DIRECTION.get(t.direction, t.direction)}"
+                     f" · {t.who_name or t.who or 'unknown'} (older — its words not shown)")
+    if cut:
+        lines.append(f"… and {cut} older touch(es), not shown.")
+    for t in tl.upcoming:
+        title = p.meeting_titles.get(t.event_id)
+        lines.append(f"Booked: {cite(t.event_id)} a meeting at {_when(t.at)}"
+                     + (f", {_CALLED} “{title}”" if title else ""))
+    lines.append(f"Usual gap between touches: {_says(tl.usual_gap)} {cite('num:usual_gap')}; "
+                 f"longest closed gap: {_n(tl.longest_gap_days)} days {cite('num:longest_gap')}; "
+                 f"quiet now: {_n(tl.days_quiet)} days {cite('num:days_quiet')}"
+                 + ("" if tl.silence_exceeds_prior_gaps is None else
+                    (" — longer than any gap it closed before" if tl.silence_exceeds_prior_gaps
+                     else " — within the gaps it closed before")))
+    lines.append("Screen activity is not part of a file's timeline, as decided.")
+    return Section("timeline", "\n".join(lines), cut)
+
+
+def _answers(p: DossierParts, cite: _Ids) -> Section:
+    """What the founder told us, answering a question this file asked: when, on a line of its own, then the
+    answer's id (the expert may cite it) and the words. Their words are no mail's — printed on the head
+    line, so no claim is asked to quote them.
+
+    ⛔ YOUR ANSWER IS YOUR WORDS (STEP-13 M36.C2.L-data.V2.U12, `03` X05). The answer's line — the item a
+    fact citing `answer:<id>` is held to (`reason/expert/verify`) — carries the id and the words and NOTHING
+    else. Never the question's text: a held review's question carried the claim its check dropped ("Is it so:
+    “…”?", until M36.C2.L-logic.V2.U10's fix), so a line carrying it let "No. He asked for the roadmap" ground
+    "Send Neel the deck" again — and whatever a question says, it is ours, never your words.
+    Never its date either: a date's digits would ground any small number, and the invention rule reads a
+    date's own month and day (`platform/grounding.corpus_of`) — so the date heads the answer on a line of
+    its own, which no id prints on and no fact can cite."""
+    lines: list[str] = []
+    for a in p.answers:
+        lines.append(f"You answered on {_when(a.answered_at)}:")
+        lines.append(f"- {cite(f'answer:{a.question_id}')} “{' '.join(str(a.answer).split())}”")
+    return Section("answers", "\n".join(lines))
+
+
+#: How a card's end is said under it (`context/file_outcomes.ENDS`) — an open card, or an end with no cause written,
+#: says nothing new.
+_ENDED_SAYS: Mapping[str, str] = {
+    "verified": "verified — its ask closed answered",
+    "replied": "cleared — its ask was only replied to",
+    "taken": "you took it", "called_wrong": "you called it wrong", "lapsed": "its window passed with nobody acting",
+    "dismissed": "you dismissed it", "replaced": "a newer decision replaced it",
+    "cleared": "the decision behind it stopped holding"}
+#: How an ask's closure is said (`open_loops.closed_basis`).
+_CLOSED_SAYS: Mapping[str, str] = {"answered": "closed answered", "replied": "closed — only replied to"}
+#: The most asks closed since the last review the dossier lists — newest first; the rest counted.
+ASKS_CLOSED_LIMIT = 5
+
+
+@dataclass(frozen=True, slots=True)
+class ClosedAsk:
+    """An ask of the file closed since its last review: which, its kind, how it closed, by what, when."""
+    loop_id: str
+    kind: str
+    basis: str | None
+    by_event: str | None
+    closed_at: datetime
+
+
+def _ended_line(e: Any, cite: _Ids) -> str | None:
+    said = _ENDED_SAYS.get(e.ended)
+    if said is None:
+        return None
+    if e.ended in ("verified", "replied") and e.by:
+        said += f", by {cite(e.by)}"
+    if e.ended == "called_wrong" and e.reason:
+        said += f" — {e.reason}"
+    return f"  how it ended: {said}"
+
+
+def _asks_closed(p: DossierParts, cite: _Ids) -> list[str]:
+    if not p.asks_closed:
+        return []
+    shown = p.asks_closed[:ASKS_CLOSED_LIMIT]
+    lines = ["Asks of the file closed since its last review:"]
+    lines.extend(f"- {cite('loop:' + a.loop_id)} an ask ({a.kind}) {_CLOSED_SAYS.get(a.basis, 'closed')}"
+                 + (f" by {cite(a.by_event)}" if a.by_event else "") + f", {_when(a.closed_at)}" for a in shown)
+    if len(p.asks_closed) > len(shown):
+        lines.append(f"… and {len(p.asks_closed) - len(shown)} more ask(s) closed, not shown.")
+    return lines
+
+
+def _corrected_head(p: DossierParts, c: Any) -> str:
+    """The line a correction is headed by: when you said it, what it reaches, the card it was about and the reason
+    you gave — on a line of its own, which no id prints on and no fact can cite (as an answer's date)."""
+    reach = (f"every file of this kind of work ({c.kind})" if c.scope == "kind" else "this file")
+    card = next((k.headline for k in getattr(p.judgments, "cards", ()) or () if k.card_id == c.card_id), None)
+    about = (f", on the card “{card}”" if card else ", on a card of it" if c.card_id else "")
+    why = f" — you called it wrong: {c.reason}" if c.reason else ""
+    return f"You corrected {reach} on {_when(c.corrected_at)}{about}{why}:"
+
+
+def _corrections(p: DossierParts, cite: _Ids) -> Section:
+    """WHAT YOU CORRECTED (STEP-16, `yc2_w27_s16` M46.C4.L-logic.V2.U03; S16-D1). Your word on this file, or on every
+    file of its kind of work, as you wrote it: the head line says when, what it reaches, the card and the reason; the
+    next carries its id (the expert may cite it — and must, to follow it or to say why the file now outweighs it,
+    `reason/expert/verify`) and your words, verbatim, nothing else. A correction of how your company works is the
+    brief's own line, printed there."""
+    lines: list[str] = []
+    for c in p.corrections:
+        lines.append(_corrected_head(p, c))
+        lines.append(f"- {cite(f'corr:{c.correction_id}')} “{' '.join(str(c.words).split())}”")
+    if p.corrections_cut:
+        lines.append(f"… and {p.corrections_cut} older correction(s), not shown.")
+    return Section("corrections", "\n".join(lines), p.corrections_cut)
+
+
+def _kind_corrections(p: DossierParts, cite: _Ids) -> list[str]:
+    """THE CORRECTED PLAYBOOK PRIOR (STEP-16 §8.4 item 4): a correction for this file's kind of work prints beside
+    the profession's prior, as yours — the shared corpus is never edited."""
+    kind = [c for c in p.corrections if c.scope == "kind"]
+    if not kind:
+        return []
+    return ["Yours, for this kind of work — beside the profession's prior, which it outweighs for your company:",
+            *(f"- {cite(f'corr:{c.correction_id}')} “{' '.join(str(c.words).split())}”" for c in kind)]
+
+
+def _promises(p: DossierParts, cite: _Ids) -> Section:
+    if not p.promises:
+        return Section("promises", "No promise was found in its mail.", p.promises_cut)
+    lines = []
+    for pr in p.promises:
+        who = {True: "we promised", False: "they promised"}.get(pr.ours, "a promise")
+        word = pr.relative
+        due = (f"no deadline — its words say “{word}”; judge from this file's own gaps whether "
+               f"{word} has passed" if word else
+               f"due {_when(pr.due_at)}" if pr.due_at else "no date")
+        lines.append(f"- {cite('promise:' + pr.promise_id)} {who}: {pr.words} · {due} · "
+                     f"{pr.status or 'open'}" + (f" · from {cite(pr.event_id)}" if pr.event_id else ""))
+    if p.promises_cut:
+        lines.append(f"… and {p.promises_cut} more promise(s), not shown.")
+    return Section("promises", "\n".join(lines), p.promises_cut)
+
+
+def _numbers(p: DossierParts, cite: _Ids) -> Section:
+    nb = p.numbers
+    if nb is None:
+        return Section("numbers", "No numbers were read for this file.")
+    people, waves = nb.people[:PEOPLE_LIMIT], nb.waves[:WAVES_LIMIT]
+    cut = len(nb.people) - len(people) + len(nb.waves) - len(waves)
+    lines = []
+    for person in people:
+        k = person.key
+        lines.append(f"- {person.name or k} <{k}>")
+        lines.append(f"  their reply time: {_says(person.their_reply_time)} "
+                     f"{cite('num:their_reply_time:' + k)}")
+        if person.their_normal is not None:
+            lines.append(f"  their normal: {_says(person.their_normal)} {cite('num:their_normal:' + k)}")
+        lines.append(f"  your reply time to them: {_says(person.your_reply_time)} "
+                     f"{cite('num:your_reply_time:' + k)} — on every answer you sent them, not split by "
+                     "who wrote first, as decided")
+        if person.your_normal is not None:
+            lines.append(f"  your normal with them: {_says(person.your_normal)} "
+                         f"{cite('num:your_normal:' + k)}")
+        if person.bounced_at is not None:
+            lines.append(f"  our mail to them BOUNCED at {_when(person.bounced_at)}")
+    if not people:
+        lines.append("No person in this file has numbers yet.")
+    if nb.your_normal_overall is not None:
+        lines.append(f"Your reply time across every counterparty: {_says(nb.your_normal_overall)} "
+                     f"{cite('num:your_normal_overall')}")
+    for w in waves:
+        lines.append(f"- {cite('wave:' + w.wave_id)} a wave “{w.line}”: sent to {_says(w.sent)}, "
+                     f"replied {_says(w.reply_rate)}, bounced {_says(w.bounce_rate)}, followed up "
+                     f"{_says(w.follow_up_rate)}; last sent {_n(w.days_since_last_send)} days ago")
+    if cut:
+        lines.append(f"… and {cut} more person(s) or wave(s), not shown.")
+    return Section("numbers", "\n".join(lines), cut)
+
+
+def _coverage(p: DossierParts, cite: _Ids) -> Section:
+    nb = p.numbers
+    if nb is None:
+        return Section("coverage", "Nothing was checked.")
+    lines = [f"- {m.address or m.connection_id}: reads {_n(m.window_days)} days back, from "
+             f"{_when(m.window_start)}; last sync "
+             + (f"completed {_when(m.last_finished_at)}" if m.last_completed else
+                f"not completed (last finished {_when(m.last_finished_at)})")
+             for m in nb.mailboxes] or ["No mailbox is shown to have read this file's mail."]
+    # Each line says what was read, and only that (`03` F160): no absence without a mailbox that read
+    # it, no "no reply" when they wrote after our last mail, and never past what a mailbox finished.
+    if nb.no_reply_since is None:
+        lines.append("We have not written in this file." if nb.mailboxes else
+                     "Whether we wrote in this file cannot be said: no mailbox is shown to have read its "
+                     "mail.")
+        return Section("coverage", "\n".join(lines))
+    since = nb.no_reply_since
+    answered = [t for t in p.timeline.touches if t.direction == "in" and t.at > since]
+    # How far EVERY mailbox that finished has read — a reply could sit in the one that read least.
+    read_to = min((m.last_finished_at for m in nb.mailboxes
+                   if m.last_completed and m.last_finished_at), default=None)
+    if answered:
+        lines.append(f"Our last mail in the file: {_when(since)} — they wrote after it "
+                     f"{cite(answered[0].event_id)}, so “no reply” is not to be said.")
+    elif nb.no_reply_can_be_said and read_to is not None:
+        lines.append(f"Our last mail in the file: {_when(since)} — “no reply since then” may be said up to "
+                     f"{_when(read_to)}: a mailbox has read that far and finished; after it, nothing was "
+                     "read.")
+    else:
+        lines.append(f"Our last mail in the file: {_when(since)} — “no reply” may NOT be said: no mailbox "
+                     "is shown to have read that far and finished since.")
+    return Section("coverage", "\n".join(lines))
+
+
+def _playbook(p: DossierParts, cite: _Ids) -> tuple[Section, tuple[str, ...]]:
+    answer = p.playbook
+    pb = getattr(answer, "playbook", None)
+    if pb is None:
+        reason = getattr(answer, "reason", None)
+        return Section("playbook", "\n".join([
+            "No playbook for this file: " f"{_NO_PLAYBOOK.get(reason, reason or 'none')}.",
+            *_kind_corrections(p, cite)])), ()
+    lines = [f"{pb.name} {cite('pb:' + pb.playbook_id)}, version {pb.version} — "
+             + ("reviewed by a named human" if pb.reviewed else (pb.review_label or "not reviewed"))]
+    lines.append("Stages — the file's current stage is named from these only:")
+    yours = p.kind_numbers
+    for s in pb.stages:
+        # STEP-16 (M47.C2.L-logic.V4.U02, Atlas V.3): beside the prior, YOUR number for the stage — told apart,
+        # never merged.
+        mine = getattr(yours, "days_in", {}).get(s.name) if yours is not None else None
+        lines.append(f"- {s.name} ({s.label}): typically {_says(s.typical)}, {s.cited}"
+                     + (f"; yours: {_says(mine)}" if mine is not None else "")
+                     + (f"; quiet means: {s.quiet_means}" if s.quiet_means else "")
+                     + (f"; it ends when: {s.leaves_when}" if s.leaves_when else ""))
+    verified = getattr(yours, "verified", None) if yours is not None else None
+    if verified is not None and verified.n:
+        lines.append(f"Yours for this kind of work: {_says(verified)} decisions on your files of it ended verified "
+                     f"(measured here, not a prior)")
+    if pb.do_nothing_consequence:
+        lines.append(f"What doing nothing costs (a prior): {pb.do_nothing_consequence}")
+    if pb.success_signal:
+        lines.append(f"What success looks like: {pb.success_signal}")
+    if pb.outcome_window_days:
+        lines.append(f"How long to wait for it: {pb.outcome_window_days} days (a prior)")
+    if pb.stop is not None:
+        lines.append(f"The work is dormant after this much quiet: {_says(pb.stop.dormant_after)} "
+                     f"({pb.stop.cited})" + (f"; then: {pb.stop.then}" if pb.stop.then else ""))
+    moves, claims = pb.moves[:MOVES_LIMIT], pb.claims[:CLAIMS_LIMIT]
+    if moves:
+        lines.append("Moves:")
+    for m in moves:
+        lines.append(f"- {cite('pb:' + m.artifact_id)} {m.name}: " + "; ".join(m.steps)
+                     + (f" — success: {m.success_signal}" if m.success_signal else "")
+                     + (f" — wait {m.outcome_window_days} days" if m.outcome_window_days else "")
+                     + ("" if m.reviewed else " (not yet reviewed)"))
+    if claims:
+        lines.append("What it rests on:")
+    for c in claims:
+        lines.append(f"- {cite('pb:' + c.artifact_id)} {c.statement}"
+                     + (f" — why: {c.why}" if c.why else "") + ("" if c.reviewed else
+                                                               " (not yet reviewed)"))
+    cut = len(pb.moves) - len(moves) + len(pb.claims) - len(claims)
+    if cut:
+        lines.append(f"… and {cut} more move(s) or claim(s), not shown.")
+    lines.extend(_kind_corrections(p, cite))
+    return Section("playbook", "\n".join(lines), cut), tuple(s.name for s in pb.stages)
+
+
+def _quiet(s) -> str:
+    """A situation's quiet — or, when it was last seen at a meeting booked ahead, that (`03` F159)."""
+    if s.days_since_seen is not None and s.days_since_seen < 0:
+        return f"last seen at a booking {_n(-s.days_since_seen)} days ahead, so no quiet yet"
+    return f"quiet {_n(s.days_since_seen)} days"
+
+
+def _situations(p: DossierParts, cite: _Ids) -> Section:
+    life = p.lifecycle
+    lines = [f"- {cite('sit:' + s.situation_id)} {s.situation_type} ({s.domain}) · {s.status} · seen "
+             f"{_when(s.first_seen_at)} → {_when(s.last_seen_at)} ({_n(s.days_seen)} days) · "
+             + _quiet(s) + f" of a {s.quiet_window_days}-day window "
+             f"({_WINDOW_FROM.get(s.window_from, s.window_from)})"
+             + (" · PAST its window" if s.past_window else "")
+             for s in life.situations] or ["No situation is anchored on this file."]
+    if life.cut:
+        lines.append(f"… and {life.cut} older situation(s), not shown.")
+    return Section("situations", "\n".join(lines), life.cut)
+
+
+def _judged_before(p: DossierParts, cite: _Ids) -> Section:
+    j = p.judgments
+    lines = []
+    for r in j.reviews:
+        lines.append(f"- {cite('review:' + r.fingerprint)} the expert's review of {_when(r.reviewed_at)}: "
+                     f"{r.status}" + (f", mode {r.mode}" if r.mode else "")
+                     + (f" — {r.reason}" if r.reason else ""))
+    for c in j.cards:
+        events = ", ".join(e.kind + (f" ({e.cause})" if e.cause else "") for e in c.events)
+        verdicts = "; ".join(v.cause + (f" — {v.reason}" if v.reason else "") for v in c.verdicts)
+        lines.append(f"- {cite('card:' + c.card_id)} a card “{c.headline}”, {c.state}"
+                     + (f"; what happened to it: {events}" if events else "")
+                     + (f"; the founder's verdict: {verdicts}" if verdicts else ""))
+        for v in getattr(c, "versions", ()):
+            # STEP-14: one card, the advice it gave each time — what changed, and when.
+            changed = "" if v.change == "created" else (
+                f", {v.change}" + (f" ({', '.join(v.changed)})" if v.changed else ""))
+            # ⛔ NO INSTANT (STEP-14 fix): a card's first version is dated by the database's clock, not the
+            # decision's — printed, it would make a dossier differ from run to run of the same file.
+            lines.append(f"  version {v.version}{changed}: “{v.headline}”")
+        # STEP-16 (M47.C2.L-logic.V4.U02): how it ended, and what proved it — its evidence citable.
+        ended = next((e for e in p.outcomes if e.card_id == c.card_id), None)
+        if ended is not None and (said := _ended_line(ended, cite)):
+            lines.append(said)
+    for s in j.situations:
+        # An outcome on a situation still open is a DECISION, not an ending (`03` F161).
+        why = f" — {s.reason}" if s.reason else ""
+        if s.outcome and s.status in _OPEN:
+            said = f"{s.status}; last decided: {s.outcome}{why}"
+        elif s.outcome:
+            said = f"ended: {s.outcome}{why}"
+        else:
+            said = f"{s.status or 'open'}, no end recorded"
+        lines.append(f"- {cite('sit:' + s.situation_id)} {s.situation_type} {said}")
+    for h in j.history:
+        lines.append(f"- {cite('hist:' + h.field)} {h.field} = {h.value}")
+    lines.extend(_asks_closed(p, cite))
+    cut = sum(j.cut.values())
+    if not lines:
+        lines.append("Nothing was judged about this file before.")
+    if cut:
+        lines.append(f"… and {cut} older item(s), not shown.")
+    return Section("judged_before", "\n".join(lines), cut)
+
+
+def _what_if(p: DossierParts, cite: _Ids) -> Section:
+    lines = [f"- {cite(f'whatif:{w.days}')} {w.says}" for w in p.what_if] or [
+        "Not measured."]
+    words = next((w.do_nothing for w in p.what_if if w.do_nothing), None)
+    if words:
+        lines.append(f"What doing nothing costs, as its playbook says (a prior): {words}")
+    return Section("what_if", "\n".join(lines))
+
+
+def build_dossier(parts: DossierParts) -> Dossier:
+    """The dossier from its parts — pure, the same parts the same dossier, byte for byte."""
+    cite = _Ids()
+    playbook, stages = _playbook(parts, cite)
+    by_name = {s.name: s for s in (
+        _brief(parts, cite), _file(parts, cite), _timeline(parts, cite), _promises(parts, cite),
+        _numbers(parts, cite), _coverage(parts, cite), playbook, _situations(parts, cite),
+        _judged_before(parts, cite), _what_if(parts, cite))}
+    names = list(SECTIONS)
+    if parts.answers:
+        # ⛔ ONLY WHEN THERE IS ONE: a file with no answer is printed byte for byte as before (STEP-13).
+        by_name["answers"] = _answers(parts, cite)
+        names.insert(names.index(OPTIONAL["answers"]) + 1, "answers")
+    if parts.corrections:
+        # ⛔ ONLY WHEN THERE IS ONE (STEP-16): after WHAT YOU TOLD US — or, with no answer, where it would be.
+        by_name["corrections"] = _corrections(parts, cite)
+        follows = OPTIONAL["corrections"] if OPTIONAL["corrections"] in names else OPTIONAL["answers"]
+        names.insert(names.index(follows) + 1, "corrections")
+    sections = tuple(by_name[name] for name in names)
+    draft = Dossier(org_id=parts.org_id, file_id=parts.file_id, as_of=parts.as_of,
+                    sections=sections, catalogue=DossierCatalogue(frozenset(), frozenset()),
+                    digest="")
+    body = draft.text
+    catalogue = DossierCatalogue(evidence_ids=frozenset(cite.seen), numbers=number_tokens(body),
+                                 stages=stages)
+    digest = "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()
+    return Dossier(org_id=parts.org_id, file_id=parts.file_id, as_of=parts.as_of,
+                   sections=sections, catalogue=catalogue, digest=digest)
+
+
+# ── reading ────────────────────────────────────────────────────────────────────────────────────
+
+#: The promises made in the file's own mail: each commitment whose words an event of the file wrote,
+#: with its quote, its due date, its status and its owner — the newest first, bounded, counted.
+_PROMISES = text(
+    "select t.subject_node_id as promise_id, t.value #>> '{}' as words, "
+    "       t.created_by_event_id as event_id, "
+    "       (select r.evidence ->> 'text' from graph_source_refs r "
+    "         where r.org_id = t.org_id and r.fact_version_id = t.fact_version_id "
+    "         order by r.created_at limit 1) as quote, "
+    "       (select d.value #>> '{}' from graph_facts d where d.org_id = t.org_id "
+    "           and d.subject_node_id = t.subject_node_id and d.field = 'commitment.due_at' "
+    "           and d.valid_to is null limit 1) as due_at, "
+    "       (select s.value #>> '{}' from graph_facts s where s.org_id = t.org_id "
+    "           and s.subject_node_id = t.subject_node_id and s.field = 'commitment.status' "
+    "           and s.valid_to is null limit 1) as status, "
+    "       (select w.value #>> '{}' from graph_facts w where w.org_id = t.org_id "
+    "           and w.subject_node_id = t.subject_node_id and w.field = 'commitment.owner' "
+    "           and w.valid_to is null limit 1) as owner, "
+    "       count(*) over () as total "
+    "  from graph_facts t "
+    " where t.org_id = :o and t.field = 'commitment.text' and t.valid_to is null "
+    "   and t.visibility_scope <> 'private' and t.created_by_event_id = any(:events) "
+    " order by t.occurred_at desc, t.subject_node_id limit :n")
+
+
+def _instant(value: Any) -> datetime | None:
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        at = value
+    else:
+        try:
+            at = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    return at if at.tzinfo else at.replace(tzinfo=timezone.utc)
+
+
+def read_promises(conn, org_id: str, events: Iterable[str], *, us: Any = None,
+                  limit: int = PROMISES_LIMIT) -> tuple[tuple[Promise, ...], int]:
+    """The promises the file's own events wrote, newest first, at most `limit` — and how many more."""
+    ids = sorted({str(e) for e in events if e})
+    if not ids:
+        return (), 0
+    rows = conn.execute(_PROMISES, {"o": org_id, "events": ids, "n": limit}).fetchall()
+    promises = tuple(Promise(
+        promise_id=r.promise_id, words=" ".join(str(r.words or "").split()),
+        quote=" ".join(str(r.quote).split()) if r.quote else None, due_at=_instant(r.due_at),
+        status=r.status, owner=r.owner,
+        ours=(bool(us.is_us(r.owner)) if us is not None and r.owner else None),
+        event_id=r.event_id) for r in rows)
+    return promises, max(0, int(rows[0].total) - limit) if rows else 0
+
+
+#: How a meeting's title is printed beside it (STEP-14, `03` F164).
+_CALLED = "the calendar calls it"
+
+#: Each meeting's title, by its event: the meeting node the calendar's event is filed as (`gcal:<id>`) and its
+#: current `meeting.title` — the newest version's — never a seat's private calendar.
+_MEETING_TITLES = text(
+    "select se.event_id, f.value #>> '{}' as title from source_events se "
+    "  join graph_nodes n on n.org_id = se.org_id and n.valid_to is null "
+    "       and n.canonical_key = 'gcal:' || se.source_object_id "
+    "  join graph_facts f on f.org_id = n.org_id and f.subject_node_id = n.node_id "
+    "       and f.field = 'meeting.title' and f.valid_to is null and f.status = 'active' "
+    "       and f.visibility_scope <> 'private' "
+    " where se.org_id = :o and se.event_id = any(:events) and se.source = 'gcal'")
+
+
+def meeting_events(timeline) -> tuple[str, ...]:
+    """The events of a file's meetings — held and booked ahead — whose titles the dossier prints."""
+    return tuple(t.event_id for t in (*timeline.touches, *timeline.upcoming) if t.kind == "meeting")
+
+
+def read_meeting_titles(conn, org_id: str, event_ids: Iterable[str]) -> dict[str, str]:
+    """{event: title} for each meeting of `event_ids` whose calendar names it (STEP-14, `03` F164)."""
+    events = sorted({str(e) for e in event_ids})
+    if not events:
+        return {}
+    return {r.event_id: " ".join(str(r.title).split()) for r in conn.execute(
+        _MEETING_TITLES, {"o": org_id, "events": events}) if r.title and str(r.title).strip()}
+
+
+#: The asks of the file's people closed since its last review — newest first (STEP-16).
+_ASKS_CLOSED = text(
+    "select l.loop_id, l.kind, l.closed_basis, l.closed_by_event, l.closed_at from open_loops l "
+    "  left join source_events se on se.org_id = l.org_id and se.event_id = l.opened_by_event "
+    " where l.org_id = :o and l.status = 'closed' and l.closed_at is not null "
+    "   and (l.subject_node_id = any(:ids) or l.awaited_from_node_id = any(:ids)) "
+    "   and l.closed_at > :since "
+    "   and se.visibility_scope is distinct from 'private' "
+    " order by l.closed_at desc, l.loop_id")
+
+
+def read_asks_closed(conn, org_id: str, people: Iterable[str], *, since: datetime) -> tuple[ClosedAsk, ...]:
+    """The asks of the file's `people` closed since `since` (the file's last review) — answered or only replied to,
+    by which event — newest first."""
+    ids = sorted({str(p) for p in people})
+    if not ids:
+        return ()
+    return tuple(ClosedAsk(loop_id=r.loop_id, kind=r.kind, basis=r.closed_basis, by_event=r.closed_by_event,
+                           closed_at=r.closed_at)
+                 for r in conn.execute(_ASKS_CLOSED, {"o": org_id, "ids": ids, "since": since}))
+
+
+def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
+               kind_numbers: Mapping[str, Any] | None = None) -> DossierParts | None:
+    """Every part of one file's dossier, read on one connection — None for a file it does not hold.
+    `kind_numbers`: your numbers by kind of work (`context/kind_numbers`), when the caller measured them once for
+    every file of a pass (the sweep) — a kind it did not measure is measured here."""
+    from genios_engine.context.file_judgments import judgments_for
+    from genios_engine.context.file_outcomes import ended_for_cards
+    from genios_engine.context.founder_corrections import standing_for
+    from genios_engine.context.kind_numbers import numbers_for_kind
+    from genios_engine.context.founder_questions import answers_for
+    from genios_engine.context.workstream_numbers import numbers_for
+    from genios_engine.context.workstream_timeline import timeline_for
+    from genios_engine.context.workstreams import file_for, lifecycle_for
+    from genios_engine.packs.compiler.playbook_reader import playbook_for
+    from genios_engine.platform.company_brief import brief_for
+    from genios_engine.platform.self_identity import identity_for
+    from genios_engine.reason.simulation import what_if_nothing
+
+    brief = brief_for(conn, org_id)
+    work = file_for(conn, org_id, file_id, now=now, company_brief=brief)
+    if work is None:
+        return None
+    timeline = timeline_for(conn, org_id, file_id, now=now)
+    playbook = playbook_for(work.work_kind)
+    lifecycle = lifecycle_for(conn, org_id, file_id, now=now)
+    pb = playbook.playbook
+    stop = pb.stop if pb is not None else None
+    promises, promises_cut = read_promises(conn, org_id, (t.event_id for t in timeline.touches),
+                                           us=identity_for(conn, org_id))
+    standing = standing_for(conn, org_id, str(file_id), people=work.people, kind=work.work_kind)
+    judgments = judgments_for(conn, org_id, file_id, people=work.people)
+    return DossierParts(
+        org_id=org_id, file_id=str(file_id), as_of=now, brief=brief, file=work, timeline=timeline,
+        numbers=numbers_for(conn, org_id, work, timeline, now=now), playbook=playbook,
+        judgments=judgments, lifecycle=lifecycle,
+        what_if=what_if_nothing(
+            now=now, quiet_days=timeline.days_quiet,
+            stop_after_days=(int(stop.dormant_after.value)
+                             if stop is not None and stop.dormant_after.value else None),
+            stop_cited=stop.cited if stop is not None else None,
+            do_nothing=pb.do_nothing_consequence if pb is not None else None,
+            lifecycle=lifecycle,
+            next_date=timeline.upcoming[0].at if timeline.upcoming else None),
+        promises=promises, promises_cut=promises_cut, answers=answers_for(conn, org_id, str(file_id)),
+        meeting_titles=read_meeting_titles(conn, org_id, meeting_events(timeline)),
+        corrections=standing.corrections, corrections_cut=standing.cut,
+        outcomes=ended_for_cards(conn, org_id, (c.card_id for c in judgments.cards)),
+        # Closed SINCE the last review — a file never reviewed has no "since": nothing is listed.
+        asks_closed=(read_asks_closed(conn, org_id, work.people or (str(file_id),),
+                                      since=judgments.reviews[0].reviewed_at) if judgments.reviews else ()),
+        kind_numbers=(((kind_numbers or {}).get(work.work_kind)
+                       or numbers_for_kind(conn, org_id, work.work_kind, now=now)) if work.work_kind else None))
+
+
+# ── reading it back (STEP-13) ──────────────────────────────────────────────────────────────────
+
+#: An id as the dossier prints it: in brackets, no spaces (`_Ids`).
+_PRINTED = re.compile(r"\[([^\[\]\s]+)\]")
+#: A touch's words, as `_timeline` prints them under its head line.
+_WORDS = re.compile(r"^\s+“(.*)”(?: … \(\d+ characters cut\))?\s*$")
+
+
+@dataclass(frozen=True, slots=True)
+class DossierLine:
+    """One place the dossier prints an id: the line, the item it belongs to (the head line and the lines
+    indented under it), and — on a touch's head line — the touch's words."""
+    line: str
+    item: str
+    words: str | None = None
+
+
+def lines_by_id(text: str, ids: Iterable[str] | None = None) -> dict[str, tuple[DossierLine, ...]]:
+    """Every id `text` prints — or only those of `ids`, the dossier's own catalogue — to each place it is
+    printed, in the order printed. Pure."""
+    keep = None if ids is None else set(ids)
+    items: list[list[str]] = []
+    for line in text.splitlines():
+        if line.startswith("  ") and items:
+            items[-1].append(line)
+        else:
+            items.append([line])
+    out: dict[str, list[DossierLine]] = {}
+    for group in items:
+        item = "\n".join(group)
+        words = next((m.group(1) for line in group[1:] if (m := _WORDS.match(line))), None)
+        for n, line in enumerate(group):
+            for found in _PRINTED.findall(line):
+                if keep is None or found in keep:
+                    out.setdefault(found, []).append(
+                        DossierLine(line=line.strip(), item=item, words=words if n == 0 else None))
+    return {k: tuple(v) for k, v in out.items()}
+
+
+@dataclass(frozen=True, slots=True)
+class Person:
+    name: str | None
+    key: str | None                    # an address, or a company's domain
+
+
+@dataclass(frozen=True, slots=True)
+class AskSeen:
+    """An open ask of the file as the check reads it: its id as printed, its kind, whether it waits on US,
+    when it was opened, its thread, who asked (None when the file cannot name them) — and when it was LAST
+    asked (`open_loops.last_seen_at`, None when never again: STEP-13 M35.C2.L-logic.V1.U17)."""
+    ref: str
+    kind: str
+    ours: bool
+    opened_at: datetime | None
+    thread: str | None
+    asker: "Person | None"
+    last_asked_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Seen:
+    """A mail or a meeting of the file as the check reads it: its event, when, its thread (a mail), when
+    it was first booked and who set it up (a meeting)."""
+    event_id: str
+    at: datetime
+    thread: str | None = None
+    booked_at: datetime | None = None
+    by: "Person | None" = None
+
+
+@dataclass(frozen=True, slots=True)
+class Answered:
+    """A question the file asked you and you answered, as the check reads it (never printed — the dossier
+    prints your words only, M36.C2.L-data.V2.U12): the answer's id, the question, your words."""
+    ref: str                           # `answer:<question id>`
+    question: str
+    words: str
+
+
+#: The rule a question card's signal fires under (`reason/expert/asks.QUESTION_RULE`).
+QUESTION_CARD_RULE = "founder_question"
+#: The modes of a version that ASKED you (`contracts/card_version.QUESTION_MODE`, `ANSWERED_MODE`) — literals here,
+#: as `QUESTION_CARD_RULE` is: what the version event stores.
+ASKING_MODES: tuple[str, ...] = ("question", "answered")
+
+
+def asks_now(card: Any) -> bool:
+    """Whether the card's own line — its current headline — is our question: a question card, or a card whose newest
+    version asked you (`ASKING_MODES`)."""
+    versions = getattr(card, "versions", None) or ()
+    return (getattr(card, "rule_id", None) == QUESTION_CARD_RULE
+            or bool(versions) and getattr(versions[-1], "mode", None) in ASKING_MODES)
+
+
+def asking_versions(card: Any) -> tuple[int, ...]:
+    """The numbers of the card's versions that asked you — their lines print our question, or your answer's."""
+    return tuple(v.version for v in (getattr(card, "versions", None) or ())
+                 if getattr(v, "mode", None) in ASKING_MODES)
+
+
+def asked_you(card: Any) -> bool:
+    """Whether a card of the file is ours to blank (STEP-14 fix, the crosscheck's finding 1; STEP-13's B2): it asks
+    now, or ANY of its versions asked you — a living card that asked, was answered and then decided still prints the
+    question's words on its version line, and its signal's rule is the decision's. What is blanked is only what
+    asked (`FilePeople.asked_lines`): the decision's own words still ground what they say."""
+    return asks_now(card) or bool(asking_versions(card))
+
+
+@dataclass(frozen=True, slots=True)
+class CorrectionSeen:
+    """A correction the dossier showed, as the check reads it (STEP-16): its id as printed, your words, the day you
+    said them as you would read it ("12 Oct"), and what it reaches."""
+    ref: str
+    words: str
+    said_on: str
+    scope: str
+
+
+@dataclass(frozen=True, slots=True)
+class CalledWrong:
+    """A card of the file you called wrong, as the dossier printed it (STEP-16): its id and its headline."""
+    ref: str
+    headline: str
+
+
+@dataclass(frozen=True, slots=True)
+class FilePeople:
+    """Whom a draft of this file may go to: who its mail shows, who is us, and the connector that
+    introduced its counterparty (None on the connector's own file, and on a file nobody introduced) —
+    and what "is this ask already answered?" reads (STEP-13 M35.C2.L-logic.V1.U15): the file's open asks,
+    the mails WE wrote in it, and its meetings, held or booked."""
+    counterparty: Person
+    people: tuple[Person, ...]         # the counterparty, the file's people, whoever wrote to us in it
+    us: SelfIdentity
+    our_names: tuple[str, ...] = ()    # the company's name and the founder's (`platform/self_identity.names_us`)
+    connector: Person | None = None
+    head: str = ""                     # the file's own section, as the dossier printed it
+    asks: tuple[AskSeen, ...] = ()
+    replies: tuple[Seen, ...] = ()     # the mails WE wrote in the file
+    meetings: tuple[Seen, ...] = ()    # held and booked ahead
+    #: STEP-13 M36.C2.L-logic.V2.U12 (second crosscheck B2): the file's QUESTION cards, as `card:` ids — their
+    #: headline is our question, never a ground for the claim it asked about — and the questions you answered.
+    question_cards: tuple[str, ...] = ()
+    answered: tuple[Answered, ...] = ()
+    #: …and of each, which lines asked (STEP-14 fix, finding 1): (`card:` id, its own line asks now, the versions that
+    #: asked). The check blanks those lines and no other.
+    asked_lines: tuple[tuple[str, bool, tuple[int, ...]], ...] = ()
+    #: STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V3.U06): your standing corrections the dossier showed, newest first, and
+    #: the cards of the file you called wrong — what "never silently" holds a review to (`reason/expert/verify`).
+    corrections: tuple[CorrectionSeen, ...] = ()
+    called_wrong: tuple[CalledWrong, ...] = ()
+
+
+def label_of(key: str | None) -> str | None:
+    """A key's own name: an address's or a domain's first label — never a public mail host's."""
+    host = str(key or "").casefold().rsplit("@", 1)[-1]
+    if not host or "." not in host or host in PUBLIC_MAIL_DOMAINS:
+        return None
+    return host.split(".", 1)[0]
+
+
+def connector_of(parts: DossierParts) -> Person | None:
+    """The connector that introduced the file's counterparty, NAMED AS THE PERSON it is (STEP-13
+    M35.C2.L-logic.V0.U13, `03` X07) — None on the connector's own file, and on a file nobody introduced.
+
+    An address is a person: named by the name its own mail in the file signs, else by its own words
+    (`pankaj@saka.vc` is Pankaj, `pankaj.mehta@saka.vc` Pankaj Mehta) — never by its domain's label, which
+    named Pankaj "saka" and let "Send Pankaj the short deck", to Pankaj Mehta, pass the connector check.
+    A connector known only by its company's domain (`boardy.ai`) is named by that domain's first label, as
+    before. ⛔ The graph's own node name is not read: the name the connector's mail signs is the one the
+    graph took it from, and a read here would be the dossier's first of a node it does not print."""
+    f = parts.file
+    if not f.introduced_by or f.kind == "connector":
+        return None
+    key = str(f.introduced_by)
+    signed = next((t.who_name for t in reversed(parts.timeline.touches)
+                   if str(t.who or "").casefold() == key.casefold() and t.who_name
+                   and t.who_name.casefold() != key.casefold()), None)
+    if "@" not in key:
+        return Person(name=signed or label_of(key), key=key)
+    words = [w for w in re.split(r"[._+-]+", key.split("@", 1)[0]) if w]
+    return Person(name=signed or " ".join(w[:1].upper() + w[1:].lower() for w in words) or None, key=key)
+
+
+def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str] = ()) -> FilePeople:
+    """The file's people as its dossier shows them (see `FilePeople`). Pure over the parts."""
+    f = parts.file
+    counterparty = Person(name=f.counterparty, key=f.counterparty_key)
+    seen = [counterparty]
+    for person in (getattr(parts.numbers, "people", None) or ()):
+        seen.append(Person(name=person.name, key=person.key))
+    for t in parts.timeline.touches:
+        if t.direction == "in" and (t.who or t.who_name):
+            seen.append(Person(name=t.who_name, key=t.who))
+    people = tuple(dict.fromkeys(seen))
+    connector = connector_of(parts)
+    by_node = {p.node_id: Person(name=p.name, key=p.key)
+               for p in (getattr(parts.numbers, "people", None) or ()) if getattr(p, "node_id", None)}
+    asks = tuple(AskSeen(ref=f"loop:{a.loop_id}", kind=a.kind, ours=a.owed_by == "us",
+                         opened_at=a.opened_at, thread=a.thread_id,
+                         asker=counterparty if a.asked_by == f.file_id else by_node.get(a.asked_by),
+                         last_asked_at=_again(a))
+                 for a in (f.open_asks or ()))
+    replies = tuple(Seen(event_id=t.event_id, at=t.at, thread=t.thread)
+                    for t in parts.timeline.touches if t.direction == "out")
+    meetings = tuple(Seen(event_id=t.event_id, at=t.at, booked_at=getattr(t, "booked_at", None),
+                          by=Person(name=t.who_name, key=t.who) if (t.who or t.who_name) else None)
+                     for t in (*parts.timeline.touches, *parts.timeline.upcoming) if t.kind == "meeting")
+    cards = getattr(parts.judgments, "cards", None) or ()
+    return FilePeople(counterparty=counterparty, people=people, us=us,
+                      our_names=tuple(n for n in our_names if n), connector=connector,
+                      head=_file(parts, _Ids()).text, asks=asks, replies=replies, meetings=meetings,
+                      question_cards=tuple(f"card:{c.card_id}" for c in cards if asked_you(c)),
+                      asked_lines=tuple((f"card:{c.card_id}", asks_now(c), asking_versions(c))
+                                        for c in cards if asked_you(c)),
+                      answered=tuple(Answered(ref=f"answer:{a.question_id}", question=str(a.question),
+                                              words=" ".join(str(a.answer).split()))
+                                     for a in (parts.answers or ()) if a.answer),
+                      # STEP-16: your corrections as the dossier printed them, and the cards you called wrong.
+                      corrections=tuple(CorrectionSeen(
+                          ref=f"corr:{c.correction_id}", words=" ".join(str(c.words).split()),
+                          said_on=f"{c.corrected_at.day} {c.corrected_at.strftime('%b')}", scope=c.scope)
+                          for c in (parts.corrections or ())),
+                      called_wrong=tuple(CalledWrong(ref=f"card:{c.card_id}", headline=str(c.headline))
+                                         for c in cards if any(v.cause == "wrong" for v in c.verdicts)
+                                         and c.headline))
+
+
+def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | None:
+    """The dossier the expert is shown for one file, or None for a file the tenant does not hold."""
+    parts = read_parts(conn, org_id, file_id, now=now)
+    return build_dossier(parts) if parts is not None else None
+
+
+__all__ = ["ASKING_MODES", "ASKS_CLOSED_LIMIT", "Answered", "AskSeen", "CalledWrong", "ClosedAsk", "CorrectionSeen",
+           "QUESTION_CARD_RULE", "asked_you", "asking_versions", "asks_now", "CLAIMS_LIMIT", "meeting_events",
+           "read_meeting_titles",
+           "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine",
+           "DossierParts", "Seen",
+           "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",
+           "OPTIONAL", "RELATIVE_WORDS", "SECTIONS", "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE",
+           "WAVES_LIMIT", "build_dossier", "connector_of", "dossier_for", "label_of", "lines_by_id", "people_of",
+           "read_asks_closed", "read_parts", "read_promises"]

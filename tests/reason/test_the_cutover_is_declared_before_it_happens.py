@@ -38,8 +38,12 @@ def test_every_switch_names_the_step_that_left_it():
         assert switch.alone, f"{name} does not say what it breaks if flipped alone"
 
 
-def test_the_seven_switches_are_the_ones_the_layer_actually_left():
-    """⛔ Three from `shadow_compile`'s own contract, four from L2-0…L2-7."""
+def test_the_six_switches_are_the_ones_the_layer_actually_left():
+    """⛔ Three from `shadow_compile`'s own contract, three from L2-0…L2-7.
+
+    ⛔ MOVED 2026-10-11, SEVEN → SIX: `situation_reasoner` (L2-5, R-6) is RETIRED, not armed (`06`
+    D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02) — the sweep no longer consults it, so there is
+    no cutover left for it (`tests/reason/test_r6_is_retired.py`)."""
     from genios_engine.reason.cutover import SWITCHES
 
     assert set(SWITCHES) == {
@@ -47,7 +51,6 @@ def test_the_seven_switches_are_the_ones_the_layer_actually_left():
         "fundraising_route",                                    # L2-4
         "observing_laws",                                       # L2-2
         "cards_from_situations",                                # L2-7
-        "situation_reasoner",                                   # L2-5
     }
 
 
@@ -64,11 +67,19 @@ def test_every_switch_is_still_off_and_a_test_says_which():
             f"flip, or the cutover is happening and nothing says so")
 
 
-def test_nothing_is_armed_yet():
+def test_nothing_is_armed_but_what_a_decision_armed():
+    """Was `test_nothing_is_armed_yet`. ⛔ 2026-10-09, STEP-11 (M30.C1.L-logic.V1.U02): one switch is
+    armed, by a named decision — `fundraising_route`, on Rohit's `06` D2 — and its row says so, and
+    says why arming it makes nothing live by itself. Any other armed switch is still the failure
+    this test was written for: armed before the parity gate was measured."""
     from genios_engine.reason.cutover import SWITCHES
 
-    assert not [n for n, s in SWITCHES.items() if s.armed], (
-        "a switch was armed before the parity gate was measured")
+    armed = {n for n, s in SWITCHES.items() if s.armed}
+    assert armed == {"fundraising_route"}, (
+        f"{sorted(armed - {'fundraising_route'})} armed before the parity gate was measured")
+    row = SWITCHES["fundraising_route"]
+    assert "ARMED 2026-10-09" in row.precondition and "D2" in row.precondition
+    assert "Harsh 26" in row.precondition, "the owed measurement must stay named"
 
 
 def test_a_switch_that_needs_a_measurement_names_which_one():

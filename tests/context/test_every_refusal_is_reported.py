@@ -130,11 +130,13 @@ def test_a_dark_domain_is_named_in_the_report_not_merely_missing():
     fact, and the report must not let the two look alike."""
     from genios_engine.context.quality.refusals import refusal_report
 
+    # `general`, the domain still dark: `fundraising` was until STEP-11 (2026-10-09), and the reason
+    # a report gives is the declared one, so a domain no longer declared has none to give.
     report = refusal_report(decisions=(), refusals=(),
-                            dark=({"domain": "fundraising", "situations": 14},))
+                            dark=({"domain": "general", "situations": 14},))
 
     assert report.dark_domains
-    assert report.dark_domains[0].domain == "fundraising"
+    assert report.dark_domains[0].domain == "general"
     assert report.dark_domains[0].situations == 14
     assert report.dark_domains[0].reason, "a dark domain with no reason is a label"
 

@@ -2,7 +2,7 @@
 
     pytest tests/test_tree_ids_are_addressable.py -q
 
-⛔ THE DEFECT. `tree.yaml` holds four programme blocks and three of them number milestones from M8, so
+⛔ THE DEFECT. `tree.yaml` holds five programme blocks and three of them number milestones from M8, so
 `M11.C1.L-logic.V0.U01` exists twice with different meanings. Every later stage — build, crosscheck,
 QA, trace — addresses work by unit id, and an ambiguous id makes that addressing a guess.
 
@@ -60,9 +60,14 @@ def test_the_tree_parses():
     assert yaml.safe_load(_TREE.read_text()) is not None
 
 
-def test_the_four_programme_blocks_are_present():
+def test_the_twenty_three_programme_blocks_are_present():
     assert set(_blocks()) == {"<root>", "persona_brain_and_layer_repair",
-                             "l1_signal_quality_seam", "atlas_v2_alignment"}
+                             "l1_signal_quality_seam", "atlas_v2_alignment", "yc2_w27",
+                             "yc2_w27_s02", "yc2_w27_s03", "yc2_w27_s04", "yc2_w27_s05",
+                             "yc2_w27_s06", "yc2_w27_s07", "yc2_w27_s08",
+                             "yc2_w27_s09", "yc2_w27_s10", "yc2_w27_s11",
+                             "yc2_w27_s12", "yc2_w27_align", "yc2_w27_s13",
+                             "yc2_w27_s17", "yc2_w27_s18", "yc2_w27_s14", "yc2_w27_s15", "yc2_w27_s16"}
 
 
 def test_the_ycw27_block_is_the_one_this_programme_builds():
@@ -123,13 +128,47 @@ def test_the_rule_names_the_precedent_it_follows():
 # =================================================================================================
 # 4 · ⛔ a new block may not widen the collision
 # =================================================================================================
-def test_no_fifth_block_has_appeared_without_updating_this_guard():
-    """⛔ THE FORWARD HALF. Four blocks already collide and that is now documented; a fifth added
+def test_no_tenth_block_has_appeared_without_updating_this_guard():
+    """⛔ THE FORWARD HALF. Four blocks already collide and that is now documented; a new block added
     silently would collide again with nobody having decided to accept it. Adding one is fine — update
-    this test on purpose, and say in the tree why the ids were chosen."""
-    assert len(_blocks()) == 4, (
+    this test on purpose, and say in the tree why the ids were chosen. The fifth, `yc2_w27`
+    (2026-10-05), was added that way: numbered from M16, past every other block. The sixth,
+    `yc2_w27_s02` (2026-10-06, STEP-02), the same way: M20. The seventh, `yc2_w27_s03` (STEP-03),
+    again: M21. The eighth, `yc2_w27_s04` (STEP-04), M22. The ninth, `yc2_w27_s05` (STEP-05), M23. The
+    tenth, `yc2_w27_s06` (STEP-06, 2026-10-07), M24. The eleventh, `yc2_w27_s08` (STEP-08, the
+    re-sync, proposed 2026-10-07), M26. The twelfth, `yc2_w27_s07` (STEP-07, the company brief,
+    proposed 2026-10-07), M25. The thirteenth, `yc2_w27_s09` (STEP-09, workstreams, proposed
+    2026-10-07), M27. The fourteenth, `yc2_w27_s10` (STEP-10, the expert's numbers, 2026-10-07), M29 —
+    M28 is held for STEP-09's cards (D2) and not drawn. The fifteenth, `yc2_w27_s11` (STEP-11, founder
+    playbooks, proposed 2026-10-09), M30 and M31. The sixteenth, `yc2_w27_s12` (STEP-12, the
+    expert pass, proposed 2026-10-10), M32 and M33. The seventeenth, `yc2_w27_align` (the steps
+    before STEP-12 complete and aligned, proposed 2026-10-10), M34. The eighteenth, `yc2_w27_s13`
+    (STEP-13, check every claim, planned 2026-10-12), M35 and M36. The nineteenth and twentieth,
+    `yc2_w27_s17` (STEP-17, real tests) and `yc2_w27_s18` (STEP-18, the known bugs) — each built on its
+    own branch and merged 2026-10-12 — M40, M41 and M48, M49. The twenty-first, `yc2_w27_s14` (STEP-14,
+    the card, built 2026-10-12 on its own branch), M42 and M43; the twenty-second, `yc2_w27_s15` (STEP-15,
+    the morning brief, built 2026-10-12 on its own branch), M44 and M45; the twenty-third, `yc2_w27_s16`
+    (STEP-16, learning from you, built 2026-10-12→16 on its own branch, merged on the integration line
+    `yc2w27-int16`), M46 and M47 — each past every other block."""
+    assert len(_blocks()) == 23, (
         "a programme block was added or removed — update the header note in tree.yaml and this test, "
         "deliberately")
+
+
+@pytest.mark.parametrize("block", ["yc2_w27", "yc2_w27_s02", "yc2_w27_s03", "yc2_w27_s04",
+                                   "yc2_w27_s05", "yc2_w27_s06", "yc2_w27_s07",
+                                   "yc2_w27_s08", "yc2_w27_s09", "yc2_w27_s10",
+                                   "yc2_w27_s11", "yc2_w27_s12",
+                                   "yc2_w27_align", "yc2_w27_s13", "yc2_w27_s17",
+                                   "yc2_w27_s18", "yc2_w27_s14", "yc2_w27_s15", "yc2_w27_s16"])
+def test_the_newest_blocks_widen_no_collision(block):
+    """⛔ The reason `yc2_w27` and `yc2_w27_s02` could be added: their milestone ids appear in no other
+    block. If a later edit gives one an id another block already uses, this fails before the
+    ambiguity ships."""
+    blocks = _blocks()
+    newest = {m["id"] for m in blocks[block]}
+    others = {m["id"] for name, ms in blocks.items() if name != block for m in ms}
+    assert newest and not (newest & others), sorted(newest & others)
 
 
 #: ⛔ RETIRED IN PLACE. `<root>`'s M1–M7 predate the YCW27 programme; the header note says so and

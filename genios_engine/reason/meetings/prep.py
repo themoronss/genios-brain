@@ -33,6 +33,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import text
 
 from genios_engine.platform.identity import norm_email, person_name_key
+from genios_engine.platform.self_identity import identity_for
 from genios_engine.reason.moments import store as M
 from genios_engine.reason.moments.common import (VISIBLE_EVENT_SQL, VISIBLE_FACT_SQL, aware,
                                                  fact_rows_to_map, iso, parse_ts, text_of,
@@ -95,7 +96,7 @@ class PrepRead:
     mine: list = field(default_factory=list)       # the seat's own commitments
     emails: dict = field(default_factory=dict)     # person → {emails}
     last_touch: dict = field(default_factory=dict)
-    internal: set = field(default_factory=set)     # attendees who are our own seats
+    internal: set = field(default_factory=set)     # attendees who are one of us (STEP-04)
     prior: tuple | None = None                     # (meeting node, title, start)
     prior_items: list = field(default_factory=list)
     changes: list = field(default_factory=list)
@@ -275,14 +276,16 @@ def read(conn, *, org_id: str, att: Attendance, email: str | None, now: datetime
     fact_ids = sorted(set(people) | set(out.nodes) | {att.meeting_node_id})
     out.facts = fact_rows_to_map(conn.execute(text(_FACTS), {
         "o": org_id, "ids": fact_ids, "viewer": viewer}).fetchall())
-    seats = {r.e for r in conn.execute(text(
-        "select lower(email) as e from org_seats where org_id = :o and email is not null"),
-        {"o": org_id})}
+    # WHO IS US (STEP-04): an attendee is ours by `platform/self_identity` — a seat, the owner, a
+    # connected account, an address the tenant declared, or any address at a declared domain. The
+    # seats alone (active or not) missed `ceo@thegenios.com`, and a prep listed the founder's own
+    # second address as someone he was meeting.
+    us = identity_for(conn, org_id)
     for r in conn.execute(text(
             "select node_id, alias_key from graph_aliases where org_id = :o "
             "and alias_type = 'email' and node_id = any(:ids)"), {"o": org_id, "ids": people}):
         out.emails.setdefault(r.node_id, set()).add(r.alias_key.lower())
-        if r.alias_key.lower() in seats:
+        if us.is_us(r.alias_key):
             out.internal.add(r.node_id)
     if people:
         for r in conn.execute(text(

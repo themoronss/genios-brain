@@ -1,0 +1,806 @@
+{
+ "totals": {
+  "cards_total": 25,
+  "cards_expired": 0,
+  "cards_expired_no_event": 0,
+  "situations_total": 328,
+  "situations_active": 227,
+  "admitted_latest": 17,
+  "held_latest": 99,
+  "admitted_no_fingerprint": 0,
+  "events_no_end_state": 0
+ },
+ "per_case": {
+  "F01": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 3,
+   "situations_active": 3,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {},
+   "events_by_outcome": {
+    "archived": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F02": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 6,
+   "situations_active": 3,
+   "admitted_latest": 0,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {},
+   "events_by_outcome": {
+    "archived": 4
+   },
+   "events_no_end_state": 0
+  },
+  "F03": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 8,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 40
+   },
+   "events_by_outcome": {
+    "archived": 3
+   },
+   "events_no_end_state": 0
+  },
+  "F04": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 5,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:emitted": 1,
+    "legacy:suppressed": 39
+   },
+   "events_by_outcome": {
+    "archived": 1,
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F05": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 7,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:emitted": 1,
+    "legacy:suppressed": 39
+   },
+   "events_by_outcome": {
+    "archived": 1,
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F06": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 7,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:emitted": 1,
+    "legacy:suppressed": 39
+   },
+   "events_by_outcome": {
+    "archived": 1,
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F07": {
+   "cards_total": 2,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 9,
+   "situations_active": 7,
+   "admitted_latest": 2,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:emitted": 1,
+    "compiled:shadow": 1,
+    "compiled:standing": 1,
+    "legacy:deferred": 1,
+    "legacy:suppressed": 40
+   },
+   "events_by_outcome": {
+    "archived": 1,
+    "emitted": 3
+   },
+   "events_no_end_state": 0
+  },
+  "F08": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 8,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 60
+   },
+   "events_by_outcome": {
+    "archived": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F09": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "archived": 1,
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F10": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 8,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:emitted": 1,
+    "legacy:suppressed": 19
+   },
+   "events_by_outcome": {
+    "emitted": 1,
+    "parked": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F11": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 5,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F12": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 10,
+   "situations_active": 5,
+   "admitted_latest": 1,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:deferred": 1,
+    "legacy:emitted": 1,
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F13": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 1,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:emitted": 1,
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F14": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 13,
+   "situations_active": 6,
+   "admitted_latest": 0,
+   "held_latest": 5,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 4
+   },
+   "events_no_end_state": 0
+  },
+  "F15": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 29,
+   "situations_active": 18,
+   "admitted_latest": 0,
+   "held_latest": 18,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 100
+   },
+   "events_by_outcome": {
+    "emitted": 5
+   },
+   "events_no_end_state": 0
+  },
+  "F16": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "archived": 1,
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F17": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 7,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:shadow": 1,
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F18": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "archived": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F19": {
+   "cards_total": 2,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 10,
+   "situations_active": 7,
+   "admitted_latest": 1,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:deferred": 1,
+    "compiled:shadow": 1,
+    "legacy:emitted": 2,
+    "legacy:suppressed": 58
+   },
+   "events_by_outcome": {
+    "emitted": 3
+   },
+   "events_no_end_state": 0
+  },
+  "F20": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:shadow": 1,
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F21": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 8,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "archived": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F22": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "archived": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F23": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 9,
+   "situations_active": 3,
+   "admitted_latest": 0,
+   "held_latest": 3,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {},
+   "events_by_outcome": {
+    "archived": 4
+   },
+   "events_no_end_state": 0
+  },
+  "F24": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 12,
+   "situations_active": 6,
+   "admitted_latest": 0,
+   "held_latest": 3,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:shadow": 1,
+    "legacy:emitted": 1,
+    "legacy:suppressed": 19
+   },
+   "events_by_outcome": {
+    "emitted": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F25": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 12,
+   "situations_active": 9,
+   "admitted_latest": 3,
+   "held_latest": 5,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:deferred": 2,
+    "compiled:standing": 1,
+    "legacy:deferred": 1,
+    "legacy:suppressed": 19
+   },
+   "events_by_outcome": {
+    "emitted": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F26": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 8,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 3,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:emitted": 1,
+    "legacy:suppressed": 19
+   },
+   "events_by_outcome": {
+    "emitted": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F27": {
+   "cards_total": 2,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 10,
+   "situations_active": 5,
+   "admitted_latest": 1,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:standing": 1,
+    "legacy:emitted": 1,
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F28": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 10,
+   "situations_active": 5,
+   "admitted_latest": 1,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:deferred": 1,
+    "legacy:emitted": 1,
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F29": {
+   "cards_total": 3,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 20,
+   "situations_active": 10,
+   "admitted_latest": 3,
+   "held_latest": 3,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:deferred": 1,
+    "compiled:emitted": 2,
+    "compiled:shadow": 3,
+    "legacy:standing": 1,
+    "legacy:suppressed": 21
+   },
+   "events_by_outcome": {
+    "emitted": 3
+   },
+   "events_no_end_state": 0
+  },
+  "F30": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 21
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F31": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 5,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:emitted": 1,
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F32": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "archived": 3
+   },
+   "events_no_end_state": 0
+  },
+  "F33": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 3,
+   "situations_active": 3,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 40
+   },
+   "events_by_outcome": {
+    "archived": 3
+   },
+   "events_no_end_state": 0
+  },
+  "F34": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 5,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 40
+   },
+   "events_by_outcome": {
+    "archived": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F35": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:shadow": 1,
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F36": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 8,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 4,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F37": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 5,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:shadow": 1,
+    "legacy:emitted": 1,
+    "legacy:suppressed": 39
+   },
+   "events_by_outcome": {
+    "archived": 1,
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F38": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 5,
+   "situations_active": 5,
+   "admitted_latest": 1,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:deferred": 1,
+    "compiled:shadow": 1,
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F39": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 5,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 3,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F40": {
+   "cards_total": 2,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 8,
+   "situations_active": 6,
+   "admitted_latest": 2,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:emitted": 1,
+    "compiled:shadow": 1,
+    "compiled:standing": 1,
+    "legacy:suppressed": 21
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F41": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 8,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 4,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 2
+   },
+   "events_no_end_state": 0
+  },
+  "F42": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 1,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "compiled:emitted": 1,
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F43": {
+   "cards_total": 0,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 4,
+   "situations_active": 4,
+   "admitted_latest": 0,
+   "held_latest": 1,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:suppressed": 20
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  },
+  "F44": {
+   "cards_total": 1,
+   "cards_expired": 0,
+   "cards_expired_no_event": 0,
+   "situations_total": 8,
+   "situations_active": 5,
+   "admitted_latest": 0,
+   "held_latest": 2,
+   "admitted_no_fingerprint": 0,
+   "fingerprint_outcomes": {
+    "legacy:emitted": 1,
+    "legacy:suppressed": 19
+   },
+   "events_by_outcome": {
+    "emitted": 1
+   },
+   "events_no_end_state": 0
+  }
+ }
+}

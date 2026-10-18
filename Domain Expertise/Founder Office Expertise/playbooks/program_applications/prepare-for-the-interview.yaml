@@ -1,0 +1,194 @@
+# A MOVE of program_applications: the interview stage of the spine, as a procedure. No stages here.
+#
+# outcome_window_days: 14 — practitioner judgement, unverified; for the founder's review. An interview
+# is typically held within one to three weeks of its invitation; Techstars Paris runs its interview
+# rounds over the two to four weeks after its first invitations (the spine's `interview` prior).
+#
+# A GENUINE TENSION, KEPT: YC asks founders not to rehearse beyond the basics; Techstars asks them to
+# practise the introduction and rehearse answers. Step 8 follows the programme being interviewed for
+# rather than averaging the two.
+identity:
+  id: founder_office.pb.program_applications.prepare_for_the_interview
+  name: Prepare for a programme's interview
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.programs_and_applications.program_applications
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  aliases:
+    - Accelerator interview preparation
+    - Selection pitch preparation
+
+purpose:
+  statement: >
+    A programme's interview is short, and it tests three things: the founders, what they have built,
+    and how far it has moved since they applied. Prepare for the programme's own format, not for an
+    investor meeting — YC's is a ten-minute Zoom call with two or three partners who have the
+    application open; Techstars runs two rounds and then a screening committee.
+  answers:
+    - Who must be on the call, and when is it on our clock?
+    - What will the panel test, and what should be ready to show?
+    - How much rehearsal does this programme want?
+  not:
+    - A pitch to an investor after a programme's demo day — the meetings and investor relations capabilities hold those.
+
+when_to_use:
+  conditions:
+    - {has_obs: meeting_request}
+  signals:
+    - A programme invites the founders to an interview, a pitch or a committee session.
+  do_not_use_when:
+    - The meeting is a programme's information session, office hours or webinar — nobody is being selected in it.
+
+steps:
+  - order: 1
+    actor: human
+    name: Book the slot before the invitation's date
+    description: >
+      Book by the date the invitation gives and write the time on both clocks. Know the format before
+      preparing for it: YC's interviews are ten-minute conversations over Zoom.
+    produces: A booked slot, on both clocks.
+    done_when: A slot is booked before the invitation's date, with its time in the programme's zone and the founders'.
+  - order: 2
+    actor: human
+    name: Get every founder on the call
+    description: >
+      YC: "All founders should be present on the call", and it prefers that each founder answers at least
+      one question. Techstars uses the interview to meet any additional co-founders and the extended team.
+    produces: Every founder confirmed for the slot.
+    done_when: Every founder has confirmed the slot.
+  - order: 3
+    actor: human
+    name: Reread the application they will have open
+    description: >
+      YC's interviewers "will have read your application and have it open during the call". Know what
+      was written, and list what has changed since it went in.
+    produces: The submitted application, reread, with its changes listed.
+    done_when: The founders have reread the submitted application and listed what has changed since.
+  - order: 4
+    actor: human
+    name: Lead with progress since applying
+    description: >
+      YC's advice for an edge is "to work hard and have your startup improve between the time that you
+      applied and the time that you interview". Have that change ready to say in a sentence.
+    produces: The progress since the application, in one or two sentences.
+    done_when: The progress since the application is written down in one or two sentences.
+  - order: 5
+    actor: human
+    name: Say what the company does in two sentences
+    description: >
+      YC's typical first question is "What is your company working on?", answered "in a few simple,
+      jargon-free sentences". Techstars asks what the founders have learned since they started, and
+      from their first customer.
+    produces: A two-sentence answer every founder can give.
+    done_when: The answer to what the company is working on is written down, and every founder can give it.
+  - order: 6
+    actor: human
+    name: Have the numbers written down, and true
+    description: >
+      YC suggests having key metrics written down to hand during the call, and warns that "if you state
+      numbers in the interview we may ask for verification of them afterwards".
+    produces: One page of key metrics, each with its source.
+    done_when: The key metrics are on one page, each with where it comes from.
+  - order: 7
+    actor: human
+    name: Have the demo loaded
+    description: >
+      YC sometimes asks to see a demo: software "loaded up and ready to screenshare", hardware in the
+      room with the founders, or a demo video when it cannot be.
+    produces: A working demo, or a demo video.
+    done_when: The demo has been screen-shared once before the call, or a demo video is ready.
+  - order: 8
+    actor: human
+    name: Rehearse only as much as this programme wants
+    description: >
+      The programmes disagree. YC: beyond the basic preparation, rehearsal "is not useful and is often
+      counter-productive". Techstars: practise the introduction, anticipate questions and rehearse
+      answers. Follow the programme being interviewed for.
+    produces: Preparation that matches the programme's own advice.
+    done_when: The preparation follows the programme's stated advice, and the founders know which advice that is.
+  - order: 9
+    actor: agent
+    name: Write down what was asked and promised
+    description: >
+      After the call, note the questions, every number stated, and anything promised — a verification, a
+      document, a follow-up — with its date.
+    produces: The questions and the promises, dated.
+    done_when: The questions asked and every promise made are on the file within a day of the call.
+
+success_signal: >
+  The interview is held at the booked time with every founder present, and every number stated in it
+  is on the file, ready to verify.
+
+outcome_window_days: 14
+
+objects_used:
+  - founder_office.obj.program_applications.application
+
+outcomes:
+  - The slot is booked before the invitation's date, with every founder on it.
+  - The founders arrive with the progress since applying, the numbers and the demo ready.
+  - What was asked and promised in the interview is on the file the next day.
+
+failure_modes:
+  - >
+    Preparing an investor pitch. A selection interview is questions about the founders and what they
+    have built, not a deck; YC says it does only two things at interviews — ask questions and look at
+    what has been built.
+  - >
+    Letting one founder answer everything. YC prefers each founder to answer at least one question.
+  - >
+    Stating a number nobody can back. YC may ask to verify it afterwards.
+
+limits:
+  - >
+    The interview advice quoted is YC's and Techstars' own; a programme that publishes its own format
+    replaces both.
+  - >
+    It prepares the selection interview, not the investor meetings a programme's demo day leads to.
+
+variants:
+  - applies_to: single_short_interview
+    change: One ten-minute call; the preparation is the application, the numbers, the demo and the progress since applying.
+    why: YC's interview is ten minutes, and YC discourages rehearsal beyond the basics.
+  - applies_to: multi_round_selection
+    change: Several rounds and a committee; note what each panel asked and bring the answers to the next round.
+    why: >
+      Techstars holds a first and a second interview and then a screening committee; Hub71 holds a round
+      with its team and one with its partners before its selection committee.
+
+references:
+  - title: YC Interview Guide
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/interviews
+    note: >
+      Read 9 Oct 2026 (the page's own text, from its source). Ten-minute Zoom calls; all founders present;
+      two or three partners with the application open; questions and what has been built; do not rehearse;
+      make progress; metrics written down and verifiable; a demo ready; each founder answers a question.
+  - title: "Inside a Techstars Accelerator: The Application & Interview Process"
+    kind: practitioner
+    author: Techstars
+    url: https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process
+    note: >
+      Published 12 Jan 2026, read 9 Oct 2026. First and second rounds, then a screening committee;
+      practise the introduction and rehearse answers; meet any additional co-founders; the questions to expect.
+  - title: Hub71 FAQs
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/faqs
+    note: Read 9 Oct 2026. Pitches to the Hub71 team, then to its ecosystem partners, then a selection committee.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
+  notes: >
+    The outcome window (14) is practitioner judgement, unverified; for the founder's review. Every piece of
+    advice quoted is the programme's own, read on 9 October 2026.

@@ -634,7 +634,7 @@ inference_patterns:
         - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
         - {path: thread.ball_in_court, op: "=", value: them}
         - {fn: days_since, path: thread.last_inbound, op: ">=",
-           value: {baseline: reply_cadence, mult: 2.5, floor: 7}}
+           value: {baseline: write_interval, mult: 2.5, floor: 7}}
       yields: {confidence_bp: 8200, attribute: escalation_warranted_bp, value: 8200,
                corroborates: [esc.overdue_and_they_owe_us]}
       evidence_fields: [thread.last_inbound, commitment.due_at]

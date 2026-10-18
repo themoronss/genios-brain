@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import text
 
 from genios_engine.platform.db import get_engine
 
+from .base import InferredInstant
 from .base import RawObject, SourceBatch
 
 # Read-only pull from a CLIENT's OWN database. Rows are STRUCTURED → they short-circuit
@@ -50,7 +51,7 @@ class ClientDatabaseConnector:
         if rid is None:
             return None
         wm = row.get(self._wm)
-        occurred = wm if isinstance(wm, datetime) else datetime.now(timezone.utc)
+        occurred = wm if isinstance(wm, datetime) else InferredInstant.now_utc()
         return RawObject(source=self.source, object_type=self._table,
                          source_object_id=str(rid), occurred_at=occurred,
                          # the watermark value IS the row's content version — a CRM deal that

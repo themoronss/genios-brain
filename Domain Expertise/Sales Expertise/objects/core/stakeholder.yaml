@@ -572,7 +572,7 @@ business_rules:
       carried forward. Positions move quietly, and the map degrades faster than anyone
       updates it.
     when:
-      - {fn: days_since, path: thread.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 4, floor:
+      - {fn: days_since, path: thread.last_inbound, op: ">", value: {baseline: write_interval, mult: 4, floor:
             21}}
     then: decay_stance_confidence
     severity: advisory

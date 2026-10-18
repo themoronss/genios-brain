@@ -1,0 +1,400 @@
+{
+ "case_id": "F11",
+ "title": "An investor reaches out and asks whether the founder is raising",
+ "kind": "must_detect",
+ "label_row": 11,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-15T18:00:00Z",
+  "2026-09-17T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "ask",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-15T14:10:00Z",
+   "from": "Tom Keller <tom@northfieldvc.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Nimbus Labs",
+   "body": "Hi Arjun,\n\nI came across Nimbus Labs in a founder community. We invest in AI-native productivity at seed. Are you raising this year? Happy to grab 20 minutes.\n\nTom Keller\nPartner, Northfield Ventures",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-northfield",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "question",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Tom Keller",
+       "entity_type": "person",
+       "quote": "Tom Keller"
+      },
+      {
+       "surface_form": "Northfield Ventures",
+       "entity_type": "organization",
+       "quote": "Northfield Ventures"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Is Nimbus Labs raising this year?",
+       "asked_by": "Tom Keller",
+       "asked_of": "Arjun Rao",
+       "quote": "Are you raising this year?"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Tom Keller",
+       "value": "Partner",
+       "standing": "observed",
+       "quote": "Partner, Northfield Ventures"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "explore an investment"
+     },
+     "implied_actions": [
+      "tell Tom whether Nimbus Labs is raising"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "ask": "emitted"
+  },
+  "memory": {
+   "ask": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Tom",
+     "Northfield"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "investor — inbound interest"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "crore",
+   "lakh",
+   "valuation"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Tom Keller"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Tom Keller"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "northfieldvc.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "northfieldvc.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "northfieldvc.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "northfieldvc.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "fifteen_minute_account_brief": 5600
+     },
+     "confidence_bp": 5000,
+     "rationale": "An investor asked us something; know the fund before replying.",
+     "missing": []
+    }
+   }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<northfieldvc.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Tom Keller, a partner at Northfield Ventures, wrote unprompted that he came across Nimbus Labs in a founder community and that Northfield invests in AI-native productivity at seed.",
+       "evidence": [
+        "evt_7eabedc7eedd5ae4297eeb1d"
+       ],
+       "quote": "came across Nimbus Labs in a founder community. We invest in AI-native productivity"
+      },
+      {
+       "claim": "Tom asked whether Nimbus Labs is raising this year and offered a short call.",
+       "evidence": [
+        "evt_7eabedc7eedd5ae4297eeb1d"
+       ],
+       "quote": "raising this year? Happy to grab 20 minutes. Tom"
+      },
+      {
+       "claim": "The file holds one open ask, Tom's question, waiting on us.",
+       "evidence": [
+        "loop:loop_1531307971fd8eba4224d4e7"
+       ]
+      },
+      {
+       "claim": "Our reply time to Tom is not measured: the file holds no mail from Arjun to him.",
+       "evidence": [
+        "num:your_reply_time:tom@northfieldvc.test"
+       ]
+      },
+      {
+       "claim": "The investor playbook, not yet reviewed, says first contact ends when a first meeting or call takes place or the investor declines, and that a large share of first emails never become a meeting.",
+       "evidence": [
+        "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+       ]
+      },
+      {
+       "claim": "The playbook holds that when the turn is ours the clock runs against us, and conversations where we owe the reply come first.",
+       "evidence": [
+        "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+       ]
+      },
+      {
+       "claim": "The file's history records no earlier verdict or outcome.",
+       "evidence": [
+        "hist:derived.history.prior_card_verdict@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "An on-thesis partner offering a call unprompted is the warm end of first contact, and the honest answer to his question is yes: the brief says Nimbus Labs is raising its seed round.",
+       "based_on": [
+        "fact:1",
+        "fact:2",
+        "fact:5"
+       ]
+      },
+      {
+       "claim": "Tom found the company on his own, so the seed-wave mail the brief mentions may not have reached him, or reached someone else at the fund.",
+       "based_on": [
+        "fact:1"
+       ]
+      },
+      {
+       "claim": "The reply decides whether a first call happens while his interest is fresh.",
+       "based_on": [
+        "fact:3",
+        "fact:6"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "When the turn is ours, nobody says the clock is running; an unanswered inbound reads to the fund as a company without momentum.",
+       "based_on": [
+        "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+       ]
+      },
+      {
+       "kind": "base_rate",
+       "claim": "Most first contacts with investors never become a meeting; an investor who offers the call himself is the exception.",
+       "based_on": [
+        "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+       ]
+      },
+      {
+       "kind": "pattern",
+       "claim": "Momentum comes from running investors in parallel; a new live fund belongs in the round's other conversations, not in a queue.",
+       "based_on": [
+        "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process"
+       ]
+      },
+      {
+       "kind": "counter_pattern",
+       "claim": "Warm interest is not an offer: only a definite offer in writing counts.",
+       "based_on": [
+        "pb:founder_office.heu.investor_relations.only_an_offer_counts"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Tom will book a first call quickly if Arjun answers with times.",
+       "needs": "A call on the calendar after the reply."
+      },
+      {
+       "proposition": "Northfield's interest is broad scouting of AI-native productivity that may stop at a first call.",
+       "needs": "What Tom asks for after the first call."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether the seed-wave mail the brief mentions reached anyone at Northfield, and what it said.",
+       "relevance": "If Tom has it, the reply can build on it; if it went to someone else, the reply should not assume he saw it."
+      },
+      {
+       "question": "How much Arjun wants to say about the round's size and timing to a fund he has not met.",
+       "relevance": "It shapes how much the reply says beyond yes; the dossier holds none of it, and none should be guessed."
+      },
+      {
+       "question": "Northfield's cheque size and portfolio.",
+       "relevance": "The playbook's call preparation needs them, and they decide how much of the round this fund could be."
+      }
+     ],
+     "frames": {
+      "primary": "A seed fund's partner, unprompted and on thesis, asks whether you are raising and offers a call; the answer is ours to give, and it is yes.",
+      "rivals": [
+       "A scout's broad outreach to many AI-native companies, where the call is a screen rather than real interest.",
+       "A fund gathering market knowledge on AI-native productivity, with little intent to invest at this stage."
+      ]
+     },
+     "proposed_kind": null,
+     "expected_vs_actual": {
+      "stage": "first_contact",
+      "expected": "At first contact nothing has started; the stage ends when a first call takes place or the investor declines, and an investor's own offer of a call is taken up promptly.",
+      "actual": "Tom asked whether the company is raising and offered a short call; the file holds no answer from Arjun."
+     },
+     "scenarios": {
+      "do_nothing": "Tom's question ages; a fund that reached out unprompted reads the quiet as no interest, and the conversation decays into a no nobody sends.",
+      "act": "A short yes with two or three times for a call turns inbound interest into a first meeting.",
+      "best": "A first call with an on-thesis partner leads to a partners' meeting and a place in the seed round.",
+      "worst": "The reply is slow or vague and Northfield moves on, or Arjun says more about the round than he means to a fund he has not met.",
+      "signals_to_watch": [
+       "Tom booking one of the times offered",
+       "Questions from Tom before the call",
+       "Quiet from Tom after Arjun's answer",
+       "Tom saying the fund wants a lead investor first"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "high",
+      "reversibility": "reversible",
+      "reasons": [
+       "Raising the seed round is the brief's first goal, and an on-thesis partner asked about it unprompted.",
+       "The reply is ours, and the playbook ages conversations where we owe the answer first.",
+       "A yes with times for a call commits Arjun to nothing he cannot shape on the call."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Reply to Tom that you are raising your seed round now, and offer two or three times for a short call",
+      "for_whom": "Tom Keller at Northfield Ventures",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Tom",
+      "answers": "loop:loop_1531307971fd8eba4224d4e7"
+     },
+     "alternative": "If you want the call to wait until more of the round is in motion, reply now with a yes and the week you can talk, rather than leaving the question open.",
+     "wait_or_stop": "Do not wait to answer. After the reply, wait for Tom to pick a time; if he goes quiet, treat it as a first contact that did not take, and send no chase.",
+     "done_when": "A first call with Tom is on the calendar.",
+     "draft": "Hi Tom, thanks for reaching out. Yes — Nimbus Labs is raising its seed round now; we're building an AI chief of staff for founders. I'd be glad to talk. Would [two or three times] work for a short call? Arjun"
+    }
+   }
+  ]
+ },
+ "notes": "Production's AI filter called the real mail junk."
+}

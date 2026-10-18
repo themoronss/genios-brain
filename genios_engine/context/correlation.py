@@ -52,8 +52,11 @@ module refuses to do.
 """
 from __future__ import annotations
 
+import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 
 from sqlalchemy import text
 
@@ -378,6 +381,39 @@ def window_for(domain: str) -> int:
     return int(declared) if declared else CORRELATION_WINDOW_DAYS
 
 
+_log = logging.getLogger(__name__)
+
+#: `06` D33 · A FILE'S OWN CLOCK, BY ITS KIND OF WORK. The brief names a counterparty's kind
+#: (investor, program, …) and that kind's playbook its stop rule — investor 90 days, program 90 —
+#: but both sit above this package (`tests/test_layer_topology.py`), so the composition root
+#: installs the reader here (`platform/kind_windows.install`): a value handed down, as
+#: `DomainSpec.register` hands down a domain's clock. It answers the days for an anchor node, or
+#: None — no line names it, or its kind has no stop rule — and then the domain's clock stands.
+QuietDaysReader = Callable[[Any, str, str], "int | None"]
+_quiet_days_for_node: QuietDaysReader | None = None
+
+
+def use_quiet_days(reader: QuietDaysReader | None) -> None:
+    """Install (or, with None, take out) the reader of a file's own quiet window."""
+    global _quiet_days_for_node
+    _quiet_days_for_node = reader
+
+
+def file_quiet_days(conn, org_id: str, node_id: str) -> int | None:
+    """How long THIS file stays open, by its kind of work — or None: the domain's clock decides.
+    A reader that fails costs its answer, never the correlation."""
+    reader = _quiet_days_for_node
+    if reader is None or not node_id:
+        return None
+    try:
+        days = reader(conn, org_id, node_id)
+    except Exception:      # noqa: BLE001 — a brief that cannot be read is a 45-day file, not a crash
+        _log.warning("the quiet window of node %s (org=%s) could not be read; the domain's clock "
+                     "stands", node_id, org_id, exc_info=True)
+        return None
+    return int(days) if days else None
+
+
 def find_or_open(conn, *, org_id: str, anchor: Anchor, event_at: datetime | None,
                  window_days: int | None = None) -> str:
     """The live correlation for this anchor, opening a new generation when the last one
@@ -393,9 +429,11 @@ def find_or_open(conn, *, org_id: str, anchor: Anchor, event_at: datetime | None
         "order by generation desc limit 1"),
         {"o": org_id, "n": anchor.node_id, "d": anchor.domain}).first()
 
-    # THE CALLER'S NUMBER, THEN THE DOMAIN'S, THEN THE ENGINE'S. A caller that knows better —
-    # a backfill replaying a year of history, a test pinning a boundary — wins over both.
-    window = window_days if window_days is not None else window_for(anchor.domain)
+    # THE CALLER'S NUMBER, THEN THE FILE'S, THEN THE DOMAIN'S, THEN THE ENGINE'S. A caller that
+    # knows better — a backfill replaying a year of history, a test pinning a boundary — wins over
+    # all; a file whose kind of work has a stop rule (`06` D33: a fund 90 days) over its domain.
+    window = window_days if window_days is not None else (
+        file_quiet_days(conn, org_id, anchor.node_id) or window_for(anchor.domain))
     if latest is not None and joins_window(group_first=latest.first_event_at,
                                            group_last=latest.last_event_at,
                                            event_at=event_at, window_days=window):
@@ -541,6 +579,26 @@ def _lift_roles(conn, *, org_id: str, node_roles: dict[str, str]) -> dict[str, s
     return lifted
 
 
+def _the_parties_files(conn, *, org_id: str, correlation_ids: list[str],
+                       node_ids: set[str]) -> list[str]:
+    """In a thread that holds SEVERAL files, a reply joins only the files of the parties in it.
+
+    STEP-09. One introduction of two people opens two files on one thread — Rahul's and Farah's —
+    and thread-first inheritance then filed Farah's answer under Rahul too. So when the thread's
+    files are more than one, the reply joins those anchored on a node it touched; touching none of
+    them (a bare "thanks" to the connector) it keeps every one, as before — leaving a message out of
+    its own conversation is worse than filing it twice. One file: thread-first, untouched.
+    """
+    if len(correlation_ids) < 2:
+        return correlation_ids
+    rows = conn.execute(text(
+        "select correlation_id, anchor_node_id from context_correlations "
+        " where org_id = :o and correlation_id = any(:ids)"),
+        {"o": org_id, "ids": list(correlation_ids)}).fetchall()
+    theirs = sorted(r.correlation_id for r in rows if r.anchor_node_id in node_ids)
+    return theirs or correlation_ids
+
+
 def correlate_event(conn, *, org_id: str, event_id: str, occurred_at: datetime | None,
                     thread_id: str | None, node_types: dict[str, str],
                     domain_hints: list | None,
@@ -551,17 +609,19 @@ def correlate_event(conn, *, org_id: str, event_id: str, occurred_at: datetime |
     continues nothing belongs to no situation, and saying so is more useful than
     inventing a group about no one.
     """
+    # People → their company → that account's deal. Order matters: a person is lifted to the
+    # company first, so a message naming only a contact still reaches the deal. The domain is
+    # resolved here as well as inside `plan_correlation`; `resolve_domain` is pure and cheap,
+    # and threading it out would put a second source of truth next to the first.
+    lifted = lift_companies_to_their_deals(
+        conn, org_id=org_id, domain=resolve_domain(domain_hints),
+        node_types=lift_people_to_their_companies(conn, org_id=org_id, node_types=node_types))
     plan = plan_correlation(
-        thread_correlation_ids=thread_correlations(
-            conn, org_id=org_id, thread_id=thread_id, exclude_event_id=event_id),
-        # People → their company → that account's deal. Order matters: a person is lifted to the
-        # company first, so a message naming only a contact still reaches the deal. The domain is
-        # resolved here as well as inside `plan_correlation`; `resolve_domain` is pure and cheap,
-        # and threading it out would put a second source of truth next to the first.
-        node_types=lift_companies_to_their_deals(
-            conn, org_id=org_id, domain=resolve_domain(domain_hints),
-            node_types=lift_people_to_their_companies(conn, org_id=org_id,
-                                                      node_types=node_types)),
+        thread_correlation_ids=_the_parties_files(
+            conn, org_id=org_id, node_ids=set(lifted),
+            correlation_ids=thread_correlations(
+                conn, org_id=org_id, thread_id=thread_id, exclude_event_id=event_id)),
+        node_types=lifted,
         # A person's role carries to the company they were lifted to: an introduction bot's
         # company is the introduction service, and it must not anchor either.
         node_roles=_lift_roles(conn, org_id=org_id, node_roles=node_roles or {}),

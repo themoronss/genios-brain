@@ -6,11 +6,14 @@ the entire engine was a manual ``POST /parked/{event_id}/recover`` that requires
 already know the event id. ``DOC-05``'s own comment in ``gate/rules.py`` says *"retryable, never
 silent"* and nothing ever retried it.
 
-It also covers JUDGED DROPS. A drop the model made on judgment is exactly as re-adjudicable as
-a park — the difference was never in the evidence, only in how confident the gate happened to
+It also covers JUDGED STOPS. A mail the model took out on judgment is exactly as re-adjudicable
+as a park — the difference was never in the evidence, only in how confident the gate happened to
 be — and 657 dropped events with no retained payload made "did we lose anything real?"
-permanently unanswerable. Deterministic drops (a provider SPAM label) stay out: those are facts,
-not opinions, and L1 is a filter rather than a warehouse.
+permanently unanswerable. Since STEP-03 the gate ARCHIVES that mail rather than dropping it, and
+the drain reads the archive exactly as it read the drop (03 F55: on every heartbeat, without
+re-running the gate); a judged drop written before the deploy is still read until it ages out.
+A RULE's stop (a provider SPAM label, an unsubscribe header) stays out: those are facts, not
+opinions — archived, kept, and not re-admitted here.
 
 Two classes of park, and the honest thing is to treat them differently:
 
@@ -72,6 +75,32 @@ NEEDS_REFETCH: frozenset[str] = frozenset({
     "DOC-09",                 # a speech engine ran and produced no usable transcript
 })
 
+#: Parks the EXTRACTOR writes (`capture/semantic/extractor.py`, `PARK_*`), not the gate.
+#:
+#: ⛔ THE FOURTH ORPHANED CLASS. The coverage ratchet read park sites out of `capture/gate/` only,
+#: so these four reached `parked_events` and no drain claimed them: `drain_parked` counted them and
+#: walked past, `parked_aging` called them ``"terminal"``, and on the design partner's org two
+#: mails waited at ``pending`` from 3 Oct with zero attempts and no next attempt. The funnel probe
+#: counted them as *kept unread*.
+#:
+#: The event is already ``emitted`` and its payload is retained; what failed is the model's answer.
+#: So flipping ``outcome`` — this drain's own recovery — would change nothing. They are read again
+#: through the door `_reread_unread` uses (`capture/landing/unread.find_parked_extractions`), under
+#: a bounded ladder; here they are counted, so the backlog is visible to every surface that reads it.
+#: STEP-05 · a KEPT mail nothing ever read — what every recovery path used to leave behind (a
+#: re-admitted park, a manual recover, a refetch, a recapture, a promotion out of the archive) and
+#: mail captured while the tenant's Layer 1 was off. Filed by the re-read queue
+#: (`capture/landing/unread.queue_unread`), not the extractor, and read by the same ladder.
+EXTRACTION_NEVER_RAN = "extraction_never_ran"
+
+NEEDS_REEXTRACTION: frozenset[str] = frozenset({
+    "extraction_call_failed",      # the model call itself failed
+    "extraction_parse_failed",     # the answer was not parseable, even after one repair
+    "extraction_schema_failed",    # parseable, but not the schema the profile asked for
+    "extraction_total_loss",       # every claim in the answer was dropped as unusable
+    EXTRACTION_NEVER_RAN,          # STEP-05: kept and never read — see above
+})
+
 #: How old a pending park has to be before it is worth an operator's attention.
 STALE_AFTER = timedelta(days=3)
 
@@ -89,7 +118,8 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
 
     now = now or datetime.now(timezone.utc)
     out = {"examined": 0, "reinjected": 0, "blocked_no_payload": 0,
-           "needs_refetch": 0, "needs_recapture": 0, "stale": 0, "by_reason": {}}
+           "needs_refetch": 0, "needs_recapture": 0, "needs_reextraction": 0, "stale": 0,
+           "by_reason": {}}
 
     where_org = " and pe.org_id=:o" if org_id else ""
     params: dict = {"lim": limit}
@@ -97,22 +127,47 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
         params["o"] = org_id
 
     with engine.begin() as c:
-        # Parked events AND judged drops. A drop the model made on judgment is exactly as
+        # Parked events AND judged stops. A mail the model took out on judgment is exactly as
         # re-adjudicable as a park — the difference was never in the evidence, only in how
         # confident the gate happened to be — and treating drops as out of scope is what made a
         # "we improved the filter" claim unverifiable against the mail it had already deleted.
+        # ARCHIVED since STEP-03 (`archive` in the trace); DROPPED before it (`drop`) — both read.
+        # ⛔ STEP-06 (`yc2_w27_s06 · M24.C5.L-data.V1.U01`). The limit used to cover every pending
+        # park, and the rows another drain owns (refetch, recapture, re-extraction) were counted
+        # and skipped where they stood: 200 of them older than a re-admittable row starved it every
+        # tick. The limited read takes only what THIS drain re-admits; the rest are counted below,
+        # with no limit, so the report still says what every class holds.
+        for r in c.execute(text(
+                "select pe.reason_code, count(*) as n, "
+                "       count(*) filter (where pe.created_at < :stale_before) as stale "
+                "from parked_events pe "
+                f"where pe.status='pending'{where_org} and not (pe.reason_code = any(:judged)) "
+                "group by pe.reason_code"),
+                {**params, "judged": sorted(RE_ADJUDICABLE),
+                 "stale_before": now - STALE_AFTER}).fetchall():
+            out["examined"] += r.n
+            out["stale"] += r.stale
+            out["by_reason"].setdefault(r.reason_code, {"seen": 0, "reinjected": 0})["seen"] += r.n
+            if r.reason_code in NEEDS_REFETCH:
+                out["needs_refetch"] += r.n
+            elif r.reason_code in NEEDS_RECAPTURE:
+                out["needs_recapture"] += r.n
+            elif r.reason_code in NEEDS_REEXTRACTION:
+                out["needs_reextraction"] += r.n
+
         rows = c.execute(text(
             "select pe.event_id, pe.org_id, pe.reason_code, pe.created_at, "
             "       (rp.event_id is not null) as has_payload "
             "from parked_events pe "
             "left join raw_payloads rp on rp.event_id = pe.event_id and rp.org_id = pe.org_id "
-            f"where pe.status='pending'{where_org} "
+            f"where pe.status='pending'{where_org} and pe.reason_code = any(:judged) "
             "union all "
             "select se.event_id, se.org_id, et.reason_code, se.captured_at, true "
             "from source_events se "
             "join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
-            "join event_trace et on et.event_id = se.event_id and et.action = 'drop' "
-            f"where se.outcome='dropped' and et.reason_code = any(:judged)"
+            "join event_trace et on et.event_id = se.event_id "
+            "     and et.action in ('drop', 'archive') "
+            f"where se.outcome in ('dropped', 'archived') and et.reason_code = any(:judged)"
             + (" and se.org_id=:o" if org_id else "") +
             " order by 4 asc limit :lim"),
             {**params, "judged": sorted(RE_ADJUDICABLE)}).fetchall()
@@ -136,6 +191,13 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
                 # a superseded version stamp. Counted here rather than walked past, so a reader
                 # of THIS report can see the whole queue rather than the part this drain owns.
                 out["needs_recapture"] += 1
+                continue
+
+            if r.reason_code in NEEDS_REEXTRACTION:
+                # Owned by the re-read pass (`capture/landing/unread.find_parked_extractions`):
+                # the event is already emitted, so the flip below would do nothing. Counted, not
+                # walked past — the defect this class exists to end.
+                out["needs_reextraction"] += 1
                 continue
 
             if r.reason_code not in RE_ADJUDICABLE:
@@ -167,15 +229,24 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
             # "low-signal / digest / backfill", which is what a row that has been sitting in a
             # park queue actually is. Understating is the safe direction — the event is still
             # extracted, it simply does not jump ahead of live mail.
+            # ATTENTION FOLLOWS THE READ (STEP-03). A re-admitted stop is about to be read, so
+            # its tier becomes `deep` and its reason says why — `readmitted:<code>` — rather than
+            # leaving an emitted row that still says nobody reads it. A parked row is already
+            # `deep`, waiting; it keeps its park code. (Postgres evaluates the CASEs on the old
+            # row, so `outcome` there is the stop being undone.)
             flipped = c.execute(text(
                 "update source_events set outcome='emitted', "
                 "route = coalesce(route, 'needs_extraction'), "
-                "triage_lane = coalesce(triage_lane, 'P3') "
-                "where org_id=:o and event_id=:e and outcome in ('parked', 'dropped')"),
-                {"o": r.org_id, "e": r.event_id}).rowcount
+                "triage_lane = coalesce(triage_lane, 'P3'), "
+                "attention = case when outcome in ('archived', 'dropped') then 'deep' "
+                "                 else attention end, "
+                "attention_reason = case when outcome in ('archived', 'dropped') "
+                "                        then 'readmitted:' || :code else attention_reason end "
+                "where org_id=:o and event_id=:e and outcome in ('parked', 'dropped', 'archived')"),
+                {"o": r.org_id, "e": r.event_id, "code": r.reason_code}).rowcount
             if flipped:
-                # Only a real parked row has a status to update; a re-admitted drop has none,
-                # and inventing one would put a row in the park queue that was never parked.
+                # Only a real parked row has a status to update; a re-admitted drop or archive has
+                # none, and inventing one would put a row in the park queue that was never parked.
                 c.execute(text("update parked_events set status='recovered' where event_id=:e"),
                           {"e": r.event_id})
                 out["reinjected"] += 1
@@ -183,9 +254,9 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
 
     if out["examined"]:
         _log.info("parked drain: examined=%d reinjected=%d needs_refetch=%d "
-                  "needs_recapture=%d stale=%d",
+                  "needs_recapture=%d needs_reextraction=%d stale=%d",
                   out["examined"], out["reinjected"], out["needs_refetch"],
-                  out["needs_recapture"], out["stale"])
+                  out["needs_recapture"], out["needs_reextraction"], out["stale"])
     return out
 
 
@@ -230,5 +301,6 @@ def parked_aging(engine, *, org_id: str | None = None, now: datetime | None = No
              "class": ("needs_refetch" if r.reason_code in NEEDS_REFETCH
                        else "re_adjudicable" if r.reason_code in RE_ADJUDICABLE
                        else "needs_recapture" if r.reason_code in NEEDS_RECAPTURE
+                       else "needs_reextraction" if r.reason_code in NEEDS_REEXTRACTION
                        else "terminal")}
             for r in rows]

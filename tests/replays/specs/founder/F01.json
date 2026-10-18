@@ -1,0 +1,282 @@
+{
+ "case_id": "F01",
+ "title": "A government portal moves the founder's live application",
+ "kind": "must_detect",
+ "label_row": 1,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-24T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "status",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-24T05:20:00Z",
+   "from": "StartupSetu <updates@startupsetu.gov.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Application SSR-2026-48213: status updated",
+   "body": "Dear Applicant,\n\nYour application SSR-2026-48213 for recognition under the StartupSetu programme has moved to the stage: Under Examination. You will be notified when the examination is complete. Track the status on the StartupSetu portal.\n\nRegards,\nStartupSetu Team",
+   "labels": [
+    "INBOX",
+    "CATEGORY_PROMOTIONS"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": {
+     "business": true,
+     "category": "transactional",
+     "human_authored": false,
+     "asks_for_reply": false
+    },
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "startup recognition",
+      "application status"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "StartupSetu",
+       "entity_type": "organization",
+       "quote": "StartupSetu"
+      },
+      {
+       "surface_form": "SSR-2026-48213",
+       "entity_type": "document",
+       "quote": "SSR-2026-48213"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "recognition application SSR-2026-48213",
+       "state": "pending",
+       "owner": "StartupSetu",
+       "quote": "has moved to the stage: Under Examination"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "thread.objective",
+       "subject": "thread",
+       "value": "startup recognition application",
+       "standing": "judgement",
+       "quote": "Your application SSR-2026-48213 for recognition"
+      }
+     ],
+     "exchange_intent": {
+      "category": "transactional",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "medium"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "status": "emitted"
+  },
+  "memory": {
+   "status": true
+  },
+  "cards": [
+   {
+    "about": [
+     "StartupSetu",
+     "SSR-2026-48213"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "compliance — the startup recognition application",
+  "stage": "under examination"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "recognition granted",
+   "rejected",
+   "pay the fee"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against",
+  "stage": "STEP-11 — no stage is derived for a file (STEP-09 built the files, not their stages)"
+ },
+ "notes": "The faithful junk-filter answer to an automated portal notice is drop: the prompt says to drop automated, self-service notices, and nothing in it says the founder has a live application. That gap is the engine's (STEP-03, STEP-04).",
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<startupsetu.gov.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "StartupSetu wrote that the recognition application has moved to the stage Under Examination.",
+       "evidence": [
+        "evt_1cc07fcda32dffd470f8bdd2"
+       ],
+       "quote": "recognition under the StartupSetu programme has moved to the stage: Under Examination."
+      },
+      {
+       "claim": "The notice says the founder will be notified when the examination is complete, points to the StartupSetu portal to track the status, and asks nothing of the founder.",
+       "evidence": [
+        "evt_1cc07fcda32dffd470f8bdd2"
+       ],
+       "quote": "notified when the examination is complete. Track the status on the StartupSetu portal."
+      },
+      {
+       "claim": "The notice is the only touch in this file, and the file has been quiet for less than a day.",
+       "evidence": [
+        "evt_1cc07fcda32dffd470f8bdd2",
+        "num:days_quiet"
+       ],
+       "quote": "Application SSR-2026-48213: status updated Dear Applicant, Your application SSR-2026-48213 for"
+      },
+      {
+       "claim": "No reply time has been measured with the portal's updates address, either way.",
+       "evidence": [
+        "num:their_reply_time:updates@startupsetu.gov.test",
+        "num:your_reply_time:updates@startupsetu.gov.test"
+       ]
+      },
+      {
+       "claim": "The engine holds this notice under an investor relationship situation in the fundraising domain, seen for the first time, with no earlier card or outcome.",
+       "evidence": [
+        "sit:sit_461663895a8f9f35ee9b84a5",
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_card_verdict@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      },
+      {
+       "claim": "The dossier names no stop rule for this file, so it does not say whether the work goes dormant if nothing is done.",
+       "evidence": [
+        "whatif:7",
+        "whatif:14"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The application is live and in the examiner's hands: the next word is the portal's, and the founder's part is to answer any query fast.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "Reading a government recognition portal as an investor relationship is a misfiling: the brief names this file compliance work, and judged as fundraising it would be held to the wrong yardstick.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to go on: this work is seen for the first time, with no earlier card or outcome to say how such notices go for this founder.",
+       "based_on": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The examiner may raise a query before deciding, rather than decide on the papers as filed.",
+       "needs": "The portal's next notice, or a look at the application on the portal."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether the examiner has already raised a query or asked for a document on the portal.",
+       "relevance": "If one is waiting, the move is the founder's now; the notice alone does not say."
+      },
+      {
+       "question": "What the examination involves and how long it usually takes.",
+       "relevance": "It sets when to expect word, and when silence would become a reason to chase."
+      },
+      {
+       "question": "Which documents the application rests on, and whether they are to hand.",
+       "relevance": "A query answered the same day is the one thing the founder controls at this stage."
+      },
+      {
+       "question": "Why the engine reads a government recognition portal as an investor relationship.",
+       "relevance": "The brief names this file compliance work; filed under fundraising it may be judged, and carded, as an investor."
+      }
+     ],
+     "frames": {
+      "primary": "A live government recognition application, one of the brief's goals now, has moved into examination; the next word is the examiner's, and your part is to be ready to answer any query fast.",
+      "rivals": [
+       "A routine automated status notice that needs nothing from the founder until the examination ends.",
+       "The start of a query cycle in which the examiner asks for more before deciding."
+      ]
+     },
+     "proposed_kind": null,
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "With no playbook, from the brief and the notice: once an application is under examination, the portal decides and writes again when the examination completes, and the applicant answers any query it raises.",
+      "actual": "The application has moved to Under Examination; no query and no decision has arrived, and we have not written in this file."
+     },
+     "scenarios": {
+      "do_nothing": "The examination runs its course and the portal writes when it completes; the risk is a query that arrives and goes unseen among automated mail.",
+      "act": "A look at the portal now confirms the stage, shows any query already raised, and leaves the founder ready to answer the examiner the same day.",
+      "best": "The examination completes without a query and the portal writes with its decision.",
+      "worst": "A query from the examiner goes unseen and the application stalls while the founder believes it is moving.",
+      "signals_to_watch": [
+       "Any mail from StartupSetu asking for a document or a clarification",
+       "A change of status on the portal",
+       "Silence well past what the portal says an examination takes, once that is known"
+      ]
+     },
+     "appraisal": {
+      "stakes": "high",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The brief names StartupSetu recognition for Nimbus Labs Private Limited as a goal now.",
+       "The notice asks nothing of the founder and says word will come when the examination completes.",
+       "Looking at the portal commits the founder to nothing, so a wrong move here costs little."
+      ]
+     },
+     "mode": "find_out",
+     "next_move": {
+      "who": "Arjun Rao",
+      "what": "Sign in to the StartupSetu portal, confirm the application reads Under Examination, and note any query or document request the examiner has raised",
+      "for_whom": "the StartupSetu recognition application",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
+     },
+     "alternative": "Have every StartupSetu mail flagged the day it arrives, so a query is answered within its window.",
+     "wait_or_stop": "After the check, wait for the examiner's word; stop waiting and chase StartupSetu only if a query is found, or if silence runs well past what the portal says an examination takes.",
+     "done_when": "You know whether the examiner wants anything, and the application's next notice, a query or a decision, is caught the day it arrives.",
+     "draft": null
+    }
+   }
+  ]
+ }
+}

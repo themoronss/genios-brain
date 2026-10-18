@@ -40,7 +40,23 @@ pytestmark = pytest.mark.pg
 #: tenant seeded at a frozen 2026-08-08 has an empty card queue and an unreplayable run by the
 #: time anybody runs this"*. Every assertion here is about structure and arithmetic, never about
 #: a date or a hash, so a moving instant costs the file nothing.
-_AT = datetime.now(timezone.utc)
+#:
+#: ⛔ CORRECTED 2026-10-05 — it costs nothing only if the SEED moves with it. The admin event was
+#: still seeded at `NOW` (2026-08-20), so from 2026-10-04 — `NOW` plus the 45 days after which a
+#: situation goes dormant — the tenant's only situation was dormant, the live query reads
+#: `active`/`partial` only, and every run reasoned over nothing. The seed now uses `_AT` as well.
+#: ⛔ Read when each test runs, never when this module is imported (`yc2_w27_s17`
+#: M41.C1.L-integration.V1.U02, `YC-II W27/03` F142): an instant taken at import is hours old by the
+#: time a long run — a sleeping laptop, a slow CI runner — reaches the test. Set by `_clock` when
+#: the module's first test starts: its module-scoped fixtures seed rows with these instants.
+_AT: datetime = None  # type: ignore[assignment]
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _clock():
+    global _AT
+    _AT = datetime.now(timezone.utc)
+
 
 _UNITS_WITH_FINDINGS = (
     "select r.reasoner_id, r.status, r.output from reasoning_reasoner_results r "
@@ -60,7 +76,7 @@ def _run(pg_store, org: str, *, roster_v2: bool) -> None:
     # `_seed_event` inserts `on conflict do nothing` — so with `_run_admin`'s constant default
     # only the FIRST org seeded on a database ever gets a `source_events` row, and every later
     # tenant silently scores `source_count = 0` in `situations.evidence_score`.
-    _run_admin(pg_store, org, event_id=f"adm_evt_{org}")
+    _run_admin(pg_store, org, event_id=f"adm_evt_{org}", occurred_at=_AT)
     situations.refresh_situations(pg_store, org, eval_time=_AT)
     # LAYER 1's OWN SUPPLY, which this tenant never had. L2's admission gate refuses a situation
     # carrying no verified evidence span, and a verified span is only ever published on a

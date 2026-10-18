@@ -34,13 +34,15 @@ from .models import RoutePlan, SourceDocument
 #: written by humans and reads better as `customer_support`, while L2's id is a registry key.
 DOMAIN_ALIASES: dict[str, str] = {
     "support": "customer_support",
-    # Fundraising is authored inside the Sales corpus, in its own `investor_relations`
-    # subdomain. Not because an investor is a customer — the capability exists precisely to
-    # refuse that reading — but because a compiled signal can only carry authority in a pack
-    # lane the tenant actually holds (`_tenant_pack`: the config snapshot's `pack_id` must
-    # equal the capability's domain). Splitting fundraising into its own corpus domain would
-    # have produced a capability that compiles, reasons, and can never become a card.
-    "fundraising": "sales",
+    # Fundraising is the FOUNDER OFFICE's (STEP-11, `06` D2): the founder's raising, programmes,
+    # introductions, compliance and hiring, authored in `Domain Expertise/Founder Office Expertise/`.
+    # ⛔ IT USED TO POINT AT SALES, AND THE REASON GIVEN WAS STALE (`03` F122). The comment here said a
+    # corpus of its own "compiles, reasons, and can never become a card", because a compiled signal
+    # carries authority only in a pack lane the tenant holds (`_tenant_pack`: the snapshot's
+    # `pack_id` must equal the capability's domain). `packs/wiring._corpus_packs` has since given
+    # EVERY authored corpus that lane with no engine code, so an investor no longer has to be read
+    # through the Sales corpus to reach a card.
+    "fundraising": "founder_office",
     # `investor` is the SAME domain under the model's own word for it — `_RELATIONSHIP_NATURES`
     # in the L2 pipeline offers `investor`, the registry calls it `fundraising`, and the two never
     # met. `context.domain_spec._ALIASES` now canonicalises the name where a hint becomes THE
@@ -48,7 +50,7 @@ DOMAIN_ALIASES: dict[str, str] = {
     # stored under the old name are real and re-typing history silently would be worse than
     # reading it. Deliberately duplicated rather than imported: L2 and L3 share no module today,
     # and one import to save one line of data is not worth the edge.
-    "investor": "sales",
+    "investor": "founder_office",
 }
 
 #: Layer 2 domain ids that are NOT a domain — they mean "no domain was identified".
@@ -637,6 +639,9 @@ class CapabilityResolver:
         priority_bp: int | None = None
         priority_situation_id: str | None = None
         priority_rank: tuple[int, str] | None = None
+        do_nothing: str | None = None
+        do_nothing_situation_id: str | None = None
+        do_nothing_rank: tuple[int, str] | None = None
         saw_index_route = False
         # L3.1-U2 · the richer routing key, when the tenant has one. Read ONCE for the whole
         # resolve so every domain answers against the same fire.
@@ -706,6 +711,17 @@ class CapabilityResolver:
                         priority_rank = p_rank
                         priority_bp = int(authored_priority)
                         priority_situation_id = situation_id
+
+                # STEP-11 · WHAT DOING NOTHING COSTS, in the situation's own words, ranked the way the
+                # card copy is — the author's priority, ties on id. Over the situations that WROTE one:
+                # a louder situation that said nothing does not silence a quieter one that did.
+                consequence = authored.get("do_nothing_consequence")
+                if isinstance(consequence, str) and consequence.strip():
+                    c_rank = (-int(authored.get("priority_bp") or 0), situation_id)
+                    if do_nothing_rank is None or c_rank < do_nothing_rank:
+                        do_nothing_rank = c_rank
+                        do_nothing = consequence.strip()
+                        do_nothing_situation_id = situation_id
 
                 render_block = authored.get("render")
                 if isinstance(render_block, Mapping) and render_block:
@@ -847,6 +863,8 @@ class CapabilityResolver:
             render_situation_id=render_situation_id,
             priority_bp=priority_bp,
             priority_situation_id=priority_situation_id,
+            do_nothing_consequence=do_nothing,
+            do_nothing_situation_id=do_nothing_situation_id,
             pattern_route_id=pattern_route_id,
             # An ACTIVATED fire that no registry names is not the same fact as a shadow fire, and
             # it is the one an operator has to act on: the tenant switched a pattern on and the

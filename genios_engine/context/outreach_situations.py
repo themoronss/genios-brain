@@ -42,6 +42,8 @@ from sqlalchemy import bindparam, text
 from genios_engine.context.derived_provenance import load_event_receipts
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.vocabulary import owner_basis
+from genios_engine.context.waiting import WAITING_ONLY_FIELDS
+from genios_engine.platform.self_identity import SelfIdentity, identity_for
 from genios_engine.context.situations import (  # noqa: I001
     unmet_source_families,
     window_coverage_gaps,
@@ -196,7 +198,7 @@ _WAITING_AFTER_DAYS = 2
 
 _WAITING_ROWS = (
     "select f.subject_node_id as node_id, f.field as field, f.value as value, "
-    "       n.display_name as name, n.node_type as node_type "
+    "       n.display_name as name, n.node_type as node_type, n.canonical_key as canonical_key "
     "from graph_facts f "
     "join graph_nodes n on n.org_id = f.org_id and n.node_id = f.subject_node_id "
     "     and n.valid_to is null "
@@ -813,7 +815,9 @@ def read_unanswered_replies(rows: dict, now: datetime, employers: dict) -> list[
         # THEIR HABIT, carried rather than compared. `party.reply_cadence_days` is the median gap
         # between THEIR replies, which says how quickly they answer — not how quickly we do — so
         # it belongs on the card as context and not in the gate above. Turning "we are four times
-        # slower than they are" into a threshold needs our own cadence, which nothing derives yet.
+        # slower than they are" into a threshold needs our own cadence — derived since STEP-10
+        # (`context/waiting`: `party.our_reply_days`, `derived.our_reply_days`); whether it becomes
+        # the threshold is `06` D42's decision, not this reading's.
         cadence = _num(held.get("party.reply_cadence_days"))
         if cadence is not None:
             facts.append(("outreach.their_normal_reply_days", int(cadence), "number"))
@@ -848,10 +852,14 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
     without a time is a different situation and needs a different card.
     """
     findings: list[_Finding] = []
-    # WHO WE ARE, so that "a promise of ours" can be checked rather than assumed. `None` covers
-    # both "no outbound observed" and "several sending seats"; neither is a basis for deciding
-    # somebody else owns a promise, so neither refuses anything below.
-    us = str(rows.get("_mailbox_owner") or "").strip().lower() or None
+    # WHO WE ARE, so that "a promise of ours" can be checked rather than assumed — ANY of us
+    # (STEP-04, `platform/self_identity`), not the one sending address `_mailbox_owner` names:
+    # that is None the moment a second address of ours sends mail, and a counterparty's promise
+    # was then carded as ours again. Rows built with `_mailbox_owner` alone are read as that one
+    # address. Knowing no address of ours is no basis for refusing anything below.
+    us = rows.get("_us")
+    if not isinstance(us, SelfIdentity):
+        us = SelfIdentity.of([rows.get("_mailbox_owner")])
     for node_id, held in rows.items():
         # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
         if node_id.startswith("_") or not isinstance(held, dict):
@@ -869,7 +877,7 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
         # finding, because "we cannot tell whose this is" has never been evidence that it is not
         # ours, and inferring an owner from silence is the move this module refuses everywhere.
         owner = str(held.get("_owner_key") or "").strip().lower()
-        if us and owner and owner != us:
+        if us and owner and not us.is_us(owner):
             continue
         # A PROMISE THE GRAPH CANNOT TRACE TO A MESSAGE IS NOT EVIDENCE THAT ONE WAS MADE.
         # See `_UNTRACEABLE_COMMITMENTS`: every fact derived, none of them tied to anything
@@ -1325,7 +1333,9 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
     # Stamped under its own reserved key by `_gather`, and `or {}` is the whole failure handling
     # it needs: a build with no angle layer, a sweep that made no calls, and a tenant whose queue
     # the model refused all arrive here as an empty map and produce exactly today's flat queue.
-    return read_conditions_in_review(queue, now, owner, rows.get("_condition_verdicts") or {})
+    # `_us` — who we are, stamped by `_gather` (STEP-04) — answers an actor that is an address.
+    return read_conditions_in_review(queue, now, owner, rows.get("_condition_verdicts") or {},
+                                     us=rows.get("_us"))
 
 
 from genios_engine.context.attention_situations import ANCHOR_UNREPORTED
@@ -1413,7 +1423,7 @@ def read_conditions_met_for_dispatch(rows: dict, now: datetime, employers: dict)
 
     met = rows.get("_conditions_met") or {}
     owner = rows.get("_mailbox_owner")
-    return read_conditions_satisfied(met, now, owner)
+    return read_conditions_satisfied(met, now, owner, us=rows.get("_us"))
 
 
 #: The dormant-condition review queue, read from its own store rather than from `_gather`'s
@@ -1424,7 +1434,7 @@ def read_meetings_for_dispatch(rows: dict, now: datetime, employers: dict) -> li
     """The meeting follow-through reading, in the shape the dispatch loop hands every reader.
 
     `_gather` stamps the meetings onto `rows` under `_meetings` — a list, not one entry per node —
-    because `meeting_touch._MEETINGS` returns its own row shape and these facts live on the
+    because `meeting_touch.meeting_rows` returns its own row shape and these facts live on the
     meeting node rather than in the `thread.*` map the outreach readings share. Same reserved-key
     route `_conditions`, `_organizations` and `_campaigns` take.
     """
@@ -1560,8 +1570,19 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
     days from TODAY and found campaigns the sweep it is replaying could not have seen.
     """
     with store.engine.connect() as c:
+        # WHO IS US, asked once for the whole gather (STEP-04, `platform/self_identity`).
+        us = identity_for(c, org_id)
         held: dict[str, dict] = {}
         for row in c.execute(text(_WAITING_ROWS), {"o": org_id}):
+            # NOBODY WAITS ON US, AND NOBODY WAITS ON A MACHINE. `waiting.py` writes its waiting
+            # facts on every counterparty of our outbound — the founder's second address, which
+            # only ever receives his mail, and a `service` included — and every waiting reading
+            # (per person, cohort, campaign, organization) gates on them: that is how the founder's
+            # own addresses reached "waiting longest" lines. Those facts are not carried for one
+            # of us or a service; everything else about the node still travels.
+            if str(row.field) in WAITING_ONLY_FIELDS and (
+                    row.node_type == "service" or us.is_us_node(row.node_type, row.canonical_key)):
+                continue
             entry = held.setdefault(str(row.node_id), {})
             entry[str(row.field)] = row.value
             entry["_name"] = row.name
@@ -1703,12 +1724,16 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         held.setdefault("_node_names", {})
         held["_mailbox_owner"] = _optional(
             c, "mailbox owner", lambda: _mailbox_owner(c, org_id), None)
+        # …and who we are, under its own reserved key: "a promise of ours" is a promise ANY of us
+        # made, which one sending address cannot say once a second one sends.
+        held["_us"] = us
         # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
-        # _MEETINGS` joins the `attended` edge, excludes retired attendances, excludes our own
-        # seats and keeps EVERY external attendee rather than one picked by sort order — three
-        # corrections its comments record, each of which this reading would otherwise have had to
-        # learn again. Guarded like `_mailbox_owner`: the query uses `#>>` and `array_agg`, so a
-        # driver without them is a gap in what this sweep can read, never a crash.
+        # meeting_rows` joins the `attended` edge, excludes retired attendances, leaves out a
+        # meeting of only us (who is us asked of `identity_for`, STEP-04) and keeps EVERY external
+        # attendee rather than one picked by sort order — corrections its comments record, each of
+        # which this reading would otherwise have had to learn again. Guarded like
+        # `_mailbox_owner`: the query uses `#>>` and `jsonb_agg`, so a driver without them is a
+        # gap in what this sweep can read, never a crash.
         # IMPORTED, not referenced from thin air. This read `_MEETINGS` as a bare name that no
         # import in this module ever bound, so the lambda raised `NameError` on every sweep,
         # `_optional` caught it, logged "gather meetings unavailable; the reading it feeds is
@@ -1716,10 +1741,8 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # and `meeting_follow_through` produced ZERO cards — not on this tenant, on every tenant,
         # since the line was written. The guard made a crash survivable and made the outage quiet;
         # the same shape as `correlation_dependency.event_parties` calling an un-imported `text`.
-        from genios_engine.context.meeting_touch import _MEETINGS as _MEETING_ROWS
-        held["_meetings"] = _optional(
-            c, "meetings", lambda: [dict(r._mapping)
-                                    for r in c.execute(text(_MEETING_ROWS), {"o": org_id})], [])
+        from genios_engine.context.meeting_touch import meeting_rows
+        held["_meetings"] = _optional(c, "meetings", lambda: meeting_rows(c, org_id, us), [])
         # The counterparty organisations, under the same reserved-key route. Computed over the
         # WHOLE tenant rather than over `held`: `works_at` membership is what makes two people one
         # firm, and a firm's size — "two of the two partners we know are silent" — is only true if

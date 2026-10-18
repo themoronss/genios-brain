@@ -15,14 +15,18 @@ from genios_engine.capture.structured.apply import (apply_mapping, apply_relatio
                                                     calendar_availability)
 from genios_engine.capture.structured.registry import get_mapping
 from genios_engine.capture.validate.spans import apply_verdicts
+from genios_engine.context.extract.extractor import Extraction
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.context.llm.client import LLMClient
+from genios_engine.context.memory_lanes import Lane, lane_for
 from genios_engine.context.pipeline import process_event
-from genios_engine.context.qes_adapter import adapt_qes_extraction
+from genios_engine.context.qes_adapter import BELOW_FLOOR_CONFIDENCE_BP, adapt_qes_extraction
 from genios_engine.context.read_models import build_entity_360
-from genios_engine.context.structured import commit_structured
+from genios_engine.context.structured import commit_structured, version_time
 from genios_engine.contracts.extraction import ExtractionResult
 from genios_engine.platform.crypto import decrypt
+from genios_engine.platform.company_brief import current as company_brief_now
+from genios_engine.platform.self_identity import identity_for
 
 _grade_log = logging.getLogger(__name__)
 
@@ -50,7 +54,8 @@ _MAX_ATTEMPTS = 3          # transient extract failures retry up to this, then p
 # outcomes that mean "this event needs no more work" → written to the run ledger as terminal
 _DONE_OUTCOMES = {"committed_structured", "committed", "committed_structural",
                   "parked_low_relevance", "skipped_no_llm",
-                  "no_op", "committed_facts", "committed_observation"}
+                  "no_op", "committed_facts", "committed_observation",
+                  "committed_metadata"}          # an archive's road (STEP-05)
 
 
 def _clean_for_llm(raw: dict, event_id: str, prepared_text: str | None = None) -> str:
@@ -82,26 +87,16 @@ def _internal_emails(store: GraphStore, org_id: str) -> frozenset[str]:
     Gmail has, by construction, told us which address it owns. Deriving from the connection
     makes "who are we" a property of the integration rather than of a table someone has to
     remember to populate.
+
+    STEP-04: the ADDRESSES of `platform/self_identity.identity_for`, the one answer every module
+    asks. That answer reads the same three sources this function used to re-write inline — active
+    seats, `orgs.email`, the connected accounts — plus what the tenant DECLARED
+    (`org_self_identities`): `ceo@thegenios.com`, which only ever receives the founder's own mail,
+    was none of the three, so all ten callers took it for an outside person. Normalised the way
+    person keys are (`platform/identity.norm_email`). Domains are not addresses; a caller that
+    needs them asks the identity itself.
     """
-    with store.engine.connect() as c:
-        rows = c.execute(text(
-            # 1) explicitly configured seats — correct when populated, empty on self-serve
-            "select lower(email) as e from org_seats "
-            "where org_id=:o and active and email is not null "
-            "union "
-            # 2) the account owner. The one identity that always exists, because signup
-            #    collected it: for the design partner this alone covers 57 outbound messages
-            #    that were being read as mail from a stranger.
-            "select lower(email) from orgs where id=:o and email is not null "
-            "union "
-            # 3) the connected mailbox, once the connector records which address it holds.
-            #    `external_account_id` is the right home for it and is not yet populated by
-            #    every provider path, so this contributes nothing today rather than failing —
-            #    the union degrades, it does not break.
-            "select lower(external_account_id) from connections "
-            "where org_id=:o and external_account_id is not null "
-            "and external_account_id like '%@%'"), {"o": org_id}).fetchall()
-    return frozenset(r.e for r in rows if r.e)
+    return identity_for(store, org_id).addresses
 
 
 def graded_extraction(qes_output, source_text: str | None, event_id: str = "?"):
@@ -132,11 +127,26 @@ def graded_extraction(qes_output, source_text: str | None, event_id: str = "?"):
 
 
 def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset(),
-                 effective=None):
-    """Route + process ONE event. Returns (outcome, affected_node_id | None)."""
-    raw = json.loads(decrypt(bytes(row.enc_content), crypto_key)) if row.enc_content else {}
+                 effective=None, self_identity=None, company_brief=None):
+    """Route + process ONE event by the road it takes into memory (STEP-05,
+    `context/memory_lanes`). Returns (outcome, affected_node_id | None). No road calls a model."""
     mapping = get_mapping(row.source, row.object_type)
-    if mapping is not None:                          # structured lane (B1, no LLM)
+    # Every production caller hands the drain's own columns: `_pull`, and `_rows_for_rebuild`, which
+    # `scripts/rebuild_graph` replays since STEP-18 B12 (S18-X14 — this said the script "selects
+    # none of the road columns"). The defaults read a row built without them — a test's — as an
+    # emitted event with a signal, which every pulled row was before STEP-05.
+    lane = lane_for(outcome=getattr(row, "outcome", "emitted"), source=row.source,
+                    structured=mapping is not None, has_signal=getattr(row, "has_signal", True),
+                    has_extraction=getattr(row, "own_output", None) is not None)
+    if lane is None:
+        # The pull admits exactly what `lane_for` gives a road — its test seeds every combination —
+        # so this is a caller's row, never the drain's: loud, and parked after three tries.
+        raise ValueError(f"event {row.event_id} has no road into memory")
+    if lane is Lane.METADATA:
+        return _commit_metadata(row, org_id=org_id, store=store, internal_emails=internal_emails,
+                                self_identity=self_identity, company_brief=company_brief)
+    raw = json.loads(decrypt(bytes(row.enc_content), crypto_key)) if row.enc_content else {}
+    if lane is Lane.CALENDAR:                        # structured lane (B1, no LLM)
         fields = apply_mapping(mapping, raw)
         display_name = fields.get(mapping.name_field) if mapping.name_field else None
         relations = apply_relations(mapping, raw)    # attendees/participants → graph edges
@@ -149,7 +159,11 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                                 # an outOfOffice event / all-day "Leave" block → its owner's
                                 # availability window (no LLM; the calendar is the record)
                                 availability=(calendar_availability(raw)
-                                              if mapping.node_type == "meeting" else None))
+                                              if mapping.node_type == "meeting" else None),
+                                # every edit drains (STEP-05): its facts are filed at when the
+                                # calendar said them, so the newest edit wins in any order
+                                version_at=version_time(raw.get("updated")),
+                                self_identity=self_identity)
         store.cache_set(processing_key=f"struct:{row.event_id}", org_id=org_id,
                         event_id=row.event_id, output={"structured": True},
                         input_tokens=0, output_tokens=0, model="structured")
@@ -159,20 +173,28 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
     is_inbound = "SENT" not in (raw.get("labelIds") or [])   # direction → thread state
     # recipients (To + Cc, captured in L1) → sender↔recipient correspondence edges in L2
     recipients = [e for e in ((raw.get("to") or []) + (raw.get("cc") or [])) if e]
-    qes_output = getattr(row, "qes_output", None)
-    if qes_output is None:
-        # A QES whose extraction pointer cannot be resolved is incomplete input, not permission
-        # for Layer 2 to reinterpret the raw message.  Leave it retryable: cache repair or an L1
-        # replay can fill the pointer and the next drain will pick it up.
-        return "held_missing_qes_extraction", None
+    if lane is Lane.BELOW_FLOOR:
+        # Layer 1 READ this mail and the floor did not publish it: its own extraction, every claim
+        # ranked below the floor — that relevance is the whole mark — and no signal, so no signal
+        # metadata (`06` D20; there is no confidence to carry, `03` F69).
+        qes_output, confidence_bp = row.own_output, BELOW_FLOOR_CONFIDENCE_BP
+        domain_hints, signal_types = (), ()
+    else:
+        qes_output = getattr(row, "qes_output", None)
+        if qes_output is None:
+            # A QES whose extraction pointer cannot be resolved is incomplete input, not permission
+            # for Layer 2 to reinterpret the raw message.  Leave it retryable: cache repair or an
+            # L1 replay can fill the pointer and the next drain will pick it up.
+            return "held_missing_qes_extraction", None
+        confidence_bp = int(getattr(row, "qes_confidence_bp", 0) or 0)
+        domain_hints = getattr(row, "qes_domain_hints", None) or ()
+        signal_types = getattr(row, "qes_signal_types", None) or ()
     if not isinstance(qes_output, dict):
         qes_output = json.loads(qes_output)
     qes_output = graded_extraction(qes_output, getattr(row, "prepared_text", None), row.event_id)
     qualified = adapt_qes_extraction(
-        qes_output,
-        confidence_bp=int(getattr(row, "qes_confidence_bp", 0) or 0),
-        domain_hints=getattr(row, "qes_domain_hints", None) or (),
-        signal_types=getattr(row, "qes_signal_types", None) or (),
+        qes_output, confidence_bp=confidence_bp, domain_hints=domain_hints,
+        signal_types=signal_types,
     )
     res = process_event(org_id=org_id, event_id=row.event_id, source=row.source, content=content,
                         sender_email=row.sender, recipient_emails=recipients,
@@ -189,7 +211,34 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                         # The tenant's own pack vocabulary. Without it the extractor runs one
                         # hardcoded B2B-SaaS ontology for everyone, and a rule reading
                         # `deal.status` is dead because the model was never told the name.
-                        effective=effective, qualified_extraction=qualified)
+                        effective=effective, qualified_extraction=qualified,
+                        # Who is us, with the domains the tenant declared (STEP-04).
+                        self_identity=self_identity,
+                        # Who the founder named — connectors, a watchlist (STEP-09).
+                        company_brief=company_brief)
+    return res.outcome, res.primary_node
+
+
+def _commit_metadata(row, *, org_id, store, internal_emails, self_identity, company_brief=None):
+    """An archive's road into memory (STEP-05): the ledger's own columns — who wrote to whom,
+    when, in which thread — with no payload, no text and no model (`process_event`'s
+    `metadata_only`). The pull never hands this road the payload, and nothing here asks for it."""
+    sender = row.sender
+    ours = (self_identity.is_us(sender) if self_identity is not None
+            else str(sender or "").strip().lower() in internal_emails)
+    res = process_event(org_id=org_id, event_id=row.event_id, source=row.source, content="",
+                        sender_email=sender, recipient_emails=list(row.recipients or ()),
+                        sender_name=getattr(row, "sender_name", None),
+                        occurred_at=row.occurred_at, llm=None, store=store,
+                        # Who sent it, not the mail's labels: those are in the payload.
+                        is_inbound=not ours, internal_emails=internal_emails,
+                        thread_id=getattr(row, "parent_object_id", None),
+                        domain_hints=getattr(row, "domain_hints", None),
+                        qualified_extraction=Extraction(
+                            relevance=0.0, noise_type="none", domains=[], entity_mentions=[],
+                            fact_candidates=[], commitments=[], questions=[], observations=[]),
+                        self_identity=self_identity, metadata_only=True,
+                        company_brief=company_brief)
     return res.outcome, res.primary_node
 
 
@@ -215,33 +264,85 @@ _L2_OWN_EXTRACTIONS = ("select event_id from l1_extraction_results "
                        "where org_id=:o and profile_id is null")
 
 
-def _pull(store: GraphStore, org_id: str, limit: int):
-    """Pull only events that crossed Layer 1's QES publication boundary.
-
-    One event may publish several signals; the lateral fold chooses its highest-importance live
-    signal for confidence/domain metadata and retains every signal type.  All signals for one
-    event point at the same cached extraction, so the expensive artifact is joined once.
-    """
-    with store.engine.connect() as c:
-        return c.execute(text(
-            "select se.event_id, se.source, se.object_type, se.actor->>'email' as sender, "
-            "se.actor->>'name' as sender_name, "
+#: THE COLUMNS THE DRAIN READS FOR EACH EVENT — one spelling, selected by `_pull` over what memory
+#: does not hold yet and by `_rows_for_rebuild` over everything (STEP-18 B12): a rebuild that read
+#: other columns would replay other memory. The column list alone — each reader writes its own `select`, so
+#: no string here reads as a statement it is not (STEP-17's census plans every whole statement).
+ROAD_COLUMNS = (
+            "se.event_id, se.source, se.object_type, se.outcome, "
+            "se.actor->>'email' as sender, se.actor->>'name' as sender_name, se.recipients, "
             "se.occurred_at, se.source_object_id, se.triage_lane, se.internal_kind, "
             "se.parent_object_id, se.domain_hints, "
             "q.qes_confidence_bp, q.qes_signal_types, q.qes_domain_hints, "
+            "(q.qes_extraction_ref is not null) as has_signal, "
             "xr.output as qes_output, "
-            "rp.enc_content, "
-            "pc.clean_text as prepared_text "
+            "own.output as own_output, "
+            # AN ARCHIVE'S PAYLOAD NEVER LEAVES THE DATABASE ON THIS ROAD: its memory is the
+            # ledger's own columns, with no decryption (STEP-05 §8.3; `03` F37, F57).
+            "case when se.outcome = 'archived' then null else rp.enc_content end as enc_content, "
+            "pc.clean_text as prepared_text ")
+
+
+def _pull(store: GraphStore, org_id: str, limit: int):
+    """Pull every kept event that has a road into memory (STEP-05, `context/memory_lanes`).
+
+    It used to pull only events that crossed Layer 1's QES publication boundary — an inner join on
+    an ACTIVE qualified signal and on the payload, `outcome = 'emitted'` only — so memory held ~27
+    of 395 mails and 2 of 34 meetings: a mail the floor did not publish, an archived mail and a
+    calendar event whose deadline signal had expired never reached Layer 2. Now a kept event is
+    pulled when it has one of the four roads:
+
+      * a signal — as before: one event may publish several; the lateral fold chooses its
+        highest-importance live signal for confidence/domain metadata and retains every type;
+      * below the floor — no live signal, but its own L1 extraction exists (`own_output`): the mail
+        WAS read, the floor only judged it not worth an alert (`06` D20);
+      * metadata — `archived`: the gate called it noise; read for its names and dates only;
+      * calendar — a structured record (`registry.mapped_kinds`), whatever its signal.
+
+    A screen session never takes the last three: a screen never creates memory of a person on its
+    own (`06` D22). `has_signal` keeps "no signal" apart from "a signal whose extraction row is
+    missing", which the drain still holds, as before.
+    """
+    with store.engine.connect() as c:
+        return c.execute(text(
+            "select " + ROAD_COLUMNS + PENDING_FROM +
+            "order by coalesce(se.triage_lane, 'P3') asc, se.occurred_at asc "
+            "limit :lim"), {**pending_params(org_id), "lim": limit}).fetchall()
+
+
+def _rows_for_rebuild(store: GraphStore, org_id: str):
+    """EVERY kept event of the tenant that has a road into memory, oldest first, with the drain's
+    own columns — what `scripts/rebuild_graph.py` replays through `_process_one`.
+
+    ⛔ STEP-18 B12 (`yc2_w27_s18` M48.C2.L-data.V0.U04). The rebuild pulled its rows with a query
+    of its own: `outcome = 'emitted'` only, and none of `ROAD_COLUMNS` — so a mail that had reached
+    memory through a signal arrived with no `qes_output` and was held
+    `held_missing_qes_extraction`, and a rebuild restored the calendar and none of the mail; the
+    archived and below-floor roads STEP-05 opened were never replayed at all. This is `_pull` over
+    the same roads (`ROADS_FROM`) without the one question a rebuild must not ask — whether memory
+    already holds the event — and with no limit: a rebuild replays the whole ledger.
+    """
+    with store.engine.connect() as c:
+        return c.execute(text(
+            "select " + ROAD_COLUMNS + ROADS_FROM +
+            "order by se.occurred_at asc, se.event_id asc"), pending_params(org_id)).fetchall()
+
+
+#: WHAT IS KEPT AND HAS A ROAD INTO MEMORY — every event `memory_lanes.lane_for` gives one, held or
+#: not. `_rows_for_rebuild` reads it whole; `PENDING_FROM` narrows it to what memory does not hold yet.
+#: Bound by `pending_params`.
+ROADS_FROM = (
             "from source_events se "
             # SCOPED, like the `prepared_content` join on the very next line. This one was not, and the
             # two are the same shape of lookup on the same event: a payload belongs to a tenant,
             # and a join that does not say so relies on `new_id("evt")` never colliding across
             # orgs to stay correct. It also cannot use `raw_payloads_org_event_idx`, which leads
             # on `org_id` — measured 2026-09-17, the per-event lookup went 351ms -> 2.9ms with
-            # the org in hand and stays a sequential scan without it.
-            "join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
+            # the org in hand and stays a sequential scan without it. LEFT since STEP-05: an
+            # event whose payload has expired still has its names and dates.
+            "left join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
             "left join prepared_content pc on pc.event_id = se.event_id and pc.org_id = se.org_id "
-            "join lateral ("
+            "left join lateral ("
             "  select max(qs.confidence_bp)::int as qes_confidence_bp, "
             "         array_agg(distinct qs.signal_type order by qs.signal_type) as qes_signal_types, "
             "         (array_agg(qs.domain_hints order by qs.importance_bp desc, qs.signal_id))[1] "
@@ -251,10 +352,31 @@ def _pull(store: GraphStore, org_id: str, limit: int):
             "  from qualified_signals qs "
             "  where qs.org_id = se.org_id and qs.event_id = se.event_id "
             "    and qs.state = 'active'"
-            ") q on q.qes_extraction_ref is not null "
+            ") q on true "
             "left join l1_extraction_results xr on xr.org_id = se.org_id "
             "     and xr.processing_key = q.qes_extraction_ref "
-            "where se.org_id=:o and se.outcome='emitted' "
+            # BELOW THE FLOOR: the event's own L1 extraction, the newest one, read only when no live
+            # signal points at one. `profile_id` is set by Layer 1's writer and null on L2's own
+            # cache rows (see `_L2_OWN_EXTRACTIONS`).
+            "left join lateral ("
+            "  select x.output from l1_extraction_results x "
+            "  where x.org_id = se.org_id and x.event_id = se.event_id and x.profile_id is not null "
+            "  order by x.created_at desc limit 1"
+            ") own on q.qes_extraction_ref is null "
+            # THE ROADS of `context/memory_lanes.lane_for`, spelled for SQL; the pull test seeds every
+            # combination, so the two spellings cannot drift. A screen item is never archived into
+            # memory, signal or not.
+            "where se.org_id=:o and se.outcome = any(:kept) "
+            "and not (se.source = :screen and se.outcome = 'archived') "
+            "and (q.qes_extraction_ref is not null "
+            "     or (se.source || ':' || se.object_type) = any(:structured) "
+            "     or se.outcome = 'archived' "
+            "     or (se.source <> :screen and own.output is not null)) ")
+
+#: WHAT IS KEPT AND NOT YET IN MEMORY — the drain's question, in ONE spelling: `_pull` selects its
+#: columns over it and `api/routes._pending_count` counts it, so the progress bar and the drain cannot
+#: disagree (they did twice before; see `_L2_OWN_EXTRACTIONS`). Bound by `pending_params`.
+PENDING_FROM = ROADS_FROM + (
             # RESTORED. The QES rewrite of this query dropped this clause and left the constant,
             # its eighteen-line rationale and the other consumer (`api/routes._pending_count`)
             # standing — so the drain and the progress bar disagreed again, which is the exact
@@ -265,9 +387,17 @@ def _pull(store: GraphStore, org_id: str, limit: int):
             # for one message on every sweep, for ever.
             f"and se.event_id not in ({_L2_OWN_EXTRACTIONS}) "
             "and se.event_id not in (select event_id from l2_processing_runs "
-            "                        where org_id=:o and status in ('done','parked')) "
-            "order by coalesce(se.triage_lane, 'P3') asc, se.occurred_at asc "
-            "limit :lim"), {"o": org_id, "lim": limit}).fetchall()
+            "                        where org_id=:o and status in ('done','parked')) ")
+
+
+def pending_params(org_id: str) -> dict:
+    """The parameters `PENDING_FROM` binds — the tenant, what is kept, which kinds are structured, and
+    the screen's source name (`context/memory_lanes`)."""
+    from genios_engine.capture.structured.registry import mapped_kinds
+    from genios_engine.context.memory_lanes import KEPT_OUTCOMES, SCREEN_SOURCE
+
+    return {"o": org_id, "kept": list(KEPT_OUTCOMES), "structured": list(mapped_kinds()),
+            "screen": SCREEN_SOURCE}
 
 
 def _record_done(store, org_id: str, event_id: str) -> None:
@@ -471,11 +601,12 @@ def _record_convergence(store: GraphStore, org_id: str, *, before: str | None, a
 
 
 def _safe_process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset(),
-                      effective=None):
+                      effective=None, self_identity=None, company_brief=None):
     """Isolation wrapper: ONE event's failure never aborts the batch (§L2 'drain every event')."""
     try:
         outcome, node = _process_one(row, org_id=org_id, store=store, llm=llm, crypto_key=crypto_key,
-                                     internal_emails=internal_emails, effective=effective)
+                                     internal_emails=internal_emails, effective=effective,
+                                     self_identity=self_identity, company_brief=company_brief)
         return outcome, node, None
     except Exception as e:      # noqa: BLE001 — quarantine this event, keep the batch alive
         return "error", None, str(e)[:400]
@@ -534,7 +665,14 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     affected: set[str] = set()
     seen: set[str] = set()                            # attempted THIS call → no intra-call re-pull
     done = 0
-    internal_emails = _internal_emails(store, org_id)  # once per drain, not per event
+    # Who is us, once per drain, not per event (STEP-04: `platform/self_identity`). The addresses
+    # are exactly what `_internal_emails` returns; the identity travels beside them so the pipeline
+    # also knows the domains the tenant declared.
+    self_identity = identity_for(store, org_id)
+    internal_emails = self_identity.addresses
+    # Who the founder NAMED (STEP-09, `platform/company_brief`): connectors and a watchlist, once per
+    # drain like who is us. Empty for a tenant with no accepted line — and then nothing differs.
+    company_brief = company_brief_now(store, org_id)
     # The tenant's pack vocabulary, resolved ONCE per drain for the same reason. A tenant is
     # bound to several packs (sales + general) and the extractor must see the union: a field
     # named by one pack and missed because only the other was consulted is the same silent loss
@@ -550,7 +688,9 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
                 lambda r: _safe_process_one(r, org_id=org_id, store=store, llm=llm,
                                             crypto_key=crypto_key,
                                             internal_emails=internal_emails,
-                                            effective=effective), rows))
+                                            effective=effective,
+                                            self_identity=self_identity,
+                                            company_brief=company_brief), rows))
         for row, (outcome, node, err) in zip(rows, results):
             seen.add(row.event_id)
             out[outcome] += 1

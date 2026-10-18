@@ -16,8 +16,9 @@ from genios_engine.context.open_loops import (
     close_loops_for_reply,
     record_ask,
 )
+from genios_engine.contracts.company_brief import CompanyBrief
 from genios_engine.contracts.open_loop import is_ask, open_loop_id
-from genios_engine.capture.gate.rules import (AUTO_REPLY, addressed_to_a_list,
+from genios_engine.capture.gate.rules import (AUTO_REPLY, addressed_to_a_list, header,
                                               reply_to_party, sender_is_a_relay)
 from genios_engine.capture.internal_knowledge import authority_rank_for
 from genios_engine.capture.structured.apply import _PERSONAL_DOMAINS
@@ -27,12 +28,16 @@ from genios_engine.context.extract.envelope import Envelope
 from genios_engine.context.extract.extractor import Extraction, extract
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.platform.config import get_settings
+from genios_engine.platform.self_identity import SelfIdentity
 from genios_engine.context.guard import _norm, annotate_grounding, keep_grounded
 from genios_engine.context.fact_visibility import strict_private_evidence
 from genios_engine.capture.documents.base import UNKNOWN_SPEAKER
-from genios_engine.context.correlation import correlate_event
+from genios_engine.context.correlation import correlate_event, thread_correlations
+from genios_engine.context.introductions import (assign_names, connector_roles, introductions_by,
+                                                 named_in)
 from genios_engine.context.canon import register_canon_node, resolve_canon_mention
 from genios_engine.context.documents import register_document_node, resolve_owner_node
+from genios_engine.context.delivery import record_delivery_failure
 from genios_engine.context.identity import (observe_company_name, observe_person_name,
                                             resolve_company_mention, resolve_person_name)
 from genios_engine.context.llm.client import LLMClient
@@ -488,6 +493,22 @@ def _thread_node(store, conn, *, org_id: str, thread_id: str | None, event_id: s
         display_name=label[:120], event_id=event_id)
 
 
+def _joined_thread(store, conn, *, org_id: str, thread_id: str | None, event_id: str, node: str,
+                   counterparty: str, occurred_at: datetime | None, source: str) -> int:
+    """`node` took part in this conversation: the thread and the participant edge the state legs
+    write, and NO state on either — an archived mail's place in its thread (STEP-05,
+    `metadata_only`), so nothing reads it as somebody waiting or owed. Returns edges written."""
+    tnode = _thread_node(store, conn, org_id=org_id, thread_id=thread_id, event_id=event_id,
+                         counterparty=counterparty)
+    if not tnode:
+        return 0
+    return int(bool(store.write_edge(conn, org_id=org_id, edge_type="corresponded_with",
+                                     from_node_id=node, to_node_id=tnode, confidence=0.95,
+                                     occurred_at=occurred_at, event_id=event_id,
+                                     evidence={"derived": "thread participant"},
+                                     source=source, authority_rank=2)))
+
+
 def _is_a_promise(cm: dict) -> bool:
     """Deterministic post-gate on a commitment candidate.
 
@@ -838,6 +859,36 @@ def _mirror_to_recipients(store, conn, *, org_id: str, recipients: list[str], ki
     return written
 
 
+def _an_auto_reply(meta: dict | None) -> bool:
+    """STEP-09 · the message says a responder wrote it (`Auto-Submitted: auto-replied`, RFC 3834) —
+    asked of a sender the founder named, whose mail is otherwise read whatever its headers."""
+    hdrs = (meta or {}).get("headers") if isinstance(meta, dict) else None
+    return header(hdrs, "Auto-Submitted").strip().lower() == "auto-replied"
+
+
+def _a_portals_mailing(meta: dict | None) -> bool:
+    """STEP-09 · a watched portal's MAILING (golden F32) rather than its notice: the bulk clauses of
+    `gate.rules.addressed_to_a_list` — a list header, a bulk precedence — read the one shared way.
+    Not `Auto-Submitted: auto-generated`: that is how a portal sends one founder a notice, and the
+    notice is the file. Nor the machine sender, which every portal address is."""
+    hdrs = (meta or {}).get("headers") if isinstance(meta, dict) else None
+    kept = {k: v for k, v in (hdrs or {}).items() if str(k).strip().lower() != "auto-submitted"}
+    return addressed_to_a_list({"headers": kept}, sender_email=None)
+
+
+def _in_their_files(conn, *, org_id: str, thread_id: str, event_id: str, prior) -> bool:
+    """STEP-09 · is this thread already in the file of someone the connector introduced? Then a mail
+    of the connector's in it, naming nobody, is the next nudge about them — not its own ask."""
+    ids = thread_correlations(conn, org_id=org_id, thread_id=thread_id, exclude_event_id=event_id)
+    if not ids:
+        return False
+    anchored = {r.anchor_node_id for r in conn.execute(text(
+        "select anchor_node_id from context_correlations "
+        " where org_id = :o and correlation_id = any(:ids)"), {"o": org_id, "ids": ids})}
+    theirs = {i.contact for i in prior} | {i.company for i in prior if i.company}
+    return bool(anchored & theirs)
+
+
 def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   sender_email: str | None, occurred_at: datetime | None,
                   sender_name: str | None = None,
@@ -850,7 +901,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   canon_meta: dict | None = None,
                   effective: dict | None = None,
                   qualified_extraction: Extraction | None = None,
-                  availability_marker: str | None = None) -> L2Result:
+                  availability_marker: str | None = None,
+                  self_identity: SelfIdentity | None = None,
+                  metadata_only: bool = False,
+                  company_brief: CompanyBrief | None = None) -> L2Result:
+    # `metadata_only` (STEP-05) — an ARCHIVED mail: the gate called it noise and no model read it.
+    # It writes the people, their companies, the thread and who wrote to whom — and no relevance
+    # observation, no ball-in-court or waiting fact, no correlation; its words stay unreadable
+    # (`03` F37, F57). Outcome `committed_metadata`.
     # replay cache — identical content+prompt → reuse, no re-call, deterministic. The key is
     # ORG-SCOPED (org_id in the hash) so tenant A's cached extraction can never be served to
     # tenant B on byte-identical content (e.g. the same newsletter) — the cross-tenant leak fix.
@@ -966,6 +1024,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # outbound email under one enormous "us" group and correlate nothing.
         touched: dict[str, str] = {}
         internal_nodes: set[str] = set()
+        # The nodes whose door held an address or a domain and asked who we are there (`_person`,
+        # `_works_at`). The pool check before correlation asks only about the others (STEP-04).
+        asked: set[str] = set()
+        # STEP-09 · the nodes of every address the founder's company brief names as a CONNECTOR, in
+        # any position on this mail — an intro network is infrastructure wherever it appears.
+        connector_nodes: set[str] = set()
 
         def _person(email: str) -> str:
             key = _person_key(email) or email.strip().lower()
@@ -975,7 +1039,16 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # (a billing notice is real), but it must never enter the person graph where the
             # relationship rules live. `service` has no rule scope, which is exactly right —
             # nobody is in a business relationship with their own tooling.
-            ntype = ("service" if (_is_automated_sender(email) or is_platform_sender(email))
+            #
+            # STEP-04 · BUT AN ADDRESS OF OURS IS A PERSON. `platform_domains` is GeniOS's own
+            # product domain, and for the design partner it is also his company's, so
+            # `ceo@thegenios.com` — his own second address — was typed a service, and stayed one
+            # (`find_or_create_node` never re-types). An exact address of ours — a seat, the owner,
+            # a connected account, a declared address: the self set the drain hands down,
+            # `runner._internal_emails` — is never a service. Only the exact address: the product's
+            # own mail at a declared domain (`invite@thegenios.com`) stays a service (§8.5).
+            ntype = ("service" if key not in internal_set and (
+                         _is_automated_sender(email) or is_platform_sender(email))
                      else "person")
             # NAME THE PERSON IF THE SOURCE NAMED THEM. Only the SENDER's name is known here —
             # recipients arrive as bare addresses in To/Cc — so this applies to the one address
@@ -1002,16 +1075,26 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             if label != email and label == sender_name:
                 store.name_person_node(conn, org_id=org_id, node_id=node, name=label)
             touched[node] = ntype
-            if key in internal_set:
+            # One of us never anchors — and that includes a colleague we know only by a declared
+            # domain (STEP-04): `correlate_event` lifts every person left in the pool to the
+            # company of their address's domain, so leaving them in would anchor the situation on
+            # our own company after `_works_at` had kept it out.
+            if key in internal_set or us.is_us(key):
                 internal_nodes.add(node)
+            elif company_brief is not None and str(
+                    company_brief.named_sender(key) or "").startswith("connector:"):
+                connector_nodes.add(node)
+            asked.add(node)
             return node
 
         employer: dict[str, str] = {}
 
-        def _works_at(email: str, person_node: str) -> None:
-            """person → works_at → company(domain). Groups everyone at 3one4/kurral/… together."""
+        def _works_at(email: str, person_node: str, *, domain: str | None = None) -> None:
+            """person → works_at → company(domain). Groups everyone at 3one4/kurral/… together.
+            `domain` names the company outright — a portal the company brief watches is one
+            organisation whichever of its subdomains wrote (STEP-09)."""
             nonlocal edge_n
-            dom = _company_domain(email)
+            dom = domain or _company_domain(email)
             if not dom:
                 return
             company = store.find_or_create_node(
@@ -1035,15 +1118,28 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # (is_platform_sender) — and the answer to either one means this is not a counterparty.
             if (_norm_email(email) or "") in internal_set or is_platform_sender(email):
                 internal_nodes.add(company)
+            # STEP-04 · AND A DOMAIN WE DECLARED IS OURS IN EVERY EVENT, whichever address reached
+            # it. It used to be ours only when the address was in the self set, so a Gmail founder
+            # copying a colleague the engine did not know by address filed the thread under his own
+            # company.
+            if us.is_us_domain(dom):
+                internal_nodes.add(company)
+            asked.add(company)
             if store.write_edge(conn, org_id=org_id, edge_type="works_at",
                                 from_node_id=person_node, to_node_id=company, confidence=0.9,
                                 occurred_at=occurred_at, event_id=event_id,
-                                evidence={"derived": "email domain", "domain": dom},
+                                evidence={"derived": ("company brief watchlist" if domain
+                                                      else "email domain"), "domain": dom},
                                 source=source, authority_rank=2):
                 edge_n += 1
 
         sender_norm = _norm_email(sender_email) or (sender_email or "").strip().lower()
         internal_set = internal_emails or frozenset()
+        # WHO IS US beyond an address (STEP-04). The drain reads `platform/self_identity` once per
+        # sweep and hands it down beside the self set: it carries the domains the tenant DECLARED,
+        # which a set of addresses cannot. A caller that hands down only addresses is answered with
+        # exactly those.
+        us = self_identity if self_identity is not None else SelfIdentity.of(addresses=internal_set)
         # WHICH ASKS THIS MESSAGE ACTUALLY ANSWERS, computed once and handed to both closers.
         # Normalised through `norm_obs_kind` exactly as the observation loop below does, so the
         # kind this consults and the kind that reaches the graph cannot be different strings.
@@ -1052,9 +1148,32 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         discharged_here = discharged_asks(
             norm_obs_kind(o.get("kind")) for o in (ex.observations or ()))
         sender_node = None
-        # A machine sender is noise for the NETWORK too: it gets a `service` node (facts attach) but
-        # never anchors a relationship edge or a situation — same treatment as a newsletter.
-        is_noise = is_noise or _is_automated_sender(sender_email)
+        # STEP-09 · WHAT THE FOUNDER'S COMPANY BRIEF NAMES THIS SENDER (`platform/company_brief`, read
+        # once per drain pass by `context/runner` and handed down beside who is us). None for a tenant
+        # with no accepted line — and then nothing below differs from before STEP-09.
+        named = (company_brief.named_sender(sender_email) if company_brief is not None else None)
+        connector_mail = str(named or "").startswith("connector:")
+        watched_domain = (str(named).split(":", 1)[1]
+                          if str(named or "").startswith("watchlist:") else None)
+        if connector_mail or watched_domain:
+            # THE FOUNDER NAMED IT, so an automated address — or the model calling its mail
+            # "automated" — does not make it noise: an intro network's introduction and a portal's
+            # notice are what the founder asked to be read. A newsletter, spam or an auto-reply (L1's
+            # marker, or the message saying so) still is; so is a watched domain's MAILING (golden
+            # F32 — read, never a file). A connector's introduction carries an unsubscribe header as
+            # a matter of course, and is not a mailing.
+            # An auto-reply the message declares is treated as L1's marker is — no ask, no
+            # question, no promise is read from it — and a portal's mailing IS a newsletter, so its
+            # noise is recorded under that name whatever the reader called it.
+            auto_reply = auto_reply or _an_auto_reply(canon_meta)
+            if (watched_domain and ex.noise_type not in ("newsletter", "spam")
+                    and _a_portals_mailing(canon_meta)):
+                ex.noise_type = "newsletter"
+            is_noise = auto_reply or ex.noise_type in ("newsletter", "spam")
+        else:
+            # A machine sender is noise for the NETWORK too: it gets a `service` node (facts attach)
+            # but never anchors a relationship edge or a situation — same treatment as a newsletter.
+            is_noise = is_noise or _is_automated_sender(sender_email)
 
         # CANON — company knowledge becomes a node of its own, so the facts in a refund
         # policy are facts about the Refund Policy rather than about the colleague who
@@ -1180,21 +1299,41 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # NETWORK edges (who↔whom, who works where) — built for real correspondence only, skipped
         # for noise so newsletters don't pollute the relationship graph. Content above is kept
         # either way; this gate is about the NETWORK, not about deleting data.
+        #: STEP-09 · the people a connector's introduction introduces: (node, address).
+        introduced: list[tuple[str, str]] = []
+        #: STEP-09 · the organisation a watched portal's notice is about.
+        watched_company: str | None = None
         if not is_noise:
             if sender_node:
-                _works_at(sender_email, sender_node)
+                _works_at(sender_email, sender_node, domain=watched_domain)
+                if watched_domain and employer.get(sender_node):
+                    # The notice is evidence about the PORTAL — the organisation is the file, the
+                    # address that sent it a service. Recorded, so a rebuild files it there too.
+                    watched_company = employer[sender_node]
+                    store.write_event_presence(
+                        conn, org_id=org_id, subject_node_id=watched_company,
+                        occurred_at=occurred_at, event_id=event_id, source=source,
+                        evidence={"presence": "watched_notice", "domain": watched_domain,
+                                  "speaker_node_id": sender_node})
             # recipients (To + Cc) → person nodes + sender↔recipient correspondence + affiliation.
             # A genuine mailing list is skipped — its subscribers are not this tenant's
             # relationships — and everything else keeps its recipients however many there are.
             # See the `_MAX_RECIPIENTS` block above for the headcount this replaced.
             recips = recipient_emails or []
-            to_a_list = addressed_to_a_list(canon_meta, sender_email=sender_email)
+            # STEP-09 · A CONNECTOR'S INTRODUCTION IS ADDRESSED TO PEOPLE, whatever its headers: an
+            # intro network sends every introduction with an unsubscribe link, and that dropped the
+            # very person introduced (`03` F91). Only a connector the founder's brief names.
+            to_a_list = (False if connector_mail
+                         else addressed_to_a_list(canon_meta, sender_email=sender_email))
             for rcpt in ([] if to_a_list else recips[:_MAX_RECIPIENTS]):
                 rn_email = _norm_email(rcpt) or rcpt.strip().lower()
                 if not rn_email or rn_email == sender_norm:
                     continue
                 rnode = _person(rn_email)
                 nodes += 1
+                if (connector_mail and rnode not in internal_nodes
+                        and rnode not in connector_nodes):
+                    introduced.append((rnode, rn_email))
                 # Thirty of sixty people in the pilot had no observations: the people who
                 # never replied. To/Cc establishes the recipient even when none of the four
                 # content-observation paths fire. Do not copy the sender's question/promise
@@ -1230,8 +1369,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 # for noise (an outbound auto-reply doesn't count as answering).
                 # Confidence is deterministic (rank 2 = grounded event): whether WE replied is a
                 # fact of the mailbox, not a function of how interesting the LLM found the email.
-                if (not is_inbound and not is_noise and occurred_at is not None
-                        and rn_email not in internal_set):
+                if (not is_inbound and not is_noise and not metadata_only
+                        and occurred_at is not None and rn_email not in internal_set):
                     # …and the reply CLOSES this thread's open loops for this person. The
                     # ball_in_court flip below says whose turn it is; the ledger says which
                     # requests this reply REACHED — one row each, never the whole person.
@@ -1299,6 +1438,93 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                              evidence={"derived": "we replied",
                                                        "thread": thread_id},
                                              source=source, authority_rank=2)
+                elif metadata_only and not is_inbound and rn_email not in internal_set:
+                    # AN ARCHIVE STILL BELONGS TO ITS CONVERSATION (STEP-05): the thread and who
+                    # was in it, without the state above.
+                    edge_n += _joined_thread(store, conn, org_id=org_id, thread_id=thread_id,
+                                             event_id=event_id, node=rnode, counterparty=rn_email,
+                                             occurred_at=occurred_at, source=source)
+
+        # STEP-09 · WHAT A CONNECTOR'S MAIL IS ABOUT (`context/introductions`). An address the
+        # founder's company brief names as a connector is an INTRODUCER wherever it appears, on the
+        # brief's word — so correlation never files an introduction under it (`03` F80). Its mail is
+        # one of three things: an introduction (it went to the people it introduces: each is typed
+        # `introduced`, joined to the connector by an `introduced` edge, and named from it); a nudge
+        # (to us alone, naming someone it introduced: it joins their file); or its OWN ask (naming
+        # no one it introduced: the connector's own file — golden F09, replay 02 m04).
+        #: Every node the brief names a connector — on this mail or only named in it — is an
+        #: introducer (`introductions.connector_roles`, which a rebuild reads too).
+        brief_roles: dict[str, str] = (connector_roles(conn, org_id=org_id,
+                                                       company_brief=company_brief)
+                                       if company_brief is not None else {})
+        if watched_company:
+            # The portal is the counterparty of every notice it sends. Its address is a machine,
+            # and a machine's role carries to its company (`correlation._lift_roles`), which made
+            # the portal non-anchoring the moment a notice named anyone else the graph knows.
+            brief_roles[watched_company] = "counterparty"
+        #: Whose turn this mail moves — the person who spoke, unless a connector's mail says
+        #: otherwise (an introduction: the people introduced; a nudge: nobody).
+        turn_subjects: list[str] = [speaker_node] if speaker_node else []
+        if watched_company and _is_automated_sender(sender_email):
+            # Nor is a portal's machine address ever owed a reply. What its notice asks of the
+            # founder ("upload a board resolution within 7 days", golden F02) is an ask — an open
+            # loop on the portal's file — done on the portal, not by answering `updates@`.
+            turn_subjects = []
+        for cnode in sorted(connector_nodes):      # on this mail: the brief's word, recorded
+            store.write_fact(conn, org_id=org_id, subject_node_id=cnode, field="party.role",
+                             value="introducer", value_type="enum",
+                             confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                             occurred_at=occurred_at, event_id=event_id,
+                             evidence={"standing": "company_brief"}, source=source,
+                             authority_rank=2)
+        if connector_mail and sender_node and introduced:
+            ours = sorted(internal_set | {sender_norm})
+            names = assign_names(ents, [a for _n, a in introduced], not_theirs=ours)
+            for rnode, address in introduced:
+                given = names.get(address.casefold())
+                brief_roles[rnode] = "introduced"
+                store.write_fact(conn, org_id=org_id, subject_node_id=rnode, field="party.role",
+                                 value="introduced", value_type="enum",
+                                 confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                                 occurred_at=occurred_at, event_id=event_id,
+                                 evidence={"standing": "connector_introduction", "by": sender_norm,
+                                           "thread": thread_id,
+                                           "names": list(given.names) if given else []},
+                                 source=source, authority_rank=2)
+                if store.write_edge(conn, org_id=org_id, edge_type="introduced",
+                                    from_node_id=sender_node, to_node_id=rnode, confidence=1.0,
+                                    occurred_at=occurred_at, event_id=event_id,
+                                    evidence={"derived": "connector introduction",
+                                              "thread": thread_id},
+                                    source=source, authority_rank=2):
+                    edge_n += 1
+                if given and given.person:
+                    store.name_person_node(conn, org_id=org_id, node_id=rnode, name=given.person)
+                if given and given.organisation and employer.get(rnode):
+                    store.name_company_node(conn, org_id=org_id, node_id=employer[rnode],
+                                            name=given.organisation)
+            # The reply an introduction calls for is owed to the people introduced.
+            turn_subjects = [rnode for rnode, _a in introduced]
+        elif connector_mail and sender_node and not is_noise:
+            # Only mail read as correspondence can be a nudge: the connector's newsletter naming
+            # someone it introduced is a mailing, filed nowhere — and recorded on nobody, or a
+            # rebuild would file it into their file.
+            prior = introductions_by(conn, org_id=org_id, connector_node=sender_node)
+            about = named_in(ents, prior)
+            if about:
+                # A NUDGE about people it introduced: it joins each of their files, and it is
+                # recorded on them so a rebuild files it there too. Their turn does not move —
+                # they did not write, and the introduction already put it with us.
+                for intro in about:
+                    touched[intro.contact] = "person"     # lifted to their company, as any person
+                    obs_n += int(store.write_event_presence(
+                        conn, org_id=org_id, subject_node_id=intro.contact,
+                        occurred_at=occurred_at, event_id=event_id, source=source,
+                        evidence={"presence": "connector_nudge", "speaker_node_id": sender_node}))
+                turn_subjects = []
+            elif prior and thread_id and _in_their_files(conn, org_id=org_id, thread_id=thread_id,
+                                                         event_id=event_id, prior=prior):
+                turn_subjects = []           # the next nudge in a thread already about them
 
         # B5 resolve — P1 anchor rule. A mention becomes a NODE only when it is a person WITH an
         # email (deterministic anchor). Anchorless mentions (companies/products/tools/systems, or
@@ -1469,6 +1695,23 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                     edge_n += 1
             return node
 
+        # WHO A CONVERSATION IS NAMED AFTER (STEP-04): its OTHER side — the first party of this
+        # message who is not us. The name is written once, below, from the message that carries
+        # what the thread is for, and never replaced (`name_thread_node` replaces only a label it
+        # generated), so taking the SENDER whatever the direction named the founder's own pitch
+        # after the founder, for good. Inbound, the other side is the sender, by the name the From
+        # header gives; outbound, the first recipient who is not one of us. Nobody but us: None,
+        # and `thread_label` names the conversation by what it is for alone.
+        def _ours(address: str) -> bool:
+            return ((_norm_email(address) or address.strip().lower()) in internal_set
+                    or us.is_us(address))
+
+        if sender_email and not _ours(sender_email):
+            other_side = sender_name or sender_email
+        else:
+            other_side = next((_norm_email(r) or r.strip().lower()
+                               for r in (recipient_emails or []) if r and not _ours(r)), None)
+
         for f in facts:
             from typing import get_args
             from genios_engine.contracts.extraction import BusinessField
@@ -1494,20 +1737,29 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                         # AND NAME IT, now that we know what it is for. This is the one moment the
                         # objective and the conversation are both in hand; before this line a
                         # thread was called after a hex fragment for the rest of its life, and 31
-                        # live cards on the pilot are anchored on one.
+                        # live cards on the pilot are anchored on one. After its OTHER side, never
+                        # after us — see `other_side` above.
                         if isinstance(claim.value, str):
                             store.name_thread_node(conn, org_id=org_id, node_id=subj,
                                                    objective=claim.value,
-                                                   counterparty=sender_name or sender_email)
+                                                   counterparty=other_side)
                 else:
                     subj = _business_subject(conn, org_id=org_id, name=claim.subject, field=claim.field)
                 if not subj:
                     continue
                 if claim.field.startswith("deal."):
-                    row = conn.execute(text("select node_type from graph_nodes where org_id=:o "
-                        "and node_id=:n and valid_to is null"), {"o":org_id,"n":subj}).first()
+                    row = conn.execute(text("select node_type, canonical_key from graph_nodes "
+                        "where org_id=:o and node_id=:n and valid_to is null"),
+                        {"o":org_id,"n":subj}).first()
                     if not row:
                         continue
+                    # A CLAIM ABOUT US IS NOT A DEAL ON US (STEP-04). An investor's "a term sheet
+                    # for <our company>" resolves its subject to our own company node, and
+                    # `_deal_for` minted "<our company> — deal" on it. Marked ours here, the subject
+                    # is what `_deal_for` already handles for an internal company: the deal goes to
+                    # the one outside company in the event — the investor's — or to nobody.
+                    if us.is_us_node(row[0], row[1]):
+                        internal_nodes.add(subj)
                     touched[subj] = row[0]
                     if row[0] != "deal":
                         # A named account/person must have its own company, never an arbitrary CC.
@@ -1691,7 +1943,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # claim about the MESSAGE — how relevant it scored, which noise class it fell in — and
         # the address that delivered it is the honest subject of that. A relay's own delivery
         # record belongs to the relay.
-        if sender_node:
+        # AN ARCHIVE WAS READ BY NO MODEL (STEP-05, `metadata_only`): there is no relevance to record.
+        if sender_node and not metadata_only:
             store.write_observation(
                 conn, org_id=org_id, subject_node_id=sender_node,
                 kind=(("email_noise:" + ("auto_reply" if auto_reply else ex.noise_type))
@@ -1717,7 +1970,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # A relay that names nobody writes neither fact rather than writing them against itself:
         # no card beats a card telling a founder to answer a mailing service.
         if (is_inbound and speaker_node and occurred_at is not None and not is_noise
-                and sender_norm not in internal_set):
+                and not metadata_only and sender_norm not in internal_set):
             # THEIR REPLY CLOSES WHAT WE ASKED THEM. The mirror of the outbound leg's
             # `close_loops_for_reply`, and until now the ledger had no such verb: a question we
             # put to somebody opened a loop on our own node that nothing could ever shut, so
@@ -1725,24 +1978,33 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             close_loops_awaited_from(conn, org_id=org_id, node_id=speaker_node,
                                      thread_id=thread_id, event_id=event_id, at=occurred_at,
                                      discharged=discharged_here)
-            store.write_fact(conn, org_id=org_id, subject_node_id=speaker_node,
-                             field="thread.last_inbound", value=occurred_at.isoformat(),
-                             value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
-                             relevance=ex.relevance,
-                             occurred_at=occurred_at, event_id=event_id,
-                             evidence={"derived": "inbound event"},
-                             source=source, authority_rank=2)
-            store.write_fact(conn, org_id=org_id, subject_node_id=speaker_node,
-                             field="thread.ball_in_court", value="us", value_type="enum",
-                             confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
-                             occurred_at=occurred_at,
-                             event_id=event_id, evidence={"derived": "last message inbound"},
-                             source=source, authority_rank=2)
+            # STEP-09 · ON WHOM. The person who spoke — except for a connector's mail: an
+            # introduction puts our turn with each person it introduces (the reply it calls for is
+            # owed to them, never to the network — `03` F81), and a nudge moves nobody's turn.
+            for subject in turn_subjects:
+                store.write_fact(conn, org_id=org_id, subject_node_id=subject,
+                                 field="thread.last_inbound", value=occurred_at.isoformat(),
+                                 value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
+                                 relevance=ex.relevance,
+                                 occurred_at=occurred_at, event_id=event_id,
+                                 evidence={"derived": "inbound event"},
+                                 source=source, authority_rank=2)
+                store.write_fact(conn, org_id=org_id, subject_node_id=subject,
+                                 field="thread.ball_in_court", value="us", value_type="enum",
+                                 confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                                 occurred_at=occurred_at,
+                                 event_id=event_id, evidence={"derived": "last message inbound"},
+                                 source=source, authority_rank=2)
             # …and the same state on the THREAD, where it does not collide. The person-level
             # write above stays for the rules that read it today; this is the substrate that
-            # makes "whose turn is it in THIS conversation" answerable at all.
-            tnode = _thread_node(store, conn, org_id=org_id, thread_id=thread_id,
-                                 event_id=event_id, counterparty=sender_norm)
+            # makes "whose turn is it in THIS conversation" answerable at all. Its other side is
+            # whoever the turn is with — for an introduction, the one person it introduced (two or
+            # more: no one is named), never the network; a nudge writes no turn, here either.
+            thread_party = (sender_norm if turn_subjects == [speaker_node]
+                            else introduced[0][1] if len(introduced) == 1 else None)
+            tnode = (_thread_node(store, conn, org_id=org_id, thread_id=thread_id,
+                                  event_id=event_id, counterparty=thread_party)
+                     if turn_subjects else None)
             if tnode:
                 if store.write_edge(conn, org_id=org_id, edge_type="corresponded_with",
                                     from_node_id=speaker_node, to_node_id=tnode, confidence=0.95,
@@ -1758,6 +2020,22 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                      occurred_at=occurred_at, event_id=event_id,
                                      evidence={"derived": "inbound event", "thread": thread_id},
                                      source=source, authority_rank=2)
+        elif (metadata_only and is_inbound and speaker_node and not is_noise
+                and sender_norm not in internal_set):
+            # AN ARCHIVE STILL BELONGS TO ITS CONVERSATION (STEP-05): the thread and who wrote in
+            # it, without the state above.
+            edge_n += _joined_thread(store, conn, org_id=org_id, thread_id=thread_id,
+                                     event_id=event_id, node=speaker_node,
+                                     counterparty=sender_norm, occurred_at=occurred_at,
+                                     source=source)
+
+        # STEP-10 · A BOUNCE IS ON THE FILE (`context/delivery`, `06` D38): a delivery report that
+        # says FAILED is written on the address that failed and on the original's thread.
+        obs_n, fact_n = record_delivery_failure(
+            store, conn, org_id=org_id, event_id=event_id, source=source,
+            sender_email=sender_email, canon_meta=canon_meta, thread_id=thread_id,
+            occurred_at=occurred_at, ours=_ours, internal_emails=internal_set,
+            metadata_only=metadata_only, counted=(obs_n, fact_n))
 
         node_roles: dict[str, str] = {}
         # A machine sender is plumbing whatever the model says, so seed it deterministically —
@@ -2008,6 +2286,27 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                      evidence={"derived": "soonest open commitment"},
                                      source=source, authority_rank=2)
 
+        # STEP-09 · the brief's word on who is a connector and whom it introduced, applied after the
+        # model's per-message reading and over it: the founder named the connector.
+        node_roles.update(brief_roles)
+        # NOTHING OF OURS ENTERS THE ANCHOR POOL, WHICHEVER DOOR IT CAME THROUGH (STEP-04). `_person`
+        # and `_works_at` ask who we are as they make a node, because they hold an address. A
+        # company named in prose (`resolve_company_mention`), a person known only by name, a
+        # claim's subject and a transcript speaker reach `touched` as an EXISTING node, with no
+        # address in hand — and asked nobody: a Gmail founder's pitch that named his own company
+        # anchored the thread on it. So the pool is asked once more, by each node's own key.
+        # Only the kinds that can be us (`SelfIdentity.is_us_node`), and only nodes no door asked about.
+        unchecked = [n for n, kind in touched.items()
+                     if n not in internal_nodes and n not in asked
+                     and kind in ("person", "service", "company", "tenant")]
+        if us and unchecked:
+            from sqlalchemy import bindparam
+            for r in conn.execute(text(
+                    "select node_id, node_type, canonical_key from graph_nodes "
+                    " where org_id = :o and node_id in :ids and valid_to is null").bindparams(
+                        bindparam("ids", expanding=True)), {"o": org_id, "ids": unchecked}):
+                if us.is_us_node(r.node_type, r.canonical_key):
+                    internal_nodes.add(r.node_id)
         # CORRELATION — the last thing in the same transaction, because a situation must
         # never reference nodes that rolled back. Anchors are the COUNTERPARTY only: our
         # own seats and our own company are removed, or every outbound email would file
@@ -2017,7 +2316,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # mention loop still creates the node and keeps every fact — this skips only the
         # grouping, so nothing is lost, it just stops a marketing blast from becoming
         # evidence in a live deal.
-        correlations = [] if is_noise else correlate_event(
+        correlations = [] if (is_noise or metadata_only) else correlate_event(
             conn, org_id=org_id, event_id=event_id, occurred_at=occurred_at,
             thread_id=thread_id,
             node_types={n: t for n, t in touched.items() if n not in internal_nodes},
@@ -2043,7 +2342,9 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
 
     # Everything readable is stored (facts tagged with relevance as confidence); nothing is
     # deleted by a relevance score. Ranking happens downstream (L3/queries), not by dropping here.
-    return L2Result(event_id, "committed", ex.relevance, nodes=nodes, facts=fact_n,
+    # A metadata write is its own outcome: it is done, and no model read it (`06` D21 — not billed).
+    return L2Result(event_id, "committed_metadata" if metadata_only else "committed", ex.relevance,
+                    nodes=nodes, facts=fact_n,
                     observations=obs_n, input_tokens=ex.input_tokens,
                     output_tokens=ex.output_tokens, graph_version=version, cached=is_cached,
                     primary_node=sender_node, correlations=len(correlations))

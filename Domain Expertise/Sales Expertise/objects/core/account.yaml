@@ -357,7 +357,7 @@ inference_patterns:
       status: executable
       when:
         - {neighbor_fact: deal.status, op: "=", value: open}
-        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 5, floor:
+        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: write_interval, mult: 5, floor:
               30}}
       yields: {confidence_bp: 8000, attribute: relationship_stage, value: at_risk}
       evidence_fields: [deal.last_inbound]
@@ -439,7 +439,7 @@ inference_patterns:
       status: executable
       when:
         - {has_obs: proposal_sent}
-        - {fn: days_since, path: thread.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3,
+        - {fn: days_since, path: thread.last_inbound, op: ">", value: {baseline: write_interval, mult: 3,
             floor: 10}}
       yields: {confidence_bp: 6800, attribute: churn_risk_bp, value: 5000}
       note: >
@@ -556,7 +556,7 @@ business_rules:
       surfaced. Satisfied customers are quiet in a different way from departing ones, and the
       pipeline cannot tell them apart, so a human must look.
     when:
-      - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 6, floor:
+      - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: write_interval, mult: 6, floor:
             45}}
     then: flag_dormant_relationship
     severity: advisory

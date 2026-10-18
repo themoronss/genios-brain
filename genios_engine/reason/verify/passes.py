@@ -35,6 +35,19 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 #: The fact that names who answers for a subject, by node type.
 _OWNER_FIELDS = ("deal.owner", "commitment.owner", "contract.owner", "account.owner")
 
+#: STEP-14 (`yc2_w27_s14` M43.C4.L-logic.V0.U04, s14-F10): a discrepancy's field AS THE FOUNDER SAYS IT — one closed
+#: map. The card used to print the graph's field name (*"Which is right? Maria Exconde: party.role"*); a field this map
+#: does not name is not asked at all — no card, counted (`unnamed_field`) — rather than shown as a field's name.
+FIELD_WORDS: dict[str, str] = {
+    "party.role": "role", "party.title": "title", "party.email": "email address", "party.phone": "phone number",
+    "party.company": "company", "person.title": "title", "person.email": "email address",
+    "company.name": "name", "company.domain": "website",
+    "deal.status": "deal status", "deal.stage": "deal stage", "deal.amount": "deal size",
+    "deal.close_date": "close date", "deal.owner": "deal owner",
+    "commitment.due_at": "due date", "commitment.status": "promise status", "commitment.owner": "promise owner",
+    "meeting.start_at": "meeting time", "meeting.status": "meeting status", "decision.status": "decision",
+}
+
 
 # ── watermarks (0154) ───────────────────────────────────────────────────────────────────────────
 def watermark(conn, org_id: str, pass_id: str) -> datetime:
@@ -94,13 +107,17 @@ def recipient(conn, org_id: str, row, seats: dict[str, str]) -> str | None:
 
 
 # ── 1. verify ───────────────────────────────────────────────────────────────────────────────────
-def compose(row, *, seat_id: str) -> dict:
-    """The situation for one discrepancy — values and sources only, never a quote."""
+def compose(row, *, seat_id: str) -> dict | None:
+    """The situation for one discrepancy — values and sources only, never a quote; its field said in words
+    (`FIELD_WORDS`). None for a field the map does not name: it is not asked."""
     p = V.public(row)
     held, ch = p["held"], p["challenger"]
     field = row.field
+    words = FIELD_WORDS.get(str(field))
+    if words is None:
+        return None
     subject = p["subject"] or "this record"
-    headline = f"Which is right? {subject}: {field}"[:300]
+    headline = f"Which is right? {subject}'s {words}"[:300]
     body = (f"On record: {V.render_value(held['value'])}"
             + (f" ({held['source']})" if held.get("source") else "")
             + f". New: {V.render_value(ch['value'])}"
@@ -125,7 +142,7 @@ def compose(row, *, seat_id: str) -> dict:
             "ttl_seconds": TTL_SECONDS, "digest": digest}
 
 
-def run_verify(engine, card_store, org_id: str, *, now: datetime, emit) -> int:
+def run_verify(engine, card_store, org_id: str, *, now: datetime, emit, counts: dict | None = None) -> int:
     with engine.begin() as c:
         # A snooze that has run out is a live question again.
         c.execute(text(
@@ -144,7 +161,13 @@ def run_verify(engine, card_store, org_id: str, *, now: datetime, emit) -> int:
         if seat_id is not None:
             try:
                 sit = compose(row, seat_id=seat_id)
-                if emit(engine, card_store, org_id, **sit) is not None:
+                if sit is None:
+                    # A field no word names is never shown as its name (STEP-14): counted, not asked.
+                    if counts is not None:
+                        counts["unnamed_field"] = counts.get("unnamed_field", 0) + 1
+                    _log.info("verify: discrepancy %s on an unnamed field %s not asked org=%s",
+                              row.id, row.field, org_id)
+                elif emit(engine, card_store, org_id, **sit) is not None:
                     emitted += 1
             except Exception:      # noqa: BLE001 — stop here; the watermark keeps this row
                 _log.exception("verify emit failed org=%s discrepancy=%s", org_id, row.id)
@@ -174,5 +197,5 @@ def run(engine, card_store, org_id: str, *, now: datetime | None = None) -> int:
     return total
 
 
-__all__ = ["PASS_ID", "advance", "compose", "owner_seat", "recipient", "run", "run_verify",
+__all__ = ["FIELD_WORDS", "PASS_ID", "advance", "compose", "owner_seat", "recipient", "run", "run_verify",
            "watermark"]

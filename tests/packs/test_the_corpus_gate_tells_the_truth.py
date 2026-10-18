@@ -149,7 +149,9 @@ def test_the_map_still_refuses_to_invent_a_corpus():
     from genios_engine.reason.domain_shadow import l3_domain_for
 
     assert l3_domain_for("general") is None
-    assert l3_domain_for("fundraising") is None
+    # Not invented: since STEP-11 (2026-10-09) `fundraising` reads the Founder Office, a corpus of
+    # its own authored for it — the ending this test's docstring asks for, not a remap.
+    assert l3_domain_for("fundraising") == "founder_office"
     assert l3_domain_for("admin") == "admin"
     assert l3_domain_for("support") == "customer_support"
 

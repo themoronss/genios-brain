@@ -1,0 +1,2703 @@
+{
+ "totals": {
+  "shadow|NONE": 118,
+  "live|admission:hold": 72,
+  "live|decided": 17,
+  "shadow|decided": 7,
+  "unroutable|NONE": 8,
+  "unroutable|decided": 5
+ },
+ "by_type": {
+  "shadow|support:support_period_review|NONE": 44,
+  "shadow|sales:pipeline_period_review|NONE": 44,
+  "live|admin:admin_period_review|admission:hold": 44,
+  "shadow|support:first_response_overdue|NONE": 29,
+  "live|admin:account_admin|admission:hold": 5,
+  "live|admin:account_admin|decided": 10,
+  "live|admin:meeting_follow_through|decided": 4,
+  "shadow|sales:channel_touch|decided": 4,
+  "unroutable|fundraising:investor_relationship|NONE": 7,
+  "live|admin:awaiting_response|admission:hold": 9,
+  "live|admin:condition_in_review|admission:hold": 3,
+  "live|admin:analytic_movement|admission:hold": 10,
+  "unroutable|fundraising:investor_relationship|decided": 5,
+  "shadow|support:first_response_overdue|decided": 2,
+  "live|admin:reply_owed|admission:hold": 1,
+  "live|admin:reply_owed|decided": 1,
+  "live|admin:dependency_stated|decided": 1,
+  "shadow|sales:opportunity|decided": 1,
+  "shadow|sales:opportunity|NONE": 1,
+  "live|admin:admin_contact|decided": 1,
+  "unroutable|fundraising:investor_contact|NONE": 1
+ },
+ "rows": [
+  {
+   "case": "F01",
+   "situation_id": "sit_5efd7567f3198914608e4945",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F01",
+   "situation_id": "sit_6cc5fc7e455b4e1612a74bc5",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F01",
+   "situation_id": "sit_db85892cae34e098d6438d0d",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F02",
+   "situation_id": "sit_11f9b2548d4b6b8eface710d",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F02",
+   "situation_id": "sit_a202dbf2e29e0dc49af444d0",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F02",
+   "situation_id": "sit_fb7ab0847b1b1991c3591058",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F03",
+   "situation_id": "sit_46560c98a8d68ffc9bb9a963",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F03",
+   "situation_id": "sit_c7e6770a2f54d228eb3b0aca",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F03",
+   "situation_id": "sit_d23b5ae69dc4d4165eaf6aca",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F03",
+   "situation_id": "sit_1b5a18ed83825ab03dfc477a",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F03",
+   "situation_id": "sit_f85efadfa3f73942e5e026bf",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F04",
+   "situation_id": "sit_413fc4e73b9d567b7c0b1a73",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F04",
+   "situation_id": "sit_e81332a71158124faf07180f",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F04",
+   "situation_id": "sit_fdea5aaa04aebd2780aff791",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F04",
+   "situation_id": "sit_6f1091edb91fac25baef1361",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F04",
+   "situation_id": "sit_f3c36f5e655ad034338162f4",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F05",
+   "situation_id": "sit_47e6f6967a7e71c511a21331",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F05",
+   "situation_id": "sit_813b8f071a89ec6662d6600e",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F05",
+   "situation_id": "sit_8df827e1d2dc01e3ca2fca73",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F05",
+   "situation_id": "sit_fcd6cecb5bba5113d4385241",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F06",
+   "situation_id": "sit_de8677059d1c25b39e4636ca",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F06",
+   "situation_id": "sit_c900b485600eb8c0fe7853d4",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F06",
+   "situation_id": "sit_42b7acc2a6499af6b0eba169",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F06",
+   "situation_id": "sit_6c7e008b543418f04ef06540",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F07",
+   "situation_id": "sit_1622742dc25b42cc6ed87c7e",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F07",
+   "situation_id": "sit_17d7c3dd125c28bcff550bd6",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F07",
+   "situation_id": "sit_bb80b1a7c381f56966dcf9e5",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F07",
+   "situation_id": "sit_e3e10780c027cec70051baf9",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F07",
+   "situation_id": "sit_f2c5fb4a7d4b4fb71e64d2db",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:standing",
+   "end": "decided"
+  },
+  {
+   "case": "F07",
+   "situation_id": "sit_77953c8ec9ee4fa5ecf57847",
+   "domain": "admin",
+   "type": "meeting_follow_through",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [
+    "observed:V-10:missing_facts"
+   ],
+   "gate": "compiled:emitted",
+   "end": "decided"
+  },
+  {
+   "case": "F07",
+   "situation_id": "sit_93c951cfcdc1f30de69ef8b3",
+   "domain": "sales",
+   "type": "channel_touch",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F08",
+   "situation_id": "sit_01f3a5ff96195aea7eae6624",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F08",
+   "situation_id": "sit_33f2e1e8fdd7ed00ab6eee19",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F08",
+   "situation_id": "sit_35e15740083d7c96216bcbda",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F08",
+   "situation_id": "sit_4ccb20b873fa69cb7ac6b94e",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F08",
+   "situation_id": "sit_e58fb7f713a35ffd929a1101",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F09",
+   "situation_id": "sit_447c030bea93bb76a1c87d8d",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F09",
+   "situation_id": "sit_4bead1434fd0ee5d511ed9ff",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F09",
+   "situation_id": "sit_4f9c2d763eec44b10125a0eb",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F09",
+   "situation_id": "sit_aa7f2f6f63a3c76d18ef4692",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F10",
+   "situation_id": "sit_5b8c47710c124fad847b6e6e",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F10",
+   "situation_id": "sit_4619e79215076c8f5a524fa4",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F10",
+   "situation_id": "sit_358b6d2377ec68ce87a4c04c",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F10",
+   "situation_id": "sit_5e71d55cf1b8c71f7819878d",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F10",
+   "situation_id": "sit_86cacc7d9a478ad9568d0de4",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F11",
+   "situation_id": "sit_074bf42632f9b92e03f69dbb",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F11",
+   "situation_id": "sit_732f8716d7b89ab869b12891",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F11",
+   "situation_id": "sit_8fe595e11e60cc68556062ac",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F11",
+   "situation_id": "sit_0838c17e30efe60ec0179262",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F11",
+   "situation_id": "sit_cd2d8e53be56c4ae3cea94c3",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F12",
+   "situation_id": "sit_ab14f0ddf187bb670bfa28ef",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F12",
+   "situation_id": "sit_16f789d04f7190177dc3c094",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F12",
+   "situation_id": "sit_d321ef7f51c3a647338c6495",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F12",
+   "situation_id": "sit_514ba3cd8c1848648d46a56e",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:deferred",
+   "end": "decided"
+  },
+  {
+   "case": "F12",
+   "situation_id": "sit_847512d20279b03f2e38b5eb",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F13",
+   "situation_id": "sit_53b904f601ae2f06ad8eeaa0",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F13",
+   "situation_id": "sit_aa5ecf1cee7c356fcca5a85a",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F13",
+   "situation_id": "sit_53d6bf5b02abb1238ae8d6e6",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F13",
+   "situation_id": "sit_23fdc9e8c9a7331697e88d4f",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:emitted",
+   "end": "decided"
+  },
+  {
+   "case": "F14",
+   "situation_id": "sit_8c6139985c6685e2af0c1ff8",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F14",
+   "situation_id": "sit_a0417529489541b880748b99",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F14",
+   "situation_id": "sit_62d62317fa5aa2cf938feaa3",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F14",
+   "situation_id": "sit_ebb235b3949cdcdb334b3d69",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F14",
+   "situation_id": "sit_c302b8a35a27b665b069f3e8",
+   "domain": "admin",
+   "type": "awaiting_response",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F14",
+   "situation_id": "sit_9cca2d328f6f678b39093fab",
+   "domain": "admin",
+   "type": "condition_in_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_321ed594cded16303842027c",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_fed35809c7d26b139c10a1cf",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_570051cce9c33319ea36d425",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_0563bfca68404dddccfb8120",
+   "domain": "admin",
+   "type": "awaiting_response",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_4d568c463ecd0ba2da0c1570",
+   "domain": "admin",
+   "type": "awaiting_response",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_edbff0475118a8b09b586376",
+   "domain": "admin",
+   "type": "awaiting_response",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_8345834220dc0e579efd9951",
+   "domain": "admin",
+   "type": "awaiting_response",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_d3bf73953e166b3c41e4c244",
+   "domain": "admin",
+   "type": "awaiting_response",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_4c9aac4c4641b1486acc5fa2",
+   "domain": "admin",
+   "type": "analytic_movement",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_6f3229def73701521683ad2a",
+   "domain": "admin",
+   "type": "analytic_movement",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_23d35302250422c094943abd",
+   "domain": "admin",
+   "type": "analytic_movement",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_2991d5790df84be43f50cc79",
+   "domain": "admin",
+   "type": "analytic_movement",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_60e095f50d063d6f9563b71a",
+   "domain": "admin",
+   "type": "analytic_movement",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_fb0a876483c23b453666148f",
+   "domain": "admin",
+   "type": "analytic_movement",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_1e770b7ad6e842edc3d4dc27",
+   "domain": "admin",
+   "type": "analytic_movement",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_583f95c4fba8ee9c6557b36f",
+   "domain": "admin",
+   "type": "analytic_movement",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_3db3657a0a4671e0b6ffd27f",
+   "domain": "admin",
+   "type": "analytic_movement",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F15",
+   "situation_id": "sit_b0b581bff1f0efc925343ff4",
+   "domain": "admin",
+   "type": "analytic_movement",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F16",
+   "situation_id": "sit_7783a096612e8e8932a8df44",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F16",
+   "situation_id": "sit_e9d46b85d11430dee3db65b8",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F16",
+   "situation_id": "sit_41b22b820ffabcaece050964",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F16",
+   "situation_id": "sit_76d317f6a27331f53b437938",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F17",
+   "situation_id": "sit_3bf7a4ff88b17cef97af7db8",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F17",
+   "situation_id": "sit_79a86c603cc8503faeb60414",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F17",
+   "situation_id": "sit_7bca7b18574edde36c85aa0e",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F17",
+   "situation_id": "sit_606ef6e360b4eb90cbc6bdb1",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F18",
+   "situation_id": "sit_4340dfa33f2618294733dca3",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F18",
+   "situation_id": "sit_52f8e7ca55536cc94480021e",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F18",
+   "situation_id": "sit_6ad9ff7483dc68e2028ed47e",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F18",
+   "situation_id": "sit_bed35c3a0933d19803c441e3",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F19",
+   "situation_id": "sit_93aa5db19fe0443d3414d9c3",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:deferred",
+   "end": "decided"
+  },
+  {
+   "case": "F19",
+   "situation_id": "sit_2b7dde5c44004581f01e230b",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F19",
+   "situation_id": "sit_43953bbb378be72b66b0253a",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F19",
+   "situation_id": "sit_44ed556390a1289706e0d75e",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F19",
+   "situation_id": "sit_001f869acc427b58d9fe506d",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F19",
+   "situation_id": "sit_8322af4b436cf946c8b65698",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F19",
+   "situation_id": "sit_0f6c5c3eba24e50480bfc8ec",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F20",
+   "situation_id": "sit_cfad537cd52fc90e1b412a68",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F20",
+   "situation_id": "sit_2686658999bae3965d1d8295",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F20",
+   "situation_id": "sit_c9634d662a0f51ef3543bc46",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F20",
+   "situation_id": "sit_ae17a79bb2702ac636d98c3d",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F21",
+   "situation_id": "sit_385bd05c80ee0bcef5a97ab7",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F21",
+   "situation_id": "sit_b2c2dfa8b487aa56adbf0f9d",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F21",
+   "situation_id": "sit_fd22ad40775c9e63b544fb0b",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F21",
+   "situation_id": "sit_6b70b0a4171d4ff6e0f9d522",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F21",
+   "situation_id": "sit_5bb53c8378b20eddf6a7fe4b",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F22",
+   "situation_id": "sit_aab5801e90590da607800112",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F22",
+   "situation_id": "sit_067b41ff82a5987efa0a9c56",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F22",
+   "situation_id": "sit_0dde88ceb73ce896e798bdb1",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F22",
+   "situation_id": "sit_d95915ad82ebcabba2dd67d3",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F23",
+   "situation_id": "sit_ecb91427de010b7b4c41374f",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F23",
+   "situation_id": "sit_8eed7914bd33a5170a0d3eba",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F23",
+   "situation_id": "sit_b98e2b1213f2a60334119f16",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F24",
+   "situation_id": "sit_93bfbadbd5f1ca8412d6cc0a",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F24",
+   "situation_id": "sit_43ac24c3565747d42a72eb8c",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F24",
+   "situation_id": "sit_4db536b7292c04bf89f29547",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F24",
+   "situation_id": "sit_982232f5a6b51e9694f7f0b0",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F24",
+   "situation_id": "sit_e129aca64cb1b58237eba924",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F24",
+   "situation_id": "sit_e9aeb6551928e46a8c5f8ba1",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F25",
+   "situation_id": "sit_13a7e30df58c15dddd2a66b8",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F25",
+   "situation_id": "sit_7bf0f31b112b23d3b22af0ee",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F25",
+   "situation_id": "sit_ed7da09f94852d8e93d7a4bc",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F25",
+   "situation_id": "sit_8af637e4af0161875ebb04b5",
+   "domain": "admin",
+   "type": "reply_owed",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F25",
+   "situation_id": "sit_16ecdc48405bb5e5093ae578",
+   "domain": "admin",
+   "type": "condition_in_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "source_coverage_insufficient"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F25",
+   "situation_id": "sit_0bbecd488cc1f1d1735b4ff1",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:deferred",
+   "end": "decided"
+  },
+  {
+   "case": "F25",
+   "situation_id": "sit_d7c14d29ac085ec7e19d5f85",
+   "domain": "admin",
+   "type": "reply_owed",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:deferred",
+   "end": "decided"
+  },
+  {
+   "case": "F25",
+   "situation_id": "sit_8a79e055e9520c206b7db3c5",
+   "domain": "admin",
+   "type": "dependency_stated",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:standing",
+   "end": "decided"
+  },
+  {
+   "case": "F25",
+   "situation_id": "sit_f946b4d006cb4a155dbea4df",
+   "domain": "admin",
+   "type": "condition_in_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "source_coverage_insufficient"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F26",
+   "situation_id": "sit_450dcca772c247464c7837a4",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F26",
+   "situation_id": "sit_92ba969a9c78c27d32f2b75c",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F26",
+   "situation_id": "sit_e667d3f801511cc3d8bbdd15",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F26",
+   "situation_id": "sit_69a2c5f8be7cbd62f71328bc",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F26",
+   "situation_id": "sit_c1610511a7ddbfe5f57f067c",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F27",
+   "situation_id": "sit_bc4297bd8b5af288e8acd3ad",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F27",
+   "situation_id": "sit_d43ad3fa77bfb13737cb7ece",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F27",
+   "situation_id": "sit_89fe33ecc6d374d5001493a7",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F27",
+   "situation_id": "sit_a079ae1a885a1df5518c7a69",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:standing",
+   "end": "decided"
+  },
+  {
+   "case": "F27",
+   "situation_id": "sit_669d7e604d43ba547ae7adf5",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F28",
+   "situation_id": "sit_21ada7fe0fc7bd68332c9501",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F28",
+   "situation_id": "sit_391f40347a1afde5dbc28b17",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F28",
+   "situation_id": "sit_589eaedcbf65ca12e2a116c0",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F28",
+   "situation_id": "sit_19f768a9d9d7704382c00afd",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:deferred",
+   "end": "decided"
+  },
+  {
+   "case": "F28",
+   "situation_id": "sit_bccc5798f99d06dddad01c9c",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F29",
+   "situation_id": "sit_004510197228485d8d9be944",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F29",
+   "situation_id": "sit_0efe53c5e144747a983fb177",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F29",
+   "situation_id": "sit_3069fb592a82afe7662850ae",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F29",
+   "situation_id": "sit_f80c825ebd1e357558c7270a",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:deferred",
+   "end": "decided"
+  },
+  {
+   "case": "F29",
+   "situation_id": "sit_b9520b4cde6a98d85ff8f245",
+   "domain": "sales",
+   "type": "channel_touch",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F29",
+   "situation_id": "sit_c54e08b03521a2c8553cea3e",
+   "domain": "admin",
+   "type": "meeting_follow_through",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [
+    "observed:V-10:missing_facts"
+   ],
+   "gate": "compiled:emitted",
+   "end": "decided"
+  },
+  {
+   "case": "F29",
+   "situation_id": "sit_996f4f553dfa8484c1d26788",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F29",
+   "situation_id": "sit_3e6f81f39ea8174e803581b4",
+   "domain": "admin",
+   "type": "meeting_follow_through",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [
+    "observed:V-10:missing_facts"
+   ],
+   "gate": "compiled:emitted",
+   "end": "decided"
+  },
+  {
+   "case": "F29",
+   "situation_id": "sit_7225d9d23d113365b2395271",
+   "domain": "sales",
+   "type": "opportunity",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F29",
+   "situation_id": "sit_e62ecf69f47033284b275162",
+   "domain": "sales",
+   "type": "channel_touch",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F30",
+   "situation_id": "sit_d533394dd2de26c669cd76fd",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F30",
+   "situation_id": "sit_d6f99b8d5b71b9861c8de841",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F30",
+   "situation_id": "sit_f00d8a354d9556b396ff8859",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F30",
+   "situation_id": "sit_621f0b236ecb1503d47c6ab5",
+   "domain": "sales",
+   "type": "opportunity",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F31",
+   "situation_id": "sit_fa35ec6115e9269631d635dc",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F31",
+   "situation_id": "sit_3edc253a39573ce3625ba20d",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F31",
+   "situation_id": "sit_883bd8b7b339e115ef364b84",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F31",
+   "situation_id": "sit_a7ccf582c429da7eccfaa857",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F31",
+   "situation_id": "sit_c3fd649aa730962e644c4b74",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F32",
+   "situation_id": "sit_f2f5687f5ae887d5d3553e15",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F32",
+   "situation_id": "sit_4ca68a4eb3c1c2778b71fb4e",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F32",
+   "situation_id": "sit_af711e1820c53ef11bb7e428",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F32",
+   "situation_id": "sit_f8fee1e72a1850831a048ef6",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F33",
+   "situation_id": "sit_4a0dcd781ac2479b60900ca1",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F33",
+   "situation_id": "sit_8de9fa2005d067950d2ec63f",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F33",
+   "situation_id": "sit_2c64d370b90f65f3fde1095b",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F34",
+   "situation_id": "sit_2f09e9bb9bc42a7202409218",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F34",
+   "situation_id": "sit_367565c3c5100634e0c265ca",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F34",
+   "situation_id": "sit_2acdd61b0c37fd0ad60965c9",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F34",
+   "situation_id": "sit_dd508d3ad92fabfa823844d7",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F34",
+   "situation_id": "sit_e6e932fb0255d9c68375bf08",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F35",
+   "situation_id": "sit_3367c9485a49fa48e07270ee",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F35",
+   "situation_id": "sit_66ad306674ccaf1f70fd2a2b",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F35",
+   "situation_id": "sit_fe50aef1962a5def6f901f88",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F35",
+   "situation_id": "sit_b98bfe47e3632c6d9611d387",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F36",
+   "situation_id": "sit_fd75addb966c6052327d1f6b",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F36",
+   "situation_id": "sit_48c392d63e88df395356d9b3",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F36",
+   "situation_id": "sit_c884aabc60d9679f39d350cc",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F36",
+   "situation_id": "sit_8fb96cd1b9e3e00ad3bf16f8",
+   "domain": "admin",
+   "type": "awaiting_response",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F36",
+   "situation_id": "sit_568e46c3102cdd54f490ff81",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F37",
+   "situation_id": "sit_aa6b24b2b32f6b098284b9a4",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F37",
+   "situation_id": "sit_20d72943fd3ea3cd3f5da961",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F37",
+   "situation_id": "sit_2ff36ead5a10fc3f4ead0cfa",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F37",
+   "situation_id": "sit_73335343294dc315234e75c4",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F37",
+   "situation_id": "sit_66401fde76c3ad9b25cc20b0",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F38",
+   "situation_id": "sit_b22e7e290a169a41549c0fc5",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F38",
+   "situation_id": "sit_05c1c5107b9b0671acc4c932",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F38",
+   "situation_id": "sit_7c1d4fcc1edeefabdcec9192",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F38",
+   "situation_id": "sit_5787ad860c5d5bb5f6205269",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F38",
+   "situation_id": "sit_65deb1eef1847353ab817298",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:deferred",
+   "end": "decided"
+  },
+  {
+   "case": "F39",
+   "situation_id": "sit_fe6d5ed23e4fd234147d1c37",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F39",
+   "situation_id": "sit_b5492d9c6bf939c9f951edea",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F39",
+   "situation_id": "sit_e0140fdb1f987b912c4962cd",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F39",
+   "situation_id": "sit_6b87c703bef225d4e216182b",
+   "domain": "admin",
+   "type": "awaiting_response",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F39",
+   "situation_id": "sit_89b564a32207761c7b4e66e8",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F40",
+   "situation_id": "sit_028b5cae2b370f5168cceb4b",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F40",
+   "situation_id": "sit_283d8e8e238c40a812b5e537",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F40",
+   "situation_id": "sit_be5eacc10d357d220bafad32",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F40",
+   "situation_id": "sit_0368500a495da46bba34c5b8",
+   "domain": "admin",
+   "type": "meeting_follow_through",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [
+    "observed:V-10:missing_facts"
+   ],
+   "gate": "compiled:emitted",
+   "end": "decided"
+  },
+  {
+   "case": "F40",
+   "situation_id": "sit_435d409034319684f09efa26",
+   "domain": "admin",
+   "type": "admin_contact",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:standing",
+   "end": "decided"
+  },
+  {
+   "case": "F40",
+   "situation_id": "sit_429349839611e86d1c9a2f16",
+   "domain": "sales",
+   "type": "channel_touch",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": "compiled:shadow",
+   "end": "decided"
+  },
+  {
+   "case": "F41",
+   "situation_id": "sit_1e5b4cd507f7428ea7511cf4",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F41",
+   "situation_id": "sit_21385755430ed3ae37974bca",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F41",
+   "situation_id": "sit_2e447e54f933de8b7700dec3",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F41",
+   "situation_id": "sit_2aa12d5eb2167672469a1cee",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F41",
+   "situation_id": "sit_96b1b54ad2f16bf60e594037",
+   "domain": "admin",
+   "type": "awaiting_response",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F42",
+   "situation_id": "sit_8430a2a126856494d84688dd",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F42",
+   "situation_id": "sit_110fd613ae33e895c48603b1",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "qes_required",
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F42",
+   "situation_id": "sit_d560e962f04640ab0f53f330",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F42",
+   "situation_id": "sit_7332ad3932e47a9a0dbeedcd",
+   "domain": "admin",
+   "type": "account_admin",
+   "lane": "live",
+   "admission": "admit",
+   "reasons": [],
+   "gate": "compiled:emitted",
+   "end": "decided"
+  },
+  {
+   "case": "F43",
+   "situation_id": "sit_e1d5c166a56d24f586dcaf64",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F43",
+   "situation_id": "sit_a1d755df18c092b9288981fd",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F43",
+   "situation_id": "sit_d310cdec7c94138717c43c0c",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F43",
+   "situation_id": "sit_97618f5e82c6db76a5c71ad9",
+   "domain": "fundraising",
+   "type": "investor_relationship",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F44",
+   "situation_id": "sit_0e06d460eafefa179c68e004",
+   "domain": "admin",
+   "type": "admin_period_review",
+   "lane": "live",
+   "admission": "hold",
+   "reasons": [
+    "verified_evidence_required"
+   ],
+   "gate": null,
+   "end": "admission:hold"
+  },
+  {
+   "case": "F44",
+   "situation_id": "sit_c942ca1358101d1a65006882",
+   "domain": "support",
+   "type": "support_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F44",
+   "situation_id": "sit_d0739c796bd60fde2b24ad9b",
+   "domain": "sales",
+   "type": "pipeline_period_review",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F44",
+   "situation_id": "sit_739d9513e085f672ec7d3315",
+   "domain": "support",
+   "type": "first_response_overdue",
+   "lane": "shadow",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  },
+  {
+   "case": "F44",
+   "situation_id": "sit_dac35ed2118bed303eaae45e",
+   "domain": "fundraising",
+   "type": "investor_contact",
+   "lane": "unroutable",
+   "admission": null,
+   "reasons": null,
+   "gate": null,
+   "end": "NONE"
+  }
+ ]
+}

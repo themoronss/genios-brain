@@ -8,7 +8,12 @@ register it here")."""
 
 GENERAL_V1 = {
     "id": "general",
-    "version": "1.5.0",              # 1.5.0: 1.4.0 was EDITED after it was published — the feed
+    "version": "1.5.1",              # 1.5.1: champion_quiet asks for `write_interval`, the name
+                                    #   `reason/baselines.py` now stores how often a person writes
+                                    #   under (STEP-10, D41 — it was `reply_cadence`, the name of a
+                                    #   reply time). Same number, same threshold, so no rule's
+                                    #   behaviour moves; the bytes did, so the version does.
+                                    # 1.5.0: 1.4.0 was EDITED after it was published — the feed
                                     #   inversion fix added 22 lines to this manifest and left the
                                     #   version alone, so `pack_registry` held one general@1.4.0
                                     #   and the code computed another. `register()` is immutable by
@@ -107,7 +112,7 @@ GENERAL_V1 = {
         {"id": "champion_quiet", "level": "predictive", "scope": "person",
          "when": [{"path": "thread.ball_in_court", "op": "=", "value": "them"},
                   {"fn": "days_since", "path": "thread.last_inbound", "op": ">=",
-                   "value": {"baseline": "reply_cadence", "mult": 2.5, "floor": 10}}],
+                   "value": {"baseline": "write_interval", "mult": 2.5, "floor": 10}}],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 5},
          "reason_code": "champion_quiet", "play": "re_engage", "cooldown_hours": 72,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},

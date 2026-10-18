@@ -331,7 +331,9 @@ def test_the_backfill_reanchors_a_situation_that_was_already_correlated(pg_store
         conn.execute(text("update context_situations set situation_type='opportunity' "
                           "where org_id=:o"), {"o": org})
 
-    out = backfill_layer2(pg_store, org)
+    # At the instant this file seeds at. The backfill refreshed situations at the wall clock, so
+    # once NOW was more than 45 days old the re-anchored situation came back dormant.
+    out = backfill_layer2(pg_store, org, eval_time=NOW)
     assert out["deal_facts_moved"] >= 1
     with pg_store.engine.begin() as conn:
         types = {s["situation_type"] for s in situations.active_situations(conn, org_id=org)}

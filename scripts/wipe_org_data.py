@@ -42,6 +42,23 @@ def main() -> int:
         # Select base tables POSITIVELY. The old exclusion read information_schema.views,
         # which omits MATERIALIZED views — `counterfactual_ledger` (0072) slipped through, and
         # "cannot delete from view" is indistinguishable from an FK block in the loop below.
+        #
+        # ⛔ CORRECTED 2026-10-02 — THE CAUSE RECORDED ABOVE IS WRONG, AND THE FIX IS RIGHT ANYWAY.
+        # `migrations/0072_counterfactual_ledger.sql:13` is `create or replace VIEW` — a PLAIN
+        # view, deliberately, and the migration says why: *"A VIEW, not a table: every source is
+        # already append-only/versioned, so materialising a copy would be a second thing to keep
+        # honest."* A plain view IS listed in `information_schema.views`, so an exclusion built
+        # from that table would have excluded it. Whatever actually let it through is not
+        # recoverable from this file, and guessing a second cause would repeat the first mistake.
+        #
+        # ⛔ WHY THE COMMENT IS CORRECTED RATHER THAN DELETED: selecting base tables positively is
+        # correct for a reason that does not depend on the story above — `information_schema.tables`
+        # with `table_type='BASE TABLE'` excludes plain views, materialised views, foreign tables
+        # and anything a future PostgreSQL adds, where every exclusion list is a list somebody has
+        # to remember to extend. **A positive selection cannot be out of date.**
+        #
+        # *A stale comment reads as a measurement* — and this one explained a real fix with an
+        # invented reason, which is the harder kind to notice.
         base = {r[0] for r in c.execute(text(
             "select table_name from information_schema.tables where table_schema='public' "
             "and table_type='BASE TABLE'"))}

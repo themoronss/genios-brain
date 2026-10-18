@@ -16,6 +16,10 @@ _REASON_HUMAN = {
     "muted": "this rule is auto-muted for you (its precision fell below the floor)",
     "shadow": "the pack is in shadow mode — evaluating silently, not allowed to surface",
     "situation": "a situational hold (e.g. a freeze window) suppressed it",
+    # STEP-02 (`yc2_w27_s02/M20.C5`): a live run that could not decide. It used to be logged as
+    # `shadow`, and this table then told the founder the pack was in shadow mode — it was not.
+    "deferred": "GeniOS could not decide this time — the card it already showed you stays up "
+                "until it can",
 }
 
 

@@ -1,0 +1,760 @@
+# SCOPED to founder_office.programs_and_applications.program_applications.
+#
+# One application by the company to one intake of one programme, held as an application rather than
+# as an investor conversation or a deal. Its STATES ARE THE SPINE'S STAGES
+# (`founder_office.pb.program_applications.follow_an_application`), name for name and in order, so the
+# expert and the object can never disagree about where an application can be.
+#
+# NO STATE IS ENTERED BY A RULE. STEP-11 §8.4: stages are data; the current stage is a judgment the
+# expert makes from the programme's own words (STEP-12). So no state carries `entered_when` and no
+# transition carries `when`: each names its trigger in prose, and every inference pattern below yields
+# evidence for the expert — whose turn it is, which date is next, what the programme said — never a stage.
+#
+# Read the patterns by status first. Eight run today and read correspondence: whose turn it is, a
+# stated date, a request, a meeting on the calendar, a pass, a deferral, a long quiet. Four are blocked,
+# and they are the four that would say what the application IS: the file's kind of work, the portal's
+# own status label, the programme's published decision date, the re-application date a rejection names.
+#
+# Relationships to the domain's core objects (the programme's organisation, its people, the founders'
+# next move) are not authored here: another unit of STEP-11 authors `objects/core/` in parallel, and an
+# edge to an object that does not exist on this branch would fail link integrity. They join at the merge.
+identity:
+  id: founder_office.obj.program_applications.application
+  scope: capability
+  name: Application
+  domain: founder_office
+  subdomain: programs_and_applications
+  owner_capability: founder_office.programs_and_applications.program_applications
+  version: 0.1.0
+  status: draft
+  aliases: ["Programme application", "Accelerator application", "Incubation application", "Scheme application"]
+
+purpose:
+  statement: >
+    One application by the company to one intake of one programme — an accelerator, an incubator, a
+    fellowship, a grant or a government scheme — and where it stands. It exists apart from an investor
+    conversation because the two move differently: a conversation moves when its parties move it; an
+    application moves on the programme's published calendar, by its rules, for the whole batch at once.
+    What it holds is that calendar, the stage the programme's own words put the application in, whose
+    turn it is, and — when it ends — how, including the date on which a rejection stops being true.
+  discriminator: >
+    An accelerator that invests is still a programme while it is selecting: until the company is
+    accepted, the counterparty is a selection process with a deadline, not an investor with a cheque —
+    the investor conversation begins, if it begins at all, after acceptance.
+  answers:
+    - What stage is this application in, and what put it there?
+    - What is the programme's next date, and whose turn is it?
+    - Does this programme answer every applicant, only the ones it wants, or through its portal?
+    - If it was declined, when can the company apply again, and with what changed?
+  not:
+    - The programme's organisation and its people as parties — the domain's core objects hold those.
+    - An investment negotiation after acceptance — investor relations holds that.
+    - A registration or a recognition — compliance holds those, even when a portal sends the notice.
+
+attributes:
+  - name: position
+    purpose: Where the application stands and whose move it is — the half that decays quietly.
+    type: composite
+    contains: [stage, programme_status_label, ball_in_court, last_programme_word_at, next_programme_date, next_programme_date_kind]
+
+  - name: programme
+    purpose: What kind of programme this is, because that decides what its quiet means and what acceptance asks.
+    type: composite
+    contains: [programme_name, programme_kind, calendar_kind, reply_policy, status_channel, funding_form]
+
+  - name: calendar
+    purpose: The programme's own published dates for this intake — the facts every prior gives way to.
+    type: composite
+    contains: [deadline_at, decision_by, starts_at, receipt_at]
+
+  - name: closure
+    purpose: How the application ended, recorded with what reopens it.
+    type: composite
+    contains: [outcome, reapplication_opens_at, feedback, what_changes_next]
+
+  - name: stage
+    purpose: >
+      The spine's stage, named by the expert from the programme's own mail or portal status — never by
+      a rule, and never from how long the file has been quiet.
+    type: value
+    data_type: enum
+    allowed_values: [applied, under_review, interview, decision, onboarding, in_programme, declined]
+    required: true
+    description: >
+      One of the seven stages of `follow_an_application`, in its order. Without evidence there is no
+      stage; an application nobody has read a programme mail about is not `applied` by default.
+
+  - name: programme_status_label
+    purpose: >
+      The programme's own name for where the application is — its words for a stage, such as shortlisted
+      or under examination — kept verbatim, because it is the strongest stage evidence there is.
+    type: value
+    data_type: string
+
+  - name: ball_in_court
+    purpose: >
+      Whose move it is. At the interview and onboarding stages it is typically ours, and a programme's
+      date passes whether or not anyone reminds the founders.
+    type: value
+    data_type: enum
+    allowed_values: [us, programme, nobody, unknown]
+    source_paths: [thread.ball_in_court]
+
+  - name: last_programme_word_at
+    purpose: When the programme last wrote, or its portal last changed — the clock quiet is measured from.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+
+  - name: next_programme_date
+    purpose: The next date the programme has set — the one the file is working to.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+
+  - name: next_programme_date_kind
+    purpose: What the next date is for, because a booking date and a decision date need opposite moves.
+    type: value
+    data_type: enum
+    allowed_values: [deadline, interview_booking, interview, clarification, documents, offer_reply,
+                     decision_by, programme_start, cohort_deliverable, reapplication_opens, unknown]
+
+  - name: programme_name
+    purpose: The programme and its intake — Hub71's Cohort 21, not the accelerator — because every date belongs to one intake.
+    type: value
+    data_type: string
+    required: true
+
+  - name: programme_kind
+    purpose: Which kind of programme, read from the brief's own line for the file rather than from the extraction's guess.
+    type: value
+    data_type: enum
+    allowed_values: [accelerator, incubator, fellowship, grant, government_scheme, fund_programme, unknown]
+
+  - name: calendar_kind
+    purpose: >
+      Whether the programme reads a batch after a deadline or each application as it arrives. A cohort
+      programme's quiet means nothing until its date; a rolling one's clock starts at the receipt.
+    type: value
+    data_type: enum
+    allowed_values: [cohort, rolling, unknown]
+
+  - name: reply_policy
+    purpose: >
+      How the programme answers. Some promise to answer everyone (YC: "We always respond to everyone who
+      applies"), some write only when there is a fit (Antler), some keep the answer on a portal (SISFS),
+      and some say they will not answer status questions at all (Emergent Ventures).
+    type: value
+    data_type: enum
+    allowed_values: [answers_everyone, writes_if_fit, portal_and_mail, no_status_answers, unknown]
+
+  - name: status_channel
+    purpose: Where the programme's record lives — its mail, its portal, or both.
+    type: value
+    data_type: enum
+    allowed_values: [mail, portal, both, unknown]
+
+  - name: funding_form
+    purpose: >
+      What acceptance brings, because it decides what onboarding asks: a SAFE or shares (YC, Techstars,
+      Hub71), a grant or a debt instrument (SISFS), or nothing (Google for Startups Accelerator India is equity-free).
+    type: value
+    data_type: enum
+    allowed_values: [safe_or_equity, grant, debt_or_convertible, none, unknown]
+
+  - name: deadline_at
+    purpose: The intake's deadline, as the programme publishes it, with its time zone.
+    type: value
+    data_type: timestamp
+
+  - name: decision_by
+    purpose: The date by which the programme says it will decide — the reference every quiet is read against.
+    type: value
+    data_type: timestamp
+
+  - name: starts_at
+    purpose: The programme's first day — the end of onboarding.
+    type: value
+    data_type: timestamp
+
+  - name: receipt_at
+    purpose: >
+      When the programme confirmed receipt. Without one the application may not have gone in — YC says so
+      in as many words.
+    type: value
+    data_type: timestamp
+
+  - name: outcome
+    purpose: What happened, where something has.
+    type: value
+    data_type: enum
+    allowed_values: [pending, accepted, declined, waitlisted, withdrawn, lapsed, unknown]
+
+  - name: reapplication_opens_at
+    purpose: The date a rejection stops being true — the next intake, or the scheme's own waiting period.
+    type: value
+    data_type: timestamp
+
+  - name: feedback
+    purpose: What the programme said about why, in its own words, where it said anything.
+    type: value
+    data_type: string
+
+  - name: what_changes_next
+    purpose: The progress the next application will lead with — what the programme will read it for.
+    type: value
+    data_type: string
+
+states:
+  initial: applied
+  terminal: [in_programme, declined]
+  values:
+    - name: applied
+      description: Submitted, with a receipt; the programme's window may still be open.
+      implies: Nothing is owed. Check the receipt; the programme's deadline, not the prior, ends this stage.
+    - name: under_review
+      description: The programme is reading — screening, desk review, eligibility.
+      implies: The quiet is not a no until the programme's own date, unless the programme writes only when there is a fit.
+    - name: interview
+      description: Invited to interview, pitch or present to a committee.
+      implies: The turn is typically ours — book by the invitation's date, every founder on the call.
+    - name: decision
+      description: The founders' part is done; a committee or a board decides.
+      implies: Wait for the programme's decision date; ask once after it, through its own channel.
+    - name: onboarding
+      description: Accepted; the offer answered and the papers in progress.
+      implies: The programme is usually waiting for us — the agreement, the entity, the documents.
+    - name: in_programme
+      description: The programme has started; its calendar is the file's calendar.
+      implies: The application is settled; the programme's deliverables carry the dates now.
+    - name: declined
+      description: Not selected for this intake.
+      implies: >
+        A date, not a verdict, in most cases: file the re-application date and what changes. A new
+        application to the next intake is a new application, back at applied.
+  transitions:
+    - {from: applied, to: under_review, trigger: "the programme's deadline passes, or its portal shows the application being read", reversible: false}
+    - {from: applied, to: declined, trigger: screened out as ineligible before any review, reversible: false}
+    - {from: under_review, to: interview, trigger: an invitation to interview or to pitch, reversible: false}
+    - {from: under_review, to: onboarding, trigger: an offer made on the papers alone, reversible: false}
+    - {from: under_review, to: declined, trigger: a rejection without an interview, reversible: false}
+    - {from: interview, to: decision, trigger: the last round the founders attend is held, reversible: false}
+    - {from: interview, to: onboarding, trigger: "an offer straight after the interview (YC typically decides the same day)", reversible: false}
+    - {from: interview, to: declined, trigger: a rejection straight after the interview, reversible: false}
+    - {from: decision, to: onboarding, trigger: the offer arrives, reversible: false}
+    - {from: decision, to: declined, trigger: the rejection arrives, reversible: false}
+    - {from: onboarding, to: in_programme, trigger: "the programme's first day, or a grant's first instalment", reversible: false}
+
+relationships:
+  - type: supersedes
+    target: founder_office.obj.program_applications.application
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 6000
+    confidence_bp: 9000
+    evidence: [email, portal]
+    description: >
+      A re-application supersedes the declined application to the same programme that it follows: it
+      carries that one's feedback forward and is read for the progress since. YC: "Having made progress
+      since your last application is a strong signal to us."
+
+inference_patterns:
+  deterministic:
+    - id: pa.turn_is_ours
+      statement: >
+        The programme wrote last and the turn is ours. At the interview and onboarding stages it is
+        typically the finding that matters, and the cheapest to act on.
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields: {attribute: ball_in_court, value: us, confidence_bp: 8500}
+      evidence_fields: [thread.ball_in_court]
+      false_positive: >
+        A courtesy close, such as a thank-you for applying, leaves the turn nominally ours with nothing owed.
+
+    - id: pa.programme_asked_for_something
+      statement: >
+        The programme asked for information — a clarification, a missing document, a slot to book. The
+        request is the programme's, and so is its date.
+      status: executable
+      when:
+        - {has_obs: information_requested}
+      yields: {attribute: ball_in_court, value: us, confidence_bp: 7500, corroborates: [pa.turn_is_ours]}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        A programme's message to the whole cohort — a reminder to complete a profile, or to register for
+        an information session — reads as a request to this application and is not one.
+
+    - id: pa.programme_stated_a_date
+      statement: >
+        The programme stated a date — a deadline, a booking date, a reply-by date, a decision date. It is
+        the date the file works to.
+      status: executable
+      when:
+        - {has_obs: deadline_stated}
+      yields: {attribute: next_programme_date, confidence_bp: 7000}
+      evidence_fields: [commitment.due_at]
+      false_positive: >
+        A newsletter announcing the next intake's deadline, or another programme's date in the same
+        mail, is not a date for this application.
+
+    - id: pa.programme_date_missed
+      statement: >
+        A date the programme set for us has passed with the commitment still open — a failure the
+        programme's calendar does not wait for.
+      status: executable
+      when:
+        - {path: commitment.days_overdue, op: ">", value: 0}
+      yields: {attribute: ball_in_court, value: us, confidence_bp: 6500, corroborates: [pa.turn_is_ours]}
+      evidence_fields: [commitment.due_at, commitment.days_overdue]
+      false_positive: >
+        The founders answered on the portal, which leaves no trace in the mailbox, so the commitment
+        looks open when it is done.
+
+    - id: pa.interview_on_the_calendar
+      statement: >
+        A meeting with the programme is on the calendar — at this stage, usually the interview or a
+        committee session.
+      status: executable
+      when:
+        - {has_obs: meeting_scheduled}
+        - {exists: meeting.start_at}
+      yields: {attribute: next_programme_date_kind, value: interview, confidence_bp: 6000}
+      evidence_fields: [meeting.start_at]
+      false_positive: >
+        An information session, office hours or a webinar from the same programme is a meeting too, and
+        selects nobody.
+
+    - id: pa.pass_observed
+      statement: >
+        Rejection language was observed on the thread. Evidence for the expert's stage, not the stage:
+        a programme's no is usually dated, so this yields an outcome and never a closed file.
+      status: executable
+      when:
+        - {has_obs: pass_received}
+      yields: {attribute: outcome, value: declined, confidence_bp: 6000}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        The founders declining the programme, a programme declining a different track, or a rejection
+        forwarded for advice — each reads as a pass.
+
+    - id: pa.decision_deferred
+      statement: >
+        The programme deferred its decision — a waitlist, or a move to a later cohort. A decision about
+        timing, which keeps the file open with the programme's new date.
+      status: executable
+      when:
+        - {has_obs: decision_deferred}
+      yields: {attribute: outcome, value: waitlisted, confidence_bp: 5500}
+      evidence_fields: [thread.last_inbound]
+      false_positive: A programme moving its own calendar for everyone is not a deferral of this application.
+
+  heuristic:
+    - id: pa.quiet_past_the_outcome_window
+      statement: >
+        No word from the programme for ninety days and no turn of ours outstanding — past Hub71's
+        published three months, the longest wait any programme read promises. The spine's one status
+        query is due: the next move is ours.
+      status: executable
+      when:
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: 90}
+        - {path: thread.ball_in_court, op: "!=", value: us}
+      yields: {attribute: ball_in_court, value: us, confidence_bp: 4000}
+      evidence_fields: [thread.last_inbound, thread.ball_in_court]
+      false_positive: >
+        A programme with a long published calendar is quiet for longer by design — Hub71's Cohort 21
+        closes in February 2027 and starts in September 2027 — and a portal can move with no mail at all.
+      note: The 90 is the spine's outcome window and `06` D33's proposed dormancy for a programme file.
+
+    - id: pa.programme_read_as_investor
+      statement: >
+        The file's kind of work is `program`, so the counterparty is a programme whatever the extraction
+        called it. The extraction prompt names "an accelerator" among investors, which is how programmes
+        came to be read as investor relationships.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: workstream.kind, owner_layer: L2,
+           note: "The brief's in-motion line names a file's kind of work (`06` D31, STEP-11 M30.C4); until a file carries it, a programme reaches this object only as `relationship.nature = investor`."}
+      yields: {attribute: programme_kind, confidence_bp: 8500}
+
+    - id: pa.portal_status_label
+      statement: >
+        The programme's own label for where the application is, read from its portal or its status mail.
+        The strongest stage evidence there is, and nothing carries it today.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: application_status, owner_layer: L2,
+           note: "Declared as an expected field of `investor_relationship` by the fundraising DomainSpec (`context/domain_spec.py`) and written by nothing."}
+      yields: {attribute: programme_status_label, confidence_bp: 8500}
+
+    - id: pa.programme_calendar_published
+      statement: >
+        The programme's published decision date for this intake — the reference every quiet is read
+        against. It lives on the programme's page, not in the mail.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: programme.decision_by, owner_layer: L2,
+           note: "A programme publishes its calendar on its own page (YC: a decision by 11 December for its Winter 2027 batch); nothing reads that page into the graph."}
+      yields: {attribute: decision_by, confidence_bp: 8000}
+
+    - id: pa.reapplication_window_stated
+      statement: >
+        The re-application date a rejection names — the next cohort, or a waiting period such as SISFS's
+        six weeks. Present in the rejection itself, and lost with it today.
+      status: needs_signal
+      requires_signals:
+        - {kind: obs_kind, name: reapplication_window, owner_layer: L1,
+           note: "Cheap to extract from the rejection's own text; its absence is why a decline is filed without its re-opening date."}
+      yields: {attribute: reapplication_opens_at, confidence_bp: 7000}
+
+inputs:
+  - source: email
+    signal: "the programme's mail: receipts, invitations, requests, decisions"
+    fills: [last_programme_word_at, programme_status_label, next_programme_date, outcome, feedback]
+    reliability_bp: 7500
+  - source: portal
+    signal: a programme's or a scheme's own status page
+    fills: [programme_status_label, status_channel]
+    reliability_bp: 9000
+  - source: website
+    signal: "the programme's published page: its calendar, its rules, its terms"
+    fills: [deadline_at, decision_by, starts_at, calendar_kind, reply_policy, funding_form]
+    reliability_bp: 8500
+  - source: calendar
+    signal: the interview or committee slot
+    fills: [next_programme_date, next_programme_date_kind]
+    reliability_bp: 8000
+  - source: manual_entry
+    signal: "the founder's in-motion line in the company brief: the kind of work and the counterparty"
+    fills: [programme_name, programme_kind]
+    reliability_bp: 9000
+
+outputs:
+  - name: stage_evidence
+    type: record
+    description: The dated mail or portal status the expert names the stage from.
+    derived_from: [programme_status_label, last_programme_word_at]
+    consumed_by: [L4.decision_maker]
+  - name: programme_next_date
+    type: timestamp
+    description: The next date the programme has set, and what it is for.
+    derived_from: [next_programme_date, next_programme_date_kind]
+    consumed_by: [L4.reasoning_unit, L5.execution_planning]
+  - name: reapplication_date
+    type: timestamp
+    description: The date a rejection stops being true.
+    derived_from: [reapplication_opens_at]
+    consumed_by: [L5.execution_planning]
+
+preconditions:
+  - id: pa.pre.programme_named
+    statement: >
+      The programme and its intake are named before anything is read against a calendar, because every
+      date and rule here belongs to one intake.
+    requires: [programme_name]
+    if_unmet: degrade
+  - id: pa.pre.calendar_or_clock
+    statement: >
+      The programme's calendar — or, for a rolling programme, its response clock — is known before its
+      quiet is read; without it the quiet is read against the prior alone, and says so.
+    requires: [decision_by, calendar_kind]
+    if_unmet: degrade
+
+constraints:
+  - id: pa.con.no_stage_by_rule
+    statement: >
+      No stage is set by a rule. The expert names it from the programme's own words; a pattern here is
+      evidence for it, never the stage.
+    hard: true
+    why: STEP-11 §8.4 — stages are data; the current stage is a judgment.
+  - id: pa.con.no_close_date
+    statement: No close date is derived for an application; the programme's published dates are the only dates.
+    hard: true
+    why: A derived date would sort the file as if it were evidence, and nothing observable supports one.
+
+business_rules:
+  - id: pa.br.programme_date_wins
+    statement: Where the programme has published a date, it replaces the spine's prior for that stage.
+    then: Measure the quiet against the programme's date.
+    severity: warning
+    why: A prior is a fallback; a published date is the fact.
+  - id: pa.br.one_query
+    statement: After the programme's own date has passed, one status query through its own channel — none where it says it will not answer.
+    then: Send one query, or record why none.
+    severity: advisory
+    why: A second query buys nothing the first did not, and a programme that has published its date has answered the first already.
+  - id: pa.br.decline_needs_a_date
+    statement: A declined application is not closed until its re-application date — or the reason there is none — is on the file.
+    then: Record the date, or the reason.
+    severity: warning
+    why: Without the date the next intake opens and closes unnoticed.
+
+decision_factors:
+  - name: programme_date_proximity
+    weight_bp: 3500
+    direction: increases
+    description: How near the programme's next date is.
+    reads: [next_programme_date, next_programme_date_kind]
+  - name: turn_is_ours
+    weight_bp: 3000
+    direction: increases
+    description: Whether the next move is the founders'.
+    reads: [ball_in_court]
+  - name: quiet_against_the_stage
+    weight_bp: 2000
+    direction: context
+    description: The programme's quiet, read by the stage and the programme's reply policy rather than by its length.
+    reads: [stage, last_programme_word_at, reply_policy, decision_by]
+  - name: reversibility
+    weight_bp: 1500
+    direction: decreases
+    description: A dated rejection is reversible at the next intake, which lowers the urgency of anything but recording the date.
+    reads: [outcome, reapplication_opens_at]
+
+evidence:
+  - source: portal
+    strength_bp: 9000
+    independent_of: [calendar, manual_entry]
+    decays: false
+    description: >
+      A scheme's or programme's own status page — the record itself. Not independent of the programme's
+      mail, which usually reports it.
+  - source: email
+    strength_bp: 7500
+    independent_of: [calendar, manual_entry]
+    decays: true
+    description: The programme's mail — receipts, invitations, requests, decisions — and the only source read today.
+  - source: website
+    strength_bp: 8000
+    independent_of: [email, portal, calendar]
+    decays: true
+    description: The programme's published page — its calendar and rules — true for one intake, re-read for the next.
+  - source: calendar
+    strength_bp: 8000
+    independent_of: [website, manual_entry]
+    decays: true
+    description: An interview or committee slot held on the calendar — hard to fake with courtesy.
+  - source: manual_entry
+    strength_bp: 9000
+    independent_of: [email, portal, calendar]
+    decays: false
+    description: The founder's own line in the company brief, naming the programme and the kind of work.
+
+metrics:
+  - name: requests_answered_before_programme_date
+    unit: percent
+    direction: higher_is_better
+    description: Share of programme requests answered before the programme's own date.
+    owner_layer: L6
+    calibrates: [pa.programme_asked_for_something, pa.programme_date_missed]
+  - name: declines_with_reapplication_date
+    unit: percent
+    direction: higher_is_better
+    description: Share of declined applications carrying a re-application date or the reason there is none.
+    owner_layer: L6
+    calibrates: [pa.pass_observed, pa.reapplication_window_stated]
+  - name: quiet_beyond_programme_date
+    unit: days
+    direction: lower_is_better
+    description: Days past the programme's own decision date with no word and no query sent.
+    owner_layer: L4
+    calibrates: [pa.quiet_past_the_outcome_window]
+
+events:
+  - id: pa.ev.request_received
+    name: Programme request received
+    payload: [next_programme_date, next_programme_date_kind]
+    severity: notable
+    invalidates: [ball_in_court]
+    description: The programme asked for something with a date; the turn is ours until it is answered.
+  - id: pa.ev.decision_received
+    name: Decision received
+    payload: [outcome, reapplication_opens_at, feedback]
+    severity: notable
+    invalidates: [next_programme_date, ball_in_court]
+    description: The programme decided; the dates the file was working to give way to the offer's or the rejection's.
+  - id: pa.ev.programme_calendar_changed
+    name: Programme moved its own date
+    payload: [decision_by, starts_at]
+    severity: notable
+    invalidates: [decision_by, next_programme_date]
+    description: An extended window or a moved committee date replaces the old date and every prior read against it.
+
+actions:
+  - id: pa.act.book_interview
+    name: Book the interview slot before the invitation's date
+    actor: human
+    effect: The interview is on the calendar with every founder confirmed.
+    cost: trivial
+    reversible: true
+  - id: pa.act.answer_request
+    name: Answer the programme's request before its date
+    actor: human
+    effect: The programme's request is closed on time.
+    cost: low
+    reversible: false
+  - id: pa.act.status_query
+    name: Send one status query through the programme's own channel
+    actor: human
+    effect: The programme is asked once, after its own date.
+    cost: trivial
+    reversible: false
+  - id: pa.act.diary_reapplication
+    name: Put the re-application date on the calendar
+    actor: agent
+    effect: The next intake reaches the file before its deadline.
+    cost: trivial
+    reversible: true
+  - id: pa.act.close_with_reason
+    name: Close the file with its reason
+    actor: human
+    effect: The application is closed as declined, lapsed or withdrawn, with the reason written down.
+    cost: trivial
+    reversible: true
+
+dependencies:
+  - target: founder_office.pb.program_applications.follow_an_application
+    kind: requires
+    strength: hard
+    description: This object's states are that playbook's stages; the two change together or not at all.
+  - target: founder_office.heu.program_applications.a_batch_is_silent_until_it_decides
+    kind: enriches
+    strength: soft
+    description: How the quiet is read at under_review and decision.
+  - target: founder_office.heu.program_applications.the_portal_is_the_record
+    kind: enriches
+    strength: soft
+    description: Where a scheme's status is read from.
+
+exceptions:
+  - id: pa.exc.fund_programme
+    statement: >
+      An investor's own programme behaves like the fund it belongs to — Peak XV calls Surge "the way Peak
+      XV does seed investing" and reviews applications on a rolling basis — and its application is close
+      to an investment conversation, with no batch date to read the quiet against.
+    overrides: [pa.br.programme_date_wins]
+    why: A rolling, investor-run programme publishes no decision date, so there is no date to win.
+    frequency: occasional
+  - id: pa.exc.late_but_read
+    statement: >
+      A late application to YC is still read — "We fund many companies that apply late every batch" — so
+      a missed deadline moves it to an unpromised date rather than out of the process.
+    why: YC reads late applications "whenever we have spare time" and decides most "within a month".
+    frequency: common
+
+best_practices:
+  - statement: Write the programme's deadline on both clocks.
+    why: YC's "November 2 at 8pm PT" is 3 November at 9:30 am in India.
+    applies_when: Any programme publishing its deadline in a time zone other than the founders'.
+  - statement: Keep the receipt.
+    why: YC — without the confirmation mail, "you likely did not submit the application".
+  - statement: File every rejection with its re-application date.
+    why: SISFS reopens after six weeks; YC encourages re-applying to the following batch.
+  - statement: Read a scheme's portal before reading the mailbox's silence.
+    why: SISFS keeps each application's real-time status on its dashboard and emails rejections.
+
+anti_patterns:
+  - id: pa.ap.investor_chase
+    statement: Chasing a programme like a quiet investor.
+    why_it_happens: >
+      The extraction calls an accelerator an investor, and every investor playbook says a quiet thread
+      waiting on the other side needs a nudge.
+    cost: >
+      A nudge to a selection team that has published its date answers a question the programme's page
+      already answered, and it spends the one status query the file has.
+    instead: Read the quiet against the programme's own date, and ask once after it.
+    detectable_by: [pa.programme_read_as_investor]
+  - id: pa.ap.pipeline_stage
+    statement: Mapping the application onto a sales pipeline stage.
+    why_it_happens: Every other company-anchored file has a pipeline, and a stage field is easy to fill.
+    cost: A pipeline stage brings a close date and a probability with it, and an application has neither.
+    instead: Hold the spine's stage, named from the programme's own words.
+  - id: pa.ap.decline_without_date
+    statement: Recording `declined` with no re-application date.
+    why_it_happens: The rejection is the memorable part, and the invitation to re-apply reads as politeness.
+    cost: The next intake opens and closes unnoticed, and the feedback that would have changed the next application is lost.
+    instead: File the date and the change at the moment the rejection arrives.
+    detectable_by: [pa.pass_observed, pa.reapplication_window_stated]
+  - id: pa.ap.mail_only
+    statement: Reading only the mailbox for a government scheme.
+    why_it_happens: Every other file lives in the mailbox, and a portal needs a login.
+    cost: The scheme moves, or asks a question, on its portal, and nobody sees it until the scheme's clock has run.
+    instead: Read the portal, and keep its templated notices.
+    detectable_by: [pa.portal_status_label]
+
+examples:
+  - label: An accelerator moves the application to interview and asks for a slot to be booked by a date
+    kind: typical
+    note: Stage interview; the turn is ours; the booking date is the programme's deadline.
+  - label: A seed scheme's incubator shortlists the application for a presentation to its committee
+    kind: typical
+    note: Stage interview — the committee presentation is the interview; the scheme's clock from receipt still runs.
+  - label: A rejection that invites the company to apply to the next cohort
+    kind: typical
+    note: Stage declined, with a date — the next intake's deadline goes on the file with the feedback.
+  - label: An accelerator's interview invitation filed as an investor relationship
+    kind: misclassification
+    note: >
+      The extraction calls an accelerator an investor, so the file gets investor advice — a nudge, a warm
+      introduction — when it needs a booked slot with every founder on it.
+  - label: A programme that writes only when there is a fit, silent for longer than its own response time
+    kind: counterexample
+    note: Here the quiet is the answer; close the file as lapsed after the programme's own window, not after the outcome window.
+  - label: An assignment due inside an accelerator's cohort
+    kind: edge
+    note: Stage in_programme — the application is settled; the deliverable's date is the programme's, and fixed.
+
+references:
+  - title: Y Combinator FAQ
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/faq
+    note: Read 9 Oct 2026. Receipts, replies to everyone, late applications, re-applying, incorporating.
+  - title: Apply to Y Combinator
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/apply
+    note: Read 9 Oct 2026. The Winter 2027 calendar.
+  - title: Hub71 FAQs
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/faqs
+    note: Read 9 Oct 2026. Feedback within three months; Cohort 21 from February to September 2027.
+  - title: Apply to Antler
+    kind: practitioner
+    author: Antler
+    url: https://www.antler.co/apply
+    note: Read 9 Oct 2026. "If there's a fit, we'll be in touch by email."
+  - title: Emergent Ventures
+    kind: practitioner
+    author: Mercatus Center
+    url: https://www.mercatus.org/emergent-ventures
+    note: Read 9 Oct 2026. Does not answer questions about application status.
+  - title: Startup India Seed Fund Scheme — F.A.Q.
+    kind: standard
+    author: DPIIT, Government of India
+    url: https://seedfund.startupindia.gov.in/faq
+    note: Read 9 Oct 2026. The real-time dashboard; rejections by email; re-applying after six weeks.
+  - title: Surge by Peak XV FAQs
+    kind: practitioner
+    author: Peak XV Partners
+    url: https://surge.peakxv.com/faqs
+    note: Read 9 Oct 2026. "Surge is the way Peak XV does seed investing"; rolling review.
+  - title: "Google for Startups Accelerator: India"
+    kind: practitioner
+    author: Google for Startups
+    url: https://startup.google.com/programs/accelerator/india/
+    note: Read 9 Oct 2026. Equity-free.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
+  notes: >
+    Eight executable patterns, four blocked. Every executable one reads correspondence — whose turn, a
+    stated date, a request, a meeting, a pass, a deferral, a long quiet; every blocked one would say what
+    the application is. Relationships to the domain's core objects join when those objects land.

@@ -659,17 +659,29 @@ def test_a_brain_write_with_brain_expert_is_refused_by_the_database(conn):
 
 def test_nothing_outside_the_publisher_writes_a_brain_entry(conn):
     """J4: writes outside the L6 pipeline = 0. Asserted structurally — the ONE insert into
-    `learned_brain_entries` in the whole engine lives in `feedback/publisher.publish_brain`."""
+    `learned_brain_entries` in the whole engine lives in `feedback/publisher.publish_brain`.
+
+    ⛔ READ OFF THE AST, NOT THE SOURCE TEXT. The text scan broke on `feedback/target_policy.py`
+    (32a5c3a4), whose comments QUOTE the publisher's insert to explain who writes and who reads.
+    `derivation_dag_check._constants` is every string a module builds that is not a docstring —
+    a `text(...)` argument, a module-level SQL constant passed by name, a raw `exec_driver_sql`
+    string, an f-string over a bound table name — and whitespace is normalised below, so a
+    statement split across lines is seen too. (`target_policy.sql_literals` reads only literals
+    inside `text(...)` and misses the second, third and fourth.)"""
+    import ast
     import pathlib
+
+    from scripts.derivation_dag_check import _constants
 
     root = pathlib.Path(og.__file__).resolve().parents[3] / "genios_engine"
     writers = []
     for py in root.rglob("*.py"):
-        body = py.read_text()
-        for verb in ("insert into learned_brain_entries", "update learned_brain_entries",
-                     "insert into temporary_memories"):
-            if verb in body:
-                writers.append(py.relative_to(root).as_posix())
+        for literal in _constants(ast.parse(py.read_text())):
+            sql = " ".join(literal.lower().split())
+            for verb in ("insert into learned_brain_entries", "update learned_brain_entries",
+                         "insert into temporary_memories"):
+                if verb in sql:
+                    writers.append(py.relative_to(root).as_posix())
     assert sorted(set(writers)) == ["feedback/publisher.py"]
 
 
@@ -881,11 +893,26 @@ def test_an_approver_resolves_through_the_identity_layers_own_keys(conn):
     c.execute(text("insert into graph_aliases (org_id, alias_type, alias_key, node_id, origin) "
                    "values (:o, 'person_name', 'rohit sharma', 'node_rohit', 'observed')"),
               {"o": org})
+    # The NAME rung binds only one of the tenant's OWN people (7faff157, PP-1): the node's
+    # canonical key must be an active seat, the org's own address or a connected account.
+    c.execute(text("insert into graph_nodes (node_id, version, org_id, node_type, canonical_key, "
+                   "display_name) values ('node_rohit', 1, :o, 'person', 'rohit@acme.io', "
+                   "'Rohit Sharma')"), {"o": org})
+    c.execute(text("insert into org_seats (org_id, seat_id, email, active) "
+                   "values (:o, 'seat_rohit', 'rohit@acme.io', true)"), {"o": org})
+    # ...and a name that only a STRANGER answers to resolves to nobody (the negative control).
+    c.execute(text("insert into graph_aliases (org_id, alias_type, alias_key, node_id, origin) "
+                   "values (:o, 'person_name', 'arjun', 'node_arjun_buyer', 'observed')"),
+              {"o": org})
+    c.execute(text("insert into graph_nodes (node_id, version, org_id, node_type, canonical_key, "
+                   "display_name) values ('node_arjun_buyer', 1, :o, 'person', "
+                   "'arjun@bigcustomer.example', 'Arjun')"), {"o": org})
     seed_founder(c, org)
 
     assert org_rule_ingest.resolve_approver_node(c, org_id=org, name="CFO@acme.io") == "node_cfo"
     assert org_rule_ingest.resolve_approver_node(
         c, org_id=org, name="Rohit Sharma") == "node_rohit"
+    assert org_rule_ingest.resolve_approver_node(c, org_id=org, name="Arjun") is None
     assert org_rule_ingest.resolve_approver_node(
         c, org_id=org, name="Founder") == "node_founder_1"
     assert org_rule_ingest.resolve_approver_node(c, org_id=org, name="the board") is None

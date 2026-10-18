@@ -17,6 +17,11 @@ different things to do about it.
 
 from __future__ import annotations
 
+#: `context/llm/client.THINKING_OFF`, as its literal: no module of the bundle package but the gate
+#: may import a model client (`tests/reason/test_bundle_doctrine`), and
+#: `tests/reason/test_every_site_says_whether_it_thinks` holds the two words equal.
+_THINKING_OFF = "off"
+
 #: R-1 · the ambiguity interpreter. Returns a typed classification with a confidence, consumed as
 #: EVIDENCE by units; never a verdict. Owned by the R-sites wave; the gate is shared.
 SITE_INTERPRET = "R-1"
@@ -31,15 +36,32 @@ SITE_ALTERNATIVES = "R-3"
 SITE_EFFECT = "R-4"
 #: R-5 · the low-confidence consult, after DEFER is chosen. Recorded non-authoritative.
 SITE_CONSULT = "R-5"
-#: ⛔ R-6 · L2-5's Context Reasoner. **One call per SITUATION, never per event** — the pilot
+#: ⛔ R-6 · L2-5's Context Reasoner — ⛔ RETIRED 2026-10-11 (`06` D51, STEP-12): the sweep no longer
+#: consults it (it ran ahead of the change gate, `03` F141) and its feature is refused; the id stays so
+#: the rows it wrote still name a site. **One call per SITUATION, never per event** — the pilot
 #: carries 159 active situations against 465 events. T1 because the deterministic validator
 #: (`context/proposal_gate`) is what makes a cheap model safe: without it you need Sonnet
 #: everywhere, because nothing would catch the error. Sonnet is the ESCALATION, on two numbers,
 #: not the tier.
 SITE_SITUATION = "R-6"
+#: ⛔ R-7 · the expert (STEP-12). One strong judgment of a FILE — the whole piece of work — each time
+#: its fingerprint moves, never one per situation per sweep: the dossier in, an `ExpertReview`
+#: (`contracts/expert_review`) out, validated against what the dossier holds. T2, and only T2:
+#: `06` D7 (answered 10 Oct) is Sonnet-class only — no Opus tier exists, and none is added.
+SITE_EXPERT = "R-7"
+#: R-8 · the morning brief's writer (STEP-15). The day's checked material in, one line per item
+#: out — written once a day, never per event and never per situation. Haiku-class: the same
+#: pattern as R-6's own note, a deterministic check (`executive/morning_check`) is what makes a
+#: cheap model safe here, not that the brief is unimportant.
+SITE_BRIEF = "R-8"
+#: R-8E · the same brief asked once more, on the Sonnet-class tier, after the Haiku draft fails
+#: its check twice or comes back malformed past its one repair (STEP-15 §8.3 point 3; s15-D1).
+#: Never escalated again and never Opus: failing twice more, the template stands and the brief
+#: says so.
+SITE_BRIEF_ESCALATE = "R-8E"
 
 R_SITES = (SITE_INTERPRET, SITE_NARRATE, SITE_ALTERNATIVES, SITE_EFFECT, SITE_CONSULT,
-           SITE_SITUATION)
+           SITE_SITUATION, SITE_EXPERT, SITE_BRIEF, SITE_BRIEF_ESCALATE)
 
 #: Tier per site, exactly as doc 11 §1 prints it. T1 = Haiku-class, T2 = Sonnet-class, the same
 #: two names `capture.semantic.batch.DEFAULT_TIER_PRICES` prices — reused rather than re-declared,
@@ -53,6 +75,9 @@ SITE_TIERS = {
     SITE_EFFECT: TIER_T1,
     SITE_CONSULT: TIER_T2,
     SITE_SITUATION: TIER_T1,
+    SITE_EXPERT: TIER_T2,
+    SITE_BRIEF: TIER_T1,
+    SITE_BRIEF_ESCALATE: TIER_T2,
 }
 
 #: The output ceiling per site, in tokens. A cap rather than a hope: doc 11 sizes R-2 at ~450
@@ -72,6 +97,13 @@ SITE_TIERS = {
 #: the next measurement rather than guessed again: `LLMClient` reads `stop_reason` now, so a call
 #: that still truncates says so in its own words instead of being filed as bad JSON, and
 #: `scripts/pipeline_health.py` fails the moment a lane's failures cluster on one output size.
+#:
+#: ⛔ AND THAT MEASUREMENT WAS NOT OF PROSE (the 13 Oct audit, s5t-F4; `yc2_w27_s18`
+#: M50.C2.L-contract.V1.U02). R-2 ran on `claude-sonnet-5`, which THINKS BY DEFAULT and spends its
+#: thinking from the same `max_tokens`: the 737–1,400 above were thinking plus answer, read as answer.
+#: The answer itself is ~450 tokens (doc 11), at most ~1,000 by its field caps
+#: (`contracts/reasoning`). Every site now asks with thinking OFF (`SITE_THINKING`, `06` D71), which is
+#: what these ceilings were sized for; a site that thinks sizes its ceiling for thinking plus answer.
 SITE_MAX_OUTPUT_TOKENS = {
     SITE_INTERPRET: 400,
     SITE_NARRATE: 2400,
@@ -81,6 +113,50 @@ SITE_MAX_OUTPUT_TOKENS = {
     # Structured output, not prose: a proposal is a mapping of at most fourteen fields, and a
     # model that decides to explain itself is a cost incident and a V-8 failure at once.
     SITE_SITUATION: 500,
+    # ⛔ MEASURED, AND THE OLD SIZING WAS WRONG (s5t-F2, F4). The 4,000 here was sized from "a full
+    # review runs about 800-1,600 tokens". The golden live passes of 12 Oct measured it: on Haiku 4.5,
+    # which does not think, a review ran p50 2,737, p90 3,509, max 3,990 output tokens and six more
+    # were cut at 4,000; on Sonnet 5, which thinks by default, all 203 calls stopped at 4,000 (thinking
+    # ~2,600-3,500 of it). Asked with thinking OFF (`06` D71), 6,000 is 1.7x Haiku's p90 — ~$0.06 of
+    # output at the T2 price, $0.09 with a 60,000-character dossier, under the expert's own $0.10 per
+    # call. A cut answer is still a RECORDED refusal (`truncated`, `03` F140). `06` D72 measures
+    # whether thinking (adaptive at 12,000) earns its cost.
+    SITE_EXPERT: 6000,
+    # ⛔ NOT YET MEASURED (`[MODELLED]`) — unlike every number above. The plan caps a brief at 600
+    # words and models its output at ~800 tokens (`reason/bundle/budget.OWN_BUDGETS`'s own comment:
+    # "a brief is about 6,000 tokens in and 800 out"). R-2's history (this dict's own lesson) is
+    # that a ceiling equal to the estimate truncates a real answer two times in three, so this is
+    # 2x the modelled figure rather than the figure itself — headroom, not a hope. The live look
+    # (s15-D1, M45.C5) measures the real distribution before any tenant reads a written brief; this
+    # number is revisited then, the way R-2's was.
+    SITE_BRIEF: 1600,
+    SITE_BRIEF_ESCALATE: 1600,
+}
+
+#: ⛔ WHETHER A SITE MAY THINK (`yc2_w27_s18` M50.C2.L-contract.V1.U02). Claude 5 models think unless
+#: told not to, and the thinking is spent from the site's ceiling above. `06` D71 (13 Oct): every site
+#: asks with thinking OFF until a measurement says otherwise — the ceilings were sized for a model that
+#: does not think, so this restores what they were sized for and costs nothing that works today. The
+#: gate sends it (`RSiteGate.consult`) to a client that takes it; `context/llm/client` turns it into
+#: what each model family honours (Opus 5.5 cannot turn thinking off: lowest effort, its own headroom).
+SITE_THINKING = {
+    SITE_INTERPRET: _THINKING_OFF,
+    SITE_NARRATE: _THINKING_OFF,
+    SITE_ALTERNATIVES: _THINKING_OFF,
+    SITE_EFFECT: _THINKING_OFF,
+    SITE_CONSULT: _THINKING_OFF,
+    SITE_SITUATION: _THINKING_OFF,
+    SITE_EXPERT: _THINKING_OFF,
+    SITE_BRIEF: _THINKING_OFF,
+    SITE_BRIEF_ESCALATE: _THINKING_OFF,
+}
+
+#: How long one call of a site may take, in seconds, where the client's own 60 s is too short. None
+#: is the client's. MEASURED (s5t-F10): on 12 Oct a 4,000-token Sonnet 5 answer took 37–45 s (the
+#: gaps between calls, p50 45.3 s), so R-7's 6,000 needs ~56–68 s — past 60 s, where the SDK retries
+#: a call whose answer may already be paid for. 120 s is 1.8x the slow end.
+SITE_TIMEOUT_S = {
+    SITE_EXPERT: 120.0,
 }
 
 # ── what a consult may END as ────────────────────────────────────────────────────────────────
@@ -109,10 +185,14 @@ OUTCOME_FAILED_VALIDATION = "failed_validation"
 #: move. Its own outcome rather than a reused skip, because a force-failed run appearing in the
 #: ledger as an ordinary budget skip would make the doctrine test invisible after the fact.
 OUTCOME_FORCE_FAILED = "force_failed"
+#: ⛔ `03` F140 · the answer was cut at the token ceiling (`LLMResult.truncated`). Never validated,
+#: never parsed into anything — a leniently closed JSON is a shorter answer than the model meant —
+#: and never retried at the same ceiling, which would only cut it again. Recorded with its cost.
+OUTCOME_TRUNCATED = "truncated"
 
 OUTCOMES = (OUTCOME_RAN, OUTCOME_CACHED, OUTCOME_NOT_ACTIVATED, OUTCOME_NO_PRECONDITION,
             OUTCOME_NO_BUDGET, OUTCOME_NO_CLIENT, OUTCOME_FAILED_GENERATION,
-            OUTCOME_FAILED_VALIDATION, OUTCOME_FORCE_FAILED)
+            OUTCOME_FAILED_VALIDATION, OUTCOME_FORCE_FAILED, OUTCOME_TRUNCATED)
 
 #: The outcomes on which the caller must use its deterministic fallback. Everything that is not a
 #: model answer this run — a cache hit is an answer, so it is not here.
@@ -141,10 +221,23 @@ def max_output_tokens(site: str) -> int:
     return SITE_MAX_OUTPUT_TOKENS[require_site(site)]
 
 
+def thinking_mode(site: str) -> str:
+    """`SITE_THINKING`'s word for the site — `context/llm/client.THINKING_MODES`."""
+    return SITE_THINKING[require_site(site)]
+
+
+def timeout_s(site: str) -> float | None:
+    """The site's own per-call timeout, or None for the client's."""
+    return SITE_TIMEOUT_S.get(require_site(site))
+
+
 __all__ = ["FALLBACK_OUTCOMES", "OUTCOMES", "OUTCOME_CACHED", "OUTCOME_FAILED_GENERATION",
            "OUTCOME_FAILED_VALIDATION", "OUTCOME_FORCE_FAILED", "OUTCOME_NOT_ACTIVATED",
            "OUTCOME_NO_BUDGET", "OUTCOME_NO_CLIENT", "OUTCOME_NO_PRECONDITION", "OUTCOME_RAN",
-           "R_SITES", "SITE_ALTERNATIVES", "SITE_CONSULT", "SITE_EFFECT", "SITE_INTERPRET",
-           "SITE_SITUATION",
-           "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_TIERS", "TIER_T1", "TIER_T2",
-           "max_output_tokens", "require_outcome", "require_site", "tier_for"]
+           "OUTCOME_TRUNCATED",
+           "R_SITES", "SITE_ALTERNATIVES", "SITE_BRIEF", "SITE_BRIEF_ESCALATE", "SITE_CONSULT",
+           "SITE_EFFECT", "SITE_EXPERT", "SITE_INTERPRET", "SITE_SITUATION",
+           "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_THINKING", "SITE_TIERS", "SITE_TIMEOUT_S",
+           "TIER_T1", "TIER_T2",
+           "max_output_tokens", "require_outcome", "require_site", "thinking_mode", "tier_for",
+           "timeout_s"]

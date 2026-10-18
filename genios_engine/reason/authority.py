@@ -329,10 +329,46 @@ AUDITED_CARD_JUDGMENTS_CTES = (
     "), canonical_judgments as ("
     "select pack_id, pack_version, authority_pack_revision, "
     "capability_id, capability_version, "
-    "rule_id, play, card_id, cause, detail, occurred_at, id "
+    # ⛔ `card_level` — STEP-18 B1. cd7f85d7 carried it into `audited_cards` and `judgment_events`
+    # and not here, so `calibrate`'s precision denominator named a column this CTE never projected
+    # and every weekly run raised `UndefinedColumn` on PostgreSQL from 2026-09-10.
+    "rule_id, play, card_id, card_level, cause, detail, occurred_at, id "
     "from ranked_judgments where judgment_position=1"
     ")"
 )
+
+
+# ── a question to the founder: its OWN authority (STEP-13, `yc2_w27_s13` M36.C2.L-logic.V1.U04) ──────────
+#
+# A find-out decision has no candidate — the decision contract forbids one — and the fragment above proves a
+# SELECTED move, so a question had no road to the founder (`03` F184). It is authorised by its own fragment,
+# never through the decision's: the expert's audited, completed, live run (`reason/expert/decide`,
+# capability `expert.file_review`) that ended INSUFFICIENT on its answer; the signal bound to that run's
+# decision hash, unexpired, in the Investigation lane, with no candidate and no decision binding
+# (`authority_binding_version = 0`); and the question that run asked of the file (`founder_questions`,
+# 0201) still open. A decision never passes it; it never passes the decision's.
+QUESTION_SIGNAL_JOINS = (
+    " join reasoning_runs question_rr on question_rr.org_id=s.org_id "
+    "and question_rr.run_id=s.reasoning_run_id and question_rr.config_snapshot_id=s.config_snapshot_id "
+    "join reasoning_run_outputs question_ro on question_ro.org_id=question_rr.org_id "
+    "and question_ro.run_id=question_rr.run_id "
+    "join founder_questions question_asked on question_asked.org_id=s.org_id "
+    "and question_asked.run_id=s.reasoning_run_id and question_asked.file_id=s.subject_node_id "
+)
+
+#: The question's authority but for its STATE: the run that asked it, the signal bound to that run, unexpired.
+QUESTION_SIGNAL_LIVE = (
+    "s.reasoning_run_id is not null "
+    "and s.authority_binding_version=0 and s.reasoning_candidate_id is null "
+    "and s.output_lane='investigation' "
+    "and question_rr.status='completed' and question_rr.mode='live' "
+    "and question_rr.capability_id='expert.file_review' "
+    "and question_rr.root_node_id=s.subject_node_id "
+    "and question_ro.outcome_kind='insufficient_context' "
+    "and question_ro.decision_hash=s.reasoning_decision_hash "
+    "and s.authority_expires_at > :authority_time "
+)
+QUESTION_SIGNAL_PREDICATE = QUESTION_SIGNAL_LIVE + "and question_asked.state='open'"
 
 
 def authority_time(value: datetime | None = None) -> datetime:
@@ -360,6 +396,9 @@ __all__ = [
     "AUTHORITATIVE_SCORE_SQL",
     "AUTHORITATIVE_SCORE_INPUTS_SQL",
     "AUDITED_CARD_JUDGMENTS_CTES",
+    "QUESTION_SIGNAL_JOINS",
+    "QUESTION_SIGNAL_LIVE",
+    "QUESTION_SIGNAL_PREDICATE",
     "authority_time",
     "projected_score",
 ]

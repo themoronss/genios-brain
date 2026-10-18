@@ -6,12 +6,17 @@ must reach exactly this decision, and must refuse when the evidence is not there
 from __future__ import annotations
 
 import json
+import re
+import threading
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import pytest
+
+from genios_engine.capture.semantic import injection as _inj
 
 SPEC_DIR = Path(__file__).parent / "specs"
 
@@ -44,6 +49,265 @@ class NoLLM:
         raise AssertionError(
             "a golden replay reached the LLM. Replays assert deterministic reasoning; if a "
             "decision needs a model to be reached, it is not a decision the replay can pin.")
+
+
+# =================================================================================================
+# THE RECORDED MODEL (STEP-01 §3.2) — what a golden case is replayed with
+# =================================================================================================
+#
+# `NoLLM` above is right for a replay that asserts deterministic reasoning. A founder case is the
+# other kind: it runs the REAL chain, and no mail reaches memory without a model answer — one mail
+# costs about three calls (the junk filter, relevance, extraction). So the answers are recorded,
+# once, into a cassette, and replayed by the prompt's own hash.
+
+#: A recorded answer is found by the hash of the prompt it answered, after removing only what the
+#: engine mints at random. Two things, both measured by running one case twice and diffing every
+#: prompt:
+#:
+#:   * the injection fence's nonce (`capture/semantic/injection.fence` — 64 fresh bits per prompt,
+#:     by design);
+#:   * an id `platform/ids.new_id` minted for this run — `sit_<24 hex>` and the like. The
+#:     resolution prompt names its situation by one, and a fresh tenant mints a fresh one.
+#:
+#: Ids are RENUMBERED, not erased: each distinct id becomes `<prefix>_#<n>` in order of first
+#: appearance, so a prompt about two situations never reads the same as one about one situation
+#: twice. Anything added here must be minted, never content: a rule that forgave content would let
+#: a changed prompt replay an old answer, which is the stale cassette this key exists to catch.
+_VOLATILE: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(rf"{re.escape(_inj.FENCE_LEAD)}({_inj.OPEN_LABEL}|{_inj.CLOSE_LABEL})_"
+                rf"[0-9a-f]{{{_inj.NONCE_CHARS}}}{re.escape(_inj.FENCE_TAIL)}"),
+     rf"{_inj.FENCE_LEAD}\1_{'0' * _inj.NONCE_CHARS}{_inj.FENCE_TAIL}"),
+)
+#: `new_id(prefix)` = `<prefix>_` + 24 hex characters (`platform/ids.py`).
+_MINTED_ID = re.compile(r"(?<![0-9A-Za-z_])([a-z]+)_([0-9a-f]{24})(?![0-9A-Za-z])")
+
+#: How a prompt says which model site wrote it: (site, module under `genios_engine/`, the phrase
+#: its prompt opens with). `test_recorded_llm` holds each phrase to its module, so a reworded
+#: prompt moves its marker instead of turning every call into `unknown`. Order matters only where
+#: one phrase contains another (the two junk-filter prompts).
+SITE_MARKERS: tuple[tuple[str, str, str], ...] = (
+    ("junk_gate", "capture/gate/relevance.py",
+     "You are a junk filter deciding whether ONE email"),
+    ("junk_gate_batch", "capture/gate/relevance.py",
+     "You are a junk filter deciding which of SEVERAL emails"),
+    ("relevance", "capture/esqe/relevance.py",
+     "You are classifying messages for a company's business-intelligence system."),
+    ("domains", "capture/domain/proposer.py",
+     "You label a business message with the domains it belongs to."),
+    ("extraction", "capture/semantic/profiles.py", "You extract structured facts from"),
+    ("resolution", "context/lifecycle/prompt.py",
+     "You read ONE message that landed on an open business situation"),
+    ("decider", "reason/llm_decision_maker.py",
+     "You are the chief of staff of a busy founder."),
+    ("r1", "reason/llm_interpretation.py",
+     "You are R1, the reader inside GeniOS's reasoning layer."),
+    ("narrator", "deliver/render.py", "You are the founder's chief of staff, writing ONE card"),
+    ("bundle_narrator", "reason/bundle/prompt.py",
+     "You are the reasoning narrator for GeniOS."),
+    # STEP-12 · R-7, the expert's review of one file (`reason/expert/prompt.ROLE`'s own opening).
+    ("expert", "reason/expert/prompt.py",
+     "You are the founder's chief of staff, thirty years in the work."),
+    ("angle", "context/angles/asker.py", "You classify one subject for an automated system."),
+    ("cohort", "context/analytic/cohort.py",
+     "A founder described a group of records they want to compare against."),
+    ("screen_insight", "reason/moments/screen_insight.py",
+     "You sit beside a busy manager and read what is on their screen right now."),
+    ("org_rule_extract", "packs/brains/org_rule_extract.py",
+     "You are reading ONE internal company document and extracting the RULES it states."),
+)
+
+
+def normalise_prompt(prompt: str) -> str:
+    """The prompt with every random token replaced by a fixed one (`_VOLATILE`) and every minted
+    id renumbered in order of first appearance (`_MINTED_ID`)."""
+    for pattern, replacement in _VOLATILE:
+        prompt = pattern.sub(replacement, prompt)
+    seen: dict[str, str] = {}
+
+    def renumber(match: re.Match[str]) -> str:
+        token = match.group(0)
+        if token not in seen:
+            prefix = match.group(1)
+            seen[token] = f"{prefix}_#{sum(1 for t in seen if t.startswith(prefix + '_')) + 1}"
+        return seen[token]
+
+    return _MINTED_ID.sub(renumber, prompt)
+
+
+def cassette_key(prompt: str) -> str:
+    """The engine's own prompt hash (`LLMClient.content_hash`), over the normalised prompt."""
+    from genios_engine.context.llm.client import LLMClient
+    return LLMClient.content_hash(normalise_prompt(prompt))
+
+
+#: A minted id in the key's own frame — `<prefix>_#<n>`, as `normalise_prompt` writes it.
+_PLACEHOLDER = re.compile(r"(?<![0-9A-Za-z_])([a-z]+)_#([0-9]+)(?![0-9A-Za-z])")
+
+
+def minted_ids(prompt: str) -> dict[str, str]:
+    """Each id the prompt names that `platform/ids.new_id` minted → the placeholder its key gives it."""
+    for pattern, replacement in _VOLATILE:
+        prompt = pattern.sub(replacement, prompt)
+    seen: dict[str, str] = {}
+    for match in _MINTED_ID.finditer(prompt):
+        token = match.group(0)
+        if token not in seen:
+            prefix = match.group(1)
+            seen[token] = f"{prefix}_#{sum(1 for t in seen if t.startswith(prefix + '_')) + 1}"
+    return seen
+
+
+def _reframe(value: Any, pattern: re.Pattern[str], mapping: Mapping[str, str]) -> Any:
+    if isinstance(value, str):
+        return pattern.sub(lambda m: mapping.get(m.group(0), m.group(0)), value)
+    if isinstance(value, list):
+        return [_reframe(v, pattern, mapping) for v in value]
+    if isinstance(value, dict):
+        return {k: _reframe(v, pattern, mapping) for k, v in value.items()}
+    return value
+
+
+def to_key_frame(answer: Any, prompt: str) -> Any:
+    """An answer with every minted id its prompt names written as the key's placeholder for it.
+
+    STEP-12 (M33.C2.L-data.V0.U03, `03` F177). The key forgives minted ids — a prompt about the same
+    things under other ids, from another door or another run, finds the same recording — so the answer
+    is kept in the same frame: what it cites is "the third event this prompt names", never one run's
+    id. An id the prompt does not name stays as written."""
+    return _reframe(answer, _MINTED_ID, minted_ids(prompt))
+
+
+def from_key_frame(answer: Any, prompt: str) -> Any:
+    """A recorded answer read back for THIS prompt: each placeholder its own id here."""
+    return _reframe(answer, _PLACEHOLDER, {v: k for k, v in minted_ids(prompt).items()})
+
+
+def identify_site(prompt: str) -> str:
+    """Which model site wrote this prompt, or `unknown`. For reports and the ideal reader only —
+    the cassette is keyed by the hash, never by the site."""
+    for site, _module, marker in SITE_MARKERS:
+        if marker in prompt:
+            return site
+    return "unknown"
+
+
+class CassetteMiss(BaseException):
+    """The chain asked the model something the cassette does not answer.
+
+    A `BaseException`, deliberately: every model site in the chain sits inside `except Exception`
+    so one failed call never stops a sweep. Here that would turn a missing recording into "the
+    model said nothing", and the case would be judged on an answer nobody gave.
+    """
+
+    def __init__(self, site: str, key: str) -> None:
+        self.site, self.key = site, key
+        super().__init__(
+            f"cassette miss at the {site} site (key {key[:12]}…): the chain asked the model "
+            "something this case's recording does not answer. A prompt changed, or the case "
+            "reached a site it never reached before — re-record deliberately "
+            "(scripts/golden_eval.py --record), never by loosening the key.")
+
+
+class RecordedLLM:
+    """A model that answers only what was recorded. Same `.model` / `.call()` shape as `LLMClient`.
+
+    Thread-safe: `run_sync` and the L2 drain both run thread pools over one client.
+    """
+
+    def __init__(self, cassette: Mapping[str, Mapping[str, Any]], *,
+                 model: str = "claude-haiku-4-5-20251001") -> None:
+        self._cassette = dict(cassette)
+        self.model = model
+        self._lock = threading.Lock()
+        self.calls: list[tuple[str, str]] = []
+        self.misses: list[tuple[str, str]] = []
+
+    @staticmethod
+    def content_hash(material: str) -> str:
+        from genios_engine.context.llm.client import LLMClient
+        return LLMClient.content_hash(material)
+
+    def call(self, prompt: str, *, max_tokens: int = 4096, **_kw: Any):
+        from genios_engine.context.llm.client import LLMResult
+        key, site = cassette_key(prompt), identify_site(prompt)
+        with self._lock:
+            self.calls.append((site, key))
+            entry = self._cassette.get(key)
+            if entry is None:
+                self.misses.append((site, key))
+        if entry is None:
+            raise CassetteMiss(site, key)
+        parsed, raw = entry.get("parsed"), entry.get("raw")
+        if entry.get("framed"):
+            # Recorded in its key's frame (`to_key_frame`): read back with this prompt's own ids.
+            parsed, raw = from_key_frame(parsed, prompt), from_key_frame(raw, prompt)
+        return LLMResult(parsed=parsed, raw=raw or json.dumps(parsed),
+                         input_tokens=int(entry.get("input_tokens") or 0),
+                         output_tokens=int(entry.get("output_tokens") or 0),
+                         model=str(entry.get("model") or self.model))
+
+
+class CassetteRecorder:
+    """Wraps a model (the ideal reader, or the live one) and writes down every answer it gives.
+
+    A cassette holds only whole answers: what the model SAID, never a failure replayed as its verdict.
+
+    ⛔ `yc2_w27_s18` M50.C4.L-integration.V0.U08 (s5t-F12). It used to RAISE on any answer with
+    `ok=False`, so a cut answer reached the R-7 gate as an exception — `model_call_raised`, uncharged and
+    retried — where production's client returns it and the gate ends the consult `truncated`, never
+    retried (`03` F140). Now a cut or unparseable answer comes back exactly as `LLMClient` returns it,
+    and only a transport failure (no answer, no tokens) raises. Every call, whatever came back, is kept
+    in `ledger` — append-only, in order, with its tokens — which is what a live pass's spend is summed
+    from (`scripts/golden_eval.py`), not the cassette.
+    """
+
+    def __init__(self, inner: Any) -> None:
+        self._inner = inner
+        self.model = getattr(inner, "model", "")
+        self._lock = threading.Lock()
+        self.cassette: dict[str, dict[str, Any]] = {}
+        #: The same report a `RecordedLLM` keeps, so a recording run and its replay compare.
+        self.calls: list[tuple[str, str]] = []
+        self.misses: list[tuple[str, str]] = []
+        #: Every call the wrapped model was asked to make, in order — a cut, a refusal and a transport
+        #: failure included. Appended to, never rewritten.
+        self.ledger: list[dict[str, Any]] = []
+
+    @property
+    def supports_thinking(self) -> bool:
+        """`call` passes `thinking=` / `timeout_s=` through when the wrapped model takes them."""
+        return bool(getattr(self._inner, "supports_thinking", False))
+
+    @staticmethod
+    def content_hash(material: str) -> str:
+        from genios_engine.context.llm.client import LLMClient
+        return LLMClient.content_hash(material)
+
+    def call(self, prompt: str, *, max_tokens: int = 4096, **kw: Any):
+        result = self._inner.call(prompt, max_tokens=max_tokens, **kw)
+        ok = bool(getattr(result, "ok", True))
+        cut = bool(getattr(result, "truncated", False))
+        raw = str(getattr(result, "raw", "") or "")
+        tokens_out = int(getattr(result, "output_tokens", 0) or 0)
+        transport = not ok and not cut and not raw and not tokens_out
+        with self._lock:
+            self.ledger.append({"site": identify_site(prompt), "key": cassette_key(prompt),
+                                "model": getattr(result, "model", "") or self.model,
+                                "input_tokens": int(getattr(result, "input_tokens", 0) or 0),
+                                "output_tokens": tokens_out, "ok": ok, "truncated": cut,
+                                "transport_failed": transport, "visible_chars": len(raw)})
+        if transport:
+            raise RuntimeError(f"not recorded — the model call failed: {result.error}")
+        if not ok or cut:
+            return result               # as production's client returns it; never a cassette
+        entry = {"site": identify_site(prompt), "parsed": to_key_frame(result.parsed, prompt),
+                 "raw": to_key_frame(result.raw, prompt), "framed": True,
+                 "input_tokens": result.input_tokens, "output_tokens": result.output_tokens,
+                 "model": result.model}
+        with self._lock:
+            self.cassette[cassette_key(prompt)] = entry
+            self.calls.append((entry["site"], cassette_key(prompt)))
+        return result
 
 
 @dataclass(frozen=True)

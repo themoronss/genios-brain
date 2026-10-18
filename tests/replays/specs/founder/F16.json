@@ -1,0 +1,293 @@
+{
+ "case_id": "F16",
+ "title": "The founder's mail to a fund bounced",
+ "kind": "must_detect",
+ "label_row": 16,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-11T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "sent",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T06:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "partners@lattice-capital.test"
+   ],
+   "subject": "Nimbus Labs - raising our seed round",
+   "body": "Hi Lattice team,\n\nNimbus Labs is raising a seed round. Could we find 20 minutes?\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-bounce",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Lattice",
+       "entity_type": "organization",
+       "quote": "Lattice"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "bounce",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T06:00:20Z",
+   "from": "Mail Delivery Subsystem <mailer-daemon@mailhost.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Delivery Status Notification (Failure)",
+   "body": "Address not found\n\nYour message wasn't delivered to partners@lattice-capital.test because the domain lattice-capital.test couldn't be found. Check for typos or unnecessary spaces and try again.",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-bounce",
+   "read": {
+    "gate": "drop",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "negative",
+     "topics": [
+      "delivery failure"
+     ],
+     "exchange_intent": {
+      "category": "automated",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "bounce": "emitted"
+  },
+  "memory": {
+   "bounce": true
+  },
+  "cards": [
+   {
+    "about": [
+     "lattice-capital.test",
+     "Lattice"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "your outbound — a fund never received your mail"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "has not replied",
+   "hasn't replied",
+   "no reply from"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
+ },
+ "notes": "Production's AI filter called all five real bounce reports junk — the faithful answer, since a bounce is automated. Knowing it was the founder's investor mail that bounced is the engine's job (STEP-04).",
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<lattice-capital.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun wrote to the partners' address at lattice-capital.test that Nimbus Labs is raising a seed round and asked for a short meeting.",
+       "evidence": [
+        "evt_087eceb326bd232754cc4664"
+       ],
+       "quote": "Nimbus Labs is raising a seed round. Could we find 20 minutes? Arjun"
+      },
+      {
+       "claim": "The file's numbers for that address record that our mail to it bounced the same morning it was sent.",
+       "evidence": [
+        "num:their_reply_time:partners@lattice-capital.test",
+        "num:your_reply_time:partners@lattice-capital.test",
+        "evt_087eceb326bd232754cc4664"
+       ],
+       "quote": "Nimbus Labs - raising our seed round Hi Lattice team"
+      },
+      {
+       "claim": "Arjun's mail is the file's only touch.",
+       "evidence": [
+        "evt_087eceb326bd232754cc4664",
+        "num:days_quiet"
+       ],
+       "quote": "Nimbus Labs - raising our seed round Hi Lattice team"
+      },
+      {
+       "claim": "The engine holds a situation typed for an investor on this file, in the fundraising domain, on the engine's default window.",
+       "evidence": [
+        "sit:sit_3d1dfb513afbf9e4b3794aaf"
+       ]
+      },
+      {
+       "claim": "The file's history records no earlier verdict or outcome.",
+       "evidence": [
+        "hist:derived.history.prior_card_verdict@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Lattice never received the pitch, so the fund has not seen the raise at all; the quiet in this file says nothing about the fund's interest.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "The move is ours again, whatever the file's own line on whose move it is: the pitch must go to an address that works.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "A bounce within the hour points at the address, not at the fund.",
+       "based_on": [
+        "fact:2"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file has no earlier verdict or outcome, and no playbook is attached while the brief names no kind of work for it.",
+       "based_on": [
+        "hist:derived.history.prior_outcome@fundraising",
+        "hist:derived.history.times_seen@fundraising"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The address was mistyped, or the fund writes from a different domain.",
+       "needs": "The fund's correct contact address, from its own site or from whoever pointed Arjun to it."
+      },
+      {
+       "proposition": "A resend to a working address would reach a partner who reads it.",
+       "needs": "A delivered resend and the fund's answer."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Why the mail bounced.",
+       "relevance": "A wrong address is fixed by resending; a fund that has closed that address needs another route, such as an introduction."
+      },
+      {
+       "question": "Whether other mails of the seed raise bounced too.",
+       "relevance": "If several did, the outreach list itself needs checking, not just this address."
+      },
+      {
+       "question": "Who at Lattice is the right person to write to.",
+       "relevance": "A named partner, or a warm introduction, does better than a generic partners' address."
+      }
+     ],
+     "frames": {
+      "primary": "Your seed-round pitch to Lattice never arrived — the mail bounced — so the fund has not seen the raise, and the next move is ours.",
+      "rivals": [
+       "A temporary delivery failure on the fund's side, where the same address would work on a resend.",
+       "A fund no longer reachable at that domain, where the path is another address or an introduction."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "Arjun wrote to the fund's partners that Nimbus Labs is raising its seed round and asked for a meeting: this file is a fund in the raise.",
+      "evidence": [
+       "evt_087eceb326bd232754cc4664"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, the brief sets the expectation: a pitch to a fund in the seed raise is delivered and read, and the fund answers or stays quiet on its own.",
+      "actual": "The pitch bounced the same morning it was sent, so the fund never received it; the file holds nothing since."
+     },
+     "scenarios": {
+      "do_nothing": "The file reads as a fund that went quiet when in fact it never saw the pitch, and Lattice drops out of the raise unnoticed.",
+      "act": "Finding the right address and resending puts the pitch in front of Lattice's partners for the first time.",
+      "best": "A resend to a working address reaches a partner, who agrees to a meeting.",
+      "worst": "The resend bounces too, or lands in a generic inbox nobody reads, and the fund is lost to the raise without anyone deciding it.",
+      "signals_to_watch": [
+       "A second bounce on the resend",
+       "A delivered resend answered by a partner",
+       "Other bounces among the raise's outreach"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "A fund in the seed raise, the brief's first goal, never received the pitch.",
+       "Nothing is lost yet that a resend to the right address cannot recover.",
+       "The file's own line says the move is theirs, so the gap is easy to miss."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Find Lattice's correct address, a named partner if possible, and resend the seed-round note to it",
+      "for_whom": "Lattice's partners",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
+     },
+     "alternative": "If no working address can be found, ask someone who knows the fund for an introduction to a partner.",
+     "wait_or_stop": "Do not wait on Lattice: it has nothing to answer. After a delivered resend, give the fund the usual time a first contact takes; stop if the resend bounces too and no other route exists.",
+     "done_when": "A resend reaches Lattice without a bounce, at an address that gets to a partner.",
+     "draft": null
+    }
+   }
+  ]
+ }
+}

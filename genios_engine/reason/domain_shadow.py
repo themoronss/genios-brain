@@ -21,41 +21,18 @@ from __future__ import annotations
 import json
 import logging
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from typing import Any
 
 from sqlalchemy import text
 
 from genios_engine.context.graph_store import GraphStore
-from genios_engine.context.expected_facts import expected_facts_for
-from genios_engine.context.interpretation_store import record_interpretation
-from genios_engine.reason.situation_reasoner import Step as ReasonerStep
-from genios_engine.reason.situation_reasoner import slice_digest as reasoner_slice_digest
-from genios_engine.reason.situation_reasoner import reason_over_situation
 from genios_engine.reason.unroutable import tally_unroutable
 
 
-def _resolve_evidence_refs(conn, org_id: str, refs) -> frozenset[str]:
-    """L2-6's `resolve_refs`, HANDED IN. One read with every ref, never one per claim.
-
-    A citation the Evidence Graph has never heard of is worse than no citation — it looks like
-    proof — so this asks the graph itself rather than trusting the model's spelling.
-    """
-    wanted = [str(r) for r in refs]
-    if not wanted:
-        return frozenset()
-    from sqlalchemy import text
-
-    rows = conn.execute(text(
-        "select fact_version_id as id from graph_facts "
-        " where org_id = :o and fact_version_id = any(:ids) "
-        "union all "
-        "select source_ref_id as id from graph_source_refs "
-        " where org_id = :o and source_ref_id = any(:ids)"),
-        {"o": org_id, "ids": wanted})
-    return frozenset(str(r.id) for r in rows)
 from genios_engine.context.importance import read_l1_scoring_live
 from genios_engine.context.quality.lens import read_coverage_lens
 from genios_engine.context.quality.missing import read_absences
@@ -72,7 +49,8 @@ from genios_engine.context.situation_bso import (
     stored_importance,
 )
 from genios_engine.context.situation_publisher import publish_situation
-from genios_engine.contracts.reasoning import ExecutionMode
+from genios_engine.context.vocabulary import CLOSED_ANSWERED
+from genios_engine.contracts.reasoning import DecisionOutcome, ExecutionMode
 from genios_engine.packs.compiler import DomainCompiler, PostgresRuntimeBrains
 from genios_engine.packs.compiler.errors import (
     NoExpertiseRoute,
@@ -82,6 +60,7 @@ from genios_engine.packs.compiler.errors import (
     UnsupportedCoverage,
 )
 from genios_engine.packs.compiler.expertise_publisher import PostgresExpertisePublisher
+from genios_engine.packs.compiler.playbook_reader import KIND_CAPABILITY
 from genios_engine.packs.domain_wiring import expert_catalog
 from genios_engine.packs.wiring import make_registry
 from genios_engine.platform.l4_activation import (
@@ -92,12 +71,15 @@ from genios_engine.platform.l4_activation import (
     is_l4_activated,
     missing_cross_layer_preconditions,
 )
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
+from genios_engine.platform.self_identity import identity_for
 from genios_engine.reason.adapters.expertise import expertise_capability_manifest
-from genios_engine.reason.adapters.native import reason_native_capability
+from genios_engine.reason.adapters.native import native_context_snapshot, reason_native_capability
 from genios_engine.reason.interpretation import make_interpreter
 from genios_engine.reason.adapters.situation_projection import project_situation
 from genios_engine.reason.audit import persist_execution
+from genios_engine.reason.expert.cover import Covers, cover_of
 from genios_engine.reason.store import ReasoningStore
 
 logger = logging.getLogger(__name__)
@@ -231,7 +213,9 @@ def _rejected_candidates(decision, selected) -> list[dict]:
 
 
 def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, execution, bundle,
-                            eval_time, pack: dict, situation_id: str | None = None) -> str:
+                            eval_time, pack: dict, situation_id: str | None = None,
+                            replace_unless_from: str | None = None,
+                            same_advice: Callable[[str | None], bool] | None = None) -> str:
     """Write the compiled brain's decision as signal.v1, tagged with the capability that made it.
 
     The delivery side has always been able to render this — card_builder reads
@@ -256,6 +240,23 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
     Returns what happened — emitted / standing / nothing_to_emit / rule_id_collision /
     race_lost — so the pass's tally distinguishes "no advice" from "advice already standing" from
     "a concurrent pass won". The caller counts; this never raises.
+
+    ``replace_unless_from`` — STEP-12 M33: a covered file's decision (`reason/expert/decide`) is
+    the review's, and the file holds ONE (M33.C1.L-integration.V2.U12, `03` F174). Its open decision
+    is read whatever pack it was bound to — the file's home moves between domains from sweep to
+    sweep, and a decision per pack was two cards for one file — and it STANDS while its window holds
+    and it came from this same review (the run's ``trigger_ref``, the review's fingerprint) or from an
+    earlier review that gave the same advice (``same_advice``, handed the standing run's fingerprint):
+    the card's words did not change, so no card is torn down and rebuilt for them. Other advice
+    replaces every open decision of the file, in every pack. Every other caller passes None: the
+    authority window rules, as before.
+
+    ⛔ STEP-14 (`yc2_w27_s14` M42.C2.L-integration.V2.U02, `03` F176, F52, F53): the file branch HANDS THE FILE
+    ON. Its old decision's signal is retired and its card is left to be VERSIONED onto the new signal by
+    delivery (`deliver/store.CardStore.version_card`) — never expired REPLACED, which made every new decision a
+    second card. And a standing decision stands only while more than its renewal margin is left
+    (`reason/change_gate.FILE_RENEW_MARGIN`): inside it the same advice is re-emitted, so its card is quietly
+    renewed before its window lapses. The compiled lane (no ``replace_unless_from``) still replaces its cards.
     """
     run = bundle.get("run") or {}
     output = bundle.get("output") or {}
@@ -303,26 +304,41 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
     # this (pack, rule, node) is still within it, the advice stands and is left alone. A decision
     # hash comparison cannot serve here — `expires_at` is derived from the evaluation time, so the
     # hash differs on every sweep even when nothing about the situation changed.
-    standing = conn.execute(text(
-        "select signal_id from signals where org_id=:o and pack_id=:p and pack_version=:pv "
-        "and rule_id=:r and subject_node_id=:n and status='open' "
-        "and authority_expires_at > :now limit 1"),
-        {"o": org_id, "p": pack["pack_id"], "pv": pack["version"], "r": rule_id,
-         "n": node_id, "now": eval_time}).first()
-    if standing is not None:
-        return "standing"
-    # One OPEN compiled signal per (pack, rule, node), same discipline as the legacy `_emit`: once
-    # the window has passed, the refreshed advice replaces the stale row rather than colliding.
-    retired = conn.execute(text(
-        "update signals set status='expired' where org_id=:o and pack_id=:p and pack_version=:pv "
-        "and rule_id=:r and subject_node_id=:n and status='open' returning signal_id"),
-        {"o": org_id, "p": pack["pack_id"], "pv": pack["version"],
-         "r": rule_id, "n": node_id}).fetchall()
-    if retired:
-        conn.execute(text(
-            "update cards set state='expired' where org_id=:o and signal_id=any(:ids) "
-            "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-            {"o": org_id, "ids": [item.signal_id for item in retired]})
+    if replace_unless_from is None:
+        standing = conn.execute(text(
+            "select signal_id from signals where org_id=:o and pack_id=:p and pack_version=:pv "
+            "and rule_id=:r and subject_node_id=:n and status='open' "
+            "and authority_expires_at > :now limit 1"),
+            {"o": org_id, "p": pack["pack_id"], "pv": pack["version"], "r": rule_id,
+             "n": node_id, "now": eval_time}).first()
+        if standing is not None:
+            return "standing"
+        # One OPEN compiled signal per (pack, rule, node), same discipline as the legacy `_emit`:
+        # once the window has passed, the refreshed advice replaces the stale row rather than
+        # colliding.
+        retired = conn.execute(text(
+            "update signals set status='expired' where org_id=:o and pack_id=:p and pack_version=:pv "
+            "and rule_id=:r and subject_node_id=:n and status='open' returning signal_id"),
+            {"o": org_id, "p": pack["pack_id"], "pv": pack["version"],
+             "r": rule_id, "n": node_id}).fetchall()
+        if retired:
+            # STEP-06: the refreshed advice replaces the stale signal — its cards say so.
+            card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                        signal_ids=[item.signal_id for item in retired])
+    else:
+        # STEP-12 M33 · THE FILE'S ONE DECISION, in whichever pack it stands (see the docstring).
+        from genios_engine.reason.change_gate import FILE_RENEW_MARGIN
+
+        held = conn.execute(text(_FILE_DECISIONS),
+                            {"o": org_id, "r": rule_id, "n": node_id}).fetchall()
+        if any(row.authority_expires_at is not None
+               and row.authority_expires_at > eval_time + FILE_RENEW_MARGIN
+               and (row.trigger_ref == replace_unless_from
+                    or (same_advice is not None and same_advice(row.trigger_ref)))
+               for row in held):
+            return "standing"
+        # STEP-14: the old decision retires; its card is left to be versioned onto the new one (see above).
+        conn.execute(text(_RETIRE_FILE_DECISIONS), {"o": org_id, "r": rule_id, "n": node_id})
     row = conn.execute(text(
         "insert into signals (signal_id, org_id, pack_id, pack_version, rule_id, rule_version, "
         "level, subject_node_id, score, score_inputs, reason_code, evidence, play, eval_time, "
@@ -410,7 +426,9 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
 
 def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id: str,
                   node_id: str, package, execution, eval_time, pack: dict,
-                  situation_id: str | None = None) -> str:
+                  situation_id: str | None = None, replace_unless_from: str | None = None,
+                  same_advice: Callable[[str | None], bool] | None = None,
+                  bundle_out: dict | None = None) -> str:
     """Commit the audit bundle, then the signal built from it. Two transactions, in that order.
 
     The audit bundle FIRST and through ``persist_execution``, never by hand: ``signals`` carries six
@@ -419,10 +437,451 @@ def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id:
     legally point at them.
     """
     bundle = persist_execution(store=reasoning_store, execution=execution)
+    if bundle_out is not None:
+        bundle_out.update(bundle)               # the audited run, for what the caller files beside it
     with store.engine.begin() as conn:
         return _emit_capability_signal(
             conn, org_id=org_id, node_id=node_id, package=package, execution=execution,
-            bundle=bundle, eval_time=eval_time, pack=pack, situation_id=situation_id)
+            bundle=bundle, eval_time=eval_time, pack=pack, situation_id=situation_id,
+            replace_unless_from=replace_unless_from, same_advice=same_advice)
+
+
+# =================================================================================================
+# STEP-12 M33 · A COVERED FILE DECIDES ONCE (tree `yc2_w27_s12` M33.C1.L-integration.V1.U02, `06` D1)
+#
+# The expert pass (`reason/expert/sweep`) says which files a VALID review now answers — `covered`,
+# file → the review's fingerprint. Each such file is decided ONCE, from that review
+# (`reason/expert/decide`): its mode the outcome, its next move the play, code's confidence, the
+# appraisal's urgency and importance — an ordinary audited Layer 4 run, persisted and emitted
+# exactly as a situation's is, its anchor the subject. No decider and no R-1 are asked for it, and
+# none for any situation of the file the review EXPLAINS: those stand down, their end recorded
+# (`decided`, `covered_by_review`), and a signal one of them left open is replaced by the file's.
+#
+# EXPLAINS, MEASURED, NOT ASSUMED (STEP-12 §8.7: "one review per file must not erase a situation the
+# file does not explain"). A situation stands down when every event behind it was in the file the
+# review judged — the events the stored review's fingerprint inputs name (`expert_reviews.inputs`,
+# 0198). A situation resting on an event the review never saw — a private one, one the file does not
+# hold, one from after a review that still stands because nothing material moved — keeps its own
+# decision on today's path. WHICH FILE'S review (M33.C1.L-integration.V2.U13, `03` F173) is
+# `reason/expert/cover`'s rule, the one the pack rules read too: a situation anchored on the file or on
+# one of its people is its own file's; one anchored on a node no one owns — the thread, the meeting's
+# reading, the dependency the mail stated — any covered file's whose review saw it all. Anchored on the
+# file alone, the review had left all of those to be decided beside it — a second card each, the
+# decider asked for each.
+# =================================================================================================
+
+#: The end a covered situation is given: it was decided — by its file's review.
+COVERED_BY_REVIEW = "covered_by_review"
+
+#: STEP-12 M33.C1.L-integration.V1.U09, `03` F104 — every anchor's measured baselines, each with its n:
+#: the file's numbers a corpus `{baseline: …}` threshold reads. A cold start is a default, never a
+#: measurement, and is not read.
+_ANCHOR_BASELINES = (
+    "select key, value, sample_size from baselines "
+    " where org_id = :o and not cold_start "
+    "   and (key like 'write_interval:%' or key like 'contact_rate_per_account:%')")
+
+#: Each baseline the corpus names, the level it is measured at and its unit.
+_BASELINE_BASIS = {"write_interval": ("person", "days"), "contact_rate_per_account": ("company", "per week")}
+
+
+def _measured_baselines(conn, org_id: str) -> dict[str, dict[str, Any]]:
+    """{node: {baseline: Measured}} — read once a pass, handed to each situation's manifest by its
+    anchor (`expertise_capability_manifest(baselines=…)`, which passes on only a normal). Fails open
+    to none: a threshold that cannot be answered answers UNKNOWN, as it did before F104."""
+    from genios_engine.contracts.measured import Measured
+
+    out: dict[str, dict[str, Any]] = {}
+    try:
+        rows = conn.execute(text(_ANCHOR_BASELINES), {"o": org_id}).fetchall()
+    except Exception:      # noqa: BLE001 — no numbers is the pass before F104, never a failed pass
+        logger.exception("domain-compiler: the anchors' baselines could not be read org=%s", org_id)
+        conn.rollback()
+        return out
+    for row in rows:
+        metric, _, node = str(row.key).partition(":")
+        basis, unit = _BASELINE_BASIS[metric]
+        out.setdefault(node, {})[metric] = Measured(value=float(row.value), n=int(row.sample_size or 0),
+                                                    basis=basis, unit=unit)
+    return out
+
+#: What `_emit_capability_signal` reads off a package: its review state. A covered file's decision
+#: is the expert's VALIDATED review (`contracts/expert_review.validate`, D1) — prescriptive, as an
+#: accepted corpus package's is.
+_REVIEWED = SimpleNamespace(metadata={"review_state": "accepted"})
+
+#: STEP-12 M33.C1.L-integration.V2.U12 · a file's open decisions, in every pack, each with its window
+#: and the review its run was triggered by (an expert run's trigger is its review's fingerprint).
+_FILE_DECISIONS = (
+    "select s.signal_id, s.authority_expires_at, r.trigger_ref from signals s "
+    "  left join reasoning_runs r on r.org_id = s.org_id and r.run_id = s.reasoning_run_id "
+    " where s.org_id = :o and s.rule_id = :r and s.subject_node_id = :n and s.status = 'open' "
+    " order by s.signal_id")
+
+#: …replaced, in every pack, when the file's new decision gives other advice.
+_RETIRE_FILE_DECISIONS = (
+    "update signals set status = 'expired' where org_id = :o and rule_id = :r "
+    "   and subject_node_id = :n and status = 'open' returning signal_id")
+
+#: …and cleared when its new review names no move now — every open decision of the file. ⛔ ALL OF THEM (STEP-13
+#: `yc2_w27_s13` M35.C3.L-integration.V1.U06, crosscheck X12): this read kept the decisions whose run named the
+#: review deciding now, as if the same review could not have decided otherwise before. It can — checked again
+#: under a newer check (X12), or decided again under a newer `DECIDE_VERSION` — and a review that names no move
+#: now leaves no decision of the file standing, whichever review made it.
+_CLEAR_FILE_DECISIONS = (
+    "update signals s set status = 'expired' "
+    " where s.org_id = :o and s.rule_id = :r and s.subject_node_id = :n and s.status = 'open' "
+    "returning s.signal_id")
+
+#: The outcomes a review CHOOSES when it names no move now: wait or blocked (DEFER — a move held under
+#: the confidence floor too), find out (INSUFFICIENT_CONTEXT), nothing (NO_ACTION). Never FAILED or
+#: BLOCKED: those are ours (`reason/output_lane`), and our failure must not take the founder's card down.
+_NO_MOVE = frozenset({DecisionOutcome.DEFER, DecisionOutcome.INSUFFICIENT_CONTEXT,
+                      DecisionOutcome.NO_ACTION})
+
+#: Each covered file's home: its anchor's type, and the situation its decision is filed under — an
+#: active one first, then the latest. Its domain is the corpus, and so the tenant pack, it binds to.
+#: A file with no situation anchored on it is filed under one of those it stood down
+#: (`_STOOD_DOWN_HOME`, M33.C1.L-integration.V2.U13).
+_FILES_HOME = (
+    "select distinct on (s.anchor_node_id) s.anchor_node_id, s.situation_id, s.domain, n.node_type "
+    "  from context_situations s join graph_nodes n on n.org_id = s.org_id "
+    "       and n.node_id = s.anchor_node_id and n.valid_to is null "
+    " where s.org_id = :o and s.anchor_node_id = any(:files) "
+    " order by s.anchor_node_id, (s.status in ('active', 'partial')) desc, "
+    "          s.last_seen_at desc nulls last, s.situation_id")
+
+#: …or, anchored on none, one of the situations it stood down — on its people or a node no one owns.
+_STOOD_DOWN_HOME = (
+    "select n.node_id as anchor_node_id, s.situation_id, s.domain, n.node_type "
+    "  from context_situations s join graph_nodes n on n.org_id = s.org_id and n.node_id = :f "
+    "       and n.valid_to is null "
+    " where s.org_id = :o and s.situation_id = any(:sids) "
+    " order by (s.status in ('active', 'partial')) desc, s.last_seen_at desc nulls last, "
+    "          s.situation_id limit 1")
+
+#: The open signals a covered file's stood-down situations left — replaced by the file's decision,
+#: whatever their subject: a stood-down situation may be anchored on one of the file's people or on a
+#: node no one owns, and its signal on that node (U13).
+_STOOD_DOWN_SIGNALS = (
+    "update signals set status = 'expired' where org_id = :o and status = 'open' "
+    # The file's own question (STEP-13) is the file's, filed under its home situation — never one of
+    # the situation signals its decision replaces.
+    "   and rule_id <> :r and rule_id <> 'founder_question' and situation_id = any(:sids) "
+    "returning signal_id")
+
+
+def _covered_reviews(conn, org_id: str, covered: Mapping[str, str] | None) -> dict[str, Any]:
+    """Each covered file's VALID review, read once. A row gone, or not valid, covers nothing."""
+    from genios_engine.reason.expert import store as reviews
+
+    out: dict[str, Any] = {}
+    for file_id, fingerprint in sorted((covered or {}).items()):
+        row = reviews.read_review(conn, org_id, str(file_id), str(fingerprint))
+        if row is not None and row.status == reviews.VALID and row.review is not None:
+            out[str(file_id)] = row
+    return out
+
+
+def _advice(row) -> tuple:
+    """What a stored review advises, as its check let it stand (STEP-13): the mode the check leaves and
+    the move it shows — who, what, for whom, by when. The card says exactly these; two reviews that say
+    them alike gave the same advice. A review with no check advises nothing anybody was shown."""
+    from genios_engine.reason.expert import decide as expert
+
+    checked, review = row.checked, row.review
+    if checked is None:
+        return (None, None)
+    move = review.next_move
+    shown = move is not None and checked.fate == "shown" and checked.words.headline
+    return (expert.mode_of(review, checked),
+            (move.who, checked.words.headline, move.for_whom, move.by_when) if shown else None)
+
+
+def _same_advice(conn, org_id: str, file_id: str, ref: str | None, row) -> bool:
+    """Did the review behind a standing decision (`ref`, its run's trigger: the review's fingerprint and the
+    version of its check — `reason/expert/decide.decision_ref`) advise what the stored review `row` advises? A
+    review gone, or never valid, gave no advice to keep; and one decided through ANOTHER check version gave the
+    advice that check let stand, which is no longer on the row (STEP-13 X12, `06` D48): the file is decided again."""
+    from genios_engine.reason.expert import decide as expert
+    from genios_engine.reason.expert import store as reviews
+
+    fingerprint = expert.fingerprint_of(ref)
+    if not fingerprint:
+        return False
+    if row.checked is None or expert.check_version_of(ref) != row.checked.version:
+        return False
+    prior = reviews.read_review(conn, org_id, file_id, fingerprint)
+    return prior is not None and prior.review is not None and _advice(prior) == _advice(row)
+
+
+def _renews_its_decision(conn, org_id: str, file_id: str, rule_id: str, review, eval_time) -> bool:
+    """Is this review's decision the RENEWAL of the file's standing one — the file holds an open decision still in its
+    authority window whose review advised what this one advises (the file branch's own test: the same decision, or
+    `_same_advice`)? Then it publishes nothing new (STEP-14 fix, finding 11)."""
+    from genios_engine.reason.expert import decide as expert
+
+    ref = expert.decision_ref(review.fingerprint, review.checked.version) if review.checked is not None else None
+    return any(row.authority_expires_at is not None and row.authority_expires_at > eval_time
+               and (row.trigger_ref == ref or _same_advice(conn, org_id, file_id, row.trigger_ref, review))
+               for row in conn.execute(text(_FILE_DECISIONS), {"o": org_id, "r": rule_id, "n": file_id}))
+#: STEP-16 (`yc2_w27_s16` M47.C1.L-integration.V1.U02, `s16-F6`): each cleared decision's card, the ask its move answered
+#: — the ask its last version names (`deliver/pipeline._decision_words`) — and how that ask closed
+#: (`open_loops.closed_by_event`, `closed_basis`: written since 0167, read here first).
+_CLEARED_CARDS = (
+    "select k.card_id, k.signal_id, l.loop_id, l.closed_by_event, l.closed_basis from cards k "
+    "left join lateral (select e.detail -> 'words' ->> 'ask' as ask from card_events e "
+    "  where e.org_id = k.org_id and e.card_id = k.card_id "
+    "    and e.kind in ('card.created', 'card.rebuilt', 'card.versioned') and e.detail ? 'words' "
+    "  order by coalesce((e.detail ->> 'version')::int, 1) desc, e.occurred_at desc, e.id desc limit 1) w on true "
+    "left join open_loops l on l.org_id = k.org_id and l.status = 'closed' and 'loop:' || l.loop_id = w.ask "
+    "where k.org_id = :o and k.signal_id = any(:sigs) order by k.card_id")
+
+
+def _clear_file_decision(store, org_id: str, file_id: str, rule_id: str, *, cards: bool = True) -> int:
+    """The file's new review names no move now: every open decision of the file — an earlier review's, or this
+    same review's through an older check (STEP-13 X12) — is cleared, its cards RULE_CLEARED (STEP-06), the rule
+    that fired no longer holding on its subject. ⛔ `cards` False when the file ASKS instead (STEP-14
+    M42.C2.L-integration.V2.U02): the question is the card's next version, so the card is left to it.
+
+    ⛔ A FILE DECISION THAT ENDS SAYS HOW (STEP-16, `yc2_w27_s16` M47.C1.L-integration.V1.U02; §8.4 item 8). A card whose
+    move named the ask it answers, and whose ask closed ANSWERED (`open_loops.closed_basis`), is RESOLVED `verified`
+    — its evidence the event that closed the ask, the loop and the basis (`platform/card_lifecycle.resolve_cards`).
+    One whose ask closed only REPLIED, or whose move named no ask, is cleared as today, the closing event — when an
+    ask closed at all — in its detail."""
+    with store.engine.begin() as conn:
+        cleared = conn.execute(text(_CLEAR_FILE_DECISIONS), {
+            "o": org_id, "r": rule_id, "n": file_id}).fetchall()
+        if cleared and cards:
+            signals = [item.signal_id for item in cleared]
+            said: set[str] = set()
+            for card in conn.execute(text(_CLEARED_CARDS), {"o": org_id, "sigs": signals}).fetchall():
+                if not (card.loop_id and card.closed_by_event):
+                    continue                    # its ask open, or none named: cleared below, as before
+                said.add(card.signal_id)
+                closed = {"event_id": card.closed_by_event, "loop_id": card.loop_id, "basis": card.closed_basis}
+                if card.closed_basis == CLOSED_ANSWERED:
+                    card_lifecycle.resolve_cards(conn, org_id=org_id, cause=card_lifecycle.VERIFIED,
+                                                 card_ids=[card.card_id], evidence=closed)
+                else:
+                    card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.RULE_CLEARED,
+                                                card_ids=[card.card_id], detail={"closed_by": closed})
+            left = [s for s in signals if s not in said]
+            if left:
+                card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.RULE_CLEARED,
+                                            signal_ids=left)
+    return len(cleared)
+
+
+def work_the_needs(store, org_id: str, *, eval_time=None, fetchers=None):
+    """STEP-13 (`yc2_w27_s13` M36.C2.L-integration.V2.U03; §1 claim 5): the needs queue has its reader at
+    last. `capture/acquire/need_executor.run_needs` works the queue and `context/evidence_need_store` holds
+    it, and neither may import the other (`capture` is layer 1, `context` 2) — so the composition root
+    joins the two halves here, a layer above both. With no connector wired (`build_fetchers` is honestly
+    empty — Harsh's integration) the pass REFUSES and closes nothing: a need closed "not connected" would
+    be a question destroyed. A question to the founder never waits on it — it is `founder_questions`'."""
+    from genios_engine.capture.acquire.need_executor import build_fetchers, run_needs
+    from genios_engine.context.evidence_need_store import close_need, read_open_needs
+
+    def read_open(org: str, *, limit: int):
+        with store.engine.connect() as conn:
+            return read_open_needs(conn, org, limit=limit)
+
+    def close(need_id: str, *, state: str, reason: str | None = None) -> bool:
+        with store.engine.begin() as conn:
+            return close_need(conn, need_id, state=state, reason=reason)
+
+    return run_needs(org_id, read_open=read_open, close=close,
+                     fetchers=build_fetchers(org_id) if fetchers is None else fetchers,
+                     eval_time=eval_time)
+
+
+def _retire_stood_down(store, org_id: str, situation_ids, rule_id: str) -> int:
+    """Expire what the file's stood-down situations left open — their cards REPLACED (STEP-06)."""
+    if not situation_ids:
+        return 0
+    with store.engine.begin() as conn:
+        retired = conn.execute(text(_STOOD_DOWN_SIGNALS), {
+            "o": org_id, "r": rule_id, "sids": list(situation_ids)}).fetchall()
+        if retired:
+            card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                        signal_ids=[item.signal_id for item in retired])
+    return len(retired)
+
+
+def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any],
+                          stood_down: Mapping[str, list[str]], gate, counts, eval_time,
+                          graph_version: int, live: bool, live_domains, registry, reasoning_store,
+                          packs: dict, remaining: list, decided: dict | None = None) -> None:
+    """Each covered file, decided once from its review; its decision persisted and emitted on the live
+    lane, measured on the shadow one. Never raises past a file. ``decided`` collects the files decided
+    on the LIVE lane — file → its review's fingerprint — whatever the decision said, or standing from an
+    earlier pass (M33.C1.L-integration.V2.U12): what a pack rule may stand down for (`reason/runner`)."""
+    decided = decided if decided is not None else {}
+    from genios_engine.context.founder_questions import LEFT_COVERAGE
+    from genios_engine.platform.canonical import semantic_hash
+    from genios_engine.reason import fingerprint_store as fs
+    from genios_engine.reason.change_gate import FILE_RENEW_MARGIN, QUESTION_RENEW_MARGIN, should_skip
+    from genios_engine.reason.expert import asks
+    from genios_engine.reason.expert import decide as expert
+    from genios_engine.reason.expert.small_move import is_small_move
+
+    if not reviews:
+        return
+    homes = {str(r.anchor_node_id): r for r in conn.execute(
+        text(_FILES_HOME), {"o": org_id, "files": list(reviews)})}
+    for file_id in sorted(set(reviews) - set(homes)):
+        if stood_down.get(file_id):
+            home = conn.execute(text(_STOOD_DOWN_HOME), {
+                "o": org_id, "f": file_id, "sids": list(stood_down[file_id])}).first()
+            if home is not None:
+                homes[file_id] = home
+    rule_id = expert.CAPABILITY_ID.rsplit(".", 1)[-1]
+    for file_id, review in sorted(reviews.items()):
+        home = homes.get(file_id)
+        if home is None:
+            # No situation was ever formed on it, so no corpus — and no pack — to bind a decision to.
+            counts["covered_without_situation"] += 1
+            continue
+        try:
+            domain = l3_domain_for(home.domain)
+            live_file = live_lane(forced=live, domain=domain, activated=live_domains)
+            pack = None
+            if live_file:
+                if domain not in packs:
+                    packs[domain] = _tenant_pack(registry, store, org_id, domain)
+                pack = packs[domain]
+                if pack is None:
+                    counts["expert_no_tenant_pack"] += 1
+                    continue
+            # THE CHANGE GATE, ON THE FILE: the review, the decision's own version, where it binds.
+            # The same review in the same lane is the same decision — skipped while it stands, and decided again
+            # in its last twelve hours, when the file branch renews it (STEP-14, `FILE_RENEW_MARGIN`).
+            key = f"{file_id}|{expert.CAPABILITY_ID}"
+            fingerprint = semantic_hash({
+                "review": review.fingerprint, "decide": expert.DECIDE_VERSION, "domain": domain,
+                "live": live_file, "config": pack["snapshot_id"] if pack else None,
+                # STEP-13: the same review checked again under a new check version is decided again.
+                "check": review.checked.version if review.checked is not None else None})
+            if gate.ready:
+                standing = (gate.expiries.get((pack["pack_id"], pack["version"], rule_id, file_id))
+                            if pack else None)
+                margin = FILE_RENEW_MARGIN
+                if standing is None and pack:
+                    # STEP-13 (M36.C2.L-integration.V2.U11, `03` X04): a file that asks stands on its
+                    # question's window, and is decided again in the day before it closes — the re-run
+                    # re-binds the question and moves its window (`reason/change_gate`).
+                    standing = gate.expiries.get((pack["pack_id"], pack["version"], asks.QUESTION_RULE,
+                                                  file_id))
+                    margin = QUESTION_RENEW_MARGIN if standing is not None else FILE_RENEW_MARGIN
+                verdict = should_skip(gate.stored.get(key), fingerprint, live=live_file,
+                                      standing_expires_at=standing, eval_time=eval_time,
+                                      renew_margin=margin)
+                if verdict.skip:
+                    counts["expert_unchanged"] += 1
+                    gate.skipped.add(key)
+                    if live_file:
+                        decided[file_id] = review.fingerprint
+                    continue
+            request = expert.request_for(
+                review, org_id=org_id, root_entity_type=str(home.node_type),
+                domain=domain or str(home.domain), eval_time=eval_time,
+                graph_version=graph_version,
+                mode=ExecutionMode.LIVE if live_file else ExecutionMode.SHADOW,
+                live_delivery_enabled=live_file,
+                config_snapshot_id=pack["snapshot_id"] if pack else None)
+            execution = expert.decide(request)
+            counts["expert_decided"] += 1
+            run_id = execution.trace.run_id
+            if not live_file:
+                counts["expert_shadow"] += 1
+                gate.record(key, fingerprint, "shadow", run_id)
+                continue
+            small = is_small_move(review)       # STEP-15 s15-D3 (`06` D66): a line in the brief, never a card
+            # THE SAME DAILY CAP, the same pool (see the situation loop above) — on what it is for: a
+            # decision that would be SHOWN. ⛔ AFTER THE OUTCOME (STEP-13 M36.C2.L-integration.V2.U11, `03`
+            # X27): a review that names no move now emits nothing — it asks its question, or clears the
+            # file's old decision — and a spent cap stopped both, leaving the old card in the question's
+            # place. A question is no publication.
+            if remaining[0] is None:
+                remaining[0] = _daily_allowance(store, org_id, eval_time, pack)
+                counts["budget_allowance"] = remaining[0]
+            # ⛔ NOR A RENEWAL (STEP-14 fix, the crosscheck's finding 11, `yc2_w27_s14` M42.C2.L-integration.V2.U07): the
+            # same advice re-emitted inside its renewal margin publishes nothing new — a quiet version (s14-D1) — and a
+            # spent cap stopped it, so the card lapsed at its window, the lapse the margin exists to prevent.
+            renewal = _renews_its_decision(conn, org_id, file_id, rule_id, review, eval_time)
+            if (remaining[0] <= 0 and execution.decision.outcome not in _NO_MOVE and not renewal
+                    and not small):
+                counts["budget_exhausted"] += 1
+                gate.record(key, fingerprint, "indeterminate", run_id)
+                continue
+            bundle: dict = {}
+            if small:
+                # DECIDED AS BEFORE — the audited run is persisted — and no signal: delivery has nothing to build a
+                # card from; the brief reads the review and says the line (`executive/morning_day`).
+                bundle.update(persist_execution(store=reasoning_store, execution=execution))
+                outcome = "nothing_to_emit"
+                counts["expert_small_move"] += 1
+            else:
+                outcome = _persist_live(
+                    store=store, reasoning_store=reasoning_store, org_id=org_id, node_id=file_id,
+                    package=_REVIEWED, execution=execution, eval_time=eval_time, pack=pack,
+                    situation_id=str(home.situation_id),
+                    replace_unless_from=expert.decision_ref(review.fingerprint, review.checked.version),
+                    same_advice=lambda prior, _file=file_id, _row=review: _same_advice(
+                        conn, org_id, _file, prior, _row), bundle_out=bundle)
+            counts[f"expert_{outcome}"] += 1
+            # STEP-13 (M36.C2.L-integration.V2.U03): a file decided INSUFFICIENT on its answer asks the
+            # founder its one question; any other decision retires the question it asked before.
+            asked = None
+            if execution.decision.outcome == DecisionOutcome.INSUFFICIENT_CONTEXT:
+                asked = asks.ask_the_founder(
+                    store, org_id=org_id, file_id=file_id, review=review, decision=execution.decision,
+                    bundle=bundle, pack=pack, eval_time=eval_time, situation_id=str(home.situation_id))
+                counts[f"expert_question_{asked}"] += 1
+            elif asks.retire_question(store, org_id=org_id, file_id=file_id, eval_time=eval_time,
+                                      # STEP-14: a decision the file emits or keeps is its card's next version.
+                                      hand_on=outcome in ("emitted", "standing")):
+                counts["expert_question_retired"] += 1
+            if outcome != "rule_id_collision":
+                decided[file_id] = review.fingerprint
+            if outcome == "nothing_to_emit" and (small or execution.decision.outcome in _NO_MOVE):
+                cleared = _clear_file_decision(store, org_id, file_id, rule_id,
+                                               cards=asked not in asks.ASKING)
+                if cleared:
+                    counts["expert_cleared"] += cleared
+            # An asking run leaves its question standing (U11, `03` X04): remembered as STANDING on the
+            # question's window, never SUPPRESSED — which the gate skips forever, the question lapsing. ⛔ And a
+            # file with nothing left to ask after your answers (M36.C2.L-data.V2.U14, second crosscheck F2) is
+            # INDETERMINATE — decided again on the next sweep, its review read again (no model: the
+            # fingerprint is unchanged) — never SUPPRESSED, which `should_skip` honours until the file moves.
+            gate.record(key, fingerprint, fs.STANDING if asked in asks.ASKING else
+                        fs.INDETERMINATE if asked == asks.ANSWERED_ALREADY else
+                        _gate_outcome(execution, outcome), run_id)
+            if outcome == "emitted" and not renewal:
+                remaining[0] -= 1
+            counts["covered_signals_replaced"] += _retire_stood_down(
+                store, org_id, stood_down.get(file_id), rule_id)
+        except Exception:      # noqa: BLE001 — one file's decision is never the pass
+            counts["expert_error"] += 1
+            logger.exception("domain-compiler: the covered file %s could not be decided org=%s",
+                             file_id, org_id)
+    # STEP-13 (M36.C2.L-integration.V2.U11, `03` X26; `06` D60 — the file's one card): a file that asked
+    # and is no longer covered is decided on its situations again, so its question retires and its card
+    # with it — never left beside the cards its situations now make. Read off the gate's own load of the
+    # open signals (no read of its own). ⛔ ONLY WHEN THE EXPERT COVERED SOMETHING: a pass whose expert
+    # failed, or did not run, covers nothing (`reason/runner`) — that is our failure, not the file's, and
+    # it takes no question down (the `if not reviews` above); its window ends it.
+    if gate.ready:
+        for file_id in sorted({key[3] for key in gate.expiries if key[2] == asks.QUESTION_RULE} - set(reviews)):
+            try:
+                if asks.retire_question(store, org_id=org_id, file_id=file_id, eval_time=eval_time,
+                                        why=LEFT_COVERAGE):
+                    counts["expert_question_uncovered"] += 1
+            except Exception:      # noqa: BLE001 — one file's question is never the pass
+                counts["expert_error"] += 1
+                logger.exception("domain-compiler: the uncovered file %s kept its question org=%s",
+                                 file_id, org_id)
 
 
 # =================================================================================================
@@ -454,42 +913,23 @@ class CandidateRoute:
     evidence: str
 
 
-#: ⛔ **THE FUNDRAISING DOCTRINE EXISTS, AND THE COMMENT BELOW SAYING IT DOES NOT IS STALE.**
-#:
-#: Measured 2026-09-24 against the authored catalog:
-#:
-#:     sales.sit.live_investor_relationship      stable · approved
-#:         "An ongoing relationship with a party that might fund us, read at the ACCOUNT level:
-#:          the fund, the accelerator, the syndicate"
-#:     sales.sit.live_investor_contact           stable · approved
-#:     sales.investor_relations.investor_relations
-#:         "Reading and running the relationships with the people who might fund the company:
-#:          funds, accelerators, angels and the operators who introduce them."
-#:
-#: **The pilot tenant is a fundraising founder and this doctrine is unreachable from their
-#: dominant domain**, behind one `None` in the table below.
-#:
-#: AND THE OBJECTION DOES NOT APPLY. The table's comment says borrowing a corpus "would put Admin
-#: doctrine on a fundraising situation". True of `admin`, and routing is **per situation type**:
-#: every type `fundraising` can mint — `investor_relationship` and `investor_contact` — lands on
-#: investor-named doctrine and on nothing else.
-#: `test_every_fundraising_type_would_land_on_investor_doctrine_only` proves that and keeps
-#: proving it.
-#:
-#: NOT ARMED, DELIBERATELY. Arming it makes every fundraising situation activatable at once, and
-#: nobody has counted them on the pilot.
-CANDIDATE_ROUTES: dict[str, CandidateRoute] = {
-    "fundraising": CandidateRoute(
-        corpus="sales",
-        evidence="`sales.sit.live_investor_relationship` and `sales.sit.live_investor_contact` "
-                 "are authored, stable and approved, and the Sales registry routes "
-                 "`investor_relationship` and `investor_contact` to them — the only two types "
-                 "`fundraising` mints. Behind them sits "
-                 "`sales.investor_relations.investor_relations`, which is fundraising doctrine by "
-                 "its own description. ENDS WHEN: the pilot's fundraising situation count is "
-                 "known (Harsh 26) and this row moves into `_L2_TO_L3_DOMAIN` — one line. "
-                 "`live_lane` still requires the tenant to have activated the `sales` corpus, so "
-                 "arming this is the second of two switches, not the first."),
+#: ⛔ **RETIRED 2026-10-09 — THE ONE CANDIDATE ROUTE THERE WAS** (STEP-11, `06` D2,
+#: M30.C1.L-logic.V1.U02). It said `fundraising`'s doctrine existed, in the Sales corpus, "one line
+#: from live". The doctrine has since moved to a corpus of its own — the Founder Office (`Domain
+#: Expertise/Founder Office Expertise/`, M30.C6.L-data.V1.U01), whose card lane needs no engine code
+#: (`packs/wiring._corpus_packs`) — and `_L2_TO_L3_DOMAIN` maps `fundraising` there below: the one line,
+#: to the right corpus. Its two switches are unchanged in kind: `live_lane` still needs the TENANT to
+#: have activated the corpus (the pilot org alone, D2), and the live compile still admits only what a
+#: named reviewer accepted (D45) — so until the founder's review, a fundraising situation on the pilot
+#: is refused as `unreviewed`, said, rather than dark, unsaid. The Sales copy is retired with it
+#: (M30.C6.L-data.V2.U03). Kept as an empty table so the next dark domain's candidate has its shape.
+CANDIDATE_ROUTES: dict[str, CandidateRoute] = {}
+
+#: Why each candidate route that went live ended — one line of history per route.
+RETIRED_CANDIDATE_ROUTES: dict[str, str] = {
+    "fundraising": "ENDED 2026-10-09 (STEP-11, `06` D2): the L2 `fundraising` domain maps to the "
+                   "`founder_office` corpus, where investor relations moved; the Sales copy it "
+                   "pointed at is retired (M30.C6.L-data.V2.U03).",
 }
 
 #: ⛔ **KEYS THAT ARE NOT LAYER 2 DOMAINS.** Accepted defensively so a caller that already
@@ -514,14 +954,13 @@ _L2_TO_L3_DOMAIN: dict[str, str | None] = {
     "sales": "sales",
     "support": "customer_support",
     "customer_support": "customer_support",   # see CORPUS_ID_ALIASES
-    # ⛔ THESE TWO ARE DARK FOR TWO DIFFERENT REASONS, AND ONE SENTENCE USED TO COVER BOTH.
-    #   `fundraising` — the doctrine EXISTS, in the Sales corpus, and is unreachable from here.
-    #                   See CANDIDATE_ROUTES above: declared, evidenced, one line from live,
-    #                   waiting on the pilot count rather than on an author.
-    #   `general`     — genuinely unrouted: `relationship` is claimed by ALL THREE corpora, so a
-    #                   route is a CHOICE nobody has made. Not a missing corpus. Not this one.
-    # `DARK_DOMAINS` carries the reason and the ENDS WHEN for each.
-    "fundraising": None,
+    # STEP-11 (`06` D2) · the founder's own work — investors, and the programmes Layer 1 hints into
+    # this domain — reads the Founder Office corpus, switched on for the pilot org alone. It was dark
+    # until 2026-10-09: see RETIRED_CANDIDATE_ROUTES above.
+    "fundraising": "founder_office",
+    # ⛔ `general` IS STILL DARK, AND FOR ITS OWN REASON: `relationship` is claimed by ALL THREE
+    # older corpora, so a route is a CHOICE nobody has made. Not a missing corpus.
+    # `DARK_DOMAINS` carries the reason and the ENDS WHEN.
     "general": None,
 }
 
@@ -561,9 +1000,248 @@ def l3_domain_for(l2_domain: Any) -> str | None:
     return _L2_TO_L3_DOMAIN.get(str(l2_domain or "").strip().lower())
 
 
+# =================================================================================================
+# STEP-11 · A PROGRAMME OR A PORTAL IS NEVER DECIDED AS AN INVESTOR
+# (`yc2_w27_align` M34.C2.L-logic.V0.U10)
+#
+# Layer 2 has no situation type for an application (`06` D32), and its hint files accelerators,
+# incubators and cohorts under `fundraising` by construction (`capture/domain/hints.py`), so a
+# programme's mail and a government portal's form `investor_relationship` / `investor_contact` and
+# route to the investor capability — F17's accelerator, F24's, F01's and F02's portal (STEP-11 §8.1).
+# The capability's own situation file calls that a misfile. Nothing showed it, because the capability
+# is unreviewed and the live compile refused every fundraising file `unreviewed`; with the investor
+# sheet admitted (`06` D45) the programme was compiled, decided and EMITTED as a fund — measured on
+# a test corpus admitted by the founder's own ceremony.
+#
+# So the brief decides. A file whose in-motion line names its kind of work `program` or `compliance`
+# (`06` D31) is refused `misfiled_kind` when the investor capability is the one its route reaches:
+# after admission, so its end is recorded, and before the compile, so no investor package is
+# published for it. On both lanes — the shadow lane measures what the live one would do. A brief that
+# names no such line refuses nothing and costs no read; one that cannot be read is no brief
+# (`platform/company_brief.current`), and the file is read as it was. Which playbook such a file
+# reads instead is STEP-12's, per file (`packs/compiler/playbook_reader`).
+# =================================================================================================
+
+#: The capability that reads a file as an investor's (`06` D2, D31).
+INVESTOR_CAPABILITY: str = str(KIND_CAPABILITY["investor"])
+#: The kinds of work it may never decide — a programme's file and a portal's.
+NOT_AN_INVESTOR: frozenset[str] = frozenset({"program", "compliance"})
+#: The refusal, counted under this name; its end is `unsupported` with this reason.
+MISFILED_KIND = "misfiled_kind"
+
+_ANCHOR_KEYS = ("select node_id, canonical_key from graph_nodes "
+                " where org_id = :o and node_id = any(:ids) and valid_to is null")
+
+
+def file_kinds(conn, org_id: str, brief, anchors: Iterable[str]) -> dict[str, str]:
+    """Anchor node id → `program` or `compliance`, for each file the brief names as such work.
+
+    By the rule a file is filed by everywhere else (`context/workstreams._work_kind`, read by the
+    anchor's own key as `platform/kind_windows` reads D33's window): the first in-motion line the
+    founder accepted that names the anchor's address, or its domain or a parent of it. So a file a
+    founder named as a fund first stays a fund's. No read at all when no line names such work."""
+    from genios_engine.context.workstreams import _anchor_domain, _work_kind, _work_lines
+
+    work = _work_lines(brief)
+    ids = sorted({str(a) for a in anchors if a})
+    if not ids or not any(line.kind in NOT_AN_INVESTOR for line in work):
+        return {}
+    out: dict[str, str] = {}
+    for r in conn.execute(text(_ANCHOR_KEYS), {"o": org_id, "ids": ids}):
+        key = str(r.canonical_key or "").strip().lower()
+        kind = _work_kind(work, {key} if "@" in key else set(), _anchor_domain(key)) if key else None
+        if kind in NOT_AN_INVESTOR:
+            out[str(r.node_id)] = kind
+    return out
+
+
+def misfiled_kind(catalog, *, domain: str | None, situation_type: Any, kind: str | None) -> bool:
+    """Would the investor capability decide this file, which the brief names a programme's or a
+    portal's? The route is the corpus's own (`registry/situation-capability-map.yaml`)."""
+    if kind not in NOT_AN_INVESTOR or domain is None:
+        return False
+    corpus = (getattr(catalog, "domains", None) or {}).get(domain)
+    route = (getattr(corpus, "routes", None) or {}).get(str(situation_type or "")) or {}
+    return INVESTOR_CAPABILITY in (route.get("capabilities") or ())
+
+
+# =================================================================================================
+# STEP-02 · THE CHANGE GATE, COMPILED LANE (`yc2_w27_s02/M20.C3.L-integration.V2.U02`)
+#
+# Every sweep re-decided every situation, and on a sweep that brought nothing new it paid the decider
+# and R-1 again for the same answer — on the golden runner F13 2 calls, F29 12, no card changed
+# (`speedrun008/YC-II W27/` STEP-02 §8.1). The gate asks, just before `reason_native_capability`,
+# whether what this decision depends on is what the last decision saw (`reason/fingerprint`), and
+# skips it when `reason/change_gate.should_skip` says it may. Live and shadow rows alike: a shadow
+# row's model calls were the same spend, discarded.
+#
+# ⛔ IT FAILS OPEN, EVERYWHERE. A gate that cannot load, a request that cannot be fingerprinted, a
+# store write that fails — each costs the saving, never the decision: the subject is decided as if
+# the gate did not exist. And its memory is written once, after the pass, in one transaction, so a
+# pass that dies half way leaves the rows it did not reach to be decided next sweep.
+# =================================================================================================
+_OPEN_SIGNAL_EXPIRY = (
+    "select pack_id, pack_version, rule_id, subject_node_id, "
+    "       max(authority_expires_at) as expires_at "
+    "  from signals where org_id = :o and status = 'open' group by 1, 2, 3, 4")
+
+
+def _gate_outcome(execution, persisted: str | None) -> str:
+    """What a live compiled row came to, in the store's vocabulary (`reason/fingerprint_store`)."""
+    from genios_engine.contracts.reasoning import DecisionOutcome
+    from genios_engine.reason import fingerprint_store as fs
+    from genios_engine.reason.llm_decision_maker import LLM_UNAVAILABLE_REASON
+
+    if persisted == "emitted":
+        return fs.EMITTED
+    if persisted == "standing":
+        return fs.STANDING
+    if persisted in ("nothing_to_emit", "rule_id_collision"):
+        decision = getattr(execution, "decision", None)
+        if decision is not None and decision.outcome == DecisionOutcome.DEFER:
+            unavailable = any(str(u).startswith(LLM_UNAVAILABLE_REASON)
+                              for u in (decision.uncertainty or ()))
+            return fs.INDETERMINATE if unavailable else fs.DEFERRED
+        return fs.SUPPRESSED
+    return fs.INDETERMINATE          # race_lost, an error, a cap, anything unnamed: decide again
+
+
+class _CompiledGate:
+    """One pass's view of the change gate: loaded once, consulted per row, written once."""
+
+    def __init__(self, *, stored=None, inputs=None, expiries=None, ready: bool = False) -> None:
+        from genios_engine.reason.fingerprint_inputs import InputsIndex
+
+        self.stored = stored or {}
+        self.inputs = inputs or InputsIndex()
+        self.expiries = expiries or {}
+        self.ready = ready
+        self.decided: dict[str, tuple[str, str, str | None]] = {}
+        self.skipped: set[str] = set()
+
+    @classmethod
+    def load(cls, conn, org_id: str) -> "_CompiledGate":
+        from genios_engine.reason.fingerprint_inputs import read_inputs
+        from genios_engine.reason.fingerprint_store import load_all
+
+        try:
+            expiries = {(r.pack_id, r.pack_version, r.rule_id, r.subject_node_id): r.expires_at
+                        for r in conn.execute(text(_OPEN_SIGNAL_EXPIRY), {"o": org_id})}
+            return cls(stored=load_all(conn, org_id), inputs=read_inputs(conn, org_id),
+                       expiries=expiries, ready=True)
+        except Exception:      # noqa: BLE001 — the gate fails open: every row is decided
+            logger.exception("change gate unavailable for org=%s — deciding every situation",
+                             org_id)
+            try:
+                conn.rollback()
+            except Exception:      # noqa: BLE001
+                pass
+            return cls()
+
+    def check(self, *, org_id: str, situation_id: str, manifest, node_ctx, projection, pack,
+              live: bool, eval_time, graph_version, interpreted: bool = False):
+        """(subject key, fingerprint, verdict) — or a None fingerprint when the gate cannot judge."""
+        from genios_engine.reason.change_gate import should_skip
+        from genios_engine.reason.fingerprint import material_fingerprint
+
+        key = f"{situation_id}|{manifest.capability_id}"
+        if not self.ready:
+            return key, None, None
+        try:
+            snapshot = native_context_snapshot(
+                org_id=org_id, context=node_ctx, capability=manifest,
+                evaluation_time=eval_time, graph_version=graph_version, projection=projection)
+            pack_id = pack["pack_id"] if pack else manifest.domain
+            fingerprint = material_fingerprint(
+                manifest, snapshot,
+                config_snapshot_id=(pack["snapshot_id"] if pack else None),
+                mode=ExecutionMode.LIVE if live else ExecutionMode.SHADOW,
+                inputs=self.inputs.for_situation(pack_id, situation_id, manifest.capability_id,
+                                                 interpreted=interpreted))
+        except Exception:      # noqa: BLE001 — unfingerprintable: decide it
+            logger.exception("change gate could not fingerprint %s for org=%s", key, org_id)
+            return key, None, None
+        standing = None
+        if live and pack:
+            rule_id = str(manifest.capability_id).rsplit(".", 1)[-1]
+            standing = self.expiries.get((pack["pack_id"], pack["version"], rule_id,
+                                          node_ctx.node_id))
+        verdict = should_skip(self.stored.get(key), fingerprint, live=live,
+                              standing_expires_at=standing, eval_time=eval_time)
+        return key, fingerprint, verdict
+
+    def record(self, key: str, fingerprint: str | None, outcome: str, run_id: str | None) -> None:
+        if fingerprint is not None:
+            self.decided[key] = (fingerprint, outcome, run_id)
+
+    def flush(self, *, store, org_id: str, eval_time, counts) -> None:
+        from genios_engine.reason import fingerprint_store as fs
+
+        if not (self.decided or self.skipped):
+            return
+        try:
+            with store.engine.begin() as conn:
+                for key, (fingerprint, outcome, run_id) in self.decided.items():
+                    fs.record_decided(conn, org_id=org_id, subject_key=key, lane="compiled",
+                                      fingerprint=fingerprint, outcome=outcome, run_id=run_id,
+                                      decided_at=eval_time)
+                for key in self.skipped:
+                    fs.record_skipped(conn, org_id=org_id, subject_key=key, checked_at=eval_time)
+        except Exception:      # noqa: BLE001 — a lost memory costs one re-decision next sweep
+            counts["gate_write_failed"] += 1
+            logger.exception("change gate could not record the pass for org=%s", org_id)
+
+
+class _SituationEnds:
+    """STEP-06 · what came of each admitted LIVE candidate in this pass — noted, then written once.
+
+    The admission ledger says admit / hold / reject; the change gate's rows say what was decided.
+    What ended in between was a counter in this pass's log line. Each admitted live candidate now
+    leaves one `situation_outcomes` row (0194), keyed on its admission `decision_id`: `decided` with
+    the change gate's word for it, or the stop and its reason. Written once, after the pass, in one
+    transaction, failing open — the change gate's discipline (`_CompiledGate.flush`): a lost write
+    costs a record, never the pass. A shadow row is never noted: its candidate was never recorded.
+    """
+
+    def __init__(self) -> None:
+        self.ends: dict[str, tuple[str, str, str | None]] = {}
+        self.seen: dict[str, str] = {}
+
+    def note(self, decision_id: str | None, situation_id: str, outcome: str,
+             reason: str | None = None) -> None:
+        if decision_id:
+            self.ends[decision_id] = (situation_id, outcome, reason)
+
+    def unchanged(self, decision_id: str | None, situation_id: str) -> None:
+        """The change gate skipped it: the end it was given stands; only its clock moves."""
+        if decision_id:
+            self.seen[decision_id] = situation_id
+
+    def flush(self, *, store, org_id: str, eval_time, counts) -> None:
+        from genios_engine.reason import situation_outcome_store as so
+
+        if not (self.ends or self.seen):
+            return
+        try:
+            with store.engine.begin() as conn:
+                for decision_id, (situation_id, outcome, reason) in self.ends.items():
+                    so.record(conn, org_id=org_id, decision_id=decision_id,
+                              situation_id=situation_id, outcome=outcome, reason=reason,
+                              at=eval_time)
+                for decision_id, situation_id in self.seen.items():
+                    if decision_id not in self.ends:
+                        so.record_seen(conn, org_id=org_id, decision_id=decision_id,
+                                       situation_id=situation_id, at=eval_time)
+        except Exception:      # noqa: BLE001 — a lost record never costs the pass
+            counts["outcome_write_failed"] += 1
+            logger.exception("situation ends could not be recorded for org=%s", org_id)
+
+
 def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None = None,
                    limit: int = 200, live: bool = False, registry=None,
-                   live_domains: frozenset[str] | Iterable[str] = ()) -> dict:
+                   live_domains: frozenset[str] | Iterable[str] = (),
+                   covered: Mapping[str, str] | None = None,
+                   people: Mapping[str, Iterable[str]] | None = None) -> dict:
     """Compile every active L2 situation into an ExpertisePackage; return route/coverage tallies.
 
     ``live=False`` (the default, and every existing caller) is unchanged: nothing is persisted and
@@ -602,6 +1280,14 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
 
     The two are OR-ed PER SITUATION, never globally: a tenant with `admin` activated runs its Admin
     situations live and its Sales situations in shadow, in the same sweep, from the same read.
+
+    ``covered`` — STEP-12 M33, `06` D1: the files a VALID expert review now answers (the expert
+    pass's receipt, file → the review's fingerprint). Each is decided ONCE, from its review — no
+    decider, no R-1 — and emitted as the file's own signal, its anchor the subject; every situation
+    of the file the review explains stands down. See `_decide_covered_files`. None, or empty — every
+    caller before M33, and every tenant whose expert pass did not run — is exactly the pass before.
+    ``people`` — the same receipt's file → the file's people (M33.C1.L-integration.V2.U13): a situation
+    anchored on one of them is its file's to explain (`reason/expert/cover`).
     """
     eval_time = eval_time or datetime.now(timezone.utc)
     live_domains = frozenset(str(d) for d in (live_domains or ()))
@@ -622,25 +1308,18 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     catalog = expert_catalog()
     graph_version = _graph_version(store, org_id)
 
-    # ⛔ L2-5 · ONE GATE PER SWEEP, built the way R-1 builds its own — `make_gate` exists so the
-    # sites "cannot each invent a different way of constructing it". RSiteGate's own docstring
-    # requires it: "constructed ONCE per sweep and reused across every consult in it… so a
-    # connection blip cannot leave one decision narrated and the next not, and `NarrativeBudget`
-    # advances in process so the ceiling binds WITHIN a sweep."
+    # ⛔ R-6 IS RETIRED (`06` D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02, `03` F141). It built a
+    # gate and a model client here every sweep and consulted the Context Reasoner for every compiled
+    # situation, shadow ones included, AHEAD of STEP-02's change gate — writing a
+    # `situation_interpretations` row per situation per pass, with an empty proposal on every tenant,
+    # because its feature was off everywhere. The expert pass reviews the FILE instead (STEP-12). No
+    # gate, no client, no consult and no row are made here now; the module stays for its own tests.
     #
-    # A NULL CLIENT IS A FIRST-CLASS ANSWER: "every site falls back to its template, which is
-    # exactly what a deployment without a key should do — plainer cards, never missing ones."
-    try:
-        from genios_engine.reason.bundle.sites import SITE_SITUATION
-        from genios_engine.reason.llm_sites import (
-            PostgresSiteCache, make_gate, make_site_client, tier_for,
-        )
-
-        r_site_gate = make_gate(org_id=org_id, engine=store.engine,
-                                client=make_site_client(tier_for(SITE_SITUATION)))
-        r_site_cache = PostgresSiteCache(engine=store.engine)
-    except Exception:      # noqa: BLE001 — an unbuildable gate means no reading, never no sweep
-        r_site_gate, r_site_cache = None, None
+    # STEP-07 · THE COMPANY BRIEF, ONCE PER SWEEP: the kinds of work a file is filed under are read
+    # from it (`file_kinds`). `current` reads on a connection of its own and fails open to the empty
+    # brief.
+    from genios_engine.platform.company_brief import current as current_company_brief
+    company_brief = current_company_brief(store.engine, org_id)
     adj, _node_types, obs_idx, fact_idx = _neighbor_index(store, org_id)
     # Every anchor's facts and observations in TWO org-wide reads instead of two per situation
     # (up to 400 round trips per sweep). The bulk loaders use the per-node load's filters and
@@ -723,6 +1402,23 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     with store.engine.connect() as conn:
         situations = conn.execute(text(_ACTIVE_SITUATIONS),
                                   {"o": org_id, "lim": limit}).mappings().all()
+        gate = _CompiledGate.load(conn, org_id)
+        # STEP-06 · beside the gate, and for the same reason: noted per row, written once.
+        ends = _SituationEnds()
+        # STEP-12 M33 · the reviews that decide their files, each read once for the pass — and what
+        # each explains, over the file's people the expert pass named (`people`, U13).
+        expert_reviews = _covered_reviews(conn, org_id, covered)
+        covers = Covers(cover_of(row, people=(people or {}).get(file_id, ()))
+                        for file_id, row in expert_reviews.items())
+        # `03` F104 · each anchor's measured normals, read once for the pass.
+        file_numbers = _measured_baselines(conn, org_id)
+        counts["covered_files"] = len(expert_reviews)
+        stood_down: dict[str, list[str]] = {}
+        decided: dict[str, str] = {}
+        counts["gate_ready"] = int(gate.ready)
+        # WHO IS US, once for the sweep (STEP-04): `gather_members` leaves us out of a situation's
+        # members, and read per situation that was one more statement for every situation.
+        us = identity_for(conn, org_id)
         l1_by_correlation = gather_l1_signals_bulk(
             conn, org_id,
             [str(row["correlation_id"]) for row in situations if row["correlation_id"]])
@@ -848,6 +1544,17 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         except Exception:      # noqa: BLE001 — a correlator is context, not the product
             logger.exception("could not read cross-domain contradictions for org=%s", org_id)
         counts["contradicted_situations"] = len(contradicted)
+        # STEP-11 · the files the brief names as a programme's or a portal's (`file_kinds`), for the
+        # whole pass in one read. Never fatal: a failure costs this sweep the refusal, every file is
+        # read as it was, and the rollback keeps the failed read from costing the next situation too.
+        misfiled_kinds: dict[str, str] = {}
+        try:
+            misfiled_kinds = file_kinds(conn, org_id, company_brief,
+                                        [str(r["anchor_node_id"]) for r in situations
+                                         if r["anchor_node_id"]])
+        except Exception:      # noqa: BLE001 — a brief that cannot be read is no brief
+            conn.rollback()
+            logger.exception("could not read the files' kinds of work for org=%s", org_id)
         brains = PostgresRuntimeBrains(conn)
         # TWO COMPILERS, ONE CONNECTION, chosen PER SITUATION by the situation's own domain.
         #
@@ -920,10 +1627,13 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         variants_by_domain = {d: declared_variants(store.engine, org_id, d) for d in live_domains}
         for row in situations:
             counts["situations"] += 1
+            # STEP-06: set once this candidate is admitted on the live lane; every end below is
+            # noted against it. None for a shadow row, or one that ended before admission.
+            admitted = None
             # WHICH LANE THIS SITUATION IS ON. The global flag still forces live for a deployment
             # that has already set it — its behaviour is unchanged — and otherwise the answer is
             # the tenant's activation row for THIS situation's corpus. A domain with no corpus
-            # (`fundraising`, `general`) resolves to None and can never be live, which is the
+            # (`general`; `fundraising` until STEP-11) resolves to None and can never be live, which is the
             # fail-closed direction: an unactivatable domain compiles and measures exactly as it
             # does today.
             row_domain = l3_domain_for(row["domain"])
@@ -938,8 +1648,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 #
                 # It is not a small set. `general:relationship` is the most-authored type in the
                 # corpus (15 situations across the three domains) and the largest on the pilot
-                # (55 rows); `fundraising:investor_relationship` and `investor_contact` are the
-                # other two. Everything they compile is measurement, forever.
+                # (55 rows); `fundraising:investor_relationship` and `investor_contact` were the
+                # other two, until STEP-11 mapped `fundraising` to the Founder Office (2026-10-09).
+                # Everything they compile is measurement, forever.
                 #
                 # THE MAP IS NOT THE DEFECT. Pointing `general` at `admin` "to get some coverage"
                 # would put Admin doctrine on a general situation, which is worse than silence.
@@ -980,7 +1691,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                                    neighbor_facts=dict(neighbor[2]))
                 signal_ids, evidence = gather_evidence_and_signals(
                     conn, org_id, row["correlation_id"], str(row["situation_id"]))
-                members = gather_members(conn, org_id, row["correlation_id"])
+                members = gather_members(conn, org_id, row["correlation_id"], us=us)
                 situation_visibility = gather_visibility(conn, org_id, row["correlation_id"])
                 # WHAT LAYER 1 PUBLISHED about these same events. Read on the same connection as
                 # every other gather, and handed to the builder rather than re-derived: the score,
@@ -1051,11 +1762,32 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     # whose roster was in fact fully awake.
                     record=live_row)
                 counts[f"admission_{publication.outcome.value}"] += 1
+                if live_row and publication.admitted:
+                    admitted = publication.decision_id
                 if not publication.admitted or publication.situation is None:
                     # HOLD/REJECT is the output.  Nothing above Layer 2 receives a weak object;
                     # the durable ledger says exactly what the next sweep may repair.
+                    if publication.admitted:
+                        ends.note(admitted, str(row["situation_id"]), "error",
+                                  "admitted_without_a_situation")
+                    continue
+                # STEP-12 M33 · ITS FILE'S REVIEW DECIDES IT. A situation whose every event the
+                # review saw stands down here — before the compile, the decider and R-1 — and its
+                # file is decided once, after the loop (`_decide_covered_files`).
+                explained = covers.explaining(str(anchor), row["anchor_type"], signal_ids)
+                if explained is not None:
+                    counts["covered_situations"] += 1
+                    stood_down.setdefault(explained.file_id, []).append(str(row["situation_id"]))
+                    ends.note(admitted, str(row["situation_id"]), "decided", COVERED_BY_REVIEW)
                     continue
                 bso = publication.situation
+                # STEP-11 · a programme's or a portal's file is never decided as an investor: refused
+                # here, its end recorded, before an investor package can be compiled for it.
+                if misfiled_kind(catalog, domain=row_domain, situation_type=bso.type,
+                                 kind=misfiled_kinds.get(str(anchor))):
+                    counts[MISFILED_KIND] += 1
+                    ends.note(admitted, str(row["situation_id"]), "unsupported", MISFILED_KIND)
+                    continue
                 context_slice = build_context_slice(
                     visibility=situation_visibility,
                     org_id=org_id, situation=row, facts=node_ctx.facts,
@@ -1069,59 +1801,6 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 counts["compiled"] += 1
                 counts["capabilities_total"] += len(package.capabilities)
 
-                # ⛔ L2-5 · THE CONTEXT REASONER, R-6. Here and nowhere else, because this is the
-                # only point where a situation AND its slice are both in hand — and the cost law
-                # is that the call goes on the SITUATION, never the event: 159 situations against
-                # 465 events on the pilot.
-                #
-                # THE QUADRANT RUNS FIRST AND MAY SPEND NOTHING. Low confidence with low
-                # importance answers `unknown` without a call — not to save money (it is about $3
-                # a month) but because a low-confidence reading of a low-importance situation is a
-                # wrong answer nobody needed.
-                #
-                # IT PROPOSES; IT DOES NOT COMMIT. The payload is validated by
-                # `context/proposal_gate` inside the site and is NOT written to the graph here.
-                # And it cannot kill the compile: a reading is worth less than the sweep, so a
-                # consult that raises costs the reading.
-                try:
-                    _step, _reading = reason_over_situation(
-                        org_id=org_id, situation_id=str(row["situation_id"]),
-                        situation_type=str(row.get("situation_type") or ""),
-                        context_slice=context_slice,
-                        slice_json=json.dumps(context_slice.to_semantic_dict(), default=str),
-                        confidence_bp=bso.confidence_bp, importance_bp=bso.importance_bp,
-                        resolve_refs=lambda refs: _resolve_evidence_refs(conn, org_id, refs),
-                        coverage_ready=bso.coverage_ready,
-                        expected_facts=expected_facts_for(str(row.get("situation_type") or "")),
-                        gate=r_site_gate, cache=r_site_cache,
-                        # ⛔ REPORTED, NEVER TRUNCATED. L2-3 set the line at 2,000 tokens and
-                        # measured that a 100-fact anchor produces a slice as expensive as the
-                        # thread it replaced. A slice over it is counted so the cost conversation
-                        # has a number; nothing is dropped to fit, because "dropping facts to hit
-                        # a number is how a reasoner concludes from evidence nobody chose to
-                        # remove".
-                        on_over_budget=lambda sentence: counts.__setitem__(
-                            "slice_over_budget", counts.get("slice_over_budget", 0) + 1))
-                    counts["reasoner_unknown" if _step is ReasonerStep.UNKNOWN
-                           else "reasoner_consulted"] += 1
-                    # ⛔ RECORDED EITHER WAY, INCLUDING THE ONE THAT COST NOTHING. `unknown` is a
-                    # RESULT — a sweep that asked nothing must not look like a sweep that was
-                    # never run, which is the distinction L2-0 spent a step drawing between a
-                    # refusal that scored nothing and one that was never scored. And the row
-                    # carries the SLICE, not its hash: L2-3's debt, paid where its only reader is.
-                    record_interpretation(
-                        store.engine, org_id=org_id, situation_id=str(row["situation_id"]),
-                        slice_digest=reasoner_slice_digest(context_slice),
-                        context_slice=context_slice,
-                        proposal=dict(getattr(_reading, "payload", None) or {}),
-                        outcome=_step.value,
-                        reasoning_trace=getattr(
-                            getattr(_reading, "receipt", None), "cache_key", None),
-                        valid_until=None,
-                        reason_codes=getattr(
-                            getattr(_reading, "receipt", None), "reason_codes", ()) or ())
-                except Exception:      # noqa: BLE001 — a reading may never cost the compile
-                    counts["reasoner_failed"] = counts.get("reasoner_failed", 0) + 1
                 # L3 -> L4 weld: adapt the package into a CapabilityManifest and reason over it.
                 # SHADOW mode + live_delivery_enabled=False on the manifest -> a decision is
                 # produced and measured but never delivered or persisted as a signal.
@@ -1160,7 +1839,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                         # authored corpus priority stops replacing the formula.
                         ranking_v2=ranking_v2,
                         # WAVE Z5 · the same object the snapshot below is built from.
-                        projection=projection)
+                        projection=projection,
+                        # `03` F104 · the file's measured normals, for a corpus `{baseline: …}`.
+                        baselines=file_numbers.get(str(anchor)))
                     pack = None
                     if live_row:
                         # The config snapshot must EXIST before reasoning and be passed in, not
@@ -1174,7 +1855,20 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             # The tenant holds no active pack in this capability's domain, so
                             # nothing can grant the decision authority. Counted, never guessed.
                             counts["no_tenant_pack"] += 1
+                            ends.note(admitted, str(row["situation_id"]), "no_tenant_pack",
+                                      manifest.domain)
                             continue
+                    gate_key, gate_fp, gate_verdict = gate.check(
+                        org_id=org_id, situation_id=str(row["situation_id"]), manifest=manifest,
+                        node_ctx=node_ctx, projection=projection, pack=pack, live=live_row,
+                        eval_time=eval_time, graph_version=graph_version,
+                        interpreted=interpreter is not None)
+                    if gate_verdict is not None and gate_verdict.skip:
+                        counts["skipped_unchanged"] += 1
+                        gate.skipped.add(gate_key)
+                        ends.unchanged(admitted, str(row["situation_id"]))
+                        continue
+                    counts[f"gate_{gate_verdict.reason if gate_verdict else 'unjudged'}"] += 1
                     execution = reason_native_capability(
                         org_id=org_id, context=node_ctx, capability=manifest,
                         evaluation_time=eval_time, graph_version=graph_version,
@@ -1186,10 +1880,14 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                         # no interpretation hashes to exactly what it hashed to before this seam.
                         interpreter=interpreter)
                     counts["reasoned"] += 1
+                    _run_id = getattr(getattr(execution, "trace", None), "run_id", None)
                     if execution.decision is None:
+                        gate.record(gate_key, gate_fp, "indeterminate", _run_id)
+                        ends.note(admitted, str(row["situation_id"]), "decided", "indeterminate")
                         continue
                     counts["decided"] += 1
                     if not live_row:
+                        gate.record(gate_key, gate_fp, "shadow", _run_id)
                         continue
                     # ── THE DAILY CAP, WHICH THIS LANE HAS NEVER OBEYED ────────────────
                     #
@@ -1219,6 +1917,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             # Counted, never silent: a lane that stops publishing for a reason
                             # nobody can see is indistinguishable from one that had nothing to say.
                             counts["budget_exhausted"] += 1
+                            # Tomorrow's budget may publish it: a clock the fingerprint does not
+                            # carry, so the gate must decide it again.
+                            gate.record(gate_key, gate_fp, "indeterminate", _run_id)
+                            ends.note(admitted, str(row["situation_id"]), "budget_exhausted")
                             continue
                     try:
                         # ⛔ L2-7 · CARRY THE SITUATION. `row["situation_id"]` is read four times
@@ -1232,6 +1934,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             eval_time=eval_time, pack=pack,
                             situation_id=str(row["situation_id"]))
                         counts[outcome] += 1
+                        gate.record(gate_key, gate_fp, _gate_outcome(execution, outcome), _run_id)
+                        ends.note(admitted, str(row["situation_id"]), "decided",
+                                  _gate_outcome(execution, outcome))
                         # Only a row that actually reached a human's queue spends the budget.
                         # `standing` left yesterday's advice alone and `nothing_to_emit` concluded
                         # no action — neither put a card in front of anybody.
@@ -1239,10 +1944,12 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             _remaining[0] -= 1
                     except Exception:
                         counts["persist_error"] += 1
+                        ends.note(admitted, str(row["situation_id"]), "error", "persist")
                         logger.exception("domain-compiler live: persist %s failed",
                                          row["situation_id"])
                 except Exception:
                     counts["reason_error"] += 1
+                    ends.note(admitted, str(row["situation_id"]), "error", "reasoning")
                     logger.exception("domain-compiler shadow: reasoning for %s failed",
                                      row["situation_id"])
             except NoExpertiseRoute as exc:
@@ -1267,12 +1974,16 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # visible as that rather than absent from the total.
                 _type = exc.situation_type if exc.situation_type is not None else "unknown"
                 no_route_by_type[_type] = no_route_by_type.get(_type, 0) + 1
+                ends.note(admitted, str(row["situation_id"]), "no_route", exc.reason)
             except SituationContextIncomplete:
                 counts["incomplete"] += 1
+                ends.note(admitted, str(row["situation_id"]), "incomplete")
             except SituationContextConflict:
                 counts["conflict"] += 1
+                ends.note(admitted, str(row["situation_id"]), "conflict")
             except RequiredKnowledgeMissing:
                 counts["required_missing"] += 1
+                ends.note(admitted, str(row["situation_id"]), "required_missing")
             except UnsupportedCoverage as exc:
                 # An honest "we do not cover this yet" — a route matched but every capability
                 # behind it is an unauthored stub. This used to fall into the catch-all below,
@@ -1280,8 +1991,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # the route-coverage metric exists to resolve. Counted by REASON so "all_stub"
                 # (authoring debt) reads apart from "no_route" (nothing claims this situation).
                 counts[f"unsupported_{exc.reason}"] += 1
-            except Exception:
+                ends.note(admitted, str(row["situation_id"]), "unsupported", exc.reason)
+            except Exception as exc:
                 counts["error"] += 1
+                ends.note(admitted, str(row["situation_id"]), "error", type(exc).__name__)
                 logger.exception("domain-compiler shadow: situation %s failed",
                                  row["situation_id"])
             finally:
@@ -1300,8 +2013,29 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # rollback() on a healthy connection is a no-op, so this is unconditional rather
                 # than guarded on a flag we would have to keep correct.
                 conn.rollback()
+        # STEP-12 M33 · each covered file, decided once from its review.
+        _decide_covered_files(
+            store=store, conn=conn, org_id=org_id, reviews=expert_reviews, stood_down=stood_down,
+            gate=gate, counts=counts, eval_time=eval_time, graph_version=graph_version,
+            live=live, live_domains=live_domains, registry=registry,
+            reasoning_store=reasoning_store, packs=packs, remaining=_remaining, decided=decided)
 
+    # STEP-02 · the gate's memory, written once for the whole pass (see `_CompiledGate`).
+    gate.flush(store=store, org_id=org_id, eval_time=eval_time, counts=counts)
+    # STEP-06 · what came of each admitted live candidate, written once for the whole pass.
+    ends.flush(store=store, org_id=org_id, eval_time=eval_time, counts=counts)
+    # STEP-13 · the needs queue, worked once a pass — or refused, counted (`work_the_needs`).
+    if live or live_domains:
+        needs = work_the_needs(store, org_id, eval_time=eval_time)
+        if needs.refused:
+            counts["needs_refused"] += 1
+        else:
+            counts["needs_examined"] += needs.examined
+            counts["needs_closed"] += needs.closed
+            counts["needs_deferred"] += needs.deferred
     result = dict(counts)
+    # STEP-12 M33 · the files decided on the live lane, file → its review's fingerprint (U12).
+    result["decided"] = dict(sorted(decided.items()))
     result["no_route_by_reason"] = dict(sorted(no_route_by_reason.items()))
     result["no_route_by_type"] = dict(sorted(no_route_by_type.items()))
     # ⛔ THE RECEIPT: two breakdowns of one total, COMPARED. Two numbers that are supposed to agree

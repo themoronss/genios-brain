@@ -181,15 +181,21 @@ def test_the_seams_gate_is_not_the_domain_compiler_flag():
     """`use_domain_compiler` is a DIFFERENT subsystem's switch (the Layer 3 compiled-brain
     cutover) that merely happened to gate this reader. The enablement path must not consult it to
     decide which TENANTS read what Layer 1 published."""
+    import ast
     import inspect
+    import textwrap
 
     from genios_engine.platform import config
 
     # The CODE, not the prose: the docstring has to be able to name the flag it replaced, and a
     # substring check over the whole source would forbid explaining the defect at the one place a
-    # reader will look for it.
-    body = inspect.getsource(config.l1_seam_enabled).replace(
-        config.l1_seam_enabled.__doc__ or "\0", "")
+    # reader will look for it. The docstring is removed through the AST, not by `str.replace` on
+    # `__doc__`: Python 3.13 dedents `__doc__` at compile time, so it no longer matches the source
+    # text and the replace silently removed nothing.
+    fn = ast.parse(textwrap.dedent(inspect.getsource(config.l1_seam_enabled))).body[0]
+    if ast.get_docstring(fn) is not None:
+        fn.body = fn.body[1:]
+    body = ast.unparse(fn)
     assert "use_domain_compiler" not in body, (
         "the per-tenant seam gate reads a global boolean again")
     assert "is_semantic_activated" in body, "the seam gate no longer reads the activation table"

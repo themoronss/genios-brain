@@ -138,3 +138,95 @@ and it blocked by being enforceable in a test.
 That is the correction worth carrying forward: a decision that can be enforced by a test is the kind
 that blocks. A decision about what to call something can almost always be deferred, and deferring it
 made it cheaper rather than more expensive.
+
+---
+
+## ✅ 2026-10-01 · DECISION #1 IS CLOSED — option A, by Rohit
+
+**"A"** — keep the code's six axes; correct the Atlas. Measurement behind it:
+`09-DECISION-C-the-confidence-vector-axes.md`.
+
+| | |
+|---|---|
+| **Kept** | `evidence · freshness · consistency · identity · coverage · analytic`, each `int \| None`, with `overall_bp` **bounded by the weakest axis** and `composed_from` recording which axes went in |
+| **Why not the Atlas's six** | `frame_bp` and `causal_bp` have **0 references** in the engine, while `identity`, `consistency` and `analytic` are populated on **459 of 459** stored situations. Adopting the Atlas vocabulary would delete four computed axes for three that compute nothing |
+| **Why `authority` is not a free win** | it exists three times and means three things — `actor_authority_bp` (is the sender senior, L1), `graph_facts.authority_rank` (which source wins, 6,253 rows), `situation_resolution_claims.authority_bp` (how authoritative a resolution claim is, 529 rows). None is *situation readiness*, which is what L2-07 asks for. Composing them would produce a number that looks like authority and means nothing in particular |
+| **Code change** | **zero.** No migration, no rename, no field |
+
+### What the Atlas must now say — three edits, and they are documentation only
+
+1. **`temporal` → it is already there, called `freshness`.** Same axis, different word. Rename in the Atlas; the code keeps `freshness_bp`, which is what 459 rows are stored under.
+2. **Drop `frame` and `causal` from the vector,** or mark them explicitly as future axes with nothing claimed. Nothing in the engine computes either, so listing them as dimensions of a live vector overstates the product.
+3. **Add `consistency`, `identity` and `analytic`.** These are measured on every situation and the Atlas's A.4 table does not name them, so a reader cannot reconcile the card's six bars with the code's six columns.
+
+⛔ **The Atlas's substantive point survives this decision and is NOT closed by it.** Cell **L2-07**: *"role/source-readiness completeness is not part of the blocking vector."* That is true, it is not solved by any existing `authority_bp`, and it needs its own axis computed from `capture/coverage`'s readiness model. It is a **build** — a seventh axis binds `overall_bp` through the weakest-axis law, so some situations correctly become less confident — and therefore its own unit with its own crosscheck, after this decision rather than inside it.
+
+### ⛔ And a correction about which document was stale
+
+`00-CORRECTIONS-2026-10-01.md` in `Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/`
+audits the **Master Atlas-vs-Code Coverage Matrix, dated 2026-08-22**. It found 6 expired cells.
+
+**The Design Atlas v2 itself (29 Sep) is a different document and it is accurate.** Verified
+2026-10-01 against the tree:
+
+    vocabulary substrate fact paths     Atlas 141      measured 141   exact
+    packs/ files                        Atlas  34      measured  34   exact
+    reason/ files                        118            120           +2
+    executive/ files                      26             27           +1
+    feedback/ files                       12             13           +1
+    capture/ files                       154            157           +3
+    deliver/ files                        36             40           +4
+    context/ files                       118            123           +5
+    23 units = 17 core + 6 supplementary                              exact
+    Admin 59 capabilities · 34 situations · 7 draft                   exact
+
+Every delta is this programme's own work since 29 September. **Do not read the matrix's staleness
+as the Atlas's.** The six-week-old audit aged; the two-day-old architecture document did not.
+
+---
+
+# DECISION #5 · ⛔ THE SWITCH THAT TURNED A BUDGET CEILING INTO A PRODUCT OUTAGE
+
+> **Opened** 2026-10-01 · **Owner** Rohit · **Blocks** every card the product could produce
+> **Evidence** `layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md`
+
+## The measurement
+
+    GENIOS_L4_LLM_DECISION_MAKER = true            ON, and no org allowlist → every org
+    Anthropic spend limit                          refusing every call since 2026-09-25 11:09 UTC
+    llm_decision_maker.py:20                       "Failure is DEFER, never the formula."
+
+    8,044 candidates on the 2,681 runs since 2026-09-29:
+        formula_utility   5,469   ✅ the deterministic scorer is HEALTHY
+        llm_utility           0   ⛔ zero on every single one
+        final_utility_bp      0   ⛔ zero on every single one
+        outcome_kind      defer 2,669 · blocked 12 · decision ZERO
+        signals emitted       0
+
+    L1 / L2 / L3 wrote rows on 2026-09-30.  L4 and L5 stopped on 2026-09-25.
+
+**L4 is not broken and neither is the decision maker.** The module refuses to fall back to the
+formula on purpose, with a stated reason: *"Falling back to the formula would make a test of 'what
+does the model decide' silently measure the formula."* That reasoning is sound. What nobody
+declared is that **the measurement mode is the production mode** — so a budget ceiling became a
+full product outage, with six layers reporting healthy and no alarm that said why.
+
+## The three options
+
+| | Option | Cost | Effect |
+|---|---|---|---|
+| **A** | raise the Anthropic spend limit | money | the switch stays on; the product resumes exactly as designed |
+| **B** | `GENIOS_L4_LLM_DECISION_MAKER = false` | the LLM-decision measurement stops | the formula decides; `formula_utility` is already **5,469** on live candidates, so cards resume immediately |
+| **C** | build a third path — `llm_decision_unavailable` falls back to the formula, `llm_declined` still defers | one unit, **and a declared doctrine changes** | the only option that makes the product survive a budget ceiling without a human noticing |
+
+## Recommendation — **B now, C as a unit, A when the budget allows**
+
+**B** restores the product today on a scorer that is measured healthy and already tested. **C** is
+what stops this recurring: the module's stated reason covers a model that **answered badly**, and
+arguably does not cover a model that was **never reachable** — but that is a doctrine change and
+has to be said out loud, not slipped in. **A** is orthogonal and good whenever affordable.
+
+⛔ **Doing nothing is also a choice, and its cost is that the product shows nobody anything.**
+
+> ⛔ **A deliberate refusal to degrade is still a stop.** Measurement modes must declare that they
+> are measurement modes, or the first budget ceiling takes the product down silently.

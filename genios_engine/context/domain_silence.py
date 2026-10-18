@@ -37,26 +37,11 @@ from __future__ import annotations
 #: `{domain: why no corpus claims it, and exactly what would end that}`.
 #:
 #: Every entry names its mover. A permanent exception list is a way to never fix anything.
+#: ⛔ `fundraising` LEFT THIS TABLE ON 2026-10-09 (STEP-11, `06` D2): its doctrine moved into the
+#: Founder Office corpus and `domain_shadow._L2_TO_L3_DOMAIN` maps it there — the mover its entry
+#: named, to a corpus of its own rather than to Sales. Checked both ways, as this module promises: a
+#: domain a corpus claims may not be listed here.
 DARK_DOMAINS: dict[str, str] = {
-    "fundraising":
-        "⛔ THE PILOT TENANT'S OWN DOMAIN. Layer 2 registers it and mints "
-        "`investor_relationship` and `investor_contact` today, declaring `funding.round`, "
-        "`application_status`, `thread.ball_in_court` and `party.role` as the facts they are "
-        "expected to know. `Domain Expertise/` authors Admin, Sales and Customer Support and "
-        "nothing else, so `l3_domain_for('fundraising')` answers None and every investor "
-        "situation on the tenant publishes no package and emits no signal. The benchmark mailbox "
-        "is investors end to end — 3one4, Titan, Neon, Antler, PeakXV, Surge, IIMA, Suvan — and "
-        "not one of them can reach a card. "
-        "⛔ CORRECTED BY L2-4, 2026-09-24 — THE SENTENCE ABOVE SAID THE DOCTRINE DOES NOT EXIST, "
-        "AND IT DOES. `sales.sit.live_investor_relationship` and `sales.sit.live_investor_contact` "
-        "are authored, stable and approved, and behind them sits "
-        "`sales.investor_relations.investor_relations` — 'reading and running the relationships "
-        "with the people who might fund the company: funds, accelerators, angels'. The Sales "
-        "registry routes BOTH of fundraising's types to them, and to nothing generic. Nothing was "
-        "missing; one `None` makes it unreachable. See `domain_shadow.CANDIDATE_ROUTES`. "
-        "ENDS WHEN: the pilot's fundraising situation count is measured (Harsh 26) and "
-        "`_L2_TO_L3_DOMAIN['fundraising']` points at `sales` — ONE LINE, with `live_lane` still "
-        "requiring the tenant to have activated that corpus. NOT authoring.",
     "general":
         "The deliberate catch-all. `domain_spec` gives it `relationship` and `deal` so a signal "
         "whose domain nothing recognised still mints a situation rather than vanishing — the "

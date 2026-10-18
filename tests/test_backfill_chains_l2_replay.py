@@ -172,3 +172,30 @@ def test_each_moved_key_alone_is_enough_to_rerun_the_chain(monkeypatch, key):
     import genios_engine.context.backfill as l2_backfill
     monkeypatch.setattr(l2_backfill, "backfill_layer2", lambda *a, **k: {key: 1}, raising=False)
     assert routes._replay_l2_history("org_test") is True
+
+
+# =================================================================================================
+# 3 · ONE INSTANT, THE CALLER'S
+# =================================================================================================
+
+def test_the_backfill_refreshes_situations_at_the_callers_instant(monkeypatch):
+    """⛔ THE CLOCK WAS THE WALL. `backfill_layer2` called `refresh_situations(store, org_id)` with
+    no instant, so a caller replaying history at a pinned time got situations judged at the wall
+    clock — and anything seeded more than 45 days earlier came back dormant. Production passes
+    nothing and still refreshes at now."""
+    from datetime import datetime, timezone
+
+    from genios_engine.context import backfill as l2_backfill
+
+    seen: list = []
+    monkeypatch.setattr(l2_backfill, "backfill_aliases", lambda store, org: {})
+    monkeypatch.setattr(l2_backfill, "backfill_deal_nodes",
+                        lambda store, org: {"deal_nodes_created": 0})
+    monkeypatch.setattr(l2_backfill, "backfill_correlations", lambda store, org, **kw: {})
+    monkeypatch.setattr(l2_backfill, "refresh_situations",
+                        lambda store, org, *, eval_time=None: seen.append(eval_time) or 0)
+
+    at = datetime(2026, 8, 1, tzinfo=timezone.utc)
+    l2_backfill.backfill_layer2(object(), "org_t", eval_time=at)
+    l2_backfill.backfill_layer2(object(), "org_t")
+    assert seen == [at, None], seen

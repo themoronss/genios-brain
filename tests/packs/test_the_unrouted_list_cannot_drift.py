@@ -38,7 +38,8 @@ def test_the_corpus_validates_clean_right_now():
 
 
 def test_there_is_a_registry_for_every_domain():
-    assert len(REGISTRIES) == 3, [p.parent.parent.name for p in REGISTRIES]
+    # Four since STEP-11 authored the Founder Office (`06` D2).
+    assert len(REGISTRIES) == 4, [p.parent.parent.name for p in REGISTRIES]
 
 
 @pytest.mark.parametrize("registry", REGISTRIES, ids=lambda p: p.parent.parent.name)

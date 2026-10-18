@@ -97,19 +97,34 @@ def test_only_the_publisher_writes_a_brain_entry():
     Read off the source of the whole engine rather than asserted about a module, because the
     failure this catches is a NEW module quietly gaining an insert — which is the shape J4's
     "writes outside the L6 pipeline == 0" row counts after the fact, one tenant at a time.
+    ⛔ MOVED TO THE AST 2026-10-02 BY `S10`, AND IT IS STRICTLY STRICTER. This scanned every
+    engine LINE for `insert into temporary_memories`, which failed two ways at once:
+
+      * it matched a COMMENT — `feedback/target_policy.py` explains the difference between the
+        publisher (a writer) and a reader by quoting the publisher's own insert, and the guard
+        read the sentence documenting the rule as a violation of it. Fourth instance in one
+        session of a text-level guard breaking on its own documentation;
+      * ⛔ and it MISSED a real write split across two source lines — `text("insert into "
+        "temporary_memories (")` is one SQL literal and two lines, and the line scan never sees
+        the concatenation. That hole is what this repair actually closes.
+
+    `target_policy.sql_literals` reads the strings handed to `text(...)`, so prose cannot trip it
+    and formatting cannot hide a write from it.
     """
     import pathlib
+
+    from genios_engine.feedback.target_policy import sql_literals
+
     root = pathlib.Path(inspect.getfile(orchestrator)).parents[1]
     brain_writers: set[str] = set()
     lease_granters: set[str] = set()
     for path in root.rglob("*.py"):
-        text = path.read_text()
-        for line in text.splitlines():
-            lowered = line.lower()
-            if "learned_brain_entries" in lowered and ("insert into" in lowered
-                                                       or "update learned_brain" in lowered):
+        for blob in sql_literals(path.read_text()):
+            sql = " ".join(blob.lower().split())
+            if "learned_brain_entries" in sql and ("insert into" in sql
+                                                   or "update learned_brain" in sql):
                 brain_writers.add(path.name)
-            if "insert into temporary_memories" in lowered:
+            if "insert into temporary_memories" in sql:
                 lease_granters.add(path.name)
     assert brain_writers == {"publisher.py"}, brain_writers
     assert lease_granters == {"publisher.py"}, lease_granters

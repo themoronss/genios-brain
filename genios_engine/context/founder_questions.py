@@ -1,0 +1,198 @@
+"""The questions a file asks you, kept — one open at a time (STEP-13 §3.6, `06` D60, `03` F184).
+
+`speedrun008/YC-II W27/` STEP-13 §8.4 item 7, tree `yc2_w27_s13` M36.C2.L-data.V1.U02; the table is
+`founder_questions` (migration 0201). A file whose review's move lost its ground (HELD by the check), or
+whose review must find out first, asks the founder ONE question:
+
+  * `ask` files it — the same words asked again are the question already open, never a second; a new
+    question retires the file's old one, saying so (`REPLACED`); words the file already answered are
+    that answer, whatever review asks them (M36.C2.L-data.V2.U12);
+  * `answer` keeps the founder's words, once;
+  * `retire` closes a file's open question the review no longer asks (`NO_LONGER_ASKED`), or one whose
+    file is no longer the expert's to decide (`LEFT_COVERAGE`, M36.C2.L-integration.V2.U11), or one you
+    called wrong (`CALLED_WRONG`, STEP-16 M46.C3.L-data.V0.U05) — always with one of the closed whys;
+  * `open_question` and `answers_for` read a file's open question and the answers it holds; `by_id` one.
+
+A question's id is its content's — the tenant, the file, the review that asks it, the words — so asking
+mints no id another part of a run would have minted (`03` F170's rule), and the same question is the same
+row however many sweeps ask it. Pure SQL over one connection; the caller owns the transaction.
+"""
+from __future__ import annotations
+
+import hashlib
+from dataclasses import dataclass
+from datetime import datetime
+
+from sqlalchemy import text
+
+# One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments.
+OPEN = "open"
+ANSWERED = "answered"
+RETIRED = "retired"
+#: Why a question was retired — closed, so each is counted by kind.
+REPLACED = "a newer question of the file replaced it"
+NO_LONGER_ASKED = "the file's latest review no longer asks it"
+LEFT_COVERAGE = "the file is no longer the expert's to decide"
+#: ⛔ STEP-16 (`yc2_w27_s16` M46.C3.L-data.V0.U05; S16-D10, `s16-F13`): *"don't ask me this"*. A question you
+#: call wrong is retired with this why, and its words are never asked of the file again (`ask`).
+CALLED_WRONG = "you called the question wrong"
+#: The closed whys — `retire` refuses any other, so every retirement is counted by kind.
+RETIRED_WHYS = (REPLACED, NO_LONGER_ASKED, LEFT_COVERAGE, CALLED_WRONG)
+
+
+
+@dataclass(frozen=True, slots=True)
+class Question:
+    question_id: str
+    file_id: str
+    fingerprint: str
+    run_id: str | None
+    question: str
+    why: str
+    asked_at: datetime
+    state: str
+    answer: str | None = None
+    answered_by: str | None = None
+    answered_at: datetime | None = None
+    retired_at: datetime | None = None
+    retired_why: str | None = None
+
+
+#: ⛔ ONE LOCK ORDER (M36.C2.L-interface.V4.U07, the second crosscheck G11; 886e16c5 "NOT FIXED, NOTICED"): the
+#: Answer press locked card → signal → question in one statement, the sweep question → signal → card — two
+#: orders, a deadlock when they meet. Both take the FILE'S QUESTION LOCK first — a transaction-scoped advisory
+#: lock on (tenant, file) — and only then any row: the press before its door (`deliver/actions.ingest_action`),
+#: the sweep before it asks or retires (`reason/expert/asks.ask_the_founder`, `retire_question`).
+_FILE_LOCK = "select pg_advisory_xact_lock(hashtextextended(:k, 0))"
+
+
+def lock_file(conn, org_id: str, file_id: str) -> None:
+    """Take the file's question lock, held to the end of the transaction — before any row of its question, its
+    signal or its card (see above)."""
+    conn.execute(text(_FILE_LOCK), {"k": f"founder_question\x1f{org_id}\x1f{file_id}"})
+
+
+def question_id_for(org_id: str, file_id: str, fingerprint: str, question: str) -> str:
+    """The question's id, from what it is."""
+    digest = hashlib.sha256("\x1f".join((org_id, file_id, fingerprint, question)).encode()).hexdigest()
+    return f"fq_{digest[:24]}"
+
+
+def _row(r) -> Question:
+    return Question(**{k: getattr(r, k) for k in Question.__slots__})
+
+
+def by_id(conn, org_id: str, question_id: str) -> Question | None:
+    r = conn.execute(text(
+        "select question_id, file_id, fingerprint, run_id, question, why, asked_at, state, answer, "
+        "answered_by, answered_at, retired_at, retired_why from founder_questions "
+        "where org_id = :o and question_id = :q"), {"o": org_id, "q": question_id}).first()
+    return _row(r) if r else None
+
+
+def open_question(conn, org_id: str, file_id: str) -> Question | None:
+    """The file's one open question, or None."""
+    r = conn.execute(text(
+        "select question_id, file_id, fingerprint, run_id, question, why, asked_at, state, answer, "
+        "answered_by, answered_at, retired_at, retired_why from founder_questions "
+        "where org_id = :o and file_id = :f and state = 'open'"), {"o": org_id, "f": file_id}).first()
+    return _row(r) if r else None
+
+
+def answers_for(conn, org_id: str, file_id: str) -> tuple[Question, ...]:
+    """The questions of this file the founder answered, newest answer first."""
+    return tuple(_row(r) for r in conn.execute(text(
+        "select question_id, file_id, fingerprint, run_id, question, why, asked_at, state, answer, "
+        "answered_by, answered_at, retired_at, retired_why from founder_questions "
+        "where org_id = :o and file_id = :f and state = 'answered' "
+        "order by answered_at desc, question_id"), {"o": org_id, "f": file_id}))
+
+
+def called_wrong_for(conn, org_id: str, file_id: str) -> tuple[Question, ...]:
+    """The questions of this file you called wrong, newest first — their words are not asked again."""
+    return tuple(_row(r) for r in conn.execute(text(
+        "select question_id, file_id, fingerprint, run_id, question, why, asked_at, state, answer, "
+        "answered_by, answered_at, retired_at, retired_why from founder_questions "
+        "where org_id = :o and file_id = :f and state = 'retired' and retired_why = :why "
+        "order by retired_at desc, question_id"), {"o": org_id, "f": file_id, "why": CALLED_WRONG}))
+
+
+def retire(conn, *, org_id: str, file_id: str, why: str, at: datetime) -> bool:
+    """Close the file's open question, saying why — one of `RETIRED_WHYS` (ValueError for any other).
+    False when the file has none open."""
+    if why not in RETIRED_WHYS:
+        raise ValueError(f"a question retires for one of the closed whys, not {why!r}")
+    return conn.execute(text(
+        "update founder_questions set state = 'retired', retired_at = :at, retired_why = :why "
+        "where org_id = :o and file_id = :f and state = 'open' returning question_id"),
+        {"o": org_id, "f": file_id, "at": at, "why": why}).first() is not None
+
+
+def ask(conn, *, org_id: str, file_id: str, fingerprint: str, run_id: str | None, question: str, why: str,
+        at: datetime) -> Question:
+    """File the file's question. The same words already open are that question — re-bound to the run
+    asking it now; any other open one is retired first — the file has one open question (0201's own
+    index). A question this file already ANSWERED is not asked again: the answered question is returned.
+
+    ⛔ WHATEVER REVIEW ASKS IT (STEP-13 M36.C2.L-data.V2.U12, `03` X25). Your answer moves the file's
+    fingerprint (`reason/expert/fingerprint`), so the review that asks the same words again is never the
+    review that asked them first — a dedupe on the asking review's id could never fire. The file's answers
+    are matched on their words, and an open question this review no longer asks retires
+    (`NO_LONGER_ASKED`). Only an ANSWER — or your *wrong* — closes the words: a question retired for any
+    other reason may be asked again, by a later review, as its own row (the record of what each review
+    asked stays whole).
+
+    ⛔ WORDS YOU CALLED WRONG (STEP-16 M46.C3.L-data.V0.U05, S16-D10) are not filed again on this file,
+    whatever review asks them: the question you called wrong is returned, RETIRED `CALLED_WRONG`, and the
+    caller counts the file held with no card. The open question this review no longer asks retires, as
+    for an answered one."""
+    answered = next((a for a in answers_for(conn, org_id, file_id) if a.question == question), None)
+    if answered is not None:
+        retire(conn, org_id=org_id, file_id=file_id, why=NO_LONGER_ASKED, at=at)
+        return answered
+    refused = next((q for q in called_wrong_for(conn, org_id, file_id) if q.question == question), None)
+    if refused is not None:
+        retire(conn, org_id=org_id, file_id=file_id, why=NO_LONGER_ASKED, at=at)
+        return refused
+    standing = open_question(conn, org_id, file_id)
+    if standing is not None and standing.question == question:
+        if run_id is not None and run_id != standing.run_id:
+            # The same question, asked by the run asking it now: its authority is that run's.
+            conn.execute(text("update founder_questions set run_id = :run where org_id = :o "
+                              "and question_id = :q and state = 'open'"),
+                         {"o": org_id, "q": standing.question_id, "run": run_id})
+            return by_id(conn, org_id, standing.question_id)
+        return standing
+    if standing is not None:
+        retire(conn, org_id=org_id, file_id=file_id, why=REPLACED, at=at)
+    qid = question_id_for(org_id, file_id, fingerprint, question)
+    conn.execute(text(
+        "insert into founder_questions (org_id, question_id, file_id, fingerprint, run_id, question, why, "
+        "asked_at, state) values (:o, :q, :f, :fp, :run, :question, :why, :at, 'open') "
+        "on conflict (org_id, question_id) do update set state = 'open', asked_at = excluded.asked_at, "
+        "run_id = excluded.run_id, retired_at = null, retired_why = null "
+        "where founder_questions.state = 'retired'"),
+        {"o": org_id, "q": qid, "f": file_id, "fp": fingerprint, "run": run_id, "question": question,
+         "why": why, "at": at})
+    return open_question(conn, org_id, file_id) or by_id(conn, org_id, qid)
+
+
+def answer(conn, *, org_id: str, question_id: str, words: str, by: str, at: datetime) -> Question:
+    """Keep the founder's answer to an open question — once. ValueError for words that say nothing, or a
+    question that is not open."""
+    if not (words or "").strip():
+        raise ValueError("an answer that says nothing is no answer")
+    r = conn.execute(text(
+        "update founder_questions set state = 'answered', answer = :w, answered_by = :by, answered_at = :at "
+        "where org_id = :o and question_id = :q and state = 'open' returning question_id, file_id, "
+        "fingerprint, run_id, question, why, asked_at, state, answer, answered_by, answered_at, retired_at, "
+        "retired_why"),
+        {"o": org_id, "q": question_id, "w": words.strip(), "by": by, "at": at}).first()
+    if r is None:
+        raise ValueError(f"question {question_id} is not open: it is answered once, and a retired one never")
+    return _row(r)
+
+
+__all__ = ["ANSWERED", "CALLED_WRONG", "LEFT_COVERAGE", "NO_LONGER_ASKED", "OPEN", "Question", "REPLACED",
+           "RETIRED", "RETIRED_WHYS", "answer", "answers_for", "ask", "by_id", "called_wrong_for", "lock_file",
+           "open_question", "question_id_for", "retire"]

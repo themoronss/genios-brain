@@ -415,7 +415,7 @@ inference_patterns:
       when:
         - {has_obs: proposal_sent}
         - {no_obs: competitor}
-        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3, floor:
+        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: write_interval, mult: 3, floor:
               10}}
       yields: {confidence_bp: 6200, attribute: competitor_type, value: status_quo}
       evidence_fields: [deal.last_inbound]
@@ -670,7 +670,7 @@ events:
       {path: derived.momentum, op: "<", value: 0.3}], payload: [competitive_position, deal_momentum]}
   - {id: comp.status_quo_winning, name: Status Quo Winning, emitted_when: [has_obs: proposal_sent,
           no_obs: competitor, {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline:
-            reply_cadence, mult: 3, floor: 10}}], payload: [competitor_type, cost_of_inaction],
+            write_interval, mult: 3, floor: 10}}], payload: [competitor_type, cost_of_inaction],
       description: "The most under-emitted event in sales tooling. No rival, no bad news, and the deal is
       being lost."}
 
