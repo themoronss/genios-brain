@@ -2,7 +2,11 @@
 
 **Written for:** Rohit, Harsh and any coding agent picking up a layer. **Started:** 2026-10-17.
 
-**Read first: [`00-ARCHITECTURE.md`](00-ARCHITECTURE.md) — the architecture we build to.**
+**Read first, in this order:**
+1. [`00-ARCHITECTURE.md`](00-ARCHITECTURE.md) — the architecture we build to (Design Atlas v2)
+2. [`01-RULES.md`](01-RULES.md) — all work is on the new architecture; how the migration is done
+3. [`02-MIGRATION-PLAN.md`](02-MIGRATION-PLAN.md) — today's code against the target, what YC-II W27 built and where it lands, the plan layer by layer
+4. [`03-QUESTIONS.md`](03-QUESTIONS.md) — every open question, asked once, with defaults
 
 ## Why this folder exists
 
