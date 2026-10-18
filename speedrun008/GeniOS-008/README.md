@@ -2,6 +2,8 @@
 
 **Written for:** Rohit, Harsh and any coding agent picking up a layer. **Started:** 2026-10-17.
 
+**Read first: [`00-ARCHITECTURE.md`](00-ARCHITECTURE.md) — the architecture we build to.**
+
 ## Why this folder exists
 
 The work so far is spread over three plan folders (`YCW27/`, `YC-II W27/`, and the layer folders
