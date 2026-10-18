@@ -52,6 +52,8 @@ L2 concluded.
 
 ## Inside L1 — capture honestly
 
+**Detailed spec: [`layer-1-enterprise-signals/05-BLUEPRINT-the-spec.md`](layer-1-enterprise-signals/05-BLUEPRINT-the-spec.md)** — groups G1–G7, units, contracts, algorithms, filters, acceptance tests.
+
 Connectors → landing (dedupe) → preprocess (documents, transcripts) → gate (park, never drop) → triage
 → **ESQE** (classify, extract, importance ALG-17, expiry ALG-19) → **signal correlation (incoming only)**
 → publisher (V-1…V-7) → **bundle + coverage receipt** to L2.
