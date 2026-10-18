@@ -3466,11 +3466,16 @@ def integrations_status(scope: str = "workspace",
     return out
 
 
-def _sync_source(org_id: str, source_type: str, limit: int):
+def _sync_source(org_id: str, source_type: str, limit: int, *, scope=None):
+    """One source's sync through the door. `scope` (GeniOS-008 L1 E2) wraps the connector so the run carries
+    ONE fetched batch — an evidence need's thread or window — instead of the cursor's next page."""
     from genios_engine.contracts.connection import Connection
     conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
     rel = make_relevance_classifier(org_id)    # ONE classifier: connector gates on snippet + fetches
-    return run_sync(make_connector_for(conn, relevance=rel),   # only keepers; pipeline reuses its cache
+    connector = make_connector_for(conn, relevance=rel)
+    if scope is not None:
+        connector = scope(connector)
+    return run_sync(connector,   # only keepers; pipeline reuses its cache
                     org_id=org_id, connection_id=conn.connection_id,
                     repo=_repo, mode="incremental", limit=limit, parked_store=_parked,
                     relevance=rel, trace_repo=_trace_repo,
@@ -3482,6 +3487,24 @@ def _sync_source(org_id: str, source_type: str, limit: int):
                     esqe=_esqe_stage_for(org_id),
                     semantic=_semantic_lane_for(org_id),
                     structured=_structured_lane_for(org_id))
+
+
+def _need_fetchers(org_id: str):
+    """GeniOS-008 L1 E2 · a tenant's evidence-need fetchers, made here because the door's stores live here.
+    The fetcher fetches with a plain Gmail connector, then carries the batch through `_sync_source` scoped to
+    it — one capture door, so the answer is gated, extracted, published and bundled like any mail."""
+    from genios_engine.capture.acquire.need_fetchers import make_fetchers
+    from genios_engine.contracts.connection import Connection
+    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type="gmail", config={})
+    return make_fetchers(
+        connector_for=lambda: make_connector_for(conn),
+        sync=lambda scoped: _sync_source(org_id, "gmail", 50,
+                                         scope=lambda _connector: scoped))
+
+
+from genios_engine.capture.acquire.need_executor import register_fetcher_factory  # noqa: E402
+
+register_fetcher_factory(_need_fetchers)
 
 
 # Onboarding backfill is WINDOW-bounded (60d email / 120d calendar), not count-bounded — the user

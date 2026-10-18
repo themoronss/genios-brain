@@ -211,6 +211,16 @@ def _run_needs(org_id: str, *, read_open, close, fetchers, eval_time, limit,
                            already_closed=already, malformed=malformed, outcomes=tuple(outcomes))
 
 
+#: GeniOS-008 L1 E2 · the composition root's factory for a tenant's fetchers (`api/routes` registers it):
+#: `capture/` builds no connector and holds no repository, so the fetchers are made where those live.
+_FACTORY: Callable[[str], Mapping[str, Callable[[EvidenceNeed], Any]]] | None = None
+
+
+def register_fetcher_factory(factory: Callable[[str], Mapping[str, Callable[[EvidenceNeed], Any]]] | None) -> None:
+    global _FACTORY
+    _FACTORY = factory
+
+
 def build_fetchers(org_id: str) -> dict[str, Callable[[EvidenceNeed], Any]]:
     """The connectors this deployment can actually reach. **Empty today, and honestly empty.**
 
@@ -221,9 +231,20 @@ def build_fetchers(org_id: str) -> dict[str, Callable[[EvidenceNeed], Any]]:
 
     Wiring these to live connectors is Harsh's integration (L1 STEP-07, L3 STEP-05). The seam is
     here so that work is a mapping, not a redesign.
+
+    ⛔ GeniOS-008 L1 E2: wired (`capture/acquire/need_fetchers`) — and still `{}` unless the deployment arms
+    it (`GENIOS_NEED_FETCHERS=on`) AND the composition root registered a factory. Either missing, the pass
+    refuses exactly as it did, and no question is closed.
     """
-    return {}
+    from genios_engine.capture.acquire.need_fetchers import armed
+    if not armed() or _FACTORY is None:
+        return {}
+    try:
+        return dict(_FACTORY(org_id) or {})
+    except Exception:      # noqa: BLE001 — a factory that failed wires nothing; the pass refuses
+        _log.exception("could not build the evidence-need fetchers for org=%s", org_id)
+        return {}
 
 
 __all__ = ["DEFAULT_LIMIT", "DEFAULT_SWEEP_BUDGET_USD", "CloseNeed", "NeedSweepReport", "ReadOpen",
-           "build_fetchers", "run_needs"]
+           "build_fetchers", "register_fetcher_factory", "run_needs"]
