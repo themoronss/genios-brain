@@ -56,7 +56,7 @@ Items that need a decision from Rohit are marked ⛔ and wait for it; nothing el
 ## Not doing (and why)
 
 - ~~New groups G1–G7, new algorithm numbers~~ ⛔ **Withdrawn 18 Oct.** Rohit's Layer 1 Blueprint (`05-BLUEPRINT-the-spec.md`) IS the spec for Layer 1: groups G1–G7 → sections → functions → components → units, its contracts (SourceReceipt, ContentArtifact, EnterpriseObservation, QualifiedEnterpriseSignal, Bundle, CoverageReceipt, EvidenceNeed, PublicationReceipt), its algorithm registry (ALG-L1-01…19 + ALG-17, ALG-19) and its acceptance tests. Layer 1 is re-planned on that structure — Blueprint Part 6 Phase 0 first: every existing file mapped to G#→section→function→component→unit with BUILT / RUNNING / TARGET / GAP / UNVERIFIED. Existing V-1…V-7 keep their meaning; the Blueprint's proposed V-mapping is reconciled against `contracts/publication.py`, not imposed.
-- **Absence signals inside L1** — absence needs memory; it stays in L3.
+- ~~Absence signals inside L1~~ ⛔ **Withdrawn 18 Oct** — that was the old flow talking. Atlas v2 and the Blueprint put absence-derived signals in L1, each with its coverage receipt: Group E, E5.
 - **Delivered / read status** — Gmail does not provide it.
 - **The database-load fixes (5.1–5.4)** — real, but in L2 `reason/`, L3 `context/analytic/` and L5
   `deliver/`. They go in those layers' folders. 5.3's mechanism does not match the code (an unchanged
