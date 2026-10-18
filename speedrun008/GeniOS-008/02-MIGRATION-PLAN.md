@@ -125,6 +125,8 @@ Waiting on Rohit: B1, B2 (the junk filter's live measurement and its prompt).
 
 ### 3.2 · L2 Reasoning — `reason/` + `packs/` (the core of the rebuild)
 
+**Superseded in detail by [`layer-2-reasoning/02-PLAN.md`](layer-2-reasoning/02-PLAN.md)** (built to Rohit's L2 spec: LLM-led, context-first). The table below is the first sketch.
+
 | ID | Item | Built from |
 |---|---|---|
 | L2-1 | **The Orchestrator loop** as one module (`reason/orchestrator`), running the 12 steps of `00-ARCHITECTURE` | `shadow_compile`'s body + `run_all` |

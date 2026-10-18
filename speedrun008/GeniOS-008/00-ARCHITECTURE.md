@@ -67,6 +67,8 @@ asks for.
 
 ## Inside L2 — where the system thinks
 
+**Detailed spec: [`layer-2-reasoning/05-SPEC-layer-2.md`](layer-2-reasoning/05-SPEC-layer-2.md)** (Rohit, 18 Oct). Its governing principle: **context-first, LLM-led.** The LLM is the reasoning engine (meaning, framing, history, patterns, consequences, next move); Plane D guides it, Plane R structures it, deterministic code only supports it (retrieval, IDs, permissions, integrity, exact numbers). The model judges in words with evidence, never an opaque score; routing, recipients, permissions and approvals stay outside it.
+
 - **Orchestrator.** The controller; not a unit, not a plane. Its twelve steps:
   1. intake and idempotency;
   2. **material-change gate**: nothing new means 0 calls;

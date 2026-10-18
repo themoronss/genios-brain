@@ -73,7 +73,7 @@ move the item to another layer.
 | Layer | Folder | State |
 |---|---|---|
 | L1 Enterprise Signals | [`layer-1-enterprise-signals/`](layer-1-enterprise-signals/00-START-HERE.md) | as-is written 17 Oct · plan written · fixing |
-| L2 Reasoning | — | next, after L1 |
+| L2 Reasoning | [`layer-2-reasoning/`](layer-2-reasoning/00-START-HERE.md) | spec received · as-is measured · plan written · not built |
 | L3 Context Graph | — | |
 | L4 Executive | — | |
 | L5 Delivery | — | |
