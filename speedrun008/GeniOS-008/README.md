@@ -20,19 +20,28 @@ company's data, workflows, dependencies and goals; detects execution gaps; decid
 directs it to the right person or AI agent; monitors progress; and keeps adapting until the goal is
 reached or human judgement is needed. *Palantir for company managers.*
 
-## The layers, and the order data flows through them
+## The layers — the new architecture (Design Atlas v2, 29 Sep), and the order we work in
 
 ```
-L1 Enterprise Signals      capture/            what happened, from which source, with what evidence
-L3 Context Graph           context/            what the company remembers
-L2 Signals Qualification   packs/ + reason/    what it means, and what should happen (Plane D + Plane R)
-L4 Executive               executive/          the decision and the plan
-L5 Delivery                deliver/            the card, the brief, the draft
-L6 Learning                feedback/           what the founder's corrections and the outcomes teach
+L1 Enterprise Signals   capture/            what happened, how reliable, which incoming signals belong
+                                            together — out: QualifiedEnterpriseSignalBundle + coverage receipt
+L2 Reasoning (primary)  reason/ + packs/    what it means and the best next move — Orchestrator,
+                                            Plane R (how a pro thinks), Plane D (what a pro knows), Tools
+L3 Context Graph        context/            the company's trusted memory; admits what L2 concluded
+L4 Executive            executive/          who decides; a decision becomes owned, dated work
+L5 Delivery             deliver/            the card a human actually sees
+L6 Learning             feedback/           attribute the miss to the layer that failed, then adapt
 ```
 
-Data flows L1 → L3 → L2 → L4 → L5 → L6. A layer can only reason as well as the layer below it
-remembers, so we go in that order.
+Target flow (Atlas v2 II.0): L1 bundle → **L2 reasons** (reads a bounded ContextSnapshot from L3,
+asks L1 for missing evidence through EvidenceNeed) → L3 admits the situation → L4 → L5 → L6.
+**We work in that order: L1, L2, L3, L4, L5, L6.**
+
+⛔ **The code today still runs the OLD flow**: `capture/` → `context/` forms and admits the situation
+→ `packs/` + `reason/` consulted → a `signals` row → a card (Atlas v2 L2.2 "today versus target").
+Every layer here is judged against the **new architecture's target**, not against what the old
+flow happens to do. Where the code does it the old way, that is a finding to fix, not a reason to
+move the item to another layer.
 
 ## How each layer folder is laid out
 
@@ -50,7 +59,7 @@ remembers, so we go in that order.
    document is corrected first.
 2. "Built" is not "working". A module counts only if production reaches it — its caller chain is named.
 3. Nothing is called done until its test runs, its mutation (the fix removed) makes the test fail, and
-   the repo-wide guards are green.
+   CI is green (full suites run in CI, not locally).
 4. Anything noticed outside the item being fixed becomes a new line in `02-PLAN.md`, never a silent fix.
 
 ## Layers
@@ -58,8 +67,8 @@ remembers, so we go in that order.
 | Layer | Folder | State |
 |---|---|---|
 | L1 Enterprise Signals | [`layer-1-enterprise-signals/`](layer-1-enterprise-signals/00-START-HERE.md) | as-is written 17 Oct · plan written · fixing |
-| L3 Context Graph | — | next, after L1 |
-| L2 Signals Qualification | — | |
+| L2 Reasoning | — | next, after L1 |
+| L3 Context Graph | — | |
 | L4 Executive | — | |
 | L5 Delivery | — | |
 | L6 Learning | — | |

@@ -70,9 +70,9 @@ Blueprint asked for — not under the Blueprint's names, and that is fine:
 
 | Claim | Truth |
 |---|---|
-| "L1 has no absence signals" | Absence lives in L3 on purpose (`context/waiting.py`, `outreach_situations.py`, `meeting_days.py`): "no reply" needs memory |
+| "L1 has no absence signals" | Absence lives in L3 on purpose (`context/waiting.py`, `outreach_situations.py`, `meeting_days.py`): "no reply" needs memory | ⛔ **Wrong under the new architecture (18 Oct)** — this judged the claim by today's OLD flow; Atlas v2 puts it in L1. See `02-PLAN` Group E
 | "No delivered/read status" | Gmail does not provide delivered or read. Bounce is the only status there is, and it is read |
-| "A meeting → follow-up link is missing" | It is in L3 (`context/meeting_days.py:183`), where the meeting's memory is |
+| "A meeting → follow-up link is missing" | It is in L3 (`context/meeting_days.py:183`), where the meeting's memory is | ⛔ **Wrong under the new architecture (18 Oct)** — this judged the claim by today's OLD flow; Atlas v2 puts it in L1. See `02-PLAN` Group E
 | "The coverage snapshot is not on each signal" | It is (`qualified_signals.coverage`), but L2 does not read it — that is W10 |
 | "A 60-day wall" | It is a per-connection default, not a wall — that is W15 |
 | W3 "the junk filter judges a snippet" (my own, 17 Oct) | Any mail from a known counterparty or a brief-named sender is fetched whole (`gate/relevance.py:200` `keeps_whole`), and every unconfident drop is fetched whole (`_skip_body`) |

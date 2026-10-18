@@ -62,3 +62,27 @@ Items that need a decision from Rohit are marked ⛔ and wait for it; nothing el
 - **The database-load fixes (5.1–5.4)** — real, but in L2 `reason/`, L3 `context/analytic/` and L5
   `deliver/`. They go in those layers' folders. 5.3's mechanism does not match the code (an unchanged
   value is not written, `publish.py:305`), so it needs one production query before any fix.
+
+---
+
+## Group E — what the NEW architecture puts in L1, which I had judged against the old flow (18 Oct)
+
+⛔ **Correction.** On 17 Oct I retracted, deferred or moved C1, C2, C4, C5, D1 and D2 by asking
+"what does today's code do?" — and today's code still runs the OLD flow, where `context/` forms the
+situation. Design Atlas v2 (§L1 "What L1 must add to stop starving reasoning", §II.1 contracts, §V.2
+P1·6–8) puts every one of these **in L1**. They are restored here and replace the rows above.
+
+| # | Replaces | What the new architecture asks of L1 | What the code has today | The change |
+|---|---|---|---|---|
+| E1 | C5 | **The L1 → L2 contract is a `QualifiedEnterpriseSignalBundle`** — signals, entities, candidate relationships, coverage receipt, unresolved | `esqe/bundle.py` builds bundles each sweep; `finalize_l1` passes no store, so nothing is written and nothing reads them | store the bundle every sweep (`finalize_l1` → `signal_bundles`), attach the sweep's coverage receipt and `unresolved[]`, and expose a reader for L2 |
+| E2 | C1 | **EvidenceNeed executor** — L2 asks L1 for the one missing fact: fetch the thread, backfill history, re-extract an attachment | executor + queue built and run every sweep; `build_fetchers()` returns `{}` | real fetchers: `FETCH_THREAD` (Gmail thread by id), `REEXTRACT` (stored payload), `BACKFILL_WINDOW` (bounded backfill); a refused provider leaves the need open, never "found nothing" |
+| E3 | C2 | **Entity resolution with doubt** — "probably the same person" stays probable | the alias resolver computes `alternatives` and drops them (`validate/canonical.py:542`) | carry candidates + basis on the mention; never a forced single entity |
+| E4 | D1, D2 | **Six object types**: commitment · condition · open question · delivery status · meeting follow-up link · thread terminal state | commitment ✅, open question ✅; condition only inside a commitment; delivery status = bounce only, linked in `context/`; meeting follow-up link only in `context/`; thread end only as `ball_in_court` | a `Condition` object; delivery status (sent / bounced / deferred) linked to its outbound message in L1; meeting → follow-up link in L1 correlation; thread terminal state per thread |
+| E5 | 01 §4 | **Absence-derived signals** with a coverage receipt — no reply, no owner, no approval, no delivery | absence is computed only in `context/` (`waiting.py`, `outreach_situations.py`); `SignalType` has no absence member | absence signals published by L1, each carrying the coverage receipt that makes it sayable |
+| E6 | — | **Role extraction**: sender ≠ promisor ≠ owner ≠ approver | `RoleAssertion(party, role)` with free-text role | a closed role set on the published signal |
+| E7 | — | **Version and supersession** lifecycle | `SIGNAL_STATES` = active, superseded, expired, resolved | add `new` and `revoked` (Atlas L1 "lifecycle"), with dates |
+| E8 | C4 | **Nothing computed goes uncarried** — L1's `ball_in_court`, `thread_key`, `direction`, `due_at`, `coverage` reach L2 | written to `qualified_signals`, read by nobody | carried in the bundle (E1) so L2 reads them |
+| E9 | — | **Untrusted-content boundary** | `capture/semantic/injection.py` exists (nonce fence, SAFETY block, no model-set scores) | verify it covers every L1 model site (junk gate, relevance, domains, extraction); fix any gap |
+| E10 | — | **Metric definitions** ("sales" = booked/collected/signed) | not found in `capture/` | open: confirm owner (L1 vs Plane D) before building |
+
+Order: E1 (the contract everything else rides on) → E8 → E2 → E4 → E5 → E3 → E6 → E7 → E9 → E10.
