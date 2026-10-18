@@ -446,6 +446,17 @@ def make_signal_store():
     return InMemorySignalStore()
 
 
+def make_bundle_store():
+    """`signal_bundles` (0186) — GeniOS-008 L1 E1, the L1 -> L2 contract made durable. Built on
+    `make_signal_store`'s terms: in memory without a database, so a dev run still groups."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.esqe.bundle_store import PostgresBundleStore
+        return PostgresBundleStore(s.database_url)
+    from genios_engine.capture.esqe.bundle_store import InMemoryBundleStore
+    return InMemoryBundleStore()
+
+
 def make_coverage_store():
     """`source_coverage` — the table migration 0002 created and nothing ever wrote."""
     s = get_settings()

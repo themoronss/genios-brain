@@ -33,7 +33,7 @@ from genios_engine.platform.wiring import (make_agent_event_store,
                                            make_conflict_store,
                                            make_drop_ledger, make_floor_store,
                                            make_rejection_ledger,
-                                           make_signal_store,
+                                           make_signal_store, make_bundle_store,
                                            make_lifecycle_store,
                                            make_connection_store, make_coverage_fn,
                                            make_esqe_stage,
@@ -90,6 +90,8 @@ _drop_ledger = make_drop_ledger()
 # the floor and its ledger because the three are one decision seen from three sides: what crossed,
 # what did not, and against which threshold.
 _signal_store = make_signal_store()
+# GeniOS-008 L1 E1 — the bundles `publish_sweep` builds, kept for Layer 2 (0186).
+_bundle_store = make_bundle_store()
 # L1.6.10 — `publication_rejections`, the row the OTHER five blocking rules never left. V-1 parks
 # and the floor drops; V-2, V-3, V-4, V-6 and V-7 refused a signal and wrote nothing anywhere, so
 # "why did I never see X?" had an answer for two of the seven rules. Resolved here beside the
@@ -118,7 +120,7 @@ def _l1_stores() -> L1Stores:
     """
     return L1Stores(conflicts=_conflict_store, floors=_floor_store, drops=_drop_ledger,
                     lifecycle=_lifecycle_store, signals=_signal_store, parked=_parked,
-                    rejections=_rejection_ledger)
+                    rejections=_rejection_ledger, bundles=_bundle_store)
 
 
 # ── health / config ──────────────────────────────────────────────────────────────

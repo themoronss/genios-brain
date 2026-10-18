@@ -53,7 +53,7 @@ _log = get_logger("genios.capture.finalize")
 
 @dataclass(frozen=True)
 class L1Stores:
-    """The seven places Layer 1's conclusions are written, as ONE argument.
+    """The places Layer 1's conclusions are written, as ONE argument.
 
     Seven keyword arguments at every call site is seven chances to pass six; a bundle makes the
     omission a construction the reader can see. Every one is optional for the same reason the
@@ -68,6 +68,8 @@ class L1Stores:
     signals: Any = None
     parked: Any = None
     rejections: Any = None
+    #: GeniOS-008 L1 E1 · `signal_bundles` — the L1 → L2 contract, stored so Layer 2 can read it.
+    bundles: Any = None
 
 
 @dataclass(frozen=True)
@@ -133,7 +135,7 @@ def finalize_l1(summary: Any, *, org_id: str, stores: L1Stores) -> FinalizeOutco
             _log.info("lifecycle retired %d stored signal(s) org=%s", retired, org_id)
     report = publish_sweep(summary, qualification, org_id=org_id, store=stores.signals,
                            parked_store=stores.parked, rejections=stores.rejections,
-                           lifecycle=lifecycle)
+                           lifecycle=lifecycle, bundle_store=stores.bundles)
     # `stored`, not `len(emitted)`: the store logs and returns 0 on a database error rather than
     # raising, so a publish that DECIDED emit and wrote nothing must not report as a success.
     return FinalizeOutcome(qualification=qualification, lifecycle=lifecycle,
