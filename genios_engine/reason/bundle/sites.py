@@ -59,9 +59,16 @@ SITE_BRIEF = "R-8"
 #: Never escalated again and never Opus: failing twice more, the template stands and the brief
 #: says so.
 SITE_BRIEF_ESCALATE = "R-8E"
+#: ⛔ R-9 · the LAYER 2 JUDGMENT PASS (GeniOS-008, `speedrun008/GeniOS-008/layer-2-reasoning/`). The STEP-12
+#: expert (R-7) generalised: one bounded run per SUBJECT — a file, or a bundle's own seed — over the six
+#: labelled blocks (signals, context snapshot, history, expertise, tool results, coverage), returning a
+#: `contracts/reasoning_result.ReasoningResult`. Its own site, not R-7's, because it runs in SHADOW beside the
+#: expert pass until the golden set says it is at least as good: sharing R-7's day would let the shadow path
+#: starve the live one. Sonnet-class (L2-Q5 default), thinking off, its own $2 day.
+SITE_REASON = "R-9"
 
 R_SITES = (SITE_INTERPRET, SITE_NARRATE, SITE_ALTERNATIVES, SITE_EFFECT, SITE_CONSULT,
-           SITE_SITUATION, SITE_EXPERT, SITE_BRIEF, SITE_BRIEF_ESCALATE)
+           SITE_SITUATION, SITE_EXPERT, SITE_BRIEF, SITE_BRIEF_ESCALATE, SITE_REASON)
 
 #: Tier per site, exactly as doc 11 §1 prints it. T1 = Haiku-class, T2 = Sonnet-class, the same
 #: two names `capture.semantic.batch.DEFAULT_TIER_PRICES` prices — reused rather than re-declared,
@@ -78,6 +85,7 @@ SITE_TIERS = {
     SITE_EXPERT: TIER_T2,
     SITE_BRIEF: TIER_T1,
     SITE_BRIEF_ESCALATE: TIER_T2,
+    SITE_REASON: TIER_T2,
 }
 
 #: The output ceiling per site, in tokens. A cap rather than a hope: doc 11 sizes R-2 at ~450
@@ -131,6 +139,11 @@ SITE_MAX_OUTPUT_TOKENS = {
     # number is revisited then, the way R-2's was.
     SITE_BRIEF: 1600,
     SITE_BRIEF_ESCALATE: 1600,
+    # ⛔ `[MODELLED]`, sized from R-7's measurement: a review ran p90 3,509 tokens on Haiku with thinking off,
+    # and the L2 result is the review plus its judgment half (six confidence lines, options, mutations,
+    # needs) — about 1,500 more. 8,000 is R-7's 6,000 plus that, with R-7's headroom kept. Measured on the
+    # first one or two live calls before any paid pass (memory: test 1-2 calls first).
+    SITE_REASON: 8000,
 }
 
 #: ⛔ WHETHER A SITE MAY THINK (`yc2_w27_s18` M50.C2.L-contract.V1.U02). Claude 5 models think unless
@@ -149,6 +162,7 @@ SITE_THINKING = {
     SITE_EXPERT: _THINKING_OFF,
     SITE_BRIEF: _THINKING_OFF,
     SITE_BRIEF_ESCALATE: _THINKING_OFF,
+    SITE_REASON: _THINKING_OFF,
 }
 
 #: How long one call of a site may take, in seconds, where the client's own 60 s is too short. None
@@ -157,6 +171,8 @@ SITE_THINKING = {
 #: a call whose answer may already be paid for. 120 s is 1.8x the slow end.
 SITE_TIMEOUT_S = {
     SITE_EXPERT: 120.0,
+    # R-7's 120 s for 6,000 tokens, scaled to 8,000.
+    SITE_REASON: 160.0,
 }
 
 # ── what a consult may END as ────────────────────────────────────────────────────────────────
@@ -236,7 +252,7 @@ __all__ = ["FALLBACK_OUTCOMES", "OUTCOMES", "OUTCOME_CACHED", "OUTCOME_FAILED_GE
            "OUTCOME_NO_BUDGET", "OUTCOME_NO_CLIENT", "OUTCOME_NO_PRECONDITION", "OUTCOME_RAN",
            "OUTCOME_TRUNCATED",
            "R_SITES", "SITE_ALTERNATIVES", "SITE_BRIEF", "SITE_BRIEF_ESCALATE", "SITE_CONSULT",
-           "SITE_EFFECT", "SITE_EXPERT", "SITE_INTERPRET", "SITE_SITUATION",
+           "SITE_EFFECT", "SITE_EXPERT", "SITE_INTERPRET", "SITE_REASON", "SITE_SITUATION",
            "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_THINKING", "SITE_TIERS", "SITE_TIMEOUT_S",
            "TIER_T1", "TIER_T2",
            "max_output_tokens", "require_outcome", "require_site", "thinking_mode", "tier_for",

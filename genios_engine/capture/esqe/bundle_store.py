@@ -171,6 +171,21 @@ class PostgresBundleStore:
         return [_stored(r) for r in rows]
 
 
+_BY_ID = (
+    "select bundle_id, org_id, trace_id, subject_key, signal_ids, entity_keys, candidate_relationships, "
+    "       coverage, unresolved, created_at "
+    f"  from {BUNDLE_TABLE} where org_id = :o and bundle_id = any(:ids) order by created_at, bundle_id")
+
+
+def read_bundles_by_id(conn, org_id: str, bundle_ids: Sequence[str]) -> list[StoredBundle]:
+    """Named bundles again — what a run that re-enters on new evidence reasoned over the first time."""
+    from sqlalchemy import text
+    ids = sorted(set(bundle_ids))
+    if not ids:
+        return []
+    return [_stored(r) for r in conn.execute(text(_BY_ID), {"o": org_id, "ids": ids}).all()]
+
+
 def read_bundles_since(conn, org_id: str, *, after: datetime | None, limit: int = 200) -> list[StoredBundle]:
     """The reader on a connection the caller already holds — Layer 2's door into this table."""
     from sqlalchemy import text
@@ -179,4 +194,4 @@ def read_bundles_since(conn, org_id: str, *, after: datetime | None, limit: int 
 
 
 __all__ = ["BUNDLE_TABLE", "BundleStore", "InMemoryBundleStore", "PostgresBundleStore", "StoredBundle",
-           "read_bundles_since"]
+           "read_bundles_by_id", "read_bundles_since"]

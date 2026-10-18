@@ -42,7 +42,7 @@ def test_the_closed_list_is_pinned_exactly_in_order():
     assertion, in the same change that registers it."""
     assert S.R_SITES == (
         S.SITE_INTERPRET, S.SITE_NARRATE, S.SITE_ALTERNATIVES, S.SITE_EFFECT, S.SITE_CONSULT,
-        S.SITE_SITUATION, S.SITE_EXPERT, S.SITE_BRIEF, S.SITE_BRIEF_ESCALATE)
+        S.SITE_SITUATION, S.SITE_EXPERT, S.SITE_BRIEF, S.SITE_BRIEF_ESCALATE, S.SITE_REASON)
 
 
 def test_an_unregistered_brief_id_is_refused():
@@ -88,4 +88,6 @@ def test_the_brief_sites_keep_the_clients_own_timeout():
     smaller than the expert's, so nothing here has earned a timeout of its own yet."""
     assert S.timeout_s(S.SITE_BRIEF) is None
     assert S.timeout_s(S.SITE_BRIEF_ESCALATE) is None
-    assert {site for site in S.R_SITES if S.timeout_s(site) is not None} == {S.SITE_EXPERT}
+    # GeniOS-008: the L2 judgment pass (R-9) is R-7 generalised, 8,000 tokens to R-7's 6,000 — it earns R-7's
+    # reason for a timeout of its own, scaled.
+    assert {site for site in S.R_SITES if S.timeout_s(site) is not None} == {S.SITE_EXPERT, S.SITE_REASON}

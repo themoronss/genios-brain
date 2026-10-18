@@ -46,10 +46,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "⛔ ITS OWN DOCSTRING SHOUTS WHAT IT IS FOR: *'THE READ THIS MODULE EXISTED WITHOUT. Layer 1's published verdicts for this situation'*. Fifteen test callers, zero production callers. So the module still exists without it. ⛔ **A function whose docstring names the absence it was written to end, and is not called, means the absence is unchanged** — and the capitals make it read as fixed",
         "MOVES WHEN the BSO build reads L1's verdicts rather than inferring them. ⛔ That is a change to what a situation object CONTAINS, so it moves a content hash and every snapshot replay is verified against — the reason it is not a one-line wiring"),
 
-    "bounded_read.read_bounded": (
-        "*'The bounded read, against a live connection, carrying the revision it saw.'* No callers and no tests. ⛔ L3's own bounded read, and L4 spent `STEP-08` bounding a different unbounded query by hand — so the pattern this function implements was wanted at least once and solved locally instead",
-        "⛔ MOVES WHEN a reader wants the revision alongside the rows. The CODING-AGENT handoff already carries a brief about bounded reads; this is the function that brief should use rather than writing a third one"),
-
     "backfill.backfill_business_facts": (
         "*'Re-grade stored L1 extractions and write the business facts today's code would produce.'* No callers and no tests — and `scripts/` IS in the source set, so not even an ops CLI runs it. ⛔ A backfill is by nature run by hand once; what is unusual is that nothing records HOW, so the next person re-derives the invocation",
         "⛔ MOVES WHEN it is run, which needs an operator and a window. Until then it is a migration written in Python with no runner — flagged for Harsh, who owns the backfills"),

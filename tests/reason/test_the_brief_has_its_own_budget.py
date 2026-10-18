@@ -48,6 +48,7 @@ def test_the_own_budgets_set_is_pinned_exactly():
         S.SITE_EXPERT: ("2.00", "0.10"),
         S.SITE_BRIEF: ("0.25", "0.03"),
         S.SITE_BRIEF_ESCALATE: ("0.25", "0.03"),
+        S.SITE_REASON: ("2.00", "0.15"),
     }
 
 

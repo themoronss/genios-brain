@@ -110,6 +110,11 @@ FEATURE_EXPERT_REVIEW = "expert_review"
 #: thinking fix's merge, which gives every R-site its own thinking mode); this is the switch alone,
 #: and `require_feature` refuses the name until the site registers it too — the R-6 lesson again.
 FEATURE_MORNING_BRIEF = "morning_brief"
+#: ⛔ GeniOS-008 · the LAYER 2 JUDGMENT PASS (R-9, `reason/l2`), in SHADOW. On, each subject a new L1 bundle
+#: touched is reasoned once into a `ReasoningResult`, stored in `reasoning_results` beside today's path —
+#: no card, no signal, no situation changes. Off — the default — nothing is read and nothing is spent. The
+#: switch to live is per situation type, after the golden set (`speedrun008/GeniOS-008/01-RULES.md` Rule 2).
+FEATURE_L2_REASONING = "l2_reasoning"
 
 #: The features doc 07 and later steps name, in WAVE order rather than alphabetical order — the
 #: order is the only safe order to switch them on in, and a list that read `bundle, brief, critique,
@@ -119,7 +124,8 @@ FEATURE_MORNING_BRIEF = "morning_brief"
 #: nothing happens.
 L4_FEATURES = (FEATURE_ROSTER_V2, FEATURE_RANKING_V2, FEATURE_BUNDLE, FEATURE_CRITIQUE,
                FEATURE_BRIEF, FEATURE_SITUATION_REASONER, FEATURE_CARDS_FROM_SITUATIONS,
-               FEATURE_CALIBRATION_APPLY, FEATURE_EXPERT_REVIEW, FEATURE_MORNING_BRIEF)
+               FEATURE_CALIBRATION_APPLY, FEATURE_EXPERT_REVIEW, FEATURE_MORNING_BRIEF,
+               FEATURE_L2_REASONING)
 
 #: Which wave builds each feature. Carried in code rather than in a doc because it is what makes
 #: `PRECONDITIONS` checkable by eye: a feature is safe to switch on when the features its wave
@@ -135,6 +141,7 @@ FEATURE_WAVES = {
     FEATURE_CALIBRATION_APPLY: "B1",
     FEATURE_EXPERT_REVIEW: "STEP-12",
     FEATURE_MORNING_BRIEF: "STEP-15",
+    FEATURE_L2_REASONING: "GeniOS-008 L2",
 }
 
 #: ⛔ FEATURES THAT ARE RETIRED — named, kept in `L4_FEATURES` so a row written before reads as what
@@ -181,6 +188,9 @@ PRECONDITIONS = {
     # ⛔ NONE. The writer reads the day `executive/morning_day.read_day` already assembled — code's
     # own selection, order and numbers — and consults no Layer 4 formula; it only chooses the WORDS.
     FEATURE_MORNING_BRIEF: (),
+    # ⛔ NONE. The judgment pass reads L1's bundles and L3's bounded context, and consults no Layer 4
+    # formula; in shadow nothing reads its result for a decision.
+    FEATURE_L2_REASONING: (),
 }
 
 #: THE PRECONDITIONS THAT ARE NOT LAYER 4's. `PRECONDITIONS` above orders the five switches against
@@ -293,6 +303,13 @@ EFFECTS = {
         "against what its item holds, and Sonnet-class (R-8E) once only when the cheap draft fails "
         "the check — never Opus. A line the check cannot hold is given its template words back, "
         "said. Off, the brief is the template's own words throughout and nothing is spent"),
+    FEATURE_L2_REASONING: (
+        "the Layer 2 judgment pass (R-9, Sonnet-class, its own $2 a day) reasons IN SHADOW over each "
+        "subject a new Layer 1 bundle touched — a file, or the bundle's own thread — from a bounded "
+        "context snapshot, comparable past work, the playbook and the tools' numbers, and keeps a "
+        "checked `ReasoningResult` with its receipt in `reasoning_results`; its evidence needs are "
+        "filed for Layer 1. Nothing it writes changes a card, a signal or a situation. Off, nothing "
+        "is read and nothing is spent"),
 }
 
 #: Every column the record carries, in one place, so the reads below cannot select different shapes
@@ -588,7 +605,8 @@ def deactivate(engine, org_id: str, *, feature: str, by: str = "unrecorded",
 
 
 __all__ = ["CROSS_LAYER_EFFECTS", "CROSS_LAYER_PRECONDITIONS", "EFFECTS", "FEATURE_BRIEF",
-           "FEATURE_BUNDLE", "FEATURE_CRITIQUE", "FEATURE_RANKING_V2", "FEATURE_ROSTER_V2",
+           "FEATURE_BUNDLE", "FEATURE_CRITIQUE", "FEATURE_L2_REASONING", "FEATURE_RANKING_V2",
+           "FEATURE_ROSTER_V2",
            "FEATURE_WAVES", "L4Activation", "L4_ACTIVATION_TABLE", "L4_FEATURES", "PRECONDITIONS",
            "RETIRED_FEATURES",
            "activate", "activated_features", "deactivate", "get_l4_activation", "is_l4_activated",

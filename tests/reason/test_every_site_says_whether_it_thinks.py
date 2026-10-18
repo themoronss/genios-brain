@@ -33,9 +33,9 @@ def test_every_site_asks_with_thinking_off_by_06_D71():
 
 def test_an_unknown_site_has_no_mode():
     with pytest.raises(ValueError, match="unknown R-site"):
-        S.thinking_mode("R-9")
+        S.thinking_mode("R-99")
     with pytest.raises(ValueError, match="unknown R-site"):
-        S.timeout_s("R-9")
+        S.timeout_s("R-99")
 
 
 def test_the_expert_ceiling_holds_a_review_a_model_that_does_not_think_writes():
@@ -54,7 +54,9 @@ def test_the_expert_has_time_to_write_its_ceiling():
 def test_a_site_that_fits_the_clients_own_timeout_keeps_it():
     """None means the client's 60 s. R-2's 2,400 is ~27 s at that pace."""
     assert S.timeout_s(S.SITE_NARRATE) is None
-    assert {site for site in S.R_SITES if S.timeout_s(site) is not None} == {S.SITE_EXPERT}
+    # GeniOS-008: R-9, the L2 judgment pass, is R-7's review plus its judgment half — 8,000 tokens, past the
+    # client's 60 s on R-7's own measurement, so it keeps a timeout of its own as R-7 does.
+    assert {site for site in S.R_SITES if S.timeout_s(site) is not None} == {S.SITE_EXPERT, S.SITE_REASON}
 
 
 def test_the_client_default_timeout_is_what_none_means():

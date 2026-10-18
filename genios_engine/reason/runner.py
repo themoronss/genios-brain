@@ -1902,6 +1902,17 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     except Exception:
         logger.exception("the expert pass failed org=%s", org_id)
         expert = {"error": True}
+    # ── GeniOS-008 · THE LAYER 2 JUDGMENT PASS, IN SHADOW (`reason/l2/sweep`). The new architecture's L2: each
+    # subject a new L1 bundle touched — a file, or the bundle's own thread — reasoned once by R-9 into a checked
+    # `ReasoningResult`, kept in `reasoning_results` with its receipt; its evidence needs filed for L1. It writes
+    # NOTHING the lanes below read — no card, signal or situation — so today's path is byte-identical whether it
+    # runs or not. Gated on `l2_reasoning`, read inside the pass. Wrapped: a failure costs its shadow rows only.
+    try:
+        from genios_engine.reason.l2.sweep import l2_pass
+        l2 = l2_pass(store=store, org_id=org_id, now=eval_time)
+    except Exception:
+        logger.exception("the L2 judgment pass failed org=%s", org_id)
+        l2 = {"error": True}
     covered = (expert.get("covered") or {}) if isinstance(expert, dict) else {}
     # …and who is in each covered file, so a situation on one of its people is its file's (U15).
     people = (expert.get("people") or {}) if isinstance(expert, dict) else {}
@@ -1993,4 +2004,4 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
         narration = {"error": True}
 
     return {"nodes": nodes, "outcomes": dict(combined), "eval_time": eval_time.isoformat(),
-            "packs": pack_ids, "narration": narration, "expert": expert}
+            "packs": pack_ids, "narration": narration, "expert": expert, "l2": l2}
