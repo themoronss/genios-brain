@@ -489,5 +489,8 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # ⛔ MERGED 16 Oct (the integration line `yc2w27-int16`): STEP-14 + STEP-15 (197 / 199 above) and STEP-16 (196 / 198
     # above, on STEP-14's 195 / 197), re-measured on the merge (`table_coverage`): 198 and 200 — `founder_corrections`
     # is the one table STEP-16 adds; none is shared with STEP-15's two.
-    assert len(TC.table_usage()) == 198
-    assert len(TC._known_tables()) == 200
+    # ⛔ RE-PINNED 198 → 199 and 200 → 201 on 2026-10-18 by migration `0243_reasoning_results` (GeniOS-008 L2, the
+    # judgment pass's shadow table): one new table, read and written by `reason/l2/store` and the shadow report. An
+    # engine change, not a resolver change.
+    assert len(TC.table_usage()) == 199
+    assert len(TC._known_tables()) == 201

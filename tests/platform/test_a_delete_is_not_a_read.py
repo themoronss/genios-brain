@@ -175,7 +175,11 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_250, (
+    # ⛔ MOVED 3,250 → 3,276 on 2026-10-18, deliberately, by GeniOS-008: new SQL, not a wider list — the bundle
+    # store's insert / since / by-id (L1 E1), the L2 pass's reads (signals + sender, seeds, nodes, comparable cases,
+    # the org's names), `reason/l2/store`'s five statements, the evidence loop's three, and
+    # `scripts/l2_shadow_report.py`'s three.
+    assert r["statements"] == 3_276, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
