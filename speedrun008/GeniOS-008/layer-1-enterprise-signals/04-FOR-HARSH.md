@@ -8,6 +8,20 @@ needs a decision from you; the decisions are Rohit's and are listed at the end s
 
 ---
 
+## 0 · Read first (added 18 Oct)
+
+From 18 Oct all work is on the **new architecture** (Design Atlas v2). Read, in order:
+
+1. `speedrun008/GeniOS-008/00-ARCHITECTURE.md` — the target: L1 → L2 (primary) → L3 → L4 → L5 → L6.
+2. `speedrun008/GeniOS-008/01-RULES.md` — how the migration runs: the new path is built **beside** the old one in shadow, the golden set compares the two, and switches happen one situation type at a time.
+3. `speedrun008/GeniOS-008/02-MIGRATION-PLAN.md` — what exists, what changes, the order.
+4. `layer-1-enterprise-signals/05-BLUEPRINT-the-spec.md` — Layer 1's detailed spec.
+
+**What this means for you:**
+- Nothing in production changes until a switch is pushed.
+- Every switch arrives with its own section in this file: what it changes, the flag, the migration, what you should see, and how to roll back.
+- The deploy in §4 H1 stands as written.
+
 ## 1 · In one paragraph
 
 Layer 1 (`genios_engine/capture/`) is what reads Gmail and Calendar, decides what deserves attention, extracts
