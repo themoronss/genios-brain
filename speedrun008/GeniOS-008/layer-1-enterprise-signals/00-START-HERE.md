@@ -1,6 +1,8 @@
 # L1 Enterprise Signals (`capture/`) — start here
 
-**Status 18 Oct:** A1 A2 A3 C3 pushed · ⛔ re-planned against the NEW architecture (Atlas v2): C1 C2 C4 C5 D1 D2 were wrongly moved out of L1 and are back as **Group E (E1–E10)** in `02-PLAN` — Layer 1 is NOT complete until Group E is built · B waits for R1.
+**Status 18 Oct (evening):** A1 A2 A3 C3 pushed · Group E: **E1 ✅ E8 ✅ E2 ✅ (armed off) built and pushed**; E9 audited —
+two L1 model sites put mail text in the prompt unfenced (finding below, fixed together with B2); E3 E4 E5 E6 E7 E10
+**not built**, each for a stated reason (§ "Group E" in `02-PLAN`) · B waits for R1.
 
 **Layer 1's job:** say what happened, in which source, when, with what evidence — and say honestly
 what it did NOT see. It does not decide what anything means for the company; that is L3 and L2.
@@ -24,7 +26,7 @@ what it did NOT see. It does not decide what anything means for the company; tha
 | B · the junk filter | B1 live measurement · B2 prompt · ~~B3~~ already built | ⛔ B1, B2 wait for R1 |
 | C · what L1 knows reaches L2 | C3 unchecked quotes ✅ · C1 C2 C4 C5 → now E2 E3 E8 E1 | C3 ✅ pushed · rest in Group E |
 | D · new objects | D1 D2 → now E4 | in Group E |
-| **E · the new architecture's L1** | E1 bundle (L1→L2 contract) · E2 EvidenceNeed fetchers · E3 entity doubt · E4 six object types · E5 absence signals · E6 roles · E7 lifecycle · E8 carried fields · E9 injection boundary · E10 metric definitions | **TO BUILD** — order E1 → E8 → E2 → E4 → E5 → E3 → E6 → E7 → E9 → E10 |
+| **E · the new architecture's L1** | E1 bundle (L1→L2 contract) · E2 EvidenceNeed fetchers · E3 entity doubt · E4 six object types · E5 absence signals · E6 roles · E7 lifecycle · E8 carried fields · E9 injection boundary · E10 metric definitions | **E1 ✅ E8 ✅ E2 ✅** (18 Oct) · E9 audited, fix waits with B2 · E3 E4 E5 E6 E7 E10 not built — reasons in `02-PLAN` Group E status |
 
 ## What Rohit decides (from `02-PLAN.md`)
 

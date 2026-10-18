@@ -72,8 +72,8 @@ move the item to another layer.
 
 | Layer | Folder | State |
 |---|---|---|
-| L1 Enterprise Signals | [`layer-1-enterprise-signals/`](layer-1-enterprise-signals/00-START-HERE.md) | as-is written 17 Oct · plan written · fixing |
-| L2 Reasoning | [`layer-2-reasoning/`](layer-2-reasoning/00-START-HERE.md) | spec received · as-is measured · plan written · not built |
+| L1 Enterprise Signals | [`layer-1-enterprise-signals/`](layer-1-enterprise-signals/00-START-HERE.md) | A1–A3, C3, E1, E8, E2 built and pushed · E9 audited · E3–E7, E10 open (reasons in its `02-PLAN`) |
+| L2 Reasoning | [`layer-2-reasoning/`](layer-2-reasoning/00-START-HERE.md) | judgment pass BUILT, runs in SHADOW behind `l2_reasoning` (18 Oct) · switch per situation type after the comparison |
 | L3 Context Graph | — | |
 | L4 Executive | — | |
 | L5 Delivery | — | |

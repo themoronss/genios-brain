@@ -229,4 +229,5 @@ notice) still gets a run, scoped to its own thread.
 | H · Demote / retire | removal | D + cutover |
 | I · Shadow + first switch (awaiting reply / outreach) | new compare harness on the golden set | A–G |
 
-**Nothing here is started.** The build opens when Rohit says so, beginning with Group A.
+~~Nothing here is started.~~ **Superseded 18 Oct evening:** Rohit opened the build; what is built, unit by unit,
+is in [`00-START-HERE.md`](00-START-HERE.md) "Build status".

@@ -144,9 +144,33 @@ deploy is live — before it, every row is refused again.
 |---|---|---|
 | B1 | Measure Layer 1's model calls on the real model (≈ $1, Haiku) | Rohit: a key and a yes |
 | B2 | Remove "drop matchmaking / plan notices" from the junk-filter prompt, after B1 | Claude, after B1 |
-| C5 | Bundles: wire an L2 reader, or retire | Rohit decides |
+| ~~C5~~ → E1 | Bundles stored and read by L2 | ✅ done 18 Oct (section 8) |
 | A4 | The Gmail cursor on `historyId` | Claude, after your H2 |
-| C4, D1, D2 | whose turn it is, a thread's end state, conditions | moved to the L3 folder — they need a reader there |
+| E9 | Fence the mail text in the junk gate and the domain proposer | Claude, together with B2 (needs the live key for the golden re-record) |
+| E3 E4 E6 | entity doubt, conditions/links/thread end, closed roles | Claude — E4/E6 need the live key (golden re-record) |
+| E5, E7 | absence as L1 signals; `new`/`revoked` states | Rohit decides (questions in `02-PLAN` Group E status) |
 
 The full picture: `00-START-HERE.md` (one screen), `01-AS-IS.md` (what works and what did not, with file:line),
 `02-PLAN.md` (every item), `03-LOG.md` (what was done, with commit and proof).
+
+
+## 8 · Pushed 18 Oct (evening): E1, E8, E2 — what it means for you
+
+**E1 · bundles are stored.** After the deploy every sweep writes its bundles to `signal_bundles` (table 0186 —
+already in production, empty until now). Nothing to do. Check after a sweep:
+`select count(*), max(created_at) from signal_bundles where org_id = '<ORG_ID>';` — rows appear per sync that
+published signals. The Layer 2 pass reads them (Layer 2 note, section G-1).
+
+**E8 · carried fields.** Nothing to do: L2 reads `qualified_signals` by the bundle's ids.
+
+**E2 · evidence-need fetchers — leave OFF for now.** Armed only with the environment variable
+`GENIOS_NEED_FETCHERS=on`. Before you arm it:
+1. Pick one open need of Rohit's org: `select need_id, subject_ref from evidence_needs where org_id='<ORG_ID>' and state='open' and subject_ref like 'thread:%' limit 1;`
+2. With the variable set in a shell (not the server), run the needs pass once for that org:
+   `python -c "from genios_engine.platform.wiring import make_graph_store; from genios_engine.reason.domain_shadow import work_the_needs; import genios_engine.api.routes; print(work_the_needs(make_graph_store(), '<ORG_ID>'))"`
+   (importing `api.routes` registers the fetchers).
+3. You should see `met` or `unavailable` with a reason — and the thread's mail captured like any sync (a new row in
+   `l1_sync_runs`, new bundles). Send me the printed report.
+4. Only then set `GENIOS_NEED_FETCHERS=on` on the server.
+
+Why careful: a closed need never reopens. With the variable off the pass refuses and closes nothing, as before.
