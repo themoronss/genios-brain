@@ -29,6 +29,17 @@ what it did NOT see. It does not decide what anything means for the company; tha
 
 R1 spend ≈ $1 on the live pass · R2 bundles: read or retire · R3 a second mailbox · R4 history 60 → 365 days.
 
+## Harsh's list for Layer 1
+
+| # | What | Why | How |
+|---|---|---|---|
+| H1 | **Deploy `speedrun008` to production** | Production runs `harsh/mvp` `84f00a40`, 815 commits behind; every Layer 1 fix (the gate keeps everything, every item in memory, the brief, coverage, A1–A3, C3) reaches the founder only through this | `YC-II W27/08-FOR-HARSH-deploy-and-after.md` §0 — 23 numbered steps, migrations `0191`–`0242` |
+| H2 | **One live Composio response for Gmail history** (`GMAIL_LIST_HISTORY` or the toolkit's equivalent), saved as a fixture | A4 (the cursor keyed on Gmail's `historyId`) cannot be built against a shape nobody has seen | run it once against the design partner's connection, commit the JSON (secrets removed) |
+| H3 | **Pin the Composio toolkit versions** | every call runs with `dangerously_skip_version_check=True`; a toolkit change arrived unannounced on 3 Oct and broke every attachment fetch | `yc2_w27` `M17.C3.L-integration.V2.U04` (blocked on the production SDK) |
+| H4 | **After the deploy: re-queue the attachments the old refusal dead-lettered** | 88 of 88 attachment fetches were refused from 3 Oct | `scripts/requeue_refused_attachments.py --org <org> --apply` (`08` §3.1) |
+| H5 | **Watch the new log line** `time inferred:` in the first week | A3 counts mail whose time the provider did not give; a non-zero count means a connector's time field changed shape | grep the worker log |
+| H6 | **If Rohit says yes to R3 / R4**: connect the second mailbox as a seat; set the history window to 365 and run the resync | the founder's replies from `ceo@thegenios.com`, and July's investor threads | `PATCH /connections/{id}/backfill-window`, then STEP-08's run (`08`) |
+
 ## Read order
 
 `01-AS-IS.md` → `02-PLAN.md` → `03-LOG.md`.
