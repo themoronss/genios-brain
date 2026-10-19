@@ -41,7 +41,8 @@ def store():
     yield gs
     with gs.engine.begin() as c:
         for table in ("reasoning_results", "evidence_needs", "signal_bundles", "qualified_signals",
-                      "post_pass_watermarks", "l4_r_site_calls", "l4_activation", "l2_admissions"):
+                      "post_pass_watermarks", "l4_r_site_calls", "l4_activation", "l2_admissions",
+                      "l1_extraction_results"):
             c.execute(text(f"delete from {table} where org_id = :o"), {"o": ORG})
         c.execute(text("delete from orgs where id = :o"), {"o": ORG})
 
@@ -217,3 +218,20 @@ def test_the_pass_files_l3s_admission_of_what_it_proposed(store):
         fp = c.execute(text("select fingerprint from reasoning_results where org_id = :o"), {"o": ORG}).scalar()
     assert (row.subject_ref, row.situation_id, row.decision, row.op) == ("seed:thread:th_vendor", "-", "hold", "create")
     assert row.result_fingerprint == fp
+
+
+def test_the_amounts_a_signal_names_reach_the_prompt_as_the_money_tool(store):
+    """L2 rebuild · the renewal's two prices are read from the signal's extraction in ONE read for the pass, and the
+    model is shown the arithmetic — it never computes the 32% itself, and the check holds the number it repeats."""
+    import json
+    _seed(store)
+    with store.engine.begin() as c:
+        c.execute(text("insert into l1_extraction_results (processing_key, org_id, event_id, output) "
+                       "values ('pk_g008_1', :o, 'evt_g008_1', cast(:out as jsonb))"),
+                  {"o": ORG, "out": json.dumps({"amounts": [
+                      {"currency": "USD", "minor_units": 100000, "as_written": "$1,000"},
+                      {"currency": "USD", "minor_units": 132000, "as_written": "$1,320"}]})})
+    client = _Client()
+    l2_pass(store=store, org_id=ORG, now=NOW, llm=client)
+    assert "[tool:amounts]" in client.prompts[0] or "tool:amounts" in client.prompts[0]
+    assert "the largest is 32% above the smallest (USD 320.00 more)" in client.prompts[0]

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any
 
@@ -68,6 +68,8 @@ class L2Signal:
     quotes: tuple[str, ...] = ()
     #: Who wrote it, as the source named them (`source_events.actor`) — a claim may name only who its lines name.
     sender: str | None = None
+    #: L2 rebuild · the amounts its extraction named, as (currency, minor units) — for the money tool's arithmetic.
+    amounts: tuple[tuple[str, int], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,12 +117,37 @@ def _signal(row: Any) -> L2Signal:
                     quotes=quotes[:QUOTES_PER_SIGNAL], sender=sender)
 
 
+#: The amounts each event's extraction named — one read for every signal of the pass (L2 rebuild, the money tool).
+_AMOUNTS = text(
+    "select event_id, output -> 'amounts' as amounts from l1_extraction_results "
+    " where org_id = :o and event_id = any(:ids)")
+
+
+def _amounts_of(raw: Any) -> tuple[tuple[str, int], ...]:
+    out = []
+    for a in _loads(raw, []) or []:
+        if not isinstance(a, Mapping):
+            continue
+        cur, minor = str(a.get("currency") or "").strip().upper(), a.get("minor_units")
+        if cur and isinstance(minor, int) and not isinstance(minor, bool) and minor >= 0:
+            out.append((cur, minor))
+    return tuple(out)
+
+
 def read_signals(conn, org_id: str, signal_ids: Iterable[str]) -> dict[str, L2Signal]:
     ids = sorted(set(signal_ids))
     if not ids:
         return {}
     rows = conn.execute(_SIGNALS, {"o": org_id, "ids": ids}).all()
-    return {str(r.signal_id): _signal(r) for r in rows if not _private(r.visibility)}
+    signals = {str(r.signal_id): _signal(r) for r in rows if not _private(r.visibility)}
+    events = sorted({s.event_id for s in signals.values()})
+    named: dict[str, list[tuple[str, int]]] = {}
+    for r in (conn.execute(_AMOUNTS, {"o": org_id, "ids": events}) if events else ()):
+        for a in _amounts_of(r.amounts):
+            if a not in named.setdefault(str(r.event_id), []):
+                named[str(r.event_id)].append(a)
+    return {k: (replace(s, amounts=tuple(named[s.event_id])) if s.event_id in named else s)
+            for k, s in signals.items()}
 
 
 def seed_of(bundle: StoredBundle, signals: Sequence[L2Signal]) -> str | None:

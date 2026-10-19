@@ -72,7 +72,39 @@ def run_tools(signals: Sequence[L2Signal], *, eval_time: datetime, file: Any = N
     if file is not None and getattr(file, "days_quiet", None) is not None:
         days = int(file.days_quiet)
         out.append(ToolResult("tool:days_quiet", f"the file has been quiet {days} days", days))
+    money = amounts_tool(signals)
+    if money is not None:
+        out.append(money)
     return tuple(out)
+
+
+def _money(minor: int) -> str:
+    return f"{minor // 100:,}.{minor % 100:02d}"
+
+
+def amounts_tool(signals: Sequence[L2Signal]) -> ToolResult | None:
+    """L2 rebuild · the money the signals name, per currency, and — where one currency names two or more — how far
+    the largest is above the smallest, in money and in percent. ARITHMETIC ONLY: which amount is the old price and
+    which the new is a reading of the words, and that is the model's; this says what the numbers are. Pure."""
+    by_cur: dict[str, set[int]] = {}
+    for s in signals:
+        for cur, minor in getattr(s, "amounts", ()) or ():
+            by_cur.setdefault(cur, set()).add(minor)
+    if not by_cur:
+        return None
+    parts, value = [], {}
+    for cur in sorted(by_cur):
+        amounts = sorted(by_cur[cur])
+        said = f"{cur} " + ", ".join(_money(a) for a in amounts)
+        entry: dict[str, Any] = {"amounts": amounts}
+        low, high = amounts[0], amounts[-1]
+        if len(amounts) > 1 and low > 0:
+            pct = round((high - low) * 100 / low)
+            said += f" — the largest is {pct}% above the smallest ({cur} {_money(high - low)} more)"
+            entry.update(difference=high - low, percent=pct)
+        parts.append(said)
+        value[cur] = entry
+    return ToolResult("tool:amounts", "amounts the signals name: " + "; ".join(parts), value)
 
 
 def measured_inputs(tools: Sequence[ToolResult]) -> dict[str, Any]:

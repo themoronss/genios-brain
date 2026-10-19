@@ -192,7 +192,9 @@ def test_the_statement_count_did_NOT_move():
     # (GeniOS-008, above) — each side counted from the same base, neither statement shared.
     # ⛔ MOVED 3,294 → 3,296, L2 rebuild B3: `context/l2_admission._UPSERT` and `._ADMITTED` — L3's admission of
     # what the L2 judgment proposed, its write and the card path's read; the engine gaining two statements.
-    assert r["statements"] == 3_296, (
+    # ⛔ MOVED 3,296 → 3,297, L2 rebuild (the money tool): `reason/l2/inputs._AMOUNTS`, the amounts each signal's
+    # extraction named — one read for the whole pass.
+    assert r["statements"] == 3_297, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
