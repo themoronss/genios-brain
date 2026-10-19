@@ -190,7 +190,9 @@ def test_the_statement_count_did_NOT_move():
     # `scripts/l2_shadow_report.py`'s three.
     # ⛔ MOVED to 3,294 at the merge of the two (19 Oct): 3,250 + 18 (L1 rebuild, above) + 26
     # (GeniOS-008, above) — each side counted from the same base, neither statement shared.
-    assert r["statements"] == 3_294, (
+    # ⛔ MOVED 3,294 → 3,296, L2 rebuild B3: `context/l2_admission._UPSERT` and `._ADMITTED` — L3's admission of
+    # what the L2 judgment proposed, its write and the card path's read; the engine gaining two statements.
+    assert r["statements"] == 3_296, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

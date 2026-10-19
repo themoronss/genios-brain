@@ -34,6 +34,11 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/context/test_the_context_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
+    "l2_admission.admitted": (
+        "L2 rebuild B3 · a tenant's ADMITTED situations — the read the card built from a ReasoningResult starts from. "
+        "Written each L2 pass (`write_admissions`, in shadow); nothing makes a card from it yet",
+        "MOVES WITH L2 rebuild Phase C (`docs/plans/L2_REBUILD_PLAN.md`): the card source for L2 results reads it"),
+
     "hold_resolution.resolve_hold": (
         "⛔ TWENTY-TWO TEST CALLERS AND NO PRODUCTION CALLER — the most heavily tested unreached function in the engine. *'What to do with a held situation, given the state of the needs it raised.'* So the decision logic for a hold is specified to the hilt and nothing asks it: a situation that goes on hold stays held. ⛔ It is the far end of the same chain as `read_open_needs` — holds raise needs, needs get executed, resolution reads the outcome — and that chain is broken at the layer boundary above",
         "MOVES WITH the EvidenceNeed seam's OUTCOMES: the queue's reader landed in STEP-13 (`reason/domain_shadow.work_the_needs`, `yc2_w27_s13` M36.C2.L-integration.V2.U03) and refuses while no connector is wired (`capture/acquire/need_executor.build_fetchers` is empty — Harsh's). ⛔ Wiring resolution before a need can be MET would ask it to read outcomes nothing produces"),

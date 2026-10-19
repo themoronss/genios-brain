@@ -44,6 +44,8 @@ from genios_engine.reason.bundle.gate import RSiteGate
 from genios_engine.reason.bundle.sites import SITE_REASON, tier_for
 from genios_engine.reason.bundle.store import BundleStore
 
+from genios_engine.context import l2_admission as admission
+
 from . import evidence, store as results
 from .dossier import L2_DOSSIER_VERSION, build_l2_dossier
 from .history import history_for
@@ -251,6 +253,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                      cost_recorder=getattr(store, "record_cost", None), eval_time=now)
     rows: list[results.L2Row] = []
     needs = []
+    admissions: list = []
     for i, (subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp) in enumerate(ready):
         request = L2Request(org_id=org_id, subject_ref=subject.subject_ref,
                             trigger=subject.trigger if subject.trigger else TRIGGER_BUNDLE, eval_time=now,
@@ -289,6 +292,10 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
             cost_micro_usd=int(getattr(rcpt, "cost_micro_usd", 0) or 0), bundle_ids=subject.bundle_ids)
         if result is not None:
             result = replace(result, receipt_ref=audit.ref)
+            # L2 rebuild B3 · L3 admits what this judgment proposed about the file's seeds (`context/l2_admission`).
+            admissions.extend(admission.decide(
+                org_id=org_id, subject_ref=subject.subject_ref, fingerprint=fp, result=result,
+                situations=getattr(getattr(parts, "lifecycle", None), "situations", ()) or ()))
         rows.append(results.L2Row(
             org_id=org_id, subject_ref=subject.subject_ref, fingerprint=fp, request_id=request.request_id,
             trigger=request.trigger, status=judged.ended, reason=judged.reason, depth=plan.depth,
@@ -317,6 +324,14 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
         with engine.begin() as conn:
             receipt["written"] = results.write_sweep(conn, rows, org_id=org_id, watermark=watermark)
             receipt["needs_filed"] = store_needs(conn, needs)
+            if admissions:
+                try:
+                    with conn.begin_nested():     # a shadow admission that fails never costs the results
+                        admission.write_admissions(conn, admissions, at=now)
+                    receipt["admissions"] = dict(Counter(a.decision for a in admissions))
+                except Exception:      # noqa: BLE001
+                    _log.exception("the L2 admission write failed org=%s", org_id)
+                    receipt["admissions_failed"] = True
     except Exception:      # noqa: BLE001 — a shadow write that failed loses this pass's rows, not the sweep
         _log.exception("the L2 pass could not write its %d row(s) org=%s", len(rows), org_id)
         receipt["write_failed"] = True

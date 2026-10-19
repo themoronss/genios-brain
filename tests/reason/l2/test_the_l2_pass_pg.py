@@ -41,7 +41,7 @@ def store():
     yield gs
     with gs.engine.begin() as c:
         for table in ("reasoning_results", "evidence_needs", "signal_bundles", "qualified_signals",
-                      "post_pass_watermarks", "l4_r_site_calls", "l4_activation"):
+                      "post_pass_watermarks", "l4_r_site_calls", "l4_activation", "l2_admissions"):
             c.execute(text(f"delete from {table} where org_id = :o"), {"o": ORG})
         c.execute(text("delete from orgs where id = :o"), {"o": ORG})
 
@@ -203,3 +203,17 @@ def test_the_shadow_report_reads_what_the_pass_kept(store):
     assert seed["lane"] == "decision" and seed["intervention"] == "prepare_decision"
     assert seed["needs"] == ["was the renewal already sent?"]
     assert rows["file:node_g008"]["today"] == {"cards": [], "expert": None}
+
+
+def test_the_pass_files_l3s_admission_of_what_it_proposed(store):
+    """L2 rebuild B3, at the call site: the seed subject's `create` has no situation row behind it yet — L3
+    HOLDS it at subject level, in the pass's own write."""
+    _seed(store)
+    receipt = l2_pass(store=store, org_id=ORG, now=NOW, llm=_Client())
+    assert receipt.get("admissions") == {"hold": 1}, receipt
+    with store.engine.connect() as c:
+        row = c.execute(text("select subject_ref, situation_id, decision, op, result_fingerprint from l2_admissions "
+                             "where org_id = :o"), {"o": ORG}).one()
+        fp = c.execute(text("select fingerprint from reasoning_results where org_id = :o"), {"o": ORG}).scalar()
+    assert (row.subject_ref, row.situation_id, row.decision, row.op) == ("seed:thread:th_vendor", "-", "hold", "create")
+    assert row.result_fingerprint == fp

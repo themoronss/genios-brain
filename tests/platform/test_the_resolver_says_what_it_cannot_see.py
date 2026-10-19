@@ -492,5 +492,8 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # ⛔ RE-PINNED 198 → 199 and 200 → 201 on 2026-10-18 by migration `0243_reasoning_results` (GeniOS-008 L2, the
     # judgment pass's shadow table): one new table, read and written by `reason/l2/store` and the shadow report. An
     # engine change, not a resolver change.
-    assert len(TC.table_usage()) == 199
-    assert len(TC._known_tables()) == 201
+    # ⛔ RE-PINNED 199 → 200 and 201 → 202 on 2026-10-19 by migration `0249_l2_admissions` (L2 rebuild B3, L3's
+    # admission of what the L2 judgment proposed): one new table, written by `context/l2_admission`. An engine
+    # change, not a resolver change.
+    assert len(TC.table_usage()) == 200
+    assert len(TC._known_tables()) == 202
