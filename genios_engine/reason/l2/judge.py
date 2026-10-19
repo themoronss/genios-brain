@@ -107,7 +107,7 @@ def judge(*, org_id: str, request_ref: str, dossier: L2Dossier, plan: L2Plan, ga
         last["result"] = ReasoningResult(
             request_ref=request_ref, subject_ref=dossier.subject_ref, context_ref=context_ref,
             expertise_ref=expertise_ref, depth=plan.depth, review=review, judgment=kept, lane=lane,
-            lane_reason=why, check_fate=checked.fate, problems=problems)
+            lane_reason=why, check_fate=checked.fate, problems=problems, checked=checked)
         return {**review.as_mapping(), **kept.as_mapping()}
 
     site = run_site(site=SITE_REASON, org_id=org_id, seed={"l2": dossier.subject_ref, "fingerprint": fingerprint},

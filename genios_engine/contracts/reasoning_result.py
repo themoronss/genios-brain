@@ -461,6 +461,13 @@ def lane_for(judgment: L2Judgment) -> tuple[str, str]:
 
 # ── the result ─────────────────────────────────────────────────────────────────────────────────
 
+def _checked_from(raw: Any) -> Any:
+    if raw is None:
+        return None
+    from .claim_check import CheckedReview
+    return CheckedReview.from_mapping(raw)
+
+
 @dataclass(frozen=True, slots=True)
 class ReasoningResult:
     request_ref: str
@@ -476,6 +483,10 @@ class ReasoningResult:
     problems: tuple[tuple[str, str], ...] = ()
     receipt_ref: str = ""
     version: str = REASONING_RESULT_VERSION
+    #: L2 rebuild A7 · the claim check's whole answer (`contracts.claim_check.CheckedReview`): the card's words
+    #: AS CHECKED — the only words that may reach a founder — and the verdict on every line. Kept so a card is
+    #: built from what stood, never from the raw review a dropped line is still in. None on rows written before.
+    checked: Any = None
 
     # The spec's names (§11), over the two halves.
     @property
@@ -557,7 +568,9 @@ class ReasoningResult:
                 "context_ref": self.context_ref, "expertise_ref": self.expertise_ref, "depth": self.depth,
                 "review": self.review.as_mapping(), "judgment": self.judgment.as_mapping(),
                 "lane": self.lane, "lane_reason": self.lane_reason, "check_fate": self.check_fate,
-                "problems": [list(p) for p in self.problems], "receipt_ref": self.receipt_ref}
+                "problems": [list(p) for p in self.problems], "receipt_ref": self.receipt_ref,
+                # Named only when there is one, so a result from before A7 hashes as it did.
+                **({"checked": self.checked.as_mapping()} if self.checked is not None else {})}
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "ReasoningResult":
@@ -569,7 +582,8 @@ class ReasoningResult:
                    lane_reason=str(raw["lane_reason"]), check_fate=raw.get("check_fate"),
                    problems=tuple(tuple(p) for p in _list(raw.get("problems"), "problems")),
                    receipt_ref=str(raw.get("receipt_ref") or ""),
-                   version=str(raw.get("version") or REASONING_RESULT_VERSION))
+                   version=str(raw.get("version") or REASONING_RESULT_VERSION),
+                   checked=_checked_from(raw.get("checked")))
 
     def output_hash(self) -> str:
         return stable_ref("l2out", self.as_mapping())

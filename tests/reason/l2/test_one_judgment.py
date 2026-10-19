@@ -188,3 +188,24 @@ def test_a_stored_result_replays_with_no_model_and_the_same_hash():
 def test_the_mails_words_are_evidence_never_instructions():
     assert P._UNTRUSTED in P.build_prompt(DOSSIER, PLAN)
     assert P.build_prompt(DOSSIER, PLAN).index("<dossier>") < P.build_prompt(DOSSIER, PLAN).index(P._UNTRUSTED)
+
+
+# ── L2 rebuild A7 · the checked card words travel on the result ─────────────────────────────────────────────
+def test_the_result_carries_the_card_words_as_checked_and_keeps_them_through_a_round_trip():
+    """A card may show only what the claim check let stand. The result now carries that answer whole — its
+    words and every line's verdict — so the card is built from it, never from the raw review."""
+    from genios_engine.reason.expert.verify import check_review
+    judged = _judge(_Client(_answer(answer())))
+    r = judged.result
+    assert r.checked is not None and r.checked.fate == r.check_fate
+    again = check_review(r.review, DOSSIER.text, PEOPLE, evidence_ids=DOSSIER.catalogue.evidence_ids)
+    assert r.checked.words == again.words, "the words kept are the check's own"
+    back = ReasoningResult.from_mapping(r.as_mapping())
+    assert back.checked == r.checked and back.output_hash() == r.output_hash()
+
+
+def test_a_result_written_before_the_checked_words_reads_and_hashes_as_it_did():
+    r = _judge(_Client(_answer(answer()))).result
+    old = {k: v for k, v in r.as_mapping().items() if k != "checked"}
+    before = ReasoningResult.from_mapping(old)
+    assert before.checked is None and "checked" not in before.as_mapping()

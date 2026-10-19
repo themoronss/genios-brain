@@ -8,7 +8,7 @@ other files of that kind — what the file holds, whose move it was, the latest 
 and how it ended, and the last thing the expert advised on it — each printed with a `case:` id the model
 may cite in `history_used`, and nothing inferred.
 
-Bounded (`MAX_CASES`), newest first, one small read per case. An org-level reader, as every file reader.
+Bounded (`MAX_CASES`), newest first, two reads for all the cases together. An org-level reader, as every file reader.
 """
 from __future__ import annotations
 
@@ -22,15 +22,18 @@ from genios_engine.contracts.reasoning_result import HistoricalCase, HistoricalC
 
 MAX_CASES = 5
 
-_LAST_SITUATION = text(
-    "select situation_type, status, resolved_by, resolved_at from context_situations "
-    " where org_id = :o and anchor_node_id = :f "
-    " order by last_seen_at desc nulls last, situation_id limit 1")
+#: L2 rebuild A4 · the latest situation and the latest valid review of EVERY comparable file in one read each
+#: (was two reads per case — up to ten a subject).
+_LAST_SITUATIONS = text(
+    "select distinct on (anchor_node_id) anchor_node_id, situation_type, status, resolved_by, resolved_at "
+    "  from context_situations where org_id = :o and anchor_node_id = any(:fs) "
+    " order by anchor_node_id, last_seen_at desc nulls last, situation_id")
 
-_LAST_REVIEW = text(
-    "select review ->> 'mode' as mode, review -> 'next_move' ->> 'what' as move, reviewed_at "
-    "  from expert_reviews where org_id = :o and file_id = :f and status = 'valid' "
-    " order by reviewed_at desc limit 1")
+_LAST_REVIEWS = text(
+    "select distinct on (file_id) file_id, review ->> 'mode' as mode, review -> 'next_move' ->> 'what' as move, "
+    "       reviewed_at "
+    "  from expert_reviews where org_id = :o and file_id = any(:fs) and status = 'valid' "
+    " order by file_id, reviewed_at desc")
 
 
 def _when(at: datetime | None) -> str:
@@ -50,9 +53,14 @@ def comparable(files: Sequence[Any], *, work_kind: str | None, exclude: str | No
 def history_for(conn, org_id: str, *, files: Sequence[Any], work_kind: str | None,
                 exclude: str | None) -> HistoricalContext:
     cases = []
-    for f in comparable(files, work_kind=work_kind, exclude=exclude):
-        sit = conn.execute(_LAST_SITUATION, {"o": org_id, "f": str(f.file_id)}).first()
-        rev = conn.execute(_LAST_REVIEW, {"o": org_id, "f": str(f.file_id)}).first()
+    picked = comparable(files, work_kind=work_kind, exclude=exclude)
+    if not picked:
+        return HistoricalContext(cases=())
+    ids = [str(f.file_id) for f in picked]
+    sits = {str(r.anchor_node_id): r for r in conn.execute(_LAST_SITUATIONS, {"o": org_id, "fs": ids})}
+    revs = {str(r.file_id): r for r in conn.execute(_LAST_REVIEWS, {"o": org_id, "fs": ids})}
+    for f in picked:
+        sit, rev = sits.get(str(f.file_id)), revs.get(str(f.file_id))
         outcome = None
         if sit is not None and sit.status and sit.status not in ("active", "partial"):
             outcome = f"{sit.situation_type} {sit.status}" + (f" by {sit.resolved_by}" if sit.resolved_by else "")
