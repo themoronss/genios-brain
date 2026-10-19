@@ -126,6 +126,8 @@ def test_an_admitted_judgment_is_the_files_review_and_the_expert_then_covers_it_
     assert (admitted.situation_id, admitted.decision, admitted.op) == ("sit_c1", "admit", "unchanged")
     assert row is not None and row.status == R.VALID and row.prompt_version == L2_PROMPT
     assert row.checked is not None and row.card_lines is not None and row.review.mode == "wait"
+    # What moved the file, in the expert pass's own words — the brief's "what changed" reads them (D1: F23, F53).
+    assert row.triggers == (("first_look", "never judged"),), row.triggers
     assert receipt["covered"][file_id] == row.fingerprint
 
     expert = EXPERT.expert_pass(store=store, org_id=ORG, now=now + timedelta(minutes=15), llm=_NoCall())

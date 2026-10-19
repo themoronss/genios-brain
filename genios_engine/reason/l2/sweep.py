@@ -124,12 +124,11 @@ def _file_review(parts: Any, result: Any, dossier: Any, rcpt: Any, *, model: str
     from genios_engine.reason.expert.fingerprint import file_fingerprint, fingerprint_inputs
     from genios_engine.reason.expert.prompt import PROMPT_VERSION as EXPERT_PROMPT
     keyed_by = llm_sites.tier_model(tier_for(SITE_EXPERT))
-    triggers = ({"kind": "l2_judgment", "says": f"the Layer 2 judgment ({trigger}) was admitted for this file"},)
     return {"file_id": str(parts.file_id), "people": sorted(str(p) for p in (parts.file.people or ())),
+            "parts": parts,
             "fingerprint": file_fingerprint(parts, model=keyed_by, prompt_version=EXPERT_PROMPT),
             "inputs": fingerprint_inputs(parts, model=keyed_by, prompt_version=EXPERT_PROMPT),
-            "review": result.review, "checked": result.checked, "triggers": triggers,
-            "card_lines": card_lines(parts, result.review, ()), "model": model or keyed_by,
+            "review": result.review, "checked": result.checked, "model": model or keyed_by,
             "dossier": {"text": dossier.text, "evidence_ids": sorted(dossier.catalogue.evidence_ids)},
             "digest": stable_ref("l2dossier", {"text": dossier.text}),
             "input_tokens": int(getattr(rcpt, "input_tokens", 0) or 0),
@@ -138,13 +137,20 @@ def _file_review(parts: Any, result: Any, dossier: Any, rcpt: Any, *, model: str
 
 
 def _write_file_review(conn, *, org_id: str, review: dict[str, Any], at: datetime) -> bool:
+    """The review row — with what moved the file since its last standing review, as the expert pass says it
+    (`reason/expert/triggers.triggers_for`): the brief's "what changed" and the card's "why now" read those words,
+    so a review the L2 judgment writes must carry the same ones (L2 rebuild D1: F23, F53)."""
     from genios_engine.reason.expert import store as reviews
+    from genios_engine.reason.expert.card_lines import card_lines
+    from genios_engine.reason.expert.triggers import triggers_for
+    parts = review["parts"]
+    found = triggers_for(parts, review["inputs"], last=reviews.latest_standing(conn, org_id, review["file_id"]))
     return reviews.write_review(
         conn, org_id=org_id, file_id=review["file_id"], fingerprint=review["fingerprint"], model=review["model"],
         prompt_version=PROMPT_VERSION, dossier_digest=review["digest"], status=reviews.VALID, reason=None,
         review=review["review"], input_tokens=review["input_tokens"], output_tokens=review["output_tokens"],
-        cost_micro_usd=review["cost_micro_usd"], at=at, inputs=review["inputs"], triggers=review["triggers"],
-        checked=review["checked"], dossier=review["dossier"], card_lines=review["card_lines"])
+        cost_micro_usd=review["cost_micro_usd"], at=at, inputs=review["inputs"], triggers=found,
+        checked=review["checked"], dossier=review["dossier"], card_lines=card_lines(parts, review["review"], found))
 
 
 #: L2 rebuild C1 · what moved a file the expert handed over (`reason/expert/triggers` kinds), as the L2 trigger.
