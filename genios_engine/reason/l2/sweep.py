@@ -359,8 +359,11 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 org_id=org_id, subject_ref=subject.subject_ref, fingerprint=fp, result=result,
                 situations=getattr(getattr(parts, "lifecycle", None), "situations", ()) or ())
             admissions.extend(decided)
+            # A judgment L3 ADMITTED or REJECTED is the file's review: "nothing owed" is a judgment too — it covers
+            # the file, so the old lane's situations on it and its people stand down, exactly as the expert's
+            # `nothing` review does (D1: F54, F64). Only an undecided HOLD leaves the file to the old lane.
             if makes_cards and parts is not None and result.checked is not None \
-                    and any(a.decision == admission.ADMIT for a in decided):
+                    and not any(a.decision == admission.HOLD for a in decided):
                 file_reviews.append(_file_review(parts, result, dossier, rcpt, model=rcpt.model or model,
                                                  trigger=request.trigger, now=now))
         rows.append(results.L2Row(

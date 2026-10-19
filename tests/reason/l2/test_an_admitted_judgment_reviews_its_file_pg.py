@@ -162,15 +162,34 @@ class _R9Nothing(_R9):
         return res
 
 
-def test_a_rejected_judgment_writes_no_review_and_covers_nothing(world):
+def test_nothing_owed_is_still_the_files_review_and_covers_it(world):
+    """L3 REJECTS the seed (nothing material) — and "nothing owed" is a judgment of the FILE all the same: it is the
+    file's review, and it covers the file, so the old lane's situations on it stand down, as the expert's `nothing`
+    review does. Uncovered, the old lane decided them again and made the cards the golden F54/F64 forbid."""
     store, now, file_id = world
     receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9Nothing())
     with store.engine.connect() as c:
         why = c.execute(text("select reason from reasoning_results where org_id = :o"), {"o": ORG}).scalar()
     assert receipt.get("admissions") == {"reject": 1}, why
+    assert list(receipt["covered"]) == [file_id]
+    with store.engine.connect() as c:
+        row = R.latest_valid(c, ORG, file_id)
+    assert row is not None and row.review.mode == "nothing"
+
+
+def test_an_undecided_hold_leaves_the_file_to_the_old_lane(world):
+    """Two live seeds and a judgment that names neither: which one it meant is not settled — HOLD, no review, not
+    covered: the old lane decides the file as before."""
+    store, now, file_id = world
+    with store.engine.begin() as c:
+        c.execute(text("insert into context_situations (situation_id, org_id, correlation_id, anchor_node_id, "
+                       " situation_type, domain, status, last_seen_at) values ('sit_c1b', :o, 'cor_c1b', :a, "
+                       " 'investor_relationship', 'admin', 'active', :at)"), {"o": ORG, "a": file_id, "at": now})
+    receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9())
+    assert receipt.get("admissions") == {"hold": 2}, str(receipt)
     assert receipt["covered"] == {}
     with store.engine.connect() as c:
-        assert R.latest_valid(c, ORG, file_id) is None, "a rejected judgment is no file's review"
+        assert R.latest_valid(c, ORG, file_id) is None, "an undecided judgment is no file's review"
 
 
 def test_a_file_the_expert_hands_over_is_judged_with_no_bundle_of_its_own(world):
