@@ -75,10 +75,22 @@ def test_an_unchanged_sweep_costs_nothing_and_changes_nothing(case, monkeypatch)
     last = len(extended.sweeps) - 1
     sweep = {"n": -1}
     original = routes._run_l2_chain
+    grew: dict[str, int] = {}
+
+    def _rows(org_id) -> dict[str, int]:
+        from sqlalchemy import text
+        with routes._graph.engine.connect() as c:
+            return {t: c.execute(text(f"select count(*) from {t} where org_id = :o"), {"o": org_id}).scalar()
+                    for t in _AUDIT_TABLES}
 
     def chain(org_id, *, eval_time=None):
         sweep["n"] += 1
-        return original(org_id, eval_time=eval_time)
+        before = _rows(org_id) if sweep["n"] == last else None
+        ok = original(org_id, eval_time=eval_time)
+        if before is not None:
+            after = _rows(org_id)
+            grew.update({t: after[t] - before[t] for t in _AUDIT_TABLES if after[t] > before[t]})
+        return ok
 
     monkeypatch.setattr(routes, "_run_l2_chain", chain)
     model = _Tagged(CassetteRecorder(IdealReader(extended)), sweep)
@@ -92,6 +104,13 @@ def test_an_unchanged_sweep_costs_nothing_and_changes_nothing(case, monkeypatch)
     recorded = judge(case, cassettes.replayed(case))
     assert judge(case, run).verdict == recorded.verdict, (
         f"{case.case_id}: the gate moved the verdict from {recorded.verdict}")
+    # 19 Oct 2026: the audit trail is what filled the 500 MB tier (prod, with no gate: ~1,270 runs a day). A
+    # sweep that brings nothing new writes no new audit row either.
+    assert not grew, f"{case.case_id}: the unchanged sweep wrote {grew}"
+
+
+#: The tables a decision writes its audit to — the ones that grew the database to 999 MB on prod.
+_AUDIT_TABLES = ("reasoning_runs", "reasoning_context_snapshots", "expertise_packages")
 
 
 @pytest.mark.pg
@@ -126,3 +145,38 @@ def test_without_the_gate_the_same_sweep_pays_again(monkeypatch):
     run_case(extended, model, expert=False)
     last = len(extended.sweeps) - 1
     assert {site for s, site in model.calls if s == last} >= {"decider", "r1"}
+
+
+@pytest.mark.pg
+@pytest.mark.golden
+def test_without_the_gate_the_same_sweep_writes_its_audit_again(monkeypatch):
+    """⛔ THE NEGATIVE CONTROL for the audit rows (19 Oct 2026): with every verdict forced to "decide" — what prod
+    ran with no gate — F13's unchanged sweep writes a new reasoning run again. The zero above is the gate's."""
+    _scratch_db()
+    from sqlalchemy import text
+
+    from genios_engine.api import routes
+    from genios_engine.reason import change_gate
+    from tests.replays.engine_runner import run_case
+    from tests.replays.ideal_reader import IdealReader
+
+    monkeypatch.setattr(change_gate, "should_skip",
+                        lambda *a, **kw: change_gate.GateVerdict(False, change_gate.CHANGED))
+    case = next(c for c in CASES if c.case_id == "F13")
+    extended = dataclasses.replace(
+        case, sweeps=case.sweeps + (case.sweeps[-1] + dt.timedelta(minutes=15),))
+    last = len(extended.sweeps) - 1
+    sweep, counts = {"n": -1}, []
+    original = routes._run_l2_chain
+
+    def chain(org_id, *, eval_time=None):
+        sweep["n"] += 1
+        ok = original(org_id, eval_time=eval_time)
+        with routes._graph.engine.connect() as c:
+            counts.append(c.execute(text("select count(*) from reasoning_runs where org_id = :o"),
+                                    {"o": org_id}).scalar())
+        return ok
+
+    monkeypatch.setattr(routes, "_run_l2_chain", chain)
+    run_case(extended, IdealReader(extended), expert=False)
+    assert counts[last] > counts[last - 1], counts
