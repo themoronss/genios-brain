@@ -938,6 +938,8 @@ _ORG_SCOPED_TABLES = [
     "open_loops", "post_pass_watermarks", "pipeline_counters", "signal_bundles",
     # GeniOS-008 L2 (0243): the judgment pass's results about this tenant's own work.
     "reasoning_results",
+    # L2 rebuild B3 (0249): Layer 3's admission of those results — this tenant's situations and why.
+    "l2_admissions",
     "segment_members", "graph_segments",
     # The compiled brain. A cache the next sweep rebuilds — but it is built FROM this tenant's
     # situation and quotes their own objects, so it is tenant content while it exists, and it was

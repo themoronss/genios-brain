@@ -66,7 +66,7 @@ from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW, activated_features
+from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW, FEATURE_L2_CARDS, activated_features
 from genios_engine.platform.logging import get_logger
 from genios_engine.reason.bundle.budget import NarrativeBudget
 from genios_engine.reason.bundle.gate import RSiteGate
@@ -165,10 +165,14 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     activated = activated_features(engine, org_id)
     if FEATURE_EXPERT_REVIEW not in activated:
         return {"skipped": "expert_review_not_activated"}
+    # L2 rebuild C1 · with `l2_cards` the Layer 2 judgment writes a file's review (`reason/l2/sweep`): this pass
+    # still reads every file, answers from the standing reviews and covers what they decide — and makes NO R-7
+    # call. A file that moved is the L2 pass's to judge (`to_l2`), so a file is judged once and paid once.
+    l2_judges = FEATURE_L2_CARDS in activated
     # The R-sites' own door, read when the pass runs — what production's wiring sets and the golden
     # runner opens (`tests/replays/engine_runner.py`); a name bound at import would never see it.
-    client = llm if llm is not None else llm_sites.make_site_client(tier_for(SITE_EXPERT))
-    if client is None:
+    client = None if l2_judges else (llm if llm is not None else llm_sites.make_site_client(tier_for(SITE_EXPERT)))
+    if client is None and not l2_judges:
         return {"skipped": "no_model_configured"}
     model = getattr(client, "model", None) or llm_sites.tier_model(tier_for(SITE_EXPERT))
 
@@ -270,6 +274,12 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             receipt["unreadable"] += 1
 
     due.sort(key=lambda d: (d[0], d[1]))
+    if l2_judges:
+        receipt["to_l2"] = len(due)
+        receipt["waiting"] = dict(receipt["waiting"])
+        receipt["reviewed"] = dict(receipt["reviewed"])
+        receipt["checked"] = dict(receipt["checked"])
+        return receipt
     # ⛔ THE LEDGER. Every consult is a row of `l4_r_site_calls` (the gate's receipt), and the expert's
     # own budget opens each pass from today's R-7 rows there — without it, `06` D7's $2 a day would
     # bind within one pass and never across a day's passes.

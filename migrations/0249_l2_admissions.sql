@@ -35,3 +35,8 @@ create table if not exists l2_admissions (
 -- The card path's read: a tenant's admitted situations.
 create index if not exists l2_admissions_admitted_idx
     on l2_admissions (org_id, decided_at desc) where decision = 'admit';
+
+-- A table that survives a tenant deletion is a compliance defect (0033's pattern).
+alter table l2_admissions drop constraint if exists l2_admissions_org_cascade_fk;
+alter table l2_admissions add constraint l2_admissions_org_cascade_fk
+    foreign key (org_id) references orgs (id) on delete cascade not valid;

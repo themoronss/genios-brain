@@ -1916,6 +1916,10 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     covered = (expert.get("covered") or {}) if isinstance(expert, dict) else {}
     # …and who is in each covered file, so a situation on one of its people is its file's (U15).
     people = (expert.get("people") or {}) if isinstance(expert, dict) else {}
+    # L2 rebuild C1 · with `l2_cards`, the files an ADMITTED L2 judgment reviewed this pass are covered by it.
+    if isinstance(l2, dict) and l2.get("covered"):
+        covered = {**covered, **l2["covered"]}
+        people = {**people, **(l2.get("people") or {})}
     compiled: dict = {}
     if live_compile or l3_domains or l1_seam_enabled(engine, org_id):
         try:

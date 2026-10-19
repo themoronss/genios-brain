@@ -36,7 +36,7 @@ from typing import Any
 from genios_engine.contracts.reasoning_result import (ENDED_OVER_BUDGET, TRIGGER_BUNDLE,
                                                       TRIGGER_NEW_EVIDENCE, L2Request, ReasoningReceipt,
                                                       stable_ref)
-from genios_engine.platform.l4_activation import FEATURE_L2_REASONING, activated_features
+from genios_engine.platform.l4_activation import FEATURE_L2_CARDS, FEATURE_L2_REASONING, activated_features
 from genios_engine.platform.logging import get_logger
 from genios_engine.reason import llm_sites
 from genios_engine.reason.bundle.budget import NarrativeBudget
@@ -114,6 +114,38 @@ def _reentry_subject(conn, org_id: str, subject_ref: str, bundle_ids: tuple[str,
                    trigger=TRIGGER_NEW_EVIDENCE, oldest_bundle_at=met_at)
 
 
+def _file_review(parts: Any, result: Any, dossier: Any, rcpt: Any, *, model: str | None, trigger: str,
+                 now: datetime) -> dict[str, Any]:
+    """L2 rebuild C1 · an admitted judgment of a file, as that file's review row (`reason/expert/store`) — keyed by
+    the fingerprint the expert pass computes for the file, so the next pass reads it as the file's standing review."""
+    from genios_engine.reason.bundle.sites import SITE_EXPERT
+    from genios_engine.reason.expert.card_lines import card_lines
+    from genios_engine.reason.expert.fingerprint import file_fingerprint, fingerprint_inputs
+    from genios_engine.reason.expert.prompt import PROMPT_VERSION as EXPERT_PROMPT
+    keyed_by = llm_sites.tier_model(tier_for(SITE_EXPERT))
+    triggers = ({"kind": "l2_judgment", "says": f"the Layer 2 judgment ({trigger}) was admitted for this file"},)
+    return {"file_id": str(parts.file_id), "people": sorted(str(p) for p in (parts.file.people or ())),
+            "fingerprint": file_fingerprint(parts, model=keyed_by, prompt_version=EXPERT_PROMPT),
+            "inputs": fingerprint_inputs(parts, model=keyed_by, prompt_version=EXPERT_PROMPT),
+            "review": result.review, "checked": result.checked, "triggers": triggers,
+            "card_lines": card_lines(parts, result.review, ()), "model": model or keyed_by,
+            "dossier": {"text": dossier.text, "evidence_ids": sorted(dossier.catalogue.evidence_ids)},
+            "digest": stable_ref("l2dossier", {"text": dossier.text}),
+            "input_tokens": int(getattr(rcpt, "input_tokens", 0) or 0),
+            "output_tokens": int(getattr(rcpt, "output_tokens", 0) or 0),
+            "cost_micro_usd": int(getattr(rcpt, "cost_micro_usd", 0) or 0)}
+
+
+def _write_file_review(conn, *, org_id: str, review: dict[str, Any], at: datetime) -> bool:
+    from genios_engine.reason.expert import store as reviews
+    return reviews.write_review(
+        conn, org_id=org_id, file_id=review["file_id"], fingerprint=review["fingerprint"], model=review["model"],
+        prompt_version=PROMPT_VERSION, dossier_digest=review["digest"], status=reviews.VALID, reason=None,
+        review=review["review"], input_tokens=review["input_tokens"], output_tokens=review["output_tokens"],
+        cost_micro_usd=review["cost_micro_usd"], at=at, inputs=review["inputs"], triggers=review["triggers"],
+        checked=review["checked"], dossier=review["dossier"], card_lines=review["card_lines"])
+
+
 def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget: NarrativeBudget | None = None,
             max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
     """Reason every subject new bundles touched, once. Returns the pass's receipt; never raises past a subject."""
@@ -140,7 +172,8 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
 
     receipt: dict[str, Any] = {"subjects": 0, "ours": 0, "unchanged": 0, "waiting": Counter(), "unreadable": 0,
                                "ended": Counter(), "not_reached": Counter(), "carried": 0, "needs_filed": 0,
-                               "reentries": 0, "lanes": Counter(), "depths": Counter(), "cost_micro_usd": 0}
+                               "reentries": 0, "lanes": Counter(), "depths": Counter(), "cost_micro_usd": 0,
+                               "covered": {}, "people": {}}
     with engine.connect() as conn:
         files = files_for(conn, org_id, now=now).files
         us = identity_for(conn, org_id)
@@ -254,6 +287,10 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     rows: list[results.L2Row] = []
     needs = []
     admissions: list = []
+    # L2 rebuild C1 · with `l2_cards`, an ADMITTED judgment of a file is written as that file's review, keyed the
+    # way the expert pass keys one, so the review path decides it and the expert pass covers it from then on.
+    makes_cards = FEATURE_L2_CARDS in activated
+    file_reviews: list[dict[str, Any]] = []
     for i, (subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp) in enumerate(ready):
         request = L2Request(org_id=org_id, subject_ref=subject.subject_ref,
                             trigger=subject.trigger if subject.trigger else TRIGGER_BUNDLE, eval_time=now,
@@ -293,9 +330,14 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
         if result is not None:
             result = replace(result, receipt_ref=audit.ref)
             # L2 rebuild B3 · L3 admits what this judgment proposed about the file's seeds (`context/l2_admission`).
-            admissions.extend(admission.decide(
+            decided = admission.decide(
                 org_id=org_id, subject_ref=subject.subject_ref, fingerprint=fp, result=result,
-                situations=getattr(getattr(parts, "lifecycle", None), "situations", ()) or ()))
+                situations=getattr(getattr(parts, "lifecycle", None), "situations", ()) or ())
+            admissions.extend(decided)
+            if makes_cards and parts is not None and result.checked is not None \
+                    and any(a.decision == admission.ADMIT for a in decided):
+                file_reviews.append(_file_review(parts, result, dossier, rcpt, model=rcpt.model or model,
+                                                 trigger=request.trigger, now=now))
         rows.append(results.L2Row(
             org_id=org_id, subject_ref=subject.subject_ref, fingerprint=fp, request_id=request.request_id,
             trigger=request.trigger, status=judged.ended, reason=judged.reason, depth=plan.depth,
@@ -332,6 +374,14 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 except Exception:      # noqa: BLE001
                     _log.exception("the L2 admission write failed org=%s", org_id)
                     receipt["admissions_failed"] = True
+            for review in file_reviews:
+                try:
+                    with conn.begin_nested():     # one file's review that fails costs that file, never the pass
+                        _write_file_review(conn, org_id=org_id, review=review, at=now)
+                    receipt["covered"][review["file_id"]] = review["fingerprint"]
+                    receipt["people"][review["file_id"]] = review["people"]
+                except Exception:      # noqa: BLE001
+                    _log.exception("the L2 file review write failed org=%s file=%s", org_id, review["file_id"])
     except Exception:      # noqa: BLE001 — a shadow write that failed loses this pass's rows, not the sweep
         _log.exception("the L2 pass could not write its %d row(s) org=%s", len(rows), org_id)
         receipt["write_failed"] = True

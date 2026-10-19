@@ -338,7 +338,10 @@ def test_the_sweep_runs_the_pass_first_wrapped_and_hands_on_what_it_covers():
     assert handed.get("covered") == "covered", handed
     assigned = [n for n in ast.walk(fn) if isinstance(n, ast.Assign)
                 and any(getattr(t, "id", "") == "covered" for t in n.targets)]
-    assert len(assigned) == 1 and "expert.get('covered')" in ast.unparse(assigned[0].value)
+    # L2 rebuild C1: the first is the expert's; the second (only with `l2_cards`) adds what an admitted L2
+    # judgment covered this pass, the expert's kept.
+    assert len(assigned) == 2 and "expert.get('covered')" in ast.unparse(assigned[0].value)
+    assert ast.unparse(assigned[1].value) == "{**covered, **l2['covered']}"
     returned = [n for n in ast.walk(fn) if isinstance(n, ast.Return)][-1]
     assert "expert" in [k.value for k in returned.value.keys]
 

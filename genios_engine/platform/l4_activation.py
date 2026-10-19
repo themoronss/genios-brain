@@ -115,6 +115,11 @@ FEATURE_MORNING_BRIEF = "morning_brief"
 #: no card, no signal, no situation changes. Off — the default — nothing is read and nothing is spent. The
 #: switch to live is per situation type, after the golden set (`speedrun008/GeniOS-008/01-RULES.md` Rule 2).
 FEATURE_L2_REASONING = "l2_reasoning"
+#: ⛔ L2 rebuild C1 · the Layer 2 judgment MAKES THE FILE'S CARD. On (with `l2_reasoning` and `expert_review`), an
+#: ADMITTED L2 result of a file is written as that file's review (`expert_reviews`) and decides it exactly as an
+#: expert review does — same decision, same audit, same card path — and the expert's own R-7 call is not made for
+#: the tenant: one judgment per file, one card, one spend. Off — the default — the expert reviews as before.
+FEATURE_L2_CARDS = "l2_cards"
 
 #: The features doc 07 and later steps name, in WAVE order rather than alphabetical order — the
 #: order is the only safe order to switch them on in, and a list that read `bundle, brief, critique,
@@ -125,7 +130,7 @@ FEATURE_L2_REASONING = "l2_reasoning"
 L4_FEATURES = (FEATURE_ROSTER_V2, FEATURE_RANKING_V2, FEATURE_BUNDLE, FEATURE_CRITIQUE,
                FEATURE_BRIEF, FEATURE_SITUATION_REASONER, FEATURE_CARDS_FROM_SITUATIONS,
                FEATURE_CALIBRATION_APPLY, FEATURE_EXPERT_REVIEW, FEATURE_MORNING_BRIEF,
-               FEATURE_L2_REASONING)
+               FEATURE_L2_REASONING, FEATURE_L2_CARDS)
 
 #: Which wave builds each feature. Carried in code rather than in a doc because it is what makes
 #: `PRECONDITIONS` checkable by eye: a feature is safe to switch on when the features its wave
@@ -142,6 +147,7 @@ FEATURE_WAVES = {
     FEATURE_EXPERT_REVIEW: "STEP-12",
     FEATURE_MORNING_BRIEF: "STEP-15",
     FEATURE_L2_REASONING: "GeniOS-008 L2",
+    FEATURE_L2_CARDS: "L2 rebuild C1",
 }
 
 #: ⛔ FEATURES THAT ARE RETIRED — named, kept in `L4_FEATURES` so a row written before reads as what
@@ -191,6 +197,9 @@ PRECONDITIONS = {
     # ⛔ NONE. The judgment pass reads L1's bundles and L3's bounded context, and consults no Layer 4
     # formula; in shadow nothing reads its result for a decision.
     FEATURE_L2_REASONING: (),
+    # The L2 judgment replaces the expert's review of a file, so both must be on: the pass that judges, and
+    # the review path its result decides through.
+    FEATURE_L2_CARDS: (FEATURE_L2_REASONING, FEATURE_EXPERT_REVIEW),
 }
 
 #: THE PRECONDITIONS THAT ARE NOT LAYER 4's. `PRECONDITIONS` above orders the five switches against
@@ -226,6 +235,9 @@ CROSS_LAYER_PRECONDITIONS = {
     # UNINTERPRETED, and the console says `live`. That is the same "both statements true and
     # together misleading" shape `ranking_v2` is annotated with above.
     FEATURE_CARDS_FROM_SITUATIONS: ("l3_domain",),
+    # A file's review decides it in the compiled lane (`reason/domain_shadow`, `covered`), which runs only
+    # where an L3 domain is live — the same road an expert review's card takes.
+    FEATURE_L2_CARDS: ("l3_domain",),
 }
 
 #: What each cross-layer precondition MEANS, and what an operator has to do to satisfy it. A
@@ -310,6 +322,12 @@ EFFECTS = {
         "checked `ReasoningResult` with its receipt in `reasoning_results`; its evidence needs are "
         "filed for Layer 1. Nothing it writes changes a card, a signal or a situation. Off, nothing "
         "is read and nothing is spent"),
+    FEATURE_L2_CARDS: (
+        "the Layer 2 judgment MAKES THE FILE'S CARD: an L2 result Layer 3 ADMITTED for a file is kept as "
+        "that file's review and decides it exactly as an expert review does — one audited decision, the "
+        "card in the review's own checked words — and the expert's own model call is not made for this "
+        "tenant, so a file is judged once and paid once. Off, the expert reviews files as before and the "
+        "L2 pass stays in shadow"),
 }
 
 #: Every column the record carries, in one place, so the reads below cannot select different shapes
