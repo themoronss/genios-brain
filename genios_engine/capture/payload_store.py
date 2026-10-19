@@ -42,16 +42,22 @@ class PostgresRawPayloadStore:
         self._engine = get_engine(database_url)
         self._key = crypto_key
 
+    INSERT = _INSERT                     # C3 · see `capture/landing/page_writes`
+
     def put(self, *, payload_id, org_id, event_id, content,
             content_type="application/json", ttl_days=30):
-        expires = datetime.now(timezone.utc) + timedelta(days=ttl_days)
+        params = self.put_params(payload_id=payload_id, org_id=org_id, event_id=event_id,
+                                 content=content, content_type=content_type, ttl_days=ttl_days)
         with self._engine.begin() as conn:
-            conn.execute(_INSERT, {
-                "id": payload_id, "org_id": org_id, "event_id": event_id,
+            conn.execute(_INSERT, params)
+
+    def put_params(self, *, payload_id, org_id, event_id, content,
+                   content_type="application/json", ttl_days=30) -> dict:
+        expires = datetime.now(timezone.utc) + timedelta(days=ttl_days)
+        return {"id": payload_id, "org_id": org_id, "event_id": event_id,
                 "content_type": content_type,
                 "enc_content": encrypt(content, self._key),
-                "expires_at": expires,
-            })
+                "expires_at": expires}
 
     def purge_expired(self, *, org_id: str | None = None, eval_time=None) -> int:
         """Enforce the raw-content TTL (DB Law 2). Deletes encrypted raw bodies past expires_at

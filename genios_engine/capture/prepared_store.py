@@ -86,21 +86,29 @@ class PostgresPreparedContentStore:
     def __init__(self, database_url: str) -> None:
         self._engine = get_engine(database_url)
 
+    INSERT = text(
+        "insert into prepared_content (event_id, org_id, prepared_content_id, "
+        "clean_text, language, masked_spans, protected_spans, offset_map, "
+        "signature_hints, preprocessor_version, expires_at, "
+        "direction, body_chars, body_words, paragraph_count, question_count) "
+        "values (:e, :o, :pid, :txt, :lang, cast(:ms as jsonb), cast(:ps as jsonb), "
+        "cast(:om as jsonb), cast(:sh as jsonb), :pv, :exp, "
+        ":dir, :bc, :bw, :pc, :qc) "
+        "on conflict (event_id) do nothing")      # C3 · see `capture/landing/page_writes`
+
     def put(self, *, org_id, prepared: PreparedContent, ttl_days=PREPARED_TTL_DAYS,
             direction: str | None = None):
+        params = self.put_params(org_id=org_id, prepared=prepared, ttl_days=ttl_days,
+                                 direction=direction)
+        with self._engine.begin() as c:
+            c.execute(self.INSERT, params)
+
+    @staticmethod
+    def put_params(*, org_id, prepared: PreparedContent, ttl_days=PREPARED_TTL_DAYS,
+                   direction: str | None = None) -> dict:
         expires = datetime.now(timezone.utc) + timedelta(days=ttl_days)
         form = message_form(prepared.clean_text)
-        with self._engine.begin() as c:
-            c.execute(text(
-                "insert into prepared_content (event_id, org_id, prepared_content_id, "
-                "clean_text, language, masked_spans, protected_spans, offset_map, "
-                "signature_hints, preprocessor_version, expires_at, "
-                "direction, body_chars, body_words, paragraph_count, question_count) "
-                "values (:e, :o, :pid, :txt, :lang, cast(:ms as jsonb), cast(:ps as jsonb), "
-                "cast(:om as jsonb), cast(:sh as jsonb), :pv, :exp, "
-                ":dir, :bc, :bw, :pc, :qc) "
-                "on conflict (event_id) do nothing"),
-                {"e": prepared.event_id, "o": org_id,
+        return {"e": prepared.event_id, "o": org_id,
                  "pid": prepared.prepared_content_id, "txt": prepared.clean_text,
                  "lang": prepared.language,
                  "ms": json.dumps([m.model_dump() for m in prepared.masked_spans]),
@@ -109,7 +117,7 @@ class PostgresPreparedContentStore:
                  "sh": json.dumps(prepared.signature_hints, default=str),
                  "pv": prepared.preprocessor_version, "exp": expires,
                  "dir": direction, "bc": form["body_chars"], "bw": form["body_words"],
-                 "pc": form["paragraph_count"], "qc": form["question_count"]})
+                 "pc": form["paragraph_count"], "qc": form["question_count"]}
 
     def get_text(self, *, org_id, event_id) -> str | None:
         with self._engine.connect() as c:

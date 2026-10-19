@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from genios_engine.capture.acquire.scheduler import (ConnectionSchedule, schedules_for,
                                                     select_due)
-from genios_engine.capture.acquire.sync_runner import (run_sync, sweep_cadence_policy,
+from genios_engine.capture.acquire.sync_runner import (in_scheduled_sweep, run_sync, sweep_cadence_policy,
                                                       sweep_tick_seconds)
 from genios_engine.capture.connectors.fake import FakeGmailConnector
 from genios_engine.capture.connectors.push_ingest import (PushIngestWiring,
@@ -899,11 +899,15 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
     is LOGGED with org/connection context (was a bare `except: pass` — the exact 'stuck tenant' an
     on-call gets paged about, engineered to be invisible)."""
     try:
-        run_sync(make_connector_for(connection), org_id=connection.org_id,
+        # ONE DOOR (L1 rebuild A1): the connector holds the SAME classifier the pipeline gates
+        # with, so this door takes the snippet-first fast path the onboarding door always had —
+        # confident junk is settled from the list fields instead of a full-body fetch each.
+        rel = make_relevance_classifier(connection.org_id,
+                                        seat_id=getattr(connection, "seat_id", None))
+        run_sync(make_connector_for(connection, relevance=rel), org_id=connection.org_id,
                  connection_id=connection.connection_id, repo=_repo, mode=mode, limit=limit,
                  parked_store=_parked,
-                 relevance=make_relevance_classifier(
-                     connection.org_id, seat_id=getattr(connection, "seat_id", None)),
+                 relevance=rel,
                  trace_repo=_trace_repo, payload_store=_payload_store,
                  prepared_store=_prepared_store,
                  mailbox_owner=_mailbox_owner_for_connection(connection),
@@ -1067,6 +1071,7 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
     # `run_sync` does not gate those either.
     from datetime import datetime as _dt, timezone as _tz
     schedule_by_id: dict[str, ConnectionSchedule] = {}
+    rank: dict[str, int] = {}
     l1_due = 0
     if mode == "incremental":
         schedules = schedules_for(conns, _cursors)
@@ -1097,7 +1102,19 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
     l1_skipped = 0
     l1_quota_full = 0
     new_events: dict[str, int] = {}               # org -> events landed this sweep
+    # L1 rebuild A4 · NOT DUE IS DECIDED BEFORE ANYTHING IS BUILT. `run_sync` already returns
+    # without touching the provider for a connection whose turn it is not — but only after this
+    # loop has built its arguments: the coverage declaration (a count, an upsert per domain, an
+    # epoch write), the org baseline (a scan of up to 5,000 rows), the semantic lane. Every 15
+    # minutes, per connection. `select_due` is the same `plan_poll` `run_sync` asks, with the
+    # same tick grace, so a connection it leaves out is one `run_sync` would have skipped; asked
+    # only inside the scheduler's own sweep, where `run_sync` gates — a manual trigger polls all.
+    gated = mode == "incremental" and in_scheduled_sweep()
+    l1_not_due = 0
     for conn in conns_to_poll:                    # L1: pull each connection (one bad source ≠ others)
+        if gated and conn.connection_id not in rank:
+            l1_not_due += 1
+            continue
         # This background sweep is the largest LLM spender in the system (the S2 gate runs on
         # every unknown sender) and it was the one path the daily cap did not gate — the breaker
         # guarded the onboarding sync only. A runaway here spends unattended, every tick.
@@ -1129,7 +1146,9 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
         _bind_gate_costs(rc, conn.org_id, getattr(conn, "seat_id", None))
         try:
             summary = run_sync(
-                     make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
+                     # A1 · the sweep's classifier rides on the connector too: the fast path.
+                     make_connector_for(conn, relevance=rc), org_id=conn.org_id,
+                     connection_id=conn.connection_id,
                      repo=_repo, mode=mode, limit=limit, parked_store=_parked, relevance=rc,
                      trace_repo=_trace_repo, payload_store=_payload_store,
                      prepared_store=_prepared_store,
@@ -1197,6 +1216,7 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
             # it. `l1_due` is the scheduler's own count for this tick — how many of the active
             # connections it said were due, in the order it put them in.
             "l1_due": l1_due,
+            "l1_skipped_not_due": l1_not_due,
             "l1_skipped_over_budget": l1_skipped, "l1_skipped_paused": l1_paused,
             # Connections skipped because the tenant's PLAN has lapsed past its grace window.
             # Separate from over_budget and sync_quota on purpose: those two clear with time or
@@ -1657,7 +1677,7 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
     for conn in conns:
         _bind_gate_costs(rc, conn.org_id, getattr(conn, "seat_id", None))
         try:
-            summary = run_sync(make_connector_for(conn), org_id=conn.org_id,
+            summary = run_sync(make_connector_for(conn, relevance=rc), org_id=conn.org_id,
                                connection_id=conn.connection_id, repo=_repo, mode=mode,
                                limit=limit, parked_store=_parked, relevance=rc,
                                trace_repo=_trace_repo, payload_store=_payload_store,
@@ -1945,11 +1965,12 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
     def _run() -> None:
         from genios_engine.capture.acquire.sync_runner import backfill_drain
         try:
+            rel = make_relevance_classifier(conn.org_id, seat_id=getattr(conn, "seat_id", None))
             summary = backfill_drain(
-                make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
+                make_connector_for(conn, relevance=rel), org_id=conn.org_id,
+                connection_id=conn.connection_id,
                 repo=_repo, source=conn.source_type, limit=limit,
-                relevance=make_relevance_classifier(
-                    conn.org_id, seat_id=getattr(conn, "seat_id", None)),
+                relevance=rel,
                 parked_store=_parked,
                 sender_resolver=_sender_resolver_for(conn.org_id), trace_repo=_trace_repo,
                 payload_store=_payload_store, prepared_store=_prepared_store,
@@ -3486,6 +3507,11 @@ def _sync_source(org_id: str, source_type: str, limit: int):
 # gets "2 months of everything". These are SAFETY ceilings only, high enough that a normal inbox is
 # fully covered but a pathological 20k-inbox can't run away on time/LLM. Hit → logged, never silent.
 _BACKFILL_MAX_ROUNDS = 200      # 200 × 25 = ~5000 messages ceiling per source (was 24 ≈ 600)
+#: L1 rebuild A3 · pages drained per `run_sync` call during onboarding. `max_rounds` above stays a
+#: PAGE budget (the checkpoint counts pages, the ~5000 ceiling is unchanged); what changes is that
+#: `run_sync` gets more than one page per call, which is the condition for its prefetch — the
+#: ~16s Composio wait of page N+1 overlaps the ~16s of DB capture of page N instead of following it.
+_BACKFILL_PAGES_PER_ROUND = max(1, int(__import__("os").environ.get("GENIOS_BACKFILL_PAGES_PER_ROUND", "4")))
 _BACKFILL_L2_EVERY = 6          # drain L2 every N rounds so facts appear DURING the backfill
 _SOURCE_EVENT_CAP: dict[str, int] = {"gcal": 2000}     # calendar safety ceiling (was 150)
 
@@ -3657,11 +3683,13 @@ def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
     semantic = _semantic_lane_for(org_id)
     structured = _structured_lane_for(org_id)
     mailbox_owner = _mailbox_owner_for(org_id)
-    for _rnd in range(max_rounds):
+    used = 0                                   # pages of the `max_rounds` budget spent so far
+    while used < max_rounds:
+        pages = min(_BACKFILL_PAGES_PER_ROUND, max_rounds - used)
         summary = run_sync(
             connector, org_id=org_id, connection_id=conn.connection_id, repo=_repo,
             mode="backfill", cursor=cursor, limit=limit, source=source_type,
-            cursor_store=None, max_pages=1, relevance=rel,
+            cursor_store=None, max_pages=pages, relevance=rel,
             parked_store=_parked, sender_resolver=_sender_resolver_for(org_id),
             trace_repo=_trace_repo, payload_store=_payload_store,
             prepared_store=_prepared_store, document_job_store=_documents,
@@ -3671,9 +3699,10 @@ def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
         scanned += summary.scanned
         emitted += summary.emitted
         cursor = summary.next_cursor
+        used += pages
         if on_cursor is not None:
             try:
-                on_cursor(cursor, _rnd + 1)
+                on_cursor(cursor, used)
             except Exception:      # noqa: BLE001 — a checkpoint that failed to save costs a resume
                 _log.exception("backfill checkpoint failed org=%s src=%s", org_id, source_type)
         if on_round is not None:

@@ -268,6 +268,30 @@ class ComposioGmailConnector:
         # per-message full-body fetch for confident DROPS — full-fetch runs ONLY for keepers. The
         # SAME instance is handed to the pipeline, so its primed verdict is reused (no re-call).
         self._relevance = relevance
+        # L1 rebuild A2 · `(object_type, message_ids) -> the ids already landed`, bound by
+        # `run_sync` from the dedup ledger. None = unknown, and then every message is treated as
+        # new (the behaviour before this existed).
+        self._landed = None
+
+    def bind_landed(self, fn) -> "ComposioGmailConnector":
+        """DEDUP BEFORE FETCH. A message whose dedup key has already landed meets
+        `land_raw_object`'s `exists` and ends as a duplicate whatever we fetch for it — so its
+        full-body fetch and its junk-gate call bought nothing. Asked once per LIST page."""
+        self._landed = fn
+        return self
+
+    def _landed_ids(self, messages) -> set[str]:
+        fn = getattr(self, "_landed", None)
+        if fn is None:
+            return set()
+        ids = [str(i) for i in (m.get("messageId") or m.get("id") or m.get("message_id")
+                                for m in messages) if i]
+        if not ids:
+            return set()
+        try:
+            return set(fn("email_message", ids))
+        except Exception:      # noqa: BLE001 — an unanswered lookup costs a fetch, never a mail
+            return set()
 
     def _client_(self) -> Any:
         if self._client is None:
@@ -470,9 +494,15 @@ class ComposioGmailConnector:
         if rel is not None and hasattr(rel, "prime") and hasattr(rel, "verdict_for"):
             from genios_engine.capture.gate.rules import availability_marker
             from genios_engine.capture.gate.rules import is_a_delivery_report
+            from genios_engine.capture.gate.relevance import RESCUE_AT
+            from genios_engine.capture.gate.rules import FINAL_NOISE
             from genios_engine.capture.gate.rules import light_junk
             light: list[tuple[dict, list[RawObject]]] = [(m, self._to_objects(m, fetch_full=False))
                                                          for m in messages]
+            # A2 · already landed → no body fetch, no gate call; its light object reaches
+            # `land_raw_object`, which records the duplicate exactly as before.
+            landed = self._landed_ids(messages)
+            seen = {id(m) for m, objs in light if objs and objs[0].source_object_id in landed}
 
             # ⛔ A DELIVERY REPORT IS READ WHOLE (`03` F117, STEP-18; `yc2_w27_s18`
             # M49.C1.L-logic.V0.U02). Since STEP-10 (`06` D38) the gate keeps a report and reads it:
@@ -497,9 +527,10 @@ class ComposioGmailConnector:
             # whole — a watchlisted portal's status mail sits on Promotions as often as not.
             whole = getattr(rel, "keeps_whole", None)
             det_junk: set[int] = set()
+            soft_junk: set[int] = set()        # det_junk a confident KEEP may overrule (B1)
             if _DET_JUNK_PREFILTER:
                 for m, objs in light:
-                    if not objs:
+                    if not objs or id(m) in seen:
                         continue
                     if whole is not None and whole(objs[0]):
                         continue
@@ -515,17 +546,34 @@ class ComposioGmailConnector:
                     # but the attachment reaches the gate as its own event and survives.
                     if attachment_overrides_junk(m, objs, ocr_enabled=self._ocr is not None):
                         continue
-                    if light_junk(objs[0].raw.get("labelIds"), objs[0].actor_email,
-                                  bool(objs[0].raw.get("has_attachment"))):
+                    code = light_junk(objs[0].raw.get("labelIds"), objs[0].actor_email,
+                                      bool(objs[0].raw.get("has_attachment")))
+                    if code:
                         det_junk.add(id(m))
+                        if code not in FINAL_NOISE:
+                            soft_junk.add(id(m))
             # An availability notice (N-05) skips the LLM junk gate at the pipeline, so it must not
             # spend a prime call here either — nor be left as a body-less snippet by one.
-            all_light = [o for m, objs in light if id(m) not in det_junk | reports for o in objs
-                         if not availability_marker(o.raw)]
+            #
+            # L1 rebuild B1/B2 · a SOFT rule's mail (Promotions, Social, a no-reply sender) is in
+            # the batch: the pipeline's own batch asked about it anyway and threw the answer away
+            # (S1 archived it before S2 could read it). Asking here, once, is what lets a confident
+            # KEEP overrule the rule — and fetch the body that mail then needs. A FINAL rule's mail
+            # (SPAM/TRASH) is never asked: nothing a model says changes what S1 does with it.
+            all_light = [o for m, objs in light
+                         if id(m) not in (det_junk - soft_junk) | reports | seen
+                         for o in objs if not availability_marker(o.raw)]
             try:
                 rel.prime(all_light)                          # LLM only on what the rules couldn't settle
             except Exception:      # noqa: BLE001 — gate failure → treat all as keepers (full-fetch)
                 pass
+
+            def _rescued(objs) -> bool:
+                v = rel.verdict_for(objs[0].source_object_id) if objs else None
+                return bool(v and v.disposition == "keep" and v.relevance is not None
+                            and v.relevance >= RESCUE_AT)
+
+            rescued = {id(m) for m, objs in light if id(m) in soft_junk and _rescued(objs)}
             # A "drop" verdict is NOT sufficient to skip the body fetch.
             #
             # The gate only takes a mail out (ARCHIVES it, since STEP-03 — it used to delete it)
@@ -557,7 +605,8 @@ class ComposioGmailConnector:
                 return not (v.relevance is not None and v.relevance >= DROP_BELOW_RELEVANCE)
 
             keepers = [m for m, objs in light
-                       if id(m) not in det_junk and not _skip_body(m, objs)]
+                       if (id(m) not in det_junk or id(m) in rescued) and id(m) not in seen
+                       and not _skip_body(m, objs)]
             drops = {id(m) for m, _ in light} - {id(m) for m in keepers}
             # full-fetch keepers concurrently; CONFIDENT junk keeps its light (snippet) object —
             # the pipeline gate re-reads the SAME primed verdict and archives it without another
@@ -575,10 +624,17 @@ class ComposioGmailConnector:
                 objs.extend(light_objs if id(m) in drops else fetched.get(id(m), light_objs))
             return SourceBatch(objects=objs, next_cursor=cursor, claimed_total=claimed)
 
-        # LEGACY PATH (no priming classifier): full-fetch every message concurrently.
+        # LEGACY PATH (no priming classifier): full-fetch every message concurrently — except one
+        # that has already landed (A2), which keeps its light object and dedups as before.
+        landed = self._landed_ids(messages)
+
+        def _one(m):
+            mid = str(m.get("messageId") or m.get("id") or m.get("message_id") or "")
+            return self._to_objects(m, fetch_full=False) if mid in landed else self._to_objects(m)
+
         workers = min(_FETCH_WORKERS, len(messages))
         with ThreadPoolExecutor(max_workers=workers) as ex:
-            per_message = list(ex.map(self._to_objects, messages))
+            per_message = list(ex.map(_one, messages))
         objs = [o for sub in per_message for o in sub]
         return SourceBatch(objects=objs, next_cursor=cursor, claimed_total=claimed)
 

@@ -61,7 +61,11 @@ NOT_SQL: dict[tuple[str, str], str] = {
 #: ⛔ MOVED 270 → 272 at the merge of STEP-17 with STEP-13 (12 Oct; crosscheck S17X-B1), both STEP-13's: the
 #: question card's door in `deliver/actions.ingest_action` (`QUESTION_CARD_SQL`, imported inside the function
 #: as the situation door's is) and the queue's third door in `deliver/store.CardStore.queue` (`qq += …`).
-ASSEMBLED_AT_RUN_TIME = 272
+#: ⛔ MOVED 272 → 274 at the merge of speedrun008 onto harsh/mvp (18 Oct): both are operator scripts
+#: that branch carried — `scripts/screen_cost_report.py` (75d08481) picks its `device_id` column at
+#: run time because migration 0212 may not be applied yet, and `scripts/purge_reasoning_now.py`
+#: (b9a21d91). Read-only reports and a manual purge, not engine paths.
+ASSEMBLED_AT_RUN_TIME = 274
 
 #: ⛔ A FLOOR UNDER WHAT IS PLANNED, so a census that stopped reading — an import that broke, a
 #: resolver that regressed — fails rather than passing over less. Measured 2,053 at the build.

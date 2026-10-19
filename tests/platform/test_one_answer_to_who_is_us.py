@@ -55,6 +55,9 @@ DECLARED: dict[tuple[str, str], str] = {
     ("scripts/workstream_funnel.py", "inbound_mail"):
         "STEP-00's baseline probe: its numbers are the recorded before-state, and redefining its "
         "sender test would falsify every comparison made against it",
+    ("scripts/screen_cost_report.py", "main"):
+        "Harsh's read-only screen spend report (`75d08481`): it prints each seat's address next "
+        "to that seat's model spend — a directory, never a test of who is us",
     ("scripts/screen_flow_report.py", "<module>"):
         "Harsh's read-only screen report (`649208f2`, merged 2026-10-09): it lists each org's seats "
         "beside their devices and capture policy — a directory, never a test of who is us",

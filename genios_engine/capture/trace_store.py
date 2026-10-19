@@ -39,14 +39,20 @@ class PostgresTraceRepository:
     def __init__(self, database_url: str) -> None:
         self._engine = get_engine(database_url)
 
+    INSERT = _INSERT                     # C3 · see `capture/landing/page_writes`
+
     def save(self, trace: EventTrace) -> None:
-        rows = [{
+        rows = self.rows_of(trace)
+        if not rows:
+            return
+        with self._engine.begin() as conn:
+            conn.execute(_INSERT, rows)
+
+    @staticmethod
+    def rows_of(trace: EventTrace) -> list[dict]:
+        return [{
             "org_id": trace.org_id, "event_id": trace.event_id,
             "dedup_key": trace.dedup_key, "source": trace.source,
             "stage": r.stage, "action": r.action.value, "reason_code": r.reason_code,
             "detail": json.dumps(r.detail, default=str),
         } for r in trace.records]
-        if not rows:
-            return
-        with self._engine.begin() as conn:
-            conn.execute(_INSERT, rows)

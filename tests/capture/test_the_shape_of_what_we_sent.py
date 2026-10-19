@@ -130,7 +130,9 @@ def test_the_measurement_is_on_clean_text():
 
     from genios_engine.capture import prepared_store
 
-    source = inspect.getsource(prepared_store.PostgresPreparedContentStore.put)
+    # `put_params` since L1 rebuild C3: the row's values are built there, for `put` and for the
+    # page-batched write alike, so it is where the measurement must be read.
+    source = inspect.getsource(prepared_store.PostgresPreparedContentStore.put_params)
 
     assert "message_form(prepared.clean_text)" in source
 

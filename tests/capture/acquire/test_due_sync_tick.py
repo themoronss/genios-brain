@@ -93,7 +93,7 @@ def two_orgs(monkeypatch):
     for name in ("_parked", "_trace_repo", "_payload_store", "_prepared_store", "_documents",
                  "_graph"):
         monkeypatch.setattr(routes, name, None)
-    monkeypatch.setattr(routes, "make_connector_for", lambda c: boxes[c.connection_id])
+    monkeypatch.setattr(routes, "make_connector_for", lambda c, **_: boxes[c.connection_id])
     for name in ("make_relevance_classifier", "_semantic_lane_for", "_structured_lane_for",
                  "_esqe_stage_for", "_coverage_fn_for", "_sender_resolver_for", "_run_ledger"):
         monkeypatch.setattr(routes, name, lambda *a, **kw: None)
@@ -142,14 +142,16 @@ def test_a_connector_that_cannot_be_built_never_stops_the_sweep(two_orgs, monkey
     one source with no connector raised out of the sweep and no org was reasoned about."""
     from genios_engine.api import routes
 
-    def factory(c):
+    def factory(c, **_):
         if c.connection_id == "con_org_quiet":
             raise ValueError("no connector for this source")
         return two_orgs.boxes[c.connection_id]
 
     monkeypatch.setattr(routes, "make_connector_for", factory)
-    with scheduled_sweep():
-        res = routes.run_sync_sweep(chain_only_on_new_data=True)
+    # Both connections must reach the factory for this property to be tested: inside the
+    # scheduler's sweep the quiet one is not due and is skipped before anything is built
+    # (L1 rebuild A4), so the sweep is run the way a manual trigger runs it — every connection.
+    res = routes.run_sync_sweep(chain_only_on_new_data=True)
 
     assert (res["l1_ok"], res["l1_err"]) == (1, 1)
     assert two_orgs.chained == ["org_new"], "the healthy org lost its chain to the broken one"

@@ -236,6 +236,33 @@ def is_a_delivery_report(raw: dict | None, *, sender_email: str | None) -> bool:
                               text=str(raw.get("body") or raw.get("snippet") or ""))
 
 
+#: L1 rebuild B1 · which noise verdicts are FACTS and which are SIGNALS.
+#:
+#: A provider's SPAM/TRASH label and the tenant's own blocklist are decisions somebody already
+#: made about this mail; nothing in its content can overturn them, so no model is ever asked.
+#: Every other N-code is a traffic SHAPE — a Promotions tab, an unsubscribe header, a no-reply
+#: local part, an Auto-Submitted header — and the shape is shared by newsletters and by real
+#: people: measured on production 18 Oct, an investor at a VC firm (N-02), an accelerator's
+#: interview mail (N-03) and a founder whose mail client stamps Auto-Submitted (N-01) all met
+#: these rules and were never read. For these the junk filter's verdict — already bought for
+#: the page — may overrule the rule when it keeps the mail with confidence (`gate.run_gate`).
+FINAL_NOISE: frozenset[str] = frozenset({"N-08", "N-09"})
+SOFT_NOISE: frozenset[str] = frozenset({"N-01", "N-02", "N-03", "N-04", "N-06", "N-07"})
+
+
+def final_noise(raw: dict | None) -> str | None:
+    """The FINAL noise code a mail carries from its LIST fields alone (SPAM/TRASH label, blocked
+    sender), or None. Such a mail is archived at S1 whatever any model says, so asking one is
+    money spent on an answer nobody reads."""
+    raw = raw if isinstance(raw, dict) else {}
+    labels = set(raw.get("labelIds") or [])
+    if labels & {"SPAM", "TRASH"}:
+        return "N-09"
+    if raw.get("sender_blocked"):
+        return "N-08"
+    return None
+
+
 def light_junk(labels, sender_email: str, has_attachment: bool) -> str | None:
     """High-confidence deterministic junk from LIST-time fields ONLY (Gmail labels + sender local-
     part) — lets the connector skip the full fetch of obvious junk BEFORE the S2 LLM prime ever

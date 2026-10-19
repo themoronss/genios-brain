@@ -70,7 +70,7 @@ def _drive(monkeypatch, *, exhausted: bool, moved: bool) -> list[str]:
 
     monkeypatch.setattr(routes, "_graph", object(), raising=False)
     monkeypatch.setattr(routes._connections, "get", lambda _cid: _Conn(), raising=False)
-    monkeypatch.setattr(routes, "make_connector_for", lambda _c: object(), raising=False)
+    monkeypatch.setattr(routes, "make_connector_for", lambda _c, **_: object(), raising=False)
     for helper in ("make_relevance_classifier", "_sender_resolver_for", "_coverage_fn_for",
                    "_esqe_stage_for", "_structured_lane_for", "_mailbox_owner_for_connection"):
         monkeypatch.setattr(routes, helper, lambda *a, **k: None, raising=False)

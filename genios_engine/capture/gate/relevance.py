@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from genios_engine.capture.gate.context import GateContext
+from genios_engine.capture.gate.rules import final_noise
 from genios_engine.contracts.prepared_content import PreparedContent
 
 
@@ -13,6 +14,12 @@ from genios_engine.contracts.prepared_content import PreparedContent
 #: an investor writing from an unfamiliar domain is exactly the case it gets wrong — so its
 #: confidence has to be part of the decision, not merely recorded next to it.
 DROP_BELOW_RELEVANCE = 0.25
+
+#: L1 rebuild B1 · the confidence at which the junk filter's KEEP overrules a SOFT noise rule
+#: (`rules.SOFT_NOISE`). High on purpose: the rule is right about most of what it flags, and the
+#: overrule must only free the mail a model is sure a person is writing — not every borderline
+#: newsletter. Below it the rule stands and the mail is archived exactly as before.
+RESCUE_AT = 0.70
 
 #: Stand-in score for "the model returned no relevance at all". Deliberately ABOVE
 #: DROP_BELOW_RELEVANCE: silence is not evidence of junk, so a missing score parks rather than
@@ -251,6 +258,8 @@ class LLMRelevanceClassifier:
             raw = getattr(o, "raw", None) or {}
             if not oid or oid in self._cache or getattr(o, "actor_type", "") == "agent":
                 continue                                    # already gated (e.g. by the connector) → skip re-call
+            if final_noise(raw):
+                continue                                    # B1 · SPAM/TRASH/blocked: S1 archives it whatever we say
             if self._named_in_brief(o):
                 continue                                    # W-07: the gate never asks (STEP-07)
             subject = raw.get("subject") or ""

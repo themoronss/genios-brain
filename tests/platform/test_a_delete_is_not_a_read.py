@@ -175,7 +175,16 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_250, (
+    # ⛔ MOVED 3,250 → 3,262 deliberately, 18 Oct, when speedrun008 merged onto harsh/mvp: +11 are
+    # the two operator scripts that branch carried (`scripts/screen_cost_report.py` 75d08481,
+    # `scripts/purge_reasoning_now.py` b9a21d91) and +1 is L1 rebuild A2's page lookup
+    # (`capture/landing/pg_repository._EXISTING_KEYS`). The engine gaining SQL, not the loop hop
+    # expanding the list. ⛔ MOVED 3,262 → 3,266, L1 rebuild C3: `capture/landing/page_writes.flush`
+    # runs the four landing stores' OWN statements (`*.INSERT`) as one `executemany` each, in one
+    # transaction per page — four call sites of SQL the census already counts, not new SQL text.
+    # ⛔ MOVED 3,266 → 3,268, L1 rebuild B4: `capture/landing/promote._ARCHIVED_FROM` and
+    # `._PROMOTE_FROM`, the retro-rescue's select and update — the engine gaining two statements.
+    assert r["statements"] == 3_268, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

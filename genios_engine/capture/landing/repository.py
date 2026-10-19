@@ -21,6 +21,10 @@ class SourceEventRepository(Protocol):
     `capture/attention.attention_for`) — None from a caller that names none."""
 
     def exists(self, org_id: str, dedup_key: str) -> bool: ...
+    def existing_keys(self, org_id: str, dedup_keys: list[str]) -> set[str]:
+        """Which of these keys have already landed — ONE lookup for a whole page, so a connector
+        can skip the full fetch of a message whose fate `exists` has already decided."""
+        ...
     def kept_child_exists(self, org_id: str, source: str, object_type: str,
                           parent_object_id: str) -> bool:
         """Has an object of `object_type` under this parent landed KEPT? (STEP-08: a Gmail
@@ -40,6 +44,9 @@ class InMemorySourceEventRepository:
 
     def exists(self, org_id: str, dedup_key: str) -> bool:
         return (org_id, dedup_key) in self._by_key
+
+    def existing_keys(self, org_id: str, dedup_keys: list[str]) -> set[str]:
+        return {k for k in dedup_keys if (org_id, k) in self._by_key}
 
     def kept_child_exists(self, org_id: str, source: str, object_type: str,
                           parent_object_id: str) -> bool:

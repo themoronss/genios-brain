@@ -44,6 +44,9 @@ def _dump_list(items: list | None) -> str | None:
 
 
 _EXISTS = text("select 1 from source_events where org_id=:o and dedup_key=:d limit 1")
+#: The page-sized form of `_EXISTS`, on the same (org_id, dedup_key) unique index.
+_EXISTING_KEYS = text("select dedup_key from source_events "
+                      " where org_id = :o and dedup_key = any(:keys)")
 #: STEP-08 · a re-read Gmail attachment carries a new key on every read, so it is known by its
 #: message: has an attachment of this message landed KEPT (`repository.KEPT_OUTCOMES`)?
 _KEPT_CHILD = text(
@@ -66,18 +69,39 @@ class PostgresSourceEventRepository:
         with self._engine.connect() as conn:
             return conn.execute(_EXISTS, {"o": org_id, "d": dedup_key}).first() is not None
 
+    def existing_keys(self, org_id: str, dedup_keys: list[str]) -> set[str]:
+        if not dedup_keys:
+            return set()
+        with self._engine.connect() as conn:
+            return {r[0] for r in conn.execute(_EXISTING_KEYS,
+                                               {"o": org_id, "keys": list(dedup_keys)})}
+
     def kept_child_exists(self, org_id: str, source: str, object_type: str,
                           parent_object_id: str) -> bool:
         with self._engine.connect() as conn:
             return conn.execute(_KEPT_CHILD, {"o": org_id, "s": source, "t": object_type,
                                               "p": parent_object_id}).first() is not None
 
+    #: L1 rebuild C3 · the statement and its parameters are separable, so one page's rows can be
+    #: written in ONE transaction (`capture/landing/page_writes.PageWrites`) by the same SQL.
+    INSERT = _INSERT
+
     def add(self, event: SourceEvent, outcome: str | None = None, *,
             route: str | None = None, triage_lane: str | None = None,
             domain_hints: list | None = None, linkage_hints: list | None = None,
             attention: str | None = None, attention_reason: str | None = None) -> None:
+        params = self.add_params(event, outcome, route=route, triage_lane=triage_lane,
+                                 domain_hints=domain_hints, linkage_hints=linkage_hints,
+                                 attention=attention, attention_reason=attention_reason)
         with self._engine.begin() as conn:
-            conn.execute(_INSERT, {
+            conn.execute(_INSERT, params)
+
+    @staticmethod
+    def add_params(event: SourceEvent, outcome: str | None = None, *,
+                   route: str | None = None, triage_lane: str | None = None,
+                   domain_hints: list | None = None, linkage_hints: list | None = None,
+                   attention: str | None = None, attention_reason: str | None = None) -> dict:
+        return {
                 "event_id": event.event_id, "org_id": event.org_id,
                 "connection_id": event.connection_id, "source": event.source,
                 "source_family": event.source_family,
@@ -105,4 +129,4 @@ class PostgresSourceEventRepository:
                 # The mail's tier and why (STEP-03). The vocabulary is closed by 0192's check, so
                 # a typo is a refused write, never a fourth tier nobody reads.
                 "attention": attention, "attention_reason": attention_reason,
-            })
+            }

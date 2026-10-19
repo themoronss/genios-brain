@@ -1594,7 +1594,12 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
                               repo=repo, sync_mode=sync_mode, mailbox_owner=mailbox_owner)
     trace, event = landing.trace, landing.event
     if not landing.landed:
-        return _finish(event, trace, "duplicate", None, trace_repo)
+        # L1 rebuild C2 · A DUPLICATE WRITES NO TRACE ROW. Its decision was traced when it first
+        # landed; this row only said "seen again". Every re-listing wrote one — the date watermark
+        # re-lists the boundary day each tick, recovery and catch-up re-scan on purpose — so the
+        # trace table grew with how often we LOOKED, not with what arrived. The outcome is still
+        # returned (and counted as `duplicate` by the sweep); the trace is still in the result.
+        return _finish(event, trace, "duplicate", None, None)
 
     # auto-detect structured sources (CRM/calendar/DB): a registry mapping means the
     # object is typed → structured route (gate short-circuit), no LLM extraction.

@@ -108,7 +108,7 @@ def sweep(monkeypatch):
             monkeypatch.setattr(routes, name, None)
         made = factory or (lambda c: _Recorder(c.connection_id))
         monkeypatch.setattr(routes, "make_connector_for",
-                            lambda c: connectors.setdefault(c.connection_id, made(c)))
+                            lambda c, **_: connectors.setdefault(c.connection_id, made(c)))
         monkeypatch.setattr(routes, "make_relevance_classifier", lambda *a, **kw: None)
         monkeypatch.setattr(routes, "_semantic_lane_for", lambda *a, **kw: None)
         monkeypatch.setattr(routes, "_structured_lane_for", lambda *a, **kw: None)

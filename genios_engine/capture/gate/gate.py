@@ -4,9 +4,9 @@ from genios_engine.capture.structured.mapper import route_structured
 from genios_engine.contracts.trace import EventTrace
 
 from .context import GateContext, GateResult
-from .relevance import DROP_BELOW_RELEVANCE, RelevanceClassifier
-from .rules import (availability_marker, content_integrity_rule, is_a_delivery_report, noise_rule,
-                    whitelist)
+from .relevance import DROP_BELOW_RELEVANCE, RESCUE_AT, RelevanceClassifier
+from .rules import (SOFT_NOISE, availability_marker, content_integrity_rule, is_a_delivery_report,
+                    noise_rule, whitelist)
 
 #: What the gate does with a mail a rule or the model would have DELETED (STEP-03, the gate keeps
 #: everything). Every noise rule (N-01 … N-10) and the model's confident junk (`llm_junk`) was a
@@ -22,6 +22,22 @@ ARCHIVE = "archive"
 def _never_delete(action: str) -> str:
     """A rule's `drop` is the gate's `archive`; every other verdict (`park`) stands."""
     return ARCHIVE if action == "drop" else action
+
+
+def _overruling_keep(code: str, ctx: GateContext, relevance):
+    """L1 rebuild B1/B2 · the junk filter's confident KEEP for a mail a SOFT rule flagged, or None.
+
+    Only a verdict ALREADY bought for this mail is read (`verdict_for`, the page's batch): the
+    rule's mail never buys a call of its own here, so the overrule costs nothing the sweep did not
+    already spend — before this the page's batch asked about these mails and the answer was
+    thrown away, because S1 archived them before S2 could read it."""
+    if code not in SOFT_NOISE or relevance is None or not hasattr(relevance, "verdict_for"):
+        return None
+    oid = getattr(ctx.event, "source_object_id", None)
+    v = relevance.verdict_for(oid) if oid else None
+    if v is None or v.disposition != "keep" or v.relevance is None or v.relevance < RESCUE_AT:
+        return None
+    return v
 
 
 def run_gate(ctx: GateContext, trace: EventTrace,
@@ -117,12 +133,19 @@ def run_gate(ctx: GateContext, trace: EventTrace,
                         if wl == "W-07" else {}))
     else:
         hit = noise_rule(ctx)
-        if hit:
+        overruled = _overruling_keep(hit[0], ctx, relevance) if hit else None
+        if hit and overruled is None:
             code, action = hit
             action = _never_delete(action)
             trace.record("S1", action, reason_code=code)
             return GateResult(action=action, reason_code=code)
-        trace.record("S1", "pass")
+        if overruled is not None:
+            # The rule's code travels on the pass, so "which rule did the filter overrule, and
+            # how sure was it" is countable from stored traces. S2 below reads the same verdict.
+            trace.record("S1", "pass", overruled=hit[0], relevance=overruled.relevance,
+                         reason=overruled.reason)
+        else:
+            trace.record("S1", "pass")
 
     # S1c — AVAILABILITY NOTICE (N-05). An out-of-office / leave / auto-reply message used to be
     # dropped on its subject; it is now routed to extraction, marked, WITHOUT the S2 junk gate —

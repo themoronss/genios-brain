@@ -103,4 +103,48 @@ def promote_named_sender(engine, org_id: str, *, address: str | None = None,
                for rule in sorted(ARCHIVE_CODES))
 
 
-__all__ = ["ARCHIVE_CODES", "Promotion", "promote_archived", "promote_named_sender"]
+#: L1 rebuild B4 · the archive of the addresses we just wrote to. Exact address (never a domain: a
+#: reply to one person at a company says nothing about the company's newsletter), every archiving
+#: rule but the FINAL ones (`gate/rules.FINAL_NOISE`: a provider's SPAM/TRASH, the tenant's blocklist
+#: — decisions someone already made), and only while the encrypted body is still readable.
+_ARCHIVED_FROM = text(
+    "select se.event_id from source_events se "
+    "  join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
+    " where se.org_id = :o and se.outcome = 'archived' "
+    "   and lower(coalesce(se.actor->>'email', '')) = any(:addrs) "
+    "   and coalesce(se.attention_reason, '') <> all(:final) "
+    "   and (rp.expires_at is null or rp.expires_at > :now)")
+_PROMOTE_FROM = text(
+    "update source_events set outcome = 'emitted', attention = 'deep', "
+    "       attention_reason = 'promoted:' || coalesce(attention_reason, 'archived'), "
+    "       route = coalesce(route, 'needs_extraction'), triage_lane = coalesce(triage_lane, 'P3') "
+    " where org_id = :o and outcome = 'archived' and event_id = any(:ids)")
+
+
+def promote_replied_senders(engine, org_id: str, addresses, *,
+                            now: datetime | None = None) -> int:
+    """L1 rebuild B4 · RETRO-RESCUE: the founder wrote to these addresses, so whatever the gate
+    archived FROM them goes back to the ledger as kept, for the re-read ladder to read.
+
+    Measured on production 18 Oct: 20 senders had mail both kept and archived — an introducer whose
+    first introductions were archived before anyone knew them, an investor whose first note met an
+    unsubscribe header. Writing to someone is the strongest sign L1 itself holds that a person is
+    not noise, and it needs no model and no graph: the outbound mail is in this ledger. Returns how
+    many mails went back."""
+    from genios_engine.capture.gate.rules import FINAL_NOISE
+
+    addrs = sorted({str(a).strip().lower() for a in (addresses or ()) if a and "@" in str(a)})
+    if not addrs:
+        return 0
+    now = now or datetime.now(timezone.utc)
+    with engine.begin() as c:
+        ids = [r[0] for r in c.execute(_ARCHIVED_FROM, {"o": org_id, "addrs": addrs,
+                                                        "final": sorted(FINAL_NOISE),
+                                                        "now": now})]
+        if not ids:
+            return 0
+        return c.execute(_PROMOTE_FROM, {"o": org_id, "ids": ids}).rowcount
+
+
+__all__ = ["ARCHIVE_CODES", "Promotion", "promote_archived", "promote_named_sender",
+           "promote_replied_senders"]

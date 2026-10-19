@@ -18,6 +18,7 @@ from genios_engine.capture.acquire.cadence import (
 from genios_engine.capture.acquire.cursor_store import CursorStore
 from genios_engine.capture.acquire.scheduler import ConnectionSchedule, PollDecision, plan_poll
 from genios_engine.capture.connectors.base import RawObject, SourceBatch, SourceConnector
+from genios_engine.capture.landing.page_writes import PageWrites
 from genios_engine.capture.landing.repository import SourceEventRepository
 from genios_engine.capture.parked.store import ParkedStore, parked_from_trace
 from genios_engine.capture.payload_store import RawPayloadStore
@@ -30,7 +31,7 @@ from genios_engine.capture.validate.conflict import (ConflictLane, ConflictOutco
 from genios_engine.capture.trace_store import TraceRepository
 from genios_engine.contracts.gated_event import GatedEvent
 from genios_engine.contracts.parked import ParkedEvent
-from genios_engine.contracts.source_event import SourceEvent, SyncMode
+from genios_engine.contracts.source_event import SourceEvent, SyncMode, compute_dedup_key
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
 
@@ -185,6 +186,29 @@ def in_scheduled_sweep() -> bool:
     return bool(getattr(_SWEEP_MARK, "on", False))
 
 
+def _rescue_replied(repo, org_id: str, mailbox_owner: str | None, results) -> int:
+    """The recipients of this run's kept OUTBOUND mail, handed to `promote_replied_senders`."""
+    engine = getattr(repo, "_engine", None)
+    owner = (mailbox_owner or "").strip().lower()
+    if engine is None or not owner:
+        return 0
+    to: set[str] = set()
+    for res in results or ():
+        ev = getattr(res, "event", None)
+        if (getattr(res, "outcome", None) == "emitted" and ev is not None
+                and (ev.actor.email or "").strip().lower() == owner):
+            to.update(r for r in (getattr(ev, "recipients", ()) or ()) if r)
+    to.discard(owner)
+    if not to:
+        return 0
+    try:
+        from genios_engine.capture.landing.promote import promote_replied_senders
+        return promote_replied_senders(engine, org_id, to)
+    except Exception:      # noqa: BLE001 — a rescue that failed costs a re-read, never the sync
+        _log.warning("retro-rescue failed org=%s", org_id, exc_info=True)
+        return 0
+
+
 def poll_decision(*, org_id: str, connection_id: str, source: str,
                   last_success_at: datetime | None, watermark: datetime | None,
                   now: datetime, base_page_budget: int,
@@ -216,6 +240,9 @@ class SyncSummary:
     #: the loop below counts with `setattr(summary, outcome, …)`, so an outcome with no field
     #: raises and takes the sweep with it.
     archived: int = 0
+    #: L1 rebuild B4 · archived mails sent back to be read because this run's outbound mail
+    #: wrote to their sender.
+    promoted_on_reply: int = 0
     duplicate: int = 0
     quarantined: int = 0
     next_cursor: str | None = None
@@ -618,6 +645,16 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
     if relevance is not None and sender_resolver is not None and hasattr(relevance,
                                                                          "bind_senders"):
         relevance.bind_senders(sender_resolver)
+    # L1 rebuild A2 · DEDUP BEFORE FETCH. A connector that can skip work for a message already in
+    # the ledger is told which ones are — one lookup per LIST page on the (org_id, dedup_key)
+    # index. The ledger's own `exists` check below still decides; this only stops paying for a
+    # body fetch and a gate call whose answer is "duplicate" either way.
+    _bind_landed = getattr(connector, "bind_landed", None)
+    if _bind_landed is not None and hasattr(repo, "existing_keys"):
+        def _landed(object_type: str, ids: list[str], _src: str = source) -> set[str]:
+            keys = {compute_dedup_key(_src, object_type, i): i for i in ids}
+            return {keys[k] for k in repo.existing_keys(org_id, list(keys)) if k in keys}
+        _bind_landed(_landed)
     saved = None
     if mode == "recovery":
         since = started_at - timedelta(days=reconcile_days)
@@ -710,6 +747,15 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 summary.claimed_total = int(claimed)
                 summary.claimed_is_estimate = bool(getattr(batch, "claimed_is_estimate", True))
 
+            # L1 rebuild C3 · this page's landing writes (ledger row, encrypted body, masked text,
+            # trace) are held and written in ONE transaction once the page is captured, instead of
+            # four transactions per mail. None = the stores cannot be batched; write as before.
+            page = PageWrites.for_page(repo=repo, payloads=payload_store,
+                                       prepared=prepared_store, traces=trace_repo)
+            p_repo, p_payloads, p_prepared, p_traces = (
+                (page.repo, page.payloads, page.prepared, page.traces) if page is not None
+                else (repo, payload_store, prepared_store, trace_repo))
+
             def _cap(raw: RawObject):
                 # P5 · a Meet transcript Doc never takes the generic door (knowledge family → ORG
                 # scope). It goes to the transcript door, which lands it as PRIVATE parts for the
@@ -728,12 +774,12 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                         return raw, None, e
                 sk = sender_resolver(raw) if sender_resolver else False
                 res, err = _capture_bounded(raw, retries=2, org_id=org_id,
-                                            connection_id=connection_id, repo=repo,
+                                            connection_id=connection_id, repo=p_repo,
                                             sender_known=sk, relevance=relevance,
                                             named_in_brief=named_in_brief(sender_resolver,
                                                                           raw),
-                                            trace_repo=trace_repo, payload_store=payload_store,
-                                            prepared_store=prepared_store,
+                                            trace_repo=p_traces, payload_store=p_payloads,
+                                            prepared_store=p_prepared,
                                             document_job_store=document_job_store,
                                             mailbox_owner=mailbox_owner,
                                             coverage_fn=coverage_fn, semantic=semantic,
@@ -782,6 +828,11 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                     captured = list(ex.map(_cap, objects))
             else:
                 captured = []
+            if page is not None:
+                # Before anything below reads the page back (claim groups, the ledger hook that
+                # publishes signals, the cursor). A failure raises: the page is unwritten and the
+                # cursor unmoved, so the next run reads it again.
+                page.flush()
 
             for raw, res, err in captured:              # aggregate SINGLE-THREADED → no races on summary
                 if res is None:                          # poison → quarantine, batch continues
@@ -894,6 +945,10 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 watermark = ceiling
         cursor_store.save(org_id, connection_id, source, cursor=summary.next_cursor,
                           watermark=watermark)
+    # L1 rebuild B4 · RETRO-RESCUE. Mail the mailbox owner SENT in this run names who they write
+    # to; whatever the gate archived from those addresses goes back to be read. One statement pair
+    # per run, only when the run carried outbound mail; never fatal.
+    summary.promoted_on_reply = _rescue_replied(repo, org_id, mailbox_owner, summary.results)
     # ALG-23 (L1.5.0-U2) — group the sweep's claims by SUBJECT before anything compares them.
     summary.claim_groups = _assemble_groups(summary.results)
     # ALG-12 (L1.5.5) — compare them. Grouping decides what is about the same thing;

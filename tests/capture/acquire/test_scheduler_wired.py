@@ -496,7 +496,10 @@ def test_the_real_cross_org_sweep_skips_a_connection_that_is_not_due(monkeypatch
         second = routes.run_sync_sweep()
 
     assert (first["l1_ok"], first["l1_err"]) == (1, 0)
-    assert (second["l1_ok"], second["l1_err"]) == (1, 0), "a deferred poll is not an error"
+    # L1 rebuild A4: a connection that is not due is skipped BEFORE its per-connection setup is
+    # built, so it is neither pulled nor an error — it is counted as not due.
+    assert (second["l1_ok"], second["l1_err"]) == (0, 0), "a deferred poll is not an error"
+    assert second["l1_skipped_not_due"] == 1
     assert len(connector.fetches) == 1, (
         f"the provider was called {len(connector.fetches)} times across two ticks one second "
         "apart — the sweep is not consulting the cadence")
