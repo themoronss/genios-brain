@@ -1,7 +1,7 @@
 {
  "case_id": "F46",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
   "323996aa2f71d36a6cd3a9bfb02484a86bfb4ec25bd2a47e752220e5fea0debd": {
    "site": "expert",
@@ -165,22 +165,6 @@
    "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5dde0b71c18499d1996f02f36908ce1ae8155492130c36503a08a7fd15bb4557": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1045,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "63bc9fc74be79a48837f1fe58573bb7a54e34e5558735a4c2ea34ba821824753": {
    "site": "resolution",
    "parsed": {
@@ -318,6 +302,22 @@
    "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
+  "a45b49e5f76f4d3f7703bf40df30efdc2b76d36cb4376ebaf3050b5fc70832a0": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1196,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "ace0b8f298f4acc142ced63c5fd41de10576ab56a40e2c97d2dea16c2fc78421": {
    "site": "relevance",
    "parsed": {
@@ -338,7 +338,7 @@
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
-  "fea83c2b85cf63fdd8063f790d27446f3843bca77796e9336cd90a71dd291d98": {
+  "f0a46de81c99435b24734657248659b13b41ff3084375144a0047b92b3ac74cf": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -350,7 +350,7 @@
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "framed": true,
-   "input_tokens": 1052,
+   "input_tokens": 1203,
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   }

@@ -1,22 +1,153 @@
 {
  "case_id": "F56",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
-  "3eeeefb5e40b6904935e9ea3523a30f46bbf0d6fcddd1b02178be8198ad7daf9": {
+  "39c5271e4fa0a69f76dd40aac9d5aa8f1e9f334a70108e49d0f68b95d7f6e249": {
    "site": "junk_gate_batch",
    "parsed": [
     {
      "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
+     "disposition": "keep",
+     "relevance": 0.85,
+     "reason": "vendor price change at renewal"
     }
    ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.85, \"reason\": \"vendor price change at renewal\"}]",
    "framed": true,
-   "input_tokens": 1069,
-   "output_tokens": 25,
+   "input_tokens": 1220,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3b7b62e60fc9b04cddff177ab928c3079ee39c07c60029bfb73cc9e6246b4b0c": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Your Authwise Pro plan renews on 15 Oct",
+    "start_offset": 0,
+    "end_offset": 39,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Your Authwise Pro plan renews on 15 Oct\", \"start_offset\": 0, \"end_offset\": 39, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1551,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a52af58abb99419d8e98162becc299a5e010bd1fde2c7340e1c8df44fcee18c6": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+     "vendor",
+     "renewal"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Authwise",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Authwise",
+        "start_offset": 5,
+        "end_offset": 13
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "amounts": [
+     {
+      "minor_units": 132000,
+      "currency": "USD",
+      "as_written": "$1,320"
+     },
+     {
+      "minor_units": 100000,
+      "currency": "USD",
+      "as_written": "$1,000"
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "thread.objective",
+      "subject": "thread",
+      "value": "the plan's renewal at a higher price",
+      "standing": "judgement",
+      "evidence": [
+       {
+        "quote": "Your Authwise Pro plan renews on 15 October 2026 at $1,320 per year",
+        "start_offset": 52,
+        "end_offset": 119
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "15 October 2026",
+      "earliest": "2026-10-15T00:00:00+05:30",
+      "latest": "2026-10-15T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-25T03:00:00Z",
+      "evidence": [
+       {
+        "quote": "15 October 2026",
+        "start_offset": 85,
+        "end_offset": 100
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "transactional",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": false,
+     "human_authored": false,
+     "asks_for_reply": false,
+     "engagement": "low",
+     "motive": "a renewal at a new price"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"vendor\", \"renewal\"], \"entity_mentions\": [{\"surface_form\": \"Authwise\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Authwise\", \"start_offset\": 5, \"end_offset\": 13}], \"confidence_bp\": 9000}], \"amounts\": [{\"minor_units\": 132000, \"currency\": \"USD\", \"as_written\": \"$1,320\"}, {\"minor_units\": 100000, \"currency\": \"USD\", \"as_written\": \"$1,000\"}], \"business_facts\": [{\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"the plan's renewal at a higher price\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"Your Authwise Pro plan renews on 15 October 2026 at $1,320 per year\", \"start_offset\": 52, \"end_offset\": 119}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"15 October 2026\", \"earliest\": \"2026-10-15T00:00:00+05:30\", \"latest\": \"2026-10-15T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-25T03:00:00Z\", \"evidence\": [{\"quote\": \"15 October 2026\", \"start_offset\": 85, \"end_offset\": 100}]}], \"exchange_intent\": {\"category\": \"transactional\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\", \"motive\": \"a renewal at a new price\"}}",
+   "framed": true,
+   "input_tokens": 5548,
+   "output_tokens": 306,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b5df3c7d01642bcdda34e8093ca4ca1256ab21c9ccbbcaaafb01b061ada24bd6": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "framed": true,
+   "input_tokens": 1113,
+   "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
   "c85ab068e0aac9c7e7b8a54f8f5c678d6c826971b961e960208149ea5b51aa04": {
@@ -37,6 +168,26 @@
    "framed": true,
    "input_tokens": 1204,
    "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f8c788204ec5c8ba97ab1cdb127344bea47a46055b81bc6a58ab6cb6f9cf9554": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "reply": 5600,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 4500,
+    "rationale": "A billing address waits on no reply; the real question, renew at 32% more before 15 Oct, is not among these plays.",
+    "missing": [
+     "a vendor-renewal play: renew, renegotiate or cancel before the renewal date"
+    ]
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 4500, \"rationale\": \"A billing address waits on no reply; the real question, renew at 32% more before 15 Oct, is not among these plays.\", \"missing\": [\"a vendor-renewal play: renew, renegotiate or cancel before the renewal date\"]}",
+   "framed": true,
+   "input_tokens": 2069,
+   "output_tokens": 81,
    "model": "claude-haiku-4-5-20251001"
   }
  }

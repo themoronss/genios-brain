@@ -1,7 +1,7 @@
 {
  "case_id": "F45",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
   "0d05660a005c1a914e38118e41460164ea8d5a598f1b4a0241972ed8b34c4fab": {
    "site": "extraction",
@@ -875,45 +875,7 @@
    "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
-  "a43ca235b96880df456d6a2e71a0bf17ce6d0361a024f26772687ebee2817f58": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Meera",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Meera",
-        "start_offset": 38,
-        "end_offset": 43
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 38, \"end_offset\": 43}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "framed": true,
-   "input_tokens": 5509,
-   "output_tokens": 107,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a51a2dd481a92e0ef9f72850275294e9502a77825fa76f2417ff92845c272e9b": {
+  "a0eb0653af08c872734d0c2a9a9402f61fc09622979014ecdaf7485922b35a7d": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -967,8 +929,46 @@
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 4, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 5, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 6, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 7, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "framed": true,
-   "input_tokens": 1257,
+   "input_tokens": 1510,
    "output_tokens": 192,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a43ca235b96880df456d6a2e71a0bf17ce6d0361a024f26772687ebee2817f58": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meera",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Meera",
+        "start_offset": 38,
+        "end_offset": 43
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 38, \"end_offset\": 43}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
+   "input_tokens": 5509,
+   "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
   },
   "b2f25a680dd6a962a7de488d4c1d7cf8d9f099419fb70050c9fe81806e47a496": {
@@ -1009,7 +1009,24 @@
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c4da27758339188b991f2f82df6a20cf2450a178ef23fe7f35b3928d4b4b8273": {
+  "c6d220f7d4e49744a426a1359aee13cd37b7b7155bbbfcea16d498a467346305": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Bluepeak x Nimbus - competition",
+    "start_offset": 0,
+    "end_offset": 35,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - competition\", \"start_offset\": 0, \"end_offset\": 35, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1510,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dfb6cc9f20aecd5ac4bd959d67d5d6db862ae62267377b575884172fee3ee1d6": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -1039,25 +1056,8 @@
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "framed": true,
-   "input_tokens": 1136,
+   "input_tokens": 1331,
    "output_tokens": 96,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c6d220f7d4e49744a426a1359aee13cd37b7b7155bbbfcea16d498a467346305": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Re: Bluepeak x Nimbus - competition",
-    "start_offset": 0,
-    "end_offset": 35,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - competition\", \"start_offset\": 0, \"end_offset\": 35, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1510,
-   "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
   },
   "eb4e3179aa6ba68a08af4b50e788a49cf489b674604747da0a5973943ca8dae0": {

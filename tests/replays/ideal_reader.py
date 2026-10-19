@@ -72,7 +72,9 @@ _NO_TEXT_VERDICT = {"business": False, "description": "no readable text", "categ
 _FENCED = re.compile(r"<<<CONTENT_[0-9a-f]+>>>\n(.*?)\n<<<END_[0-9a-f]+>>>", re.S)
 _RELEVANCE_ITEM = re.compile(r"^item (\d+):\n<<<CONTENT_[0-9a-f]+>>>\n(.*?)\n<<<END_[0-9a-f]+>>>",
                              re.S | re.M)
-_BATCH_ITEM = re.compile(r"^\[(\d+)\] ", re.M)
+#: `capture/gate/relevance._classify_chunk` (E9): each email in its own fence, the index outside it.
+_BATCH_ITEM = re.compile(r"^\[(\d+)\]\n<<<CONTENT_[0-9a-f]+>>>\n(.*?)\n<<<END_[0-9a-f]+>>>",
+                         re.S | re.M)
 
 
 #: STEP-07 · the company brief's block — the same in every prompt of a case, and about the COMPANY,
@@ -116,16 +118,15 @@ class IdealReader:
     # ── per site ─────────────────────────────────────────────────────────────────────────────
     def _answer(self, site: str, prompt: str) -> Any:
         if site == "junk_gate":
-            return _gate(self._match(prompt.split("EMAIL:\n", 1)[-1], site))
+            fenced = _FENCED.findall(prompt.split("EMAIL:\n", 1)[-1])
+            if len(fenced) != 1:
+                raise IdealReaderError(f"a junk-filter prompt holds {len(fenced)} fenced regions")
+            return _gate(self._match(fenced[0], site))
         if site == "junk_gate_batch":
-            listing = prompt.split("EMAILS:\n", 1)[-1]
-            marks = list(_BATCH_ITEM.finditer(listing))
-            out = []
-            for n, m in enumerate(marks):
-                end = marks[n + 1].start() if n + 1 < len(marks) else len(listing)
-                obj = self._match(listing[m.end():end], site)
-                out.append({"i": int(m.group(1)), **_gate(obj)})
-            return out
+            items = _BATCH_ITEM.findall(prompt.split("EMAILS:\n", 1)[-1])
+            if not items:
+                raise IdealReaderError("a batch junk-filter prompt with no fenced emails")
+            return [{"i": int(n), **_gate(self._match(text, site))} for n, text in items]
         if site == "relevance":
             items = _RELEVANCE_ITEM.findall(prompt)
             if not items:

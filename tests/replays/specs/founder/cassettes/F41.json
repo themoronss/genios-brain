@@ -1,7 +1,7 @@
 {
  "case_id": "F41",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
   "276a672ceb3298eb21887ed26a60f1355a3b33f6c417160a203a86b0262bbfb0": {
    "site": "extraction",
@@ -40,6 +40,28 @@
    "framed": true,
    "input_tokens": 5536,
    "output_tokens": 117,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2ad3bbc28c08a4f7e210ca839752ec04aba7d29c61c5fbf63ea5053132ca058f": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1259,
+   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
   "53b569a05b3c56fff5da30d53c9e8e2dd5640b6ff086faa414ddac9554bc87a1": {
@@ -200,28 +222,6 @@
    "framed": true,
    "input_tokens": 1539,
    "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8d896bc6c1c3d4d46608fce793dbadf8403474ba9d10f213ba737e1f0a005f9d": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1093,
-   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
   "97423666c38becaadca7c69c77a97c4eba6494577c6843e75a1e6be172c85545": {

@@ -1,7 +1,7 @@
 {
  "case_id": "F62",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
   "0f5d155b63b37e93b13f0ae60fefd39264e2bd54426f395fe5feb2ed6dbbd117": {
    "site": "resolution",
@@ -460,7 +460,24 @@
    "output_tokens": 341,
    "model": "claude-haiku-4-5-20251001"
   },
-  "73fc0b9cc91aba193648643c58c27195239d7460d66779d8e7b5b91946208b2e": {
+  "78a735dabcdb5db6afe8133d8c38e422b7df555d231a68859502e2da0229ffda": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 221,
+    "end_offset": 256,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 221, \"end_offset\": 256, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1547,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b2accb9d27e648ccc5cc96255300b8c6ba378ced29215bb4ee09c428eb1fe487": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -478,25 +495,8 @@
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "framed": true,
-   "input_tokens": 1107,
+   "input_tokens": 1273,
    "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "78a735dabcdb5db6afe8133d8c38e422b7df555d231a68859502e2da0229ffda": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll let you two take it from here.",
-    "start_offset": 221,
-    "end_offset": 256,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 221, \"end_offset\": 256, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1547,
-   "output_tokens": 47,
    "model": "claude-haiku-4-5-20251001"
   },
   "c0abee66647b7b6e602daa0985c561d826bf33e1f5f3269bd989b6ca82f1f38a": {

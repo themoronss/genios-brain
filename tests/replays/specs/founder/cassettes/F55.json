@@ -1,36 +1,19 @@
 {
  "case_id": "F55",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
-  "023acd531a344f02df6bdeed183f62806c8987dbf719109f70df6eebe00c91c7": {
-   "site": "r1",
+  "007c7de12e21347ca7de4c4d32382cdec2a4158dc10e9734fa802e8b1e81f9bf": {
+   "site": "narrator",
    "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
+    "headline": "Send Dev Malhotra the pricing sheet",
+    "situation": "Dev Malhotra asked 26 days ago: \"Could you send the pricing sheet?\"",
+    "artifact": "Hi Dev, here is the pricing sheet: [attach]."
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "raw": "{\"headline\": \"Send Dev Malhotra the pricing sheet\", \"situation\": \"Dev Malhotra asked 26 days ago: \\\"Could you send the pricing sheet?\\\"\", \"artifact\": \"Hi Dev, here is the pricing sheet: [attach].\"}",
    "framed": true,
-   "input_tokens": 1141,
-   "output_tokens": 74,
+   "input_tokens": 1862,
+   "output_tokens": 49,
    "model": "claude-haiku-4-5-20251001"
   },
   "0be83a77c056a5a80be7e58b92ef0cf7c982381afae1ed114c43ce559d6cf2af": {
@@ -48,24 +31,6 @@
    "framed": true,
    "input_tokens": 1518,
    "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "0e956df9291ca4a572d520a990ec9efaac4f71e085e9626489f20e1020c7f951": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 4300
-    },
-    "confidence_bp": 5500,
-    "rationale": "Dev asked for the pricing sheet and has waited 26 days for it.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4300}, \"confidence_bp\": 5500, \"rationale\": \"Dev asked for the pricing sheet and has waited 26 days for it.\", \"missing\": []}",
-   "framed": true,
-   "input_tokens": 2103,
-   "output_tokens": 49,
    "model": "claude-haiku-4-5-20251001"
   },
   "1878f5acbbff34dc6785a5d34c5e935e62a0079395ee096da1322c0a6d8cb30f": {
@@ -201,17 +166,38 @@
    "output_tokens": 939,
    "model": "claude-haiku-4-5-20251001"
   },
-  "187c8b8ee0f06d20146224ce5bc458248c4b46cd2c6855fa10a2de4ddaa1e028": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Dev Malhotra the pricing sheet",
-    "situation": "Dev Malhotra asked 26 days ago: \"Could you send the pricing sheet?\"",
-    "artifact": "Hi Dev, here is the pricing sheet: [attach]."
-   },
-   "raw": "{\"headline\": \"Send Dev Malhotra the pricing sheet\", \"situation\": \"Dev Malhotra asked 26 days ago: \\\"Could you send the pricing sheet?\\\"\", \"artifact\": \"Hi Dev, here is the pricing sheet: [attach].\"}",
+  "301be5d4c162a12972812909e5b6cf996dfff64aada8baf997ceaf420df9e5b4": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 3,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "framed": true,
-   "input_tokens": 1862,
-   "output_tokens": 49,
+   "input_tokens": 1291,
+   "output_tokens": 96,
    "model": "claude-haiku-4-5-20251001"
   },
   "41e85e3f5c937666af16ecad14bd690d9c560dae78d5088e192283fa52897002": {
@@ -450,38 +436,22 @@
    "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
   },
-  "aa269c5d0cec6131cd7d9d0b84858da1c236517c6535310e6a3697eaf00c03d6": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
+  "a7f3cd93873eecb8fd57ee12c53892efdf91d83a0f608227654476fff39ac19d": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 4300
     },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 2,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 3,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+    "confidence_bp": 5500,
+    "rationale": "Dev asked for the pricing sheet and has waited 26 days for it.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4300}, \"confidence_bp\": 5500, \"rationale\": \"Dev asked for the pricing sheet and has waited 26 days for it.\", \"missing\": []}",
    "framed": true,
-   "input_tokens": 1097,
-   "output_tokens": 96,
+   "input_tokens": 2103,
+   "output_tokens": 49,
    "model": "claude-haiku-4-5-20251001"
   },
   "b76f8074fb935df6a394d8c5603c3eab0692fd9b34630fc1e47372cf3d098e9c": {
@@ -877,6 +847,36 @@
    "framed": true,
    "input_tokens": 3415,
    "output_tokens": 893,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e70f95fa73887b7e73ba6cce96284592a9558f6757635a9ccb92c12d47aac7a2": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "framed": true,
+   "input_tokens": 1141,
+   "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
   "f890a2ef7d6b817666ecef46f402f91a358327e6c18b7868d3c71ce447c38631": {

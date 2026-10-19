@@ -1,7 +1,7 @@
 {
  "case_id": "F49",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
   "0e48cea5a0e6f2c08661c2d93c638302d241a7b0267f97525517630b85994099": {
    "site": "extraction",
@@ -134,28 +134,6 @@
    "framed": true,
    "input_tokens": 5516,
    "output_tokens": 237,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "2ca17ee4e0803f2ee75170b05ab1fe0e52c7cfac89e412120d0ccf5ad50a10cb": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1079,
-   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
   "303395a995687bdf514b263963fe6f4b7b2dad6719c2830ac6a6fd9a4af3b80d": {
@@ -299,6 +277,28 @@
    "framed": true,
    "input_tokens": 3503,
    "output_tokens": 1186,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7d8558a5965aa4308e3aecca7a7278241b8c150dfca8a1076bc532c06166ed43": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1245,
+   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
   "8ddd315a1c0de2d08e9b3c68cb899c4fe2f08495350541b1ea0408a46875e9c7": {

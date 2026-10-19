@@ -76,10 +76,24 @@ PROMO = ({"subject": "Event update", "body": "See you there", "labelIds": ["CATE
          "theresa@antler.test")
 SPAM = ({"subject": "Intro", "body": "Hi", "labelIds": ["SPAM"]}, "theresa@antler.test")
 
+#: B5 · the rest of production's 18 Oct false-junk shapes, one per SOFT rule, so every soft code has a
+#: real-shaped fixture: a founder whose mail client stamps `Auto-Submitted` (N-01), a programme
+#: manager's note sent through a list server (`Precedence: bulk`, N-04), and an investor's intro that
+#: Gmail filed under Social (N-07). Synthetic text; the shapes are production's.
+FOUNDER = ({"subject": "Quick question on your deck", "body": "Can we speak on Thursday?",
+            "headers": {"Auto-Submitted": "auto-generated"}, "labelIds": ["INBOX"]},
+           "ravi@247vc.test")
+PROGRAMME = ({"subject": "Your NSRCEL cohort interview", "body": "Please confirm a slot.",
+              "headers": {"Precedence": "bulk"}, "labelIds": ["INBOX"]},
+             "programmes@nsrcel.test")
+SOCIAL = ({"subject": "Meet Anjali from a16z", "body": "Anjali would like to talk to you.",
+           "labelIds": ["CATEGORY_SOCIAL"]}, "partner@a16z.test")
+
 KEEP = RelevanceVerdict(True, 0.85, disposition="keep", reason="named person writing")
 
 
-@pytest.mark.parametrize("case, code", [(INVESTOR, "N-02"), (ACCELERATOR, "N-03"), (PROMO, "N-06")])
+@pytest.mark.parametrize("case, code", [(INVESTOR, "N-02"), (ACCELERATOR, "N-03"), (PROMO, "N-06"),
+                                        (FOUNDER, "N-01"), (PROGRAMME, "N-04"), (SOCIAL, "N-07")])
 def test_a_confident_keep_overrules_a_soft_rule(case, code):
     result, trace, gate = _gate(*case, KEEP)
     assert (result.action, result.route) == ("route", "needs_extraction")

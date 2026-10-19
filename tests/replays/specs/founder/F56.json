@@ -34,7 +34,11 @@
    ],
    "thread": "t-authwise",
    "read": {
-    "gate": "drop",
+    "gate": {
+     "disposition": "keep",
+     "relevance": 0.85,
+     "reason": "vendor price change at renewal"
+    },
     "relevance": "business",
     "extraction": {
      "intent": "inform",
@@ -128,7 +132,25 @@
  "not_expressible": {
   "workstream": "the vendor kind of work - yc2_w27_align M34.C2.L-contract.V0.U01"
  },
- "model": {},
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Authwise Billing"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4500,
+     "rationale": "A billing address waits on no reply; the real question, renew at 32% more before 15 Oct, is not among these plays.",
+     "missing": [
+      "a vendor-renewal play: renew, renegotiate or cancel before the renewal date"
+     ]
+    }
+   }
+  ]
+ },
  "notes": "09 G5, the Possibility Atlas's first card (a login vendor at +32%): a renewal with a price rise is work with a date and money; a plain receipt stays archived (F33). The junk filter's prompt says to drop 'subscription / plan / account notices', so a faithful reader drops this one.",
- "blocked_on": "the junk filter's prompt drops 'subscription / plan / account notices', so the renewal is archived - in memory, read by no model, its only situation a support thread owed a first response; there is no vendor kind for the brief to name (yc2_w27_align C2.U01)"
+ "blocked_on": "the renewal now passes the junk filter (B2, 19 Oct) and reaches reasoning, but only as a 'general unanswered email' whose plays are reply / wait — there is no vendor-renewal kind or play for it (yc2_w27_align C2.U01), so no card says 'renews 15 Oct at 32% more'"
 }

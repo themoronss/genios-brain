@@ -81,6 +81,41 @@ def entity_keys(signal: Any) -> frozenset[str]:
     return frozenset(found)
 
 
+def _joinable(mention: Any) -> str | None:
+    """The key a PROXIMITY join may use for one mention, or None.
+
+    ⛔ G6.3 · A DISPLAY NAME IS NOT AN IDENTITY. A resolved hint joins, and so does the written name
+    of an organisation (or any kind that is not a person) — "Acme" in two mails of one week is the
+    company the old join meant. A PERSON known only by the name written does not: "Priya" in two
+    mails is two testimonies, and joining them made one bundle of two people. Such a pair is kept
+    as an unresolved candidate instead (`_grouped`), for Layer 2 — which owns identity — to settle.
+    """
+    hint = (getattr(mention, "canonical_hint", None) or "").strip()
+    if hint:
+        return f"entity:{hint.lower()}"
+    surface = (getattr(mention, "surface_form", None) or "").strip()
+    if not surface or getattr(mention, "entity_type", None) == "person":
+        return None
+    return f"entity:{surface.lower()}"
+
+
+def _mentions(signal: Any) -> tuple[Any, ...]:
+    return tuple(getattr(getattr(signal, "extraction", None), "entities", None) or ())
+
+
+def _name_only_people(signal: Any) -> frozenset[str]:
+    """People this signal names with no hint — the names a join may NOT use."""
+    return frozenset(
+        (getattr(m, "surface_form", None) or "").strip().lower() for m in _mentions(signal)
+        if getattr(m, "entity_type", None) == "person"
+        and not (getattr(m, "canonical_hint", None) or "").strip()
+        and (getattr(m, "surface_form", None) or "").strip())
+
+
+#: At most this many name-only candidates are written onto one bundle; the rest are counted.
+MAX_NAME_CANDIDATES = 10
+
+
 def _instant(signal: Any):
     return getattr(signal, "occurred_at", None) or getattr(signal, "ingested_at", None)
 
@@ -102,9 +137,17 @@ def group_signals(signals: Sequence[Any]) -> list[tuple[Any, ...]]:
     """Partition one page's signals into groups. Order inside a group is qualification order.
 
     Union-find over shared keys. Identity keys join unconditionally; entity keys join only inside
-    `ENTITY_WINDOW`. A signal that shares nothing with anything is its own group of one — a bundle
-    of one is a real answer ("this arrived alone"), not a failure to group.
+    `ENTITY_WINDOW`, and only keys `_joinable` allows. A signal that shares nothing with anything is
+    its own group of one — a bundle of one is a real answer ("this arrived alone"), not a failure to
+    group.
     """
+    return [members for members, _links, _notes in _grouped(signals)]
+
+
+def _grouped(signals: Sequence[Any]) -> list[tuple[tuple[Any, ...], tuple[str, ...], tuple[str, ...]]]:
+    """`group_signals`, with what G6.5 asks a bundle to carry: per group, the link record of every
+    join that formed it (`"<a> ~ <b>: same thread:<key>"` — method and key, at most n-1), and the
+    candidate links it refused (a person shared by name only, inside the window)."""
     parent: dict[int, int] = {i: i for i in range(len(signals))}
 
     def find(i: int) -> int:
@@ -113,24 +156,58 @@ def group_signals(signals: Sequence[Any]) -> list[tuple[Any, ...]]:
             i = parent[i]
         return i
 
-    def union(i: int, j: int) -> None:
+    def union(i: int, j: int) -> bool:
         ri, rj = find(i), find(j)
-        if ri != rj:
-            parent[max(ri, rj)] = min(ri, rj)
+        if ri == rj:
+            return False
+        parent[max(ri, rj)] = min(ri, rj)
+        return True
+
+    def sid(i: int) -> str:
+        return str(getattr(signals[i], "signal_id", i))
 
     identity = [join_keys(s) for s in signals]
-    entities = [entity_keys(s) for s in signals]
+    entities = [frozenset(k for k in map(_joinable, _mentions(s)) if k) for s in signals]
+    edges: list[tuple[int, str]] = []
     for i in range(len(signals)):
         for j in range(i + 1, len(signals)):
-            if identity[i] & identity[j]:
-                union(i, j)
+            shared = identity[i] & identity[j]
+            if shared:
+                key = min(shared, key=lambda k: (not k.startswith("thread:"), k))
+                if union(i, j):
+                    edges.append((i, f"{sid(i)} ~ {sid(j)}: same {key}"))
             elif entities[i] & entities[j] and _within_window(signals[i], signals[j]):
-                union(i, j)
+                if union(i, j):
+                    key = min(entities[i] & entities[j])
+                    edges.append((i, f"{sid(i)} ~ {sid(j)}: both name {key} within "
+                                     f"{ENTITY_WINDOW.days} days"))
+
+    names = [_name_only_people(s) for s in signals]
+    refused: dict[int, list[str]] = {}
+    for i in range(len(signals)):
+        for j in range(i + 1, len(signals)):
+            if find(i) == find(j) or not (names[i] & names[j]):
+                continue
+            if not _within_window(signals[i], signals[j]):
+                continue
+            for name in sorted(names[i] & names[j]):
+                note = (f"'{name}' is named in {sid(i)} and {sid(j)} by name only — not joined: a "
+                        "display name is not an identity")
+                refused.setdefault(find(i), []).append(note)
+                refused.setdefault(find(j), []).append(note)
 
     groups: dict[int, list[Any]] = {}
     for index, signal in enumerate(signals):
         groups.setdefault(find(index), []).append(signal)
-    return [tuple(members) for _, members in sorted(groups.items())]
+    out = []
+    for root, members in sorted(groups.items()):
+        links = tuple(text for i, text in edges if find(i) == root)
+        notes = refused.get(root, [])
+        if len(notes) > MAX_NAME_CANDIDATES:
+            notes = notes[:MAX_NAME_CANDIDATES] + [
+                f"{len(notes) - MAX_NAME_CANDIDATES} more name-only candidate(s) not listed"]
+        out.append((tuple(members), links, tuple(notes)))
+    return out
 
 
 def bundle_id_for(org_id: str, signal_ids: Iterable[str]) -> str:
@@ -206,9 +283,11 @@ def merged_coverage(signals: Sequence[Any]) -> dict[str, Any]:
     return merged
 
 
-def build_bundle(org_id: str, trace_id: str,
-                 members: Sequence[Any]) -> QualifiedEnterpriseSignalBundle:
-    """One group → the boundary object. Pure; nothing is written here."""
+def build_bundle(org_id: str, trace_id: str, members: Sequence[Any], *,
+                 links: Sequence[str] = (), refused: Sequence[str] = ()
+                 ) -> QualifiedEnterpriseSignalBundle:
+    """One group → the boundary object. Pure; nothing is written here. `links` and `refused` are
+    `_grouped`'s link records and name-only candidates for this group."""
     signal_ids = tuple(str(getattr(s, "signal_id")) for s in members)
     subjects = {getattr(s, "subject_key", None) for s in members} - {None}
     entities: set[str] = set()
@@ -220,6 +299,12 @@ def build_bundle(org_id: str, trace_id: str,
         # Stated rather than left blank: "these arrived together and nobody could name what they
         # are about" is a fact Layer 2 can act on — it is what an EvidenceNeed is raised from.
         unresolved.append("no subject could be named for this group")
+    elif len(subjects) > 1:
+        # G6.2 · competing matches the grouper cannot settle are recorded, never resolved by
+        # naming one of them.
+        unresolved.append(f"competing subjects: {', '.join(sorted(subjects))} — joined into one "
+                          "group; which one each signal concerns is not settled here")
+    unresolved.extend(refused)
 
     return QualifiedEnterpriseSignalBundle(
         bundle_id=bundle_id_for(org_id, signal_ids),
@@ -230,9 +315,9 @@ def build_bundle(org_id: str, trace_id: str,
         subject_key=next(iter(subjects)) if len(subjects) == 1 else None,
         signal_ids=signal_ids,
         entity_keys=tuple(sorted(entities)),
-        candidate_relationships=tuple(
+        candidate_relationships=(tuple(
             f"{sid} concerns {next(iter(subjects))}" for sid in signal_ids
-        ) if len(subjects) == 1 else (),
+        ) if len(subjects) == 1 else ()) + tuple(links),
         coverage=merged_coverage(members),
         unresolved=tuple(unresolved),
     )
@@ -241,7 +326,8 @@ def build_bundle(org_id: str, trace_id: str,
 def build_bundles(org_id: str, trace_id: str,
                   signals: Sequence[Any]) -> list[QualifiedEnterpriseSignalBundle]:
     """One page of qualified signals → its bundles."""
-    return [build_bundle(org_id, trace_id, members) for members in group_signals(signals)]
+    return [build_bundle(org_id, trace_id, members, links=links, refused=refused)
+            for members, links, refused in _grouped(signals)]
 
 
 __all__ = ["ENTITY_WINDOW", "build_bundle", "build_bundles", "bundle_id_for", "entity_keys",

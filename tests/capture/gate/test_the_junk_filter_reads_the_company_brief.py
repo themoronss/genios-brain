@@ -13,6 +13,7 @@ is bound (`bind_costs(…, brief_source=…)`, as `platform/wiring.make_relevanc
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -70,7 +71,10 @@ def test_with_no_brief_the_prompts_are_what_they_were(monkeypatch):
     gate.prime(_objs())
     unbound = _Model(model.answer)
     R.LLMRelevanceClassifier(unbound).prime(_objs())
-    assert model.prompts == unbound.prompts and "COMPANY BRIEF" not in model.prompts[0]
+    # E9 · each prompt fences its mail with a fresh nonce; the prompt is otherwise byte for byte
+    unfenced = lambda ps: [re.sub(r"(CONTENT|END)_[0-9a-f]+", r"\1_n", p) for p in ps]  # noqa: E731
+    assert unfenced(model.prompts) == unfenced(unbound.prompts)
+    assert "COMPANY BRIEF" not in model.prompts[0]
 
 
 def test_the_batch_is_not_spent_on_a_sender_the_brief_names(monkeypatch):

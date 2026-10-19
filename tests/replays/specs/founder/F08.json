@@ -40,9 +40,9 @@
    },
    "read": {
     "gate": {
-     "disposition": "drop",
-     "relevance": 0.4,
-     "reason": "automated introduction service"
+     "disposition": "keep",
+     "relevance": 0.85,
+     "reason": "introduction to a named person"
     },
     "relevance": "business",
     "extraction": {
@@ -105,9 +105,9 @@
    },
    "read": {
     "gate": {
-     "disposition": "drop",
-     "relevance": 0.4,
-     "reason": "automated introduction service"
+     "disposition": "keep",
+     "relevance": 0.85,
+     "reason": "introduction to a named person"
     },
     "relevance": "business",
     "extraction": {

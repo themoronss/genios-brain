@@ -1,7 +1,7 @@
 {
  "case_id": "F44",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
   "147e323813a069b5b44fcd4e3821aa7941f146988d287b24202526ee3aebedf0": {
    "site": "extraction",
@@ -205,7 +205,7 @@
    "output_tokens": 1145,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3732d4bf5d1abaf59d737ec29d169deaa409a2a9d3185a8da422116cf4557a6f": {
+  "380dec94d1f3f92f80bd8aceeb997414e30438cb9b7f86691c577dd9c37bb3c0": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -217,7 +217,7 @@
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "framed": true,
-   "input_tokens": 1053,
+   "input_tokens": 1204,
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
@@ -239,38 +239,6 @@
    "framed": true,
    "input_tokens": 1184,
    "output_tokens": 37,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9108067df4d632b5d9b334c7e735af5d179e1b5a90ecac475c4abf528a0d146b": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1707,
-   "output_tokens": 143,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d24ecb27371023dbdc6f0357a8eaa9df41d74170011859fe9d47d0d79c3fd459": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1523,
-   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
   "f8fb22784fe4d15cb0044940601d78f3f0ce652964ee4087215c097a3628f30f": {

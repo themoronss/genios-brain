@@ -78,9 +78,9 @@
    },
    "read": {
     "gate": {
-     "disposition": "drop",
-     "relevance": 0.35,
-     "reason": "automated assistant reply"
+     "disposition": "keep",
+     "relevance": 0.75,
+     "reason": "introduction service asks a question"
     },
     "relevance": "business",
     "extraction": {

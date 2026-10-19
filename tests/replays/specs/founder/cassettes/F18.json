@@ -1,24 +1,8 @@
 {
  "case_id": "F18",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
-  "2d1a1b23e84aa53454e706a97dc1dcaece49253eb235b0db5dbc6af2d63dae80": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "framed": true,
-   "input_tokens": 1061,
-   "output_tokens": 25,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "46787eb109cca51576ee17e0911c251df1e55bacd64ae02f70254893f99dbfb0": {
    "site": "relevance",
    "parsed": {
@@ -37,6 +21,22 @@
    "framed": true,
    "input_tokens": 1192,
    "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5ea03db9c4fb89341d3337080783b1e6f4fd90f06cbded499e1fd108bec3e1fd": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "framed": true,
+   "input_tokens": 1212,
+   "output_tokens": 25,
    "model": "claude-haiku-4-5-20251001"
   }
  }

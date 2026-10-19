@@ -1,7 +1,7 @@
 {
  "case_id": "F32",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
   "50510a9bfdfa962650111a4ad9261e83b094f41f692a42bd769bf6d9d8a50103": {
    "site": "relevance",
@@ -21,28 +21,6 @@
    "framed": true,
    "input_tokens": 1153,
    "output_tokens": 39,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "77322eccd330364baf078704241319038a600954cd7681599a4e53e8229dc5e9": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    },
-    {
-     "i": 1,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "framed": true,
-   "input_tokens": 1055,
-   "output_tokens": 50,
    "model": "claude-haiku-4-5-20251001"
   },
   "cad69f4b24b31365aeeb741f6f35888c2a0e0956a1aa1ac8bcd0f2f28b2eceb8": {
@@ -82,6 +60,28 @@
    "framed": true,
    "input_tokens": 5499,
    "output_tokens": 121,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d3b8c15305989c771fc3a68ad72ed7908de1ec4f3a96ce849a40387234f1ba3d": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    },
+    {
+     "i": 1,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "framed": true,
+   "input_tokens": 1221,
+   "output_tokens": 50,
    "model": "claude-haiku-4-5-20251001"
   }
  }

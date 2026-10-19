@@ -1,7 +1,7 @@
 {
  "case_id": "F47",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
   "1be2412cab382a342277e1c53906831a41785306d906e0ae9ff18d7bb60b4960": {
    "site": "expert",
@@ -136,6 +136,28 @@
    "output_tokens": 1149,
    "model": "claude-haiku-4-5-20251001"
   },
+  "463d6388a46ef6b5c1e87920f1951d646581e89aaa31c65b40866f3a670002ba": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1258,
+   "output_tokens": 49,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "56786935d7f8b02ed6bf2a50ff7bdeecb50afbdca15a06d5c89de1a67f1076fd": {
    "site": "relevance",
    "parsed": {
@@ -171,28 +193,6 @@
    "framed": true,
    "input_tokens": 1513,
    "output_tokens": 44,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7d4036994013dbbb8e10e2e03e7139746192fdacc67ac7e15f86baeadfc30914": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1092,
-   "output_tokens": 49,
    "model": "claude-haiku-4-5-20251001"
   },
   "c9a00252e964679160bb2c62e321e32a0e1b40ee555ae8acd4a510e69bfa2223": {

@@ -87,15 +87,16 @@ def _extraction_prompt(text: str) -> str:
 def test_the_junk_filter_is_answered_per_object_from_a_single_prompt():
     reader = _reader()
     res = reader.call(gate._GATE_PROMPT.format(source="gmail",
-                                               content=f"Deck before Monday?\n\n{ASK}"))
+                                               content=fence(f"Deck before Monday?\n\n{ASK}").text))
     assert res.ok and res.parsed["disposition"] == "keep" and 0 < res.parsed["relevance"] <= 1
     res = reader.call(gate._GATE_PROMPT.format(source="gmail",
-                                               content=f"This week in funding\n\n{DIGEST}"))
+                                               content=fence(f"This week in funding\n\n{DIGEST}").text))
     assert res.parsed == {"disposition": "drop", "relevance": 0.4, "reason": "a digest"}
 
 
 def test_the_batch_junk_filter_answers_every_index_in_order():
-    emails = f"[0] This week in funding\n\n{DIGEST}\n\n[1] Deck before Monday?\n\n{ASK[:300]}"
+    emails = (f"[0]\n{fence(f'This week in funding{chr(10) * 2}{DIGEST}').text}\n\n"
+              f"[1]\n{fence(f'Deck before Monday?{chr(10) * 2}{ASK[:300]}').text}")
     res = _reader().call(gate._GATE_BATCH_PROMPT.format(n=2, last=1, emails=emails))
     assert [(a["i"], a["disposition"]) for a in res.parsed] == [(0, "drop"), (1, "keep")]
 
@@ -134,8 +135,8 @@ def test_a_quote_the_content_does_not_contain_is_refused():
 
 def test_an_object_the_case_does_not_hold_is_refused():
     with pytest.raises(IdealReaderError, match="no object"):
-        _reader().call(gate._GATE_PROMPT.format(source="gmail",
-                                                content="An unrelated subject\n\nunrelated words"))
+        _reader().call(gate._GATE_PROMPT.format(
+            source="gmail", content=fence("An unrelated subject\n\nunrelated words").text))
 
 
 def test_a_site_the_object_has_no_answer_for_is_refused():

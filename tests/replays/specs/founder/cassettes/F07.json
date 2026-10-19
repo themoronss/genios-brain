@@ -1,8 +1,24 @@
 {
  "case_id": "F07",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
+  "0a0738d01d8c49bd80fbb62a324415e99c3c54e00cdab25796e7e7bcca281944": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1185,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "5ce586cfd369f068d0ce150f0771f08eacc05bcf639efbc31b219ecc3e87b249": {
    "site": "extraction",
    "parsed": {
@@ -106,6 +122,22 @@
    "framed": true,
    "input_tokens": 5508,
    "output_tokens": 156,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "69d2b4f6ddeaa3fde9671efe4e5402dfe695b81ddb547a67dfe77e533a6d64db": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1190,
+   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
   "7b5bd01d6f09346cffecd89ce6c321516275580c60fd37adc5a76182cfcb073b": {
@@ -490,22 +522,6 @@
    "output_tokens": 990,
    "model": "claude-haiku-4-5-20251001"
   },
-  "99d322aaa945500c484e9f3882dc507f5775254877d81957b31a2e037a3d27bb": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1034,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "a839a5c65bc6c80d0830386ecb10b1d52b4d19b7a4c21e4fd24a33d8dfe0f783": {
    "site": "relevance",
    "parsed": {
@@ -563,40 +579,7 @@
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c613ac8ea163a258afc4ca9359f783e9665787568188d64bc3ce38d0ad6041d1": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Re: Arjun <> Leela Krishnan (Ferngrove)",
-    "start_offset": 0,
-    "end_offset": 39,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"start_offset\": 0, \"end_offset\": 39, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1512,
-   "output_tokens": 46,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d53bb0ce5fb9282ec5eb4bccb2fab9da67fd76ed331aba1aeaccfba5f4b756aa": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1039,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e234cf9a5ee9a36e391df3aec921d99ec7c0ddb1b724faa32eced4a67afbbb7d": {
+  "c2dfc89d731b93a0a680d4abcd403290ae374892761f7f4d33c9e32c1ac6aa1e": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -771,6 +754,23 @@
    "framed": true,
    "input_tokens": 3791,
    "output_tokens": 1509,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c613ac8ea163a258afc4ca9359f783e9665787568188d64bc3ce38d0ad6041d1": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Arjun <> Leela Krishnan (Ferngrove)",
+    "start_offset": 0,
+    "end_offset": 39,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"start_offset\": 0, \"end_offset\": 39, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1512,
+   "output_tokens": 46,
    "model": "claude-haiku-4-5-20251001"
   }
  }

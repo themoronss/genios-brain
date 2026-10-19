@@ -1,7 +1,7 @@
 {
  "case_id": "F39",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "a8dbefa2",
  "answers": {
   "1adb4aa431d9615643b4875b703be229989217f0785db1c228e9d5107ed489fd": {
    "site": "expert",
@@ -136,6 +136,22 @@
    "output_tokens": 37,
    "model": "claude-haiku-4-5-20251001"
   },
+  "671b9bd69434742e80e0cd73688041e9306e2dcfae8b14399df6edfffa96f9e2": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1178,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "6b662bff65b5454ef3389145d19463cd5c7d346890f77cd640e0f1245b731959": {
    "site": "resolution",
    "parsed": {
@@ -196,22 +212,6 @@
    "framed": true,
    "input_tokens": 5495,
    "output_tokens": 147,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e1c20dbd2b9695e2270228579878d17f48b455179bca29b14d5368684086834c": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1027,
-   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   }
  }

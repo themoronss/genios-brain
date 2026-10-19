@@ -77,6 +77,13 @@ blocked on s15-D2 then, and passes since 16 Oct — s15-F22, also `ADDED_AFTER`,
 
 RESTATED BY STEP-16 (`yc2_w27_s16` M47.C4.L-data.V1.U04–U06). Three cases are new (`ADDED_AFTER`: F65–F67, your
 corrections); the gate keeps and reads every one of their mails. Nothing else moved.
+
+RESTATED BY THE L1 REBUILD (B2 + E9, 19 Oct, `docs/plans/L1_REBUILD_PLAN.md`). The junk filter's prompt no
+longer says to drop "automated matchmaking" or "subscription / plan / account notices": an introduction to a
+named person and a vendor's price / plan / renewal change are ALWAYS KEEP. F56's renewal notice — the one
+archive `ARCHIVED_IN_ADDED` held — is emitted and read; F56 stays blocked further on (no vendor-renewal kind).
+The Introly mails were already kept by the brief (W-07) and did not move. Nothing dropped, every other archive
+the same.
 """
 from __future__ import annotations
 
@@ -156,9 +163,10 @@ ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-
                                "F65": "STEP-16", "F66": "STEP-16", "F67": "STEP-16"}
 
 #: A case added after STEP-03 whose mail today's gate ARCHIVES — held to that code, as the dropped mail
-#: of the cases before it is. F56: a vendor's renewal notice, which the junk filter's own prompt drops
-#: ("subscription / plan / account notices") — kept, with its body, and read by no model.
-ARCHIVED_IN_ADDED: dict[str, dict[str, str]] = {"F56": {"f56-renewal": "llm_junk"}}
+#: of the cases before it is. Empty since the L1 rebuild's B2 (19 Oct): F56's renewal notice, archived
+#: `llm_junk` until then, is a price change from a vendor the company pays for — ALWAYS KEEP in the
+#: junk filter's prompt now — and is emitted and read.
+ARCHIVED_IN_ADDED: dict[str, dict[str, str]] = {}
 
 #: Cases a later step moved, with their marking after it — (step, (kind, verdict, lost_at, cards)).
 #: STEP-05: a mail below the floor, the founder's own sent mail and an archive now enter memory.
