@@ -151,11 +151,19 @@ def expand(request: ReadRequest, neighbours: Neighbours) -> BoundedView:
                        truncated_by=truncated_by)
 
 
+#: ⛔ ONE NODE'S EDGES ARE BOUNDED TOO (L2 rebuild A4, 19 Oct 2026). `max_nodes` bounds how many nodes the walk
+#: keeps, never how many rows one neighbour query returns: a hub — the founder's own company, a domain every mail
+#: shares — returned every edge it has, each sweep, to keep forty. A node's read stops at this many; one that
+#: reaches it marks the view TRUNCATED (`max_edges`), so a capped neighbourhood never reads as a complete one.
+MAX_EDGES_PER_NODE = 500
+
 _NEIGHBOUR_SQL = (
     "select edge_type, from_node_id, to_node_id, confidence, valid_from "
     "from graph_edges "
     "where org_id = :o and valid_to is null "
-    "  and (from_node_id = :n or to_node_id = :n)"
+    "  and (from_node_id = :n or to_node_id = :n) "
+    "order by valid_from desc nulls last, edge_type, from_node_id, to_node_id "
+    "limit :lim"
 )
 
 _REVISION_SQL = "select graph_version from graph_versions where org_id = :o"
@@ -171,11 +179,15 @@ def sql_neighbours(conn, org_id: str) -> Neighbours:
     from sqlalchemy import text
 
     def walk(node_id: str):
-        rows = conn.execute(text(_NEIGHBOUR_SQL), {"o": org_id, "n": node_id}).mappings().all()
+        rows = conn.execute(text(_NEIGHBOUR_SQL),
+                            {"o": org_id, "n": node_id, "lim": MAX_EDGES_PER_NODE}).mappings().all()
+        if len(rows) >= MAX_EDGES_PER_NODE:
+            walk.capped.add(node_id)
         for row in rows:
             other = row["to_node_id"] if row["from_node_id"] == node_id else row["from_node_id"]
             yield str(row["edge_type"]), str(other), dict(row)
 
+    walk.capped = set()
     return walk
 
 
@@ -183,12 +195,14 @@ def read_bounded(conn, org_id: str, request: ReadRequest) -> BoundedView:
     """The bounded read, against a live connection, carrying the revision it saw."""
     from sqlalchemy import text
 
-    view = expand(request, sql_neighbours(conn, org_id))
+    neighbours = sql_neighbours(conn, org_id)
+    view = expand(request, neighbours)
     revision = conn.execute(text(_REVISION_SQL), {"o": org_id}).scalar()
+    capped = bool(getattr(neighbours, "capped", ()))
     return BoundedView(node_ids=view.node_ids, edges=view.edges,
                        revision=None if revision is None else int(revision),
-                       truncated=view.truncated, hops_walked=view.hops_walked,
-                       truncated_by=view.truncated_by)
+                       truncated=view.truncated or capped, hops_walked=view.hops_walked,
+                       truncated_by=view.truncated_by or ("max_edges" if capped else None))
 
 
 __all__ = ["DEFAULT_MAX_HOPS", "DEFAULT_MAX_NODES", "BoundedView", "Neighbours", "ReadRequest",
