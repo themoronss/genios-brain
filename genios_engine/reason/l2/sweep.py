@@ -96,7 +96,8 @@ def _waiting(row: Any, now: datetime) -> str | None:
     return None
 
 
-def _reentry_subject(conn, org_id: str, subject_ref: str, bundle_ids: tuple[str, ...], files: list) -> Subject | None:
+def _reentry_subject(conn, org_id: str, subject_ref: str, bundle_ids: tuple[str, ...], files: list,
+                     met_at: datetime | None = None) -> Subject | None:
     from genios_engine.capture.esqe.bundle_store import read_bundles_by_id
     bundles = read_bundles_by_id(conn, org_id, bundle_ids)
     signals = read_signals(conn, org_id, (s for b in bundles for s in b.signal_ids))
@@ -104,9 +105,11 @@ def _reentry_subject(conn, org_id: str, subject_ref: str, bundle_ids: tuple[str,
     if file_id is None and not signals:
         return None
     seed = None if file_id else (seed_of(bundles[0], list(signals.values())) if bundles else None)
+    # L2 rebuild A3 · the instant its need was met is where the watermark must stay if this run is not reached:
+    # without it a carried re-entry let the watermark pass `closed_at`, and the met need was never read again.
     return Subject(subject_ref=subject_ref, file_id=file_id, seed_key=seed, bundle_ids=tuple(bundle_ids),
                    signals=tuple(signals.values()), coverage=tuple(dict(b.coverage) for b in bundles if b.coverage),
-                   trigger=TRIGGER_NEW_EVIDENCE)
+                   trigger=TRIGGER_NEW_EVIDENCE, oldest_bundle_at=met_at)
 
 
 def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget: NarrativeBudget | None = None,
@@ -144,9 +147,9 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
         after = results.read_watermark(conn, org_id)
         subjects, newest = read_subjects(conn, org_id, after=after, files=files)
         seen = {s.subject_ref for s in subjects}
-        for subject_ref, bundle_ids in evidence.reentries(conn, org_id, since=after):
+        for subject_ref, bundle_ids, met_at in evidence.reentries(conn, org_id, since=after):
             if subject_ref not in seen:
-                again = _reentry_subject(conn, org_id, subject_ref, bundle_ids, files)
+                again = _reentry_subject(conn, org_id, subject_ref, bundle_ids, files, met_at)
                 if again is not None:
                     subjects.append(again)
                     receipt["reentries"] += 1
@@ -156,44 +159,53 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     receipt["subjects"] = len(subjects)
     held: list[datetime] = []          # the oldest bundle of each subject not reached — the watermark stays there
 
+    # L2 rebuild A1 + A2 · THE GATE BEFORE THE READS, THE CAP BEFORE THE READS.
+    #
+    # The fingerprint is made of the subject's signals, its file's parts, its needs' states and the due rung —
+    # never of the snapshot or the history. Those two were read for every subject first (~50 round trips each)
+    # and then thrown away for every unchanged subject and for every subject past `max_per_pass`. Now a subject
+    # is first read only as far as its fingerprint (one connection for all of them), the standing rows answer,
+    # the rest are ordered nearest-due first, and only the ones that WILL be judged read their snapshot and
+    # history. What a judged subject is shown is unchanged.
     due: list[tuple] = []
-    for order, subject in enumerate(subjects):
-        work = by_file.get(subject.file_id) if subject.file_id else None
-        if work is not None and (us.is_us_node(work.counterparty_type, work.counterparty_key)
-                                 or names_us(work.counterparty, us, names=our_names)):
-            receipt["ours"] += 1
-            continue
-        try:
-            with engine.connect() as conn:
+    with engine.connect() as conn:
+        for order, subject in enumerate(subjects):
+            work = by_file.get(subject.file_id) if subject.file_id else None
+            if work is not None and (us.is_us_node(work.counterparty_type, work.counterparty_key)
+                                     or names_us(work.counterparty, us, names=our_names)):
+                receipt["ours"] += 1
+                continue
+            try:
                 parts = file_dossier = people = None
                 if subject.file_id:
                     parts = read_parts(conn, org_id, subject.file_id, now=now)
                     if parts is not None:
                         file_dossier = build_dossier(parts)
                         people = people_of(parts, us=us, our_names=our_names)
-                snapshot = read_snapshot(conn, org_id, seeds_for(conn, org_id, file_id=subject.file_id,
-                                                                 events=subject.events))
-                history = history_for(conn, org_id, files=files,
-                                      work_kind=getattr(getattr(parts, "file", None), "work_kind", None),
-                                      exclude=subject.file_id)
                 latest = results.latest_result(conn, org_id, subject.subject_ref)
                 asked = tuple((latest.receipt or {}).get("needs_raised") or ()) if latest is not None else ()
-                states = evidence.need_states(conn, org_id, asked)
-            tools = run_tools(subject.signals, eval_time=now, file=getattr(parts, "file", None))
-            measured = measured_inputs(tools)
-            asked_deeper = None
-            if latest is not None and isinstance(latest.result, dict):
-                asked_deeper = ((latest.result.get("judgment") or {}).get("deeper"))
-            importance = max((s.importance_bp for s in subject.signals if s.importance_bp is not None), default=None)
-            plan = compile_plan(tools=measured, file_id=subject.file_id, unresolved=subject.unresolved,
-                                truncated=snapshot.truncated,
-                                situations=len(getattr(getattr(parts, "lifecycle", None), "situations", ()) or ()),
-                                importance_bp=importance, asked_deeper=asked_deeper)
-            file_inputs = fingerprint_inputs(parts, model=model, prompt_version=EXPERT_PROMPT) if parts else None
-            fp, _inputs = fingerprint_of(subject, file_inputs=file_inputs, need_states=states, model=model,
-                                         tools=measured)
-            with engine.connect() as conn:
+                # L2 rebuild · an OPEN need is the question the last run asked, not something that arrived: only
+                # a SETTLED one (met / unavailable) is new input. Counting `open` made every run that raised a need
+                # look changed on the next read of the same inputs — one more model call for nothing.
+                states = {k: v for k, v in evidence.need_states(conn, org_id, asked).items() if v != "open"}
+                tools = run_tools(subject.signals, eval_time=now, file=getattr(parts, "file", None))
+                measured = measured_inputs(tools)
+                asked_deeper = None
+                if latest is not None and isinstance(latest.result, dict):
+                    asked_deeper = ((latest.result.get("judgment") or {}).get("deeper"))
+                importance = max((s.importance_bp for s in subject.signals if s.importance_bp is not None),
+                                 default=None)
+                file_inputs = fingerprint_inputs(parts, model=model, prompt_version=EXPERT_PROMPT) if parts else None
+                fp, _inputs = fingerprint_of(subject, file_inputs=file_inputs, need_states=states, model=model,
+                                             tools=measured)
                 row = results.read_result(conn, org_id, subject.subject_ref, fp)
+            except Exception:      # noqa: BLE001 — one unreadable subject is not a failed pass
+                _log.exception("the L2 pass could not read subject=%s org=%s", subject.subject_ref, org_id)
+                conn.rollback()    # the shared connection reads on for the next subject
+                receipt["unreadable"] += 1
+                if subject.oldest_bundle_at is not None:
+                    held.append(subject.oldest_bundle_at)
+                continue
             if row is not None and row.status in results.STANDING:
                 receipt["unchanged"] += 1
                 continue
@@ -205,24 +217,41 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 continue
             hours = (measured.get("nearest_due") or {}).get("hours") if isinstance(measured.get("nearest_due"), dict) else None
             key = (hours if hours is not None else float("inf"), -(importance or 0), order)
-            due.append((key, subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp))
-        except Exception:      # noqa: BLE001 — one unreadable subject is not a failed pass
-            _log.exception("the L2 pass could not read subject=%s org=%s", subject.subject_ref, org_id)
-            receipt["unreadable"] += 1
-            if subject.oldest_bundle_at is not None:
-                held.append(subject.oldest_bundle_at)
+            due.append((key, subject, parts, file_dossier, people, tools, measured, importance, asked_deeper, fp))
 
     due.sort(key=lambda d: d[0])
+    if len(due) > max_per_pass:
+        receipt["carried"] += len(due) - max_per_pass
+        held.extend(d[1].oldest_bundle_at for d in due[max_per_pass:] if d[1].oldest_bundle_at is not None)
+        due = due[:max_per_pass]
+    ready: list[tuple] = []
+    with engine.connect() as conn:
+        for (_key, subject, parts, file_dossier, people, tools, measured, importance, asked_deeper, fp) in due:
+            try:
+                snapshot = read_snapshot(conn, org_id, seeds_for(conn, org_id, file_id=subject.file_id,
+                                                                 events=subject.events))
+                history = history_for(conn, org_id, files=files,
+                                      work_kind=getattr(getattr(parts, "file", None), "work_kind", None),
+                                      exclude=subject.file_id)
+            except Exception:      # noqa: BLE001 — one unreadable subject is not a failed pass
+                _log.exception("the L2 pass could not read subject=%s org=%s", subject.subject_ref, org_id)
+                conn.rollback()
+                receipt["unreadable"] += 1
+                if subject.oldest_bundle_at is not None:
+                    held.append(subject.oldest_bundle_at)
+                continue
+            plan = compile_plan(tools=measured, file_id=subject.file_id, unresolved=subject.unresolved,
+                                truncated=snapshot.truncated,
+                                situations=len(getattr(getattr(parts, "lifecycle", None), "situations", ()) or ()),
+                                importance_bp=importance, asked_deeper=asked_deeper)
+            ready.append((subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp))
+
     gate = RSiteGate(org_id=org_id, engine=engine, client=client, store=BundleStore(engine), activated=activated,
                      budget=budget or NarrativeBudget.for_site(SITE_REASON, org_id=org_id, engine=engine, now=now),
                      cost_recorder=getattr(store, "record_cost", None), eval_time=now)
     rows: list[results.L2Row] = []
     needs = []
-    for i, (_key, subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp) in enumerate(due):
-        if i >= max_per_pass:
-            receipt["carried"] += len(due) - i
-            held.extend(d[1].oldest_bundle_at for d in due[i:] if d[1].oldest_bundle_at is not None)
-            break
+    for i, (subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp) in enumerate(ready):
         request = L2Request(org_id=org_id, subject_ref=subject.subject_ref,
                             trigger=subject.trigger if subject.trigger else TRIGGER_BUNDLE, eval_time=now,
                             bundle_ids=subject.bundle_ids, fingerprint=fp)
@@ -274,8 +303,8 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
             cost_micro_usd=int(getattr(rcpt, "cost_micro_usd", 0) or 0), reasoned_at=now,
             bundle_ids=subject.bundle_ids))
         if judged.ended == ENDED_OVER_BUDGET:
-            receipt["carried"] += len(due) - i - 1
-            held.extend(d[1].oldest_bundle_at for d in due[i:] if d[1].oldest_bundle_at is not None)
+            receipt["carried"] += len(ready) - i - 1
+            held.extend(d[0].oldest_bundle_at for d in ready[i:] if d[0].oldest_bundle_at is not None)
             break
 
     watermark = newest

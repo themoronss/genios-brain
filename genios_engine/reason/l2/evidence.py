@@ -34,12 +34,17 @@ NEED_MAX_USD = 0.05
 MAX_NEEDS_PER_RUN = 2
 
 _STATES = text("select need_id, state from evidence_needs where org_id = :o and need_id = any(:ids)")
+#: L2 rebuild A4 · at most this many met needs are re-entered a pass — oldest first, so none is skipped; the
+#: rest wait for the next pass (the watermark holds at the first one not read).
+MAX_REENTRIES = 50
 _MET_SINCE = text(
-    "select need_id from evidence_needs where org_id = :o and state = 'met' and need_id like :p "
-    "   and (cast(:since as timestamptz) is null or closed_at > cast(:since as timestamptz))")
+    "select need_id, closed_at from evidence_needs where org_id = :o and state = 'met' and need_id like :p "
+    "   and (cast(:since as timestamptz) is null or closed_at > cast(:since as timestamptz))"
+    " order by closed_at, need_id limit :n")
+#: ONE read for every met need's asker (was one unindexed jsonb probe per need).
 _ASKED_BY = text(
-    "select subject_ref, fingerprint, bundle_ids from reasoning_results "
-    " where org_id = :o and receipt -> 'needs_raised' ? :need order by reasoned_at desc limit 1")
+    "select subject_ref, bundle_ids, receipt -> 'needs_raised' as raised, reasoned_at from reasoning_results "
+    " where org_id = :o and receipt -> 'needs_raised' ?| cast(:needs as text[]) order by reasoned_at desc")
 
 
 def need_id_for(org_id: str, subject_ref: str, question: str) -> str:
@@ -67,20 +72,32 @@ def need_states(conn, org_id: str, need_ids: Iterable[str]) -> dict[str, str]:
     return {str(r.need_id): str(r.state) for r in conn.execute(_STATES, {"o": org_id, "ids": ids})}
 
 
-def reentries(conn, org_id: str, *, since: datetime | None) -> list[tuple[str, tuple[str, ...]]]:
-    """The subjects whose L2 need was MET since `since`: (subject, the bundles its asking run read)."""
-    out: dict[str, tuple[str, ...]] = {}
-    for row in conn.execute(_MET_SINCE, {"o": org_id, "p": f"{NEED_PREFIX}:%", "since": since}):
-        asked = conn.execute(_ASKED_BY, {"o": org_id, "need": str(row.need_id)}).first()
-        if asked is not None and asked.subject_ref not in out:
-            bundles = asked.bundle_ids if isinstance(asked.bundle_ids, list) else []
-            out[str(asked.subject_ref)] = tuple(str(b) for b in bundles)
-    return sorted(out.items())
+def reentries(conn, org_id: str, *, since: datetime | None
+              ) -> list[tuple[str, tuple[str, ...], datetime | None]]:
+    """The subjects whose L2 need was MET since `since`: (subject, the bundles its asking run read, the instant
+    the need was met — where a carried re-entry holds the watermark)."""
+    met = conn.execute(_MET_SINCE, {"o": org_id, "p": f"{NEED_PREFIX}:%", "since": since,
+                                    "n": MAX_REENTRIES}).all()
+    if not met:
+        return []
+    closed = {str(r.need_id): r.closed_at for r in met}
+    out: dict[str, tuple[tuple[str, ...], datetime | None]] = {}
+    answered: set[str] = set()
+    for row in conn.execute(_ASKED_BY, {"o": org_id, "needs": sorted(closed)}):
+        raised = [str(n) for n in (row.raised or ()) if str(n) in closed and str(n) not in answered]
+        if not raised:
+            continue                    # a later run already holds the newest asker of each of its needs
+        answered.update(raised)
+        if str(row.subject_ref) in out:
+            continue
+        bundles = row.bundle_ids if isinstance(row.bundle_ids, list) else []
+        out[str(row.subject_ref)] = (tuple(str(b) for b in bundles), min(closed[n] for n in raised))
+    return sorted((ref, b, at) for ref, (b, at) in out.items())
 
 
 def ids_of(needs: Sequence[EvidenceNeed]) -> tuple[str, ...]:
     return tuple(n.need_id for n in needs)
 
 
-__all__ = ["MAX_NEEDS_PER_RUN", "NEED_MAX_USD", "NEED_PREFIX", "NEED_TTL", "ids_of", "need_id_for",
+__all__ = ["MAX_NEEDS_PER_RUN", "MAX_REENTRIES", "NEED_MAX_USD", "NEED_PREFIX", "NEED_TTL", "ids_of", "need_id_for",
            "need_states", "needs_from", "reentries"]
