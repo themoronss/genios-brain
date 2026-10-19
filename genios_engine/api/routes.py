@@ -856,7 +856,29 @@ def _run_l2_chain(org_id: str, *, eval_time: datetime | None = None) -> bool:
     except Exception:
         _log.exception("L2/L3/L5 background pass failed for org_id=%s", org_id)
         return False
+    finally:
+        _reclaim_after_sweep()
     return True
+
+
+def _reclaim_after_sweep() -> None:
+    """⛔ THE DATABASE CANNOT OUTGROW THE TIER (19 Oct 2026). Every sweep ends by purging what it made and nothing
+    will read: reasoning runs no signal references, older than an hour (`reason/retention.purge_after_sweep`),
+    and every expertise package but the newest of each situation — a compile cache the next sweep rebuilds.
+    In-process, bounded, and never fatal: the heartbeat's purge alone let the database reach 999 MB of a 500 MB
+    tier. No Celery task (the broker is quota-limited)."""
+    if _graph is None:
+        return
+    try:
+        from genios_engine.reason.retention import purge_after_sweep
+        purge_after_sweep(_graph.engine)
+    except Exception:      # noqa: BLE001 — never fails a sweep
+        _log.exception("reasoning purge after sweep failed")
+    try:
+        from genios_engine.packs.compiler.expertise_publisher import purge_superseded_expertise_packages
+        purge_superseded_expertise_packages(_graph.engine, keep=1)
+    except Exception:      # noqa: BLE001
+        _log.exception("expertise purge after sweep failed")
 
 
 def _mailbox_owner_for(org_id: str) -> str | None:

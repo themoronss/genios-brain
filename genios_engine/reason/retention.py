@@ -65,6 +65,14 @@ logger = get_logger(__name__)
 #: refills whatever this clears in about a week.
 KEEP_DAYS = int(os.environ.get("GENIOS_REASONING_KEEP_DAYS") or 2)
 
+#: ⛔ THE SWEEP'S OWN PASS (19 Oct 2026, measured on prod): the lane writes ~1,270 runs a day at ~91 KB each
+#: (~115 MB/day) and 98% are never referenced by a signal (4,679 of 4,775). The heartbeat purge was not reaching
+#: them — the database sat at 999 MB against a 500 MB tier. So every sweep now ends with a bounded purge of
+#: unreferenced runs older than `SWEEP_GRACE_HOURS` (default 1): far longer than the race it guards (a run is
+#: written seconds before its signal), and short enough that the unreferenced trail stays a few MB. Referenced
+#: runs are untouched — the `signals` foreign keys refuse their deletion whatever this is called with.
+SWEEP_GRACE_HOURS = max(1, int(os.environ.get("GENIOS_REASONING_KEEP_HOURS") or 1))
+
 #: One aged, unreferenced run at a time, in batches, so a first pass over a year of backlog cannot
 #: hold a lock long enough to matter to the sweep running beside it. A cascade of one run touches
 #: roughly fourteen rows on this tenant, so a batch of 500 is about seven thousand deletes.
@@ -110,6 +118,18 @@ _PURGE_CAPABILITY = text("""
 """)
 
 
+def purge_after_sweep(engine, *, now: datetime | None = None, max_batches: int = 4) -> dict[str, int]:
+    """The sweep's own purge: unreferenced runs older than `SWEEP_GRACE_HOURS`, at most `max_batches` × `BATCH`
+    a sweep. Never raises — a purge that cannot run costs its rows, never the sweep."""
+    try:
+        now = now or datetime.now(timezone.utc)
+        return purge_expired_reasoning(engine, keep_days=0, now=now - timedelta(hours=SWEEP_GRACE_HOURS),
+                                       max_batches=max_batches)
+    except Exception:      # noqa: BLE001
+        logger.exception("the sweep's reasoning purge failed")
+        return {"error": 1}
+
+
 def purge_expired_reasoning(engine, *, keep_days: int = KEEP_DAYS,
                             now: datetime | None = None,
                             max_batches: int = 40) -> dict[str, int]:
@@ -147,4 +167,4 @@ def purge_expired_reasoning(engine, *, keep_days: int = KEEP_DAYS,
     return out
 
 
-__all__ = ["BATCH", "KEEP_DAYS", "purge_expired_reasoning"]
+__all__ = ["BATCH", "KEEP_DAYS", "SWEEP_GRACE_HOURS", "purge_after_sweep", "purge_expired_reasoning"]
