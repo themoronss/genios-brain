@@ -64,7 +64,7 @@ CHAIN_SITES: dict[str, tuple[str, str, tuple[str, ...]]] = {
     # ── L4 reasoning ────────────────────────────────────────────────────────────────────────
     "reason/intelligence.py": ("off", "the Ask API, not the sweep", ()),
     "reason/bundle/gate.py": ("recorded", "llm_sites.make_site_client",
-                              ("bundle_narrator", "expert")),
+                              ("bundle_narrator", "expert", "reason_l2")),
     "reason/llm_decision_maker.py": ("recorded", "llm_decision_maker.client", ("decider",)),
     "reason/llm_interpretation.py": ("recorded", "llm_decision_maker.client", ("r1",)),
     "reason/brief_drafter.py": (

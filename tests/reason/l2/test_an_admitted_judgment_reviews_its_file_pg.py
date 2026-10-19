@@ -169,3 +169,16 @@ def test_a_rejected_judgment_writes_no_review_and_covers_nothing(world):
     assert receipt["covered"] == {}
     with store.engine.connect() as c:
         assert R.latest_valid(c, ORG, file_id) is None, "a rejected judgment is no file's review"
+
+
+def test_a_file_the_expert_hands_over_is_judged_with_no_bundle_of_its_own(world):
+    """A bundle maps to ONE file, so a file reached only through bundles can be missed (the golden F03: the
+    introduction's mail is the connector's AND the investor's). The expert hands every moved file over, and the
+    L2 pass judges each as a subject of its own."""
+    store, now, file_id = world
+    with store.engine.begin() as c:
+        c.execute(text("delete from signal_bundles where org_id = :o"), {"o": ORG})
+    expert = EXPERT.expert_pass(store=store, org_id=ORG, now=now, llm=_NoCall())
+    assert [f for f, _kinds in expert["to_l2_files"]] == [file_id]
+    receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9(), files_due=expert["to_l2_files"])
+    assert receipt["subjects"] == 1 and list(receipt["covered"]) == [file_id], str(receipt)

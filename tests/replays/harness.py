@@ -107,6 +107,9 @@ SITE_MARKERS: tuple[tuple[str, str, str], ...] = (
     # STEP-12 · R-7, the expert's review of one file (`reason/expert/prompt.ROLE`'s own opening).
     ("expert", "reason/expert/prompt.py",
      "You are the founder's chief of staff, thirty years in the work."),
+    # L2 rebuild D1 · R-9, the Layer 2 judgment of one subject (`reason/l2/prompt.ROLE`'s own opening).
+    ("reason_l2", "reason/l2/prompt.py",
+     "You are the founder's chief of staff, thirty years in the work, and the reasoning layer of their"),
     ("angle", "context/angles/asker.py", "You classify one subject for an automated system."),
     ("cohort", "context/analytic/cohort.py",
      "A founder described a group of records they want to compare against."),

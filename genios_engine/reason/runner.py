@@ -1909,7 +1909,8 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     # runs or not. Gated on `l2_reasoning`, read inside the pass. Wrapped: a failure costs its shadow rows only.
     try:
         from genios_engine.reason.l2.sweep import l2_pass
-        l2 = l2_pass(store=store, org_id=org_id, now=eval_time)
+        l2 = l2_pass(store=store, org_id=org_id, now=eval_time,
+                     files_due=(expert.get("to_l2_files") if isinstance(expert, dict) else None))
     except Exception:
         logger.exception("the L2 judgment pass failed org=%s", org_id)
         l2 = {"error": True}

@@ -276,6 +276,10 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     due.sort(key=lambda d: (d[0], d[1]))
     if l2_judges:
         receipt["to_l2"] = len(due)
+        # Each file that moved, nearest first, with what moved it — the L2 pass judges it as a subject of its own
+        # (a bundle maps to ONE file, so a file judged only through bundles would miss the others an event is in).
+        receipt["to_l2_files"] = [(str(d[2].file_id), [str(getattr(t, "kind", "") or "") for t in d[5]])
+                                  for d in due]
         receipt["waiting"] = dict(receipt["waiting"])
         receipt["reviewed"] = dict(receipt["reviewed"])
         receipt["checked"] = dict(receipt["checked"])

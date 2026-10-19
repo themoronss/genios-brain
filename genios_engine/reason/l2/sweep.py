@@ -34,6 +34,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from genios_engine.contracts.reasoning_result import (ENDED_OVER_BUDGET, TRIGGER_BUNDLE,
+                                                      TRIGGER_DEADLINE_CROSSED, TRIGGER_EXPECTED_REPLY_ABSENT,
                                                       TRIGGER_NEW_EVIDENCE, L2Request, ReasoningReceipt,
                                                       stable_ref)
 from genios_engine.platform.l4_activation import FEATURE_L2_CARDS, FEATURE_L2_REASONING, activated_features
@@ -146,8 +147,18 @@ def _write_file_review(conn, *, org_id: str, review: dict[str, Any], at: datetim
         checked=review["checked"], dossier=review["dossier"], card_lines=review["card_lines"])
 
 
+#: L2 rebuild C1 · what moved a file the expert handed over (`reason/expert/triggers` kinds), as the L2 trigger.
+def _trigger_of(kinds: Any) -> str:
+    said = " ".join(str(k) for k in (kinds or ())).lower()
+    if "due" in said or "deadline" in said or "overdue" in said:
+        return TRIGGER_DEADLINE_CROSSED
+    if "quiet" in said or "silence" in said:
+        return TRIGGER_EXPECTED_REPLY_ABSENT
+    return TRIGGER_BUNDLE
+
+
 def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget: NarrativeBudget | None = None,
-            max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
+            max_per_pass: int = MAX_PER_PASS, files_due: Any = None) -> dict[str, Any]:
     """Reason every subject new bundles touched, once. Returns the pass's receipt; never raises past a subject."""
     now = now or datetime.now(timezone.utc)
     engine = getattr(store, "engine", None)
@@ -182,6 +193,14 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
         after = results.read_watermark(conn, org_id)
         subjects, newest = read_subjects(conn, org_id, after=after, files=files)
         seen = {s.subject_ref for s in subjects}
+        # L2 rebuild C1 · with `l2_cards` the expert hands over every file that moved (`to_l2_files`): each is a
+        # subject of its own, judged as the expert would have judged it — never only through the bundles.
+        for file_id, kinds in (files_due or ()):
+            ref = f"file:{file_id}"
+            if ref not in seen:
+                subjects.append(Subject(subject_ref=ref, file_id=str(file_id), seed_key=None, bundle_ids=(),
+                                        signals=(), trigger=_trigger_of(kinds)))
+                seen.add(ref)
         for subject_ref, bundle_ids, met_at in evidence.reentries(conn, org_id, since=after):
             if subject_ref not in seen:
                 again = _reentry_subject(conn, org_id, subject_ref, bundle_ids, files, met_at)

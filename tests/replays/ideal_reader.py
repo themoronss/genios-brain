@@ -144,6 +144,8 @@ class IdealReader:
         if site == "unknown":
             raise IdealReaderError("a prompt no known site writes (identify_site: unknown): "
                                    f"{prompt[:160]!r}")
+        if site == "reason_l2":
+            return self._reason_l2(prompt)
         authored = self._authored(site, prompt)
         if site == "r1":
             return authored if authored is not None else read_stances(prompt)
@@ -173,6 +175,19 @@ class IdealReader:
             from tests.replays.expert_citations import spots_for, translate
             return translate(authored, prompt, spots_for(self.case.case_id))
         return authored
+
+    def _reason_l2(self, prompt: str) -> dict[str, Any]:
+        """L2 rebuild D1 · R-9's answer: the case's OWN expert answer for the file the subject is (the same
+        judgment, written once, cited against THIS dossier), and the judgment half derived from it as a
+        faithful reader of the L2 prompt would write it (`l2_judgment_for`). A subject with no file — a seed —
+        has no authored review: it waits, citing what arrived (a seed has no situation, so nothing is admitted)."""
+        authored = self._authored("expert", prompt)
+        if authored is not None:
+            from tests.replays.expert_citations import spots_for, translate
+            review = translate(authored, prompt, spots_for(self.case.case_id))
+        else:
+            review = _seed_review(prompt, self.case.case_id)
+        return {**review, **l2_judgment_for(review, prompt)}
 
     def _authored(self, site: str, prompt: str) -> Any:
         """A site that reads a situation, not one object: the first `model[site]` entry whose
@@ -480,3 +495,64 @@ def resolve_message(prompt: str, authored: dict[str, Any] | None, case_id: str) 
     return {"verdict": "NOT_RESOLVED", "certainty": "INTENT_ONLY" if ask else "AMBIGUOUS",
             "scope": [], "quote": message[start:end], "start_offset": start, "end_offset": end,
             "speaker_role_said": "unknown"}
+
+
+# ── L2 rebuild D1 · the judgment half of R-9's answer, from the review it carries ─────────────────────────────
+from genios_engine.contracts.reasoning_result import CONFIDENCE_DIMENSIONS  # noqa: E402
+#: The intervention a review's mode allows (`contracts/reasoning_result.MODE_FITS`), as a faithful reader picks it.
+_INTERVENTION_OF = {"act": "prepare_decision", "find_out": "gather_evidence", "wait": "monitor",
+                    "blocked": "monitor", "nothing": "abstain"}
+#: A live situation the L2 dossier prints: `[sit:<id>] <type> (<domain>) · active|partial`.
+_LIVE_SIT = re.compile(r"\[(sit:[^\]\s]+)\][^\n]*?· (?:active|partial)\b")
+_EVT = re.compile(r"\[(evt_[^\]\s]+)\]")
+
+
+def _first_cited(review: dict[str, Any], prompt: str) -> str:
+    for fact in review.get("facts") or ():
+        for ref in fact.get("evidence") or ():
+            return str(ref)
+    m = _EVT.search(prompt)
+    if m is None:
+        raise IdealReaderError("an L2 prompt that prints no event to cite")
+    return m.group(1)
+
+
+def _seed_review(prompt: str, case_id: str) -> dict[str, Any]:
+    evt = _first_cited({}, prompt)
+    return {"facts": [{"claim": "a message arrived on this thread", "evidence": [evt]}],
+            "frames": {"primary": "something that just arrived", "rivals": ["noise"]},
+            "expected_vs_actual": {"stage": None, "expected": "nothing yet", "actual": "a message"},
+            "scenarios": {"do_nothing": "it waits", "act": "it moves", "best": "it is handled",
+                          "worst": "it is missed", "signals_to_watch": ["a reply"]},
+            "appraisal": {"stakes": "low", "urgency": "low", "reversibility": "reversible",
+                          "reasons": ["a lone message"]},
+            "mode": "wait", "wait_or_stop": "wait until it joins a piece of work", "done_when": "it is filed"}
+
+
+def l2_judgment_for(review: dict[str, Any], prompt: str) -> dict[str, Any]:
+    """What a faithful reader adds to the review for the L2 prompt: the intervention its mode allows, the six
+    confidence dimensions on the record it cites, one option where the mode moves, no decision owed — and, for
+    a review that finds work, an `update` naming each live situation the dossier printed (the file's seeds,
+    which the one review explains). Words with no number: the L2 check refuses an unprinted number."""
+    mode = str(review.get("mode") or "")
+    if mode not in _INTERVENTION_OF:
+        raise IdealReaderError(f"an authored review with no mode an L2 judgment can carry: {mode!r}")
+    cite = _first_cited(review, prompt)
+    options = []
+    if mode in ("act", "find_out"):
+        move = review.get("next_move") or {}
+        options.append({"option": str(move.get("what") or "find out what is owed first"),
+                        "benefit": "the work moves", "downside": "it takes the founder's time",
+                        "reversibility": "reversible", "affects": "the founder",
+                        "would_change": "an answer that settles it"})
+    mutations = [] if mode == "nothing" else [
+        {"op": "update", "situation": "the work this file holds", "why": "the review reads this file",
+         "evidence": [cite], "situation_ref": sit}
+        for sit in dict.fromkeys(_LIVE_SIT.findall(prompt))]
+    return {"intervention_mode": _INTERVENTION_OF[mode],
+            "confidence": {d: {"level": "medium", "reason": "as the record the review cites reads",
+                               "evidence": [cite]}
+                           for d in CONFIDENCE_DIMENSIONS},
+            "options": options, "history_used": [], "second_order": [], "decision_need": {"needed": False},
+            "proposed_mutations": mutations, "evidence_needs": [], "coverage_limitations": [],
+            "open_conflict": None, "deeper": None}

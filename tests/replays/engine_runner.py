@@ -419,6 +419,21 @@ def switch_on_the_expert(engine: Any, org: str) -> None:
     from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW, activate
     activate(engine, org, feature=FEATURE_EXPERT_REVIEW, by="golden_runner",
              notes="the golden founder's files reviewed by the expert, in shadow (STEP-12)")
+    if l2_path():
+        # L2 rebuild D1 · the NEW path: the Layer 2 judgment reviews the files and makes the cards (`l2_cards`).
+        from genios_engine.platform.l4_activation import FEATURE_L2_CARDS, FEATURE_L2_REASONING
+        activate(engine, org, feature=FEATURE_L2_REASONING, by="golden_runner", notes="L2 rebuild D1")
+        activate(engine, org, feature=FEATURE_L2_CARDS, by="golden_runner", notes="L2 rebuild D1")
+
+
+#: L2 rebuild D1 · `GENIOS_GOLDEN_L2=1` runs a case down the NEW path — the L2 judgment in place of the expert's
+#: review — so the two are scored on the same cases (`python -m tests.replays.l2_score`). Unset: today's path.
+L2_PATH_ENV = "GENIOS_GOLDEN_L2"
+
+
+def l2_path() -> bool:
+    import os
+    return os.environ.get(L2_PATH_ENV) == "1"
 
 
 def compose_brief(engine: Any, org: str, *, at: datetime) -> tuple[BriefLineView, ...]:
