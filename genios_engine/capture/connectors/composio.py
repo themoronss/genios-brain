@@ -20,7 +20,17 @@ _DET_JUNK_PREFILTER = os.environ.get("GENIOS_L1_DET_JUNK", "true").lower() != "f
 # Per-page full-body fetches. These are Composio HTTP calls — pure network wait, no DB slot and
 # no local CPU — so the only reason this was 6 is caution inherited from the DB budget next door.
 _FETCH_WORKERS = int(os.environ.get("GENIOS_L1_FETCH_WORKERS", "12"))
+#: L1 rebuild G3 · the largest attachment downloaded INSIDE a sync. Gmail allows 25 MB; one such
+#: file used to be downloaded and parsed in the page's critical path with no ceiling at all. Above
+#: this it is parked as `too_large` (DOC-10) and the refetch ladder fetches it on its own.
+_MAX_ATTACHMENT_BYTES = int(os.environ.get("GENIOS_L1_MAX_ATTACHMENT_BYTES", str(15 * 1024 * 1024)))
+#: L1 rebuild G3 · the longest attachment text one event carries. The `document` profile fits
+#: 40,000 characters in one call and refuses (raises) above it, which sent a long contract to the
+#: poison queue: lost. Below the cap with room for masking and the fence (58 characters); a longer
+#: text becomes one event per section-aware piece (`chunking.sections_within`), each read in full.
+_ATTACHMENT_CHUNK_CHARS = 36_000
 
+from genios_engine.capture.documents.chunking import sections_within
 from genios_engine.capture.documents.native import process_document
 from genios_engine.capture.documents.router import has_pages
 # The fetch decision and the gate decision key on the SAME threshold, or they drift — and this
@@ -458,7 +468,9 @@ class ComposioGmailConnector:
         data = body.get("data") if isinstance(body, dict) else None
         att_id = body.get("attachmentId") if isinstance(body, dict) else None
         if filename and (att_id or data):                       # an attachment part
-            atts.append({"filename": filename, "mime": mime, "attachmentId": att_id, "data": data})
+            atts.append({"filename": filename, "mime": mime, "attachmentId": att_id, "data": data,
+                         # G3 · Gmail's own byte count for the part, read before any download
+                         "size": body.get("size") if isinstance(body, dict) else None})
         elif mime in ("text/plain", "text/html") and data:       # a body text part
             texts.append((mime, _b64url(data)))
 
@@ -810,6 +822,12 @@ class ComposioGmailConnector:
                     mid=mid, att=a, idx=i, occurred=occurred, sender_email=sender_email,
                     to_emails=to_emails, cc_emails=cc_emails, status=status))
                 continue
+            size = a.get("size")
+            if not a.get("data") and isinstance(size, int) and size > _MAX_ATTACHMENT_BYTES:
+                objs.append(self._attachment_stub(
+                    mid=mid, att=a, idx=i, occurred=occurred, sender_email=sender_email,
+                    to_emails=to_emails, cc_emails=cc_emails, status="too_large"))
+                continue
             raw_bytes = _b64url(a.get("data")) if a.get("data") else \
                 self._attachment_bytes(mid, a.get("attachmentId"), a.get("filename"))
             if not raw_bytes:
@@ -820,33 +838,55 @@ class ComposioGmailConnector:
                 continue
             r = process_document(mime=a.get("mime") or "", data=raw_bytes,
                                  filename=a.get("filename") or "", ocr=self._ocr)
-            objs.append(RawObject(
-                source="gmail", object_type="email_attachment",
-                source_object_id=f"{mid}::{a.get('attachmentId') or a.get('filename') or i}",
-                occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
-                parent_object_id=mid,          # links the file back to its email
-                recipients=tuple(to_emails) + tuple(cc_emails),
+            base_id = f"{mid}::{a.get('attachmentId') or a.get('filename') or i}"
+            # G3 · a text longer than one extraction call is ONE EVENT PER PIECE — never cut, never
+            # one oversized prompt. A text that fits is one event, byte for byte as before.
+            pieces = (sections_within(r.text, max_chars=_ATTACHMENT_CHUNK_CHARS)
+                      if len(r.text or "") > _ATTACHMENT_CHUNK_CHARS else None)
+            for piece in (pieces or [None]):
+                objs.append(self._attachment_object(
+                    a=a, r=r, mid=mid, base_id=base_id, occurred=occurred,
+                    sender_email=sender_email, to_emails=to_emails, cc_emails=cc_emails,
+                    piece=piece, pieces=len(pieces or ())))
+        return objs
+
+    def _attachment_object(self, *, a, r, mid, base_id, occurred, sender_email, to_emails,
+                           cc_emails, piece, pieces) -> RawObject:
+        """One attachment event — or one PIECE of a long one (`piece` set): its own id
+        (`<attachment>#c<n>`), its text, and where it sits in the whole file, so an evidence span
+        still resolves to the document and its section."""
+        return RawObject(
+            source="gmail", object_type="email_attachment",
+            source_object_id=(base_id if piece is None else f"{base_id}#c{piece.index}"),
+            occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
+            parent_object_id=mid,              # links the file back to its email
+            recipients=tuple(to_emails) + tuple(cc_emails),
             # Step 13 · KEEP WHAT WE JUST READ. Both lists were parsed from the headers a few
             # lines up and then thrown away by the line above; `recipients` still means everyone
             # on the message and these two travel beside it.
             to_recipients=tuple(to_emails), cc_recipients=tuple(cc_emails),
-                raw={
-                    "subject": a.get("filename") or "attachment",
-                    "body": r.text,            # extracted document text → L2 facts
-                    "mime": a.get("mime"),
-                    "has_attachment": bool(r.text),
-                    # `page_offsets` is L1.3.4-U5's map: where each page of this file begins in
-                    # the text above. Carried on the event because it exists for one moment
-                    # inside the extractor and is unrecoverable afterwards — it is what lets an
-                    # evidence span say "page 4" instead of "character 4,812".
-                    "document": {"native_parse_used": r.native_parse_used, "ocr_used": r.ocr_used,
-                                 "ocr_engine": r.ocr_engine, "ocr_pages": r.ocr_pages,
-                                 "confidence_bp": r.confidence_bp, "status": r.status,
-                                 "page_offsets": list(r.page_offsets), "first_page": 1},
-                    "to": to_emails, "cc": cc_emails,
-                },
-            ))
-        return objs
+            raw={
+                "subject": a.get("filename") or "attachment",
+                # extracted document text (or one piece of it) → L2 facts
+                "body": r.text if piece is None else piece.text,
+                "mime": a.get("mime"),
+                "has_attachment": bool(r.text),
+                # `page_offsets` is L1.3.4-U5's map: where each page of this file begins in
+                # the text above. Carried on the event because it exists for one moment
+                # inside the extractor and is unrecoverable afterwards — it is what lets an
+                # evidence span say "page 4" instead of "character 4,812".
+                "document": {"native_parse_used": r.native_parse_used, "ocr_used": r.ocr_used,
+                             "ocr_engine": r.ocr_engine, "ocr_pages": r.ocr_pages,
+                             "confidence_bp": r.confidence_bp, "status": r.status,
+                             "page_offsets": list(r.page_offsets), "first_page": 1},
+                "to": to_emails, "cc": cc_emails,
+                # G3 · where this piece sits in the whole file (offsets into the full text)
+                **({} if piece is None else {"chunk": {
+                    "index": piece.index, "count": pieces,
+                    "start_offset": piece.start_offset, "end_offset": piece.end_offset,
+                    "section_title": piece.section_title}}),
+            },
+        )
 
 
 # ── L1.3.8-U2 · Gmail fast-path attachment recovery ──────────────────────────────────────────

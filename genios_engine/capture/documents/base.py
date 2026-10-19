@@ -70,6 +70,10 @@ class DocumentStatus(str, Enum):
     TRANSCRIPTION_FAILED = "transcription_failed"
     #: The bytes never arrived. Retryable, and never silent (set by the connectors).
     FETCH_FAILED = "fetch_failed"
+    #: L1 rebuild G3 · the file is over the per-attachment byte ceiling, so it was not downloaded
+    #: during the sync. Parked (DOC-10) for the refetch ladder, which fetches it on its own,
+    #: bounded, outside the page — a sync is never held by one 25 MB file.
+    TOO_LARGE = "too_large"
     #: A format with no text layer, no pages and no audio — a .zip, a firmware blob.
     UNSUPPORTED = "unsupported"
 

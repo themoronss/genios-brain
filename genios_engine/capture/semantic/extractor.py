@@ -209,6 +209,14 @@ PARK_SCHEMA_FAILED = "extraction_schema_failed"
 #: prompt or the vocabulary moves, which is exactly what `PARK_SCHEMA_FAILED` waits for too.
 PARK_TOTAL_LOSS = "extraction_total_loss"
 
+#: L1 rebuild G3 · the content is longer than its profile fits in ONE call. `assemble_call` refuses
+#: to truncate (rightly) and raised — which, inside a capture, sent the mail to the poison queue
+#: after two retries: a long thread or a long document was simply lost. It parks instead, with the
+#: length it had, so it is counted and visible; the attachment door now pages a long file into
+#: pieces before this seam (`connectors/composio._ATTACHMENT_CHUNK_CHARS`), so what still parks here
+#: is a body that needs the same paging.
+PARK_OVERSIZED = "extraction_oversized"
+
 #: One call plus ONE repair retry, and the doc says one for a reason: a second repair is a third
 #: charge for a model that has now failed twice to answer in the shape it was shown, and the
 #: park lane exists precisely so that failure is recorded rather than paid for repeatedly.
@@ -1765,6 +1773,26 @@ def _parked(request: ExtractionRequest, *, reason_code: str, failure: str, call:
                        created_at=request.eval_time)
 
 
+def _oversized(request: ExtractionRequest) -> ParkedEvent | None:
+    """A park row when the content cannot fit its profile's ONE call (see `PARK_OVERSIZED`), else
+    None. Measured exactly as `assemble_call` measures it — the content plus its fence — so the two
+    cannot disagree about what fits."""
+    profile = request.profile
+    content = request.content or ""
+    if not content.strip():
+        return None
+    overhead = len(fence(content).text) - len(content)
+    if len(content) + overhead <= profile.max_input_chars:
+        return None
+    return ParkedEvent(
+        event_id=request.event_id, org_id=request.org_id, source=request.source,
+        reason_code=PARK_OVERSIZED, stage=STAGE,
+        trace=[{"stage": STAGE, "reason": PARK_OVERSIZED, "profile_id": profile.profile_id,
+                "content_chars": len(content), "max_input_chars": profile.max_input_chars,
+                "model_calls": 0}],
+        created_at=request.eval_time)
+
+
 class _Unusable(Exception):
     """The thunk's way out of `cached_extraction`, carrying the park row it produced.
 
@@ -1971,6 +1999,13 @@ def extract(request: ExtractionRequest, *, llm: LLMClient,
     fence for a test or a byte-exact replay.
     """
     _require_deterministic(llm)
+    oversized = _oversized(request)
+    if oversized is not None:
+        # No call was assembled, so nothing was spent and there is no cache key to name.
+        return ExtractionOutcome(
+            event_id=request.event_id, result=None, parked=oversized, cache_key=None,
+            cache_hit=False, model_calls=0, input_tokens=0, output_tokens=0, tier=None,
+            diagnostics=ExtractionDiagnostics())
     call = assemble_call(request, nonce=nonce)
     key = cache_key(org_id=request.org_id, content=request.content, profile_id=call.profile_id,
                     prompt_version=call.prompt_version, schema_version=call.schema_version,

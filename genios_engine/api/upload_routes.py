@@ -20,7 +20,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPExcepti
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from genios_engine.capture.documents.chunking import (SECTION, SENTENCE, Chunk, chunk_document)
+from genios_engine.capture.documents.chunking import (SECTION, SENTENCE, Chunk, chunk_document,
+                                                      sections_within)
 from genios_engine.capture.documents.native import native_page_map
 from genios_engine.capture.esqe.finalize import L1Stores, ManualSweep, finalize_l1
 from genios_engine.capture.documents.native import extract_text_best_effort
@@ -134,25 +135,9 @@ def _chunk(text_content: str) -> list[Chunk]:
     docstring says it drops them because the upload door "has no use for offsets yet", which
     stopped being true the moment a receipt had to be human-checkable.
     """
-    sections = chunk_document(text_content, max_chars=CHUNK_CHARS, strategy=SECTION)
-    out: list[Chunk] = []
-    for piece in sections:
-        if not piece.oversized:
-            out.append(replace(piece, index=len(out)))
-            continue
-        # A section longer than the chunk cap is emitted WHOLE by the section strategy — the
-        # chunker refuses to tear a clause apart, and says so — which leaves the caller the
-        # choice its docstring names: "pay for the longer prompt, or page the chunk yourself".
-        # We page it, by sentence, and every piece INHERITS the heading it came from. Paying the
-        # longer prompt would put a 50-page agreement into one model call; dropping the heading
-        # to get sentence chunking would trade a citation that says *Termination* for one that
-        # says "somewhere in the agreement".
-        for inner in chunk_document(piece.text, max_chars=CHUNK_CHARS, strategy=SENTENCE):
-            out.append(replace(
-                inner, index=len(out), section_title=piece.section_title,
-                start_offset=piece.start_offset + inner.start_offset,
-                end_offset=piece.start_offset + inner.end_offset))
-    return out
+    # The paging itself moved to `capture/documents/chunking.sections_within` (L1 rebuild G3) so the
+    # Gmail attachment door reads a long file exactly as this door does.
+    return sections_within(text_content, max_chars=CHUNK_CHARS)
 
 
 def _l1_stores() -> L1Stores:

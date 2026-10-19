@@ -74,7 +74,7 @@ index into the string that was passed in.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 DEFAULT_CHUNK_CHARS = 2000
 
@@ -399,3 +399,25 @@ def chunk_text(text_content: str, *, max_chars: int = DEFAULT_CHUNK_CHARS) -> li
     and the extractor must never disagree about where a document divides.
     """
     return [c.text for c in chunk_document(text_content, max_chars=max_chars, strategy=SENTENCE)]
+
+
+def sections_within(text_content: str, *, max_chars: int) -> list[Chunk]:
+    """Every piece of a document, none longer than `max_chars`, each knowing its heading.
+
+    SECTION first — a clause is never torn apart, and a piece knows which heading it sat under —
+    then any section the SECTION strategy had to emit whole (`oversized`) is paged by SENTENCE,
+    every inner piece INHERITING its section's title and offsets into the WHOLE document. Shared by
+    the upload door and the Gmail attachment door (L1 rebuild G3), so a 50-page agreement is read
+    the same way whichever door it came through: in full, a chunk at a time, never cut off.
+    """
+    out: list[Chunk] = []
+    for piece in chunk_document(text_content, max_chars=max_chars, strategy=SECTION):
+        if not piece.oversized:
+            out.append(replace(piece, index=len(out)))
+            continue
+        for inner in chunk_document(piece.text, max_chars=max_chars, strategy=SENTENCE):
+            out.append(replace(
+                inner, index=len(out), section_title=piece.section_title,
+                start_offset=piece.start_offset + inner.start_offset,
+                end_offset=piece.start_offset + inner.end_offset))
+    return out

@@ -73,6 +73,7 @@ NEEDS_REFETCH: frozenset[str] = frozenset({
     "DOC-07",                 # an engine ran and read nothing: a corrupt download, a noisy scan
     "DOC-08",                 # audio arrived and no speech engine is wired anywhere yet
     "DOC-09",                 # a speech engine ran and produced no usable transcript
+    "DOC-10",                 # over the sync's byte ceiling: the bytes were never fetched
 })
 
 #: Parks the EXTRACTOR writes (`capture/semantic/extractor.py`, `PARK_*`), not the gate.
@@ -98,6 +99,7 @@ NEEDS_REEXTRACTION: frozenset[str] = frozenset({
     "extraction_parse_failed",     # the answer was not parseable, even after one repair
     "extraction_schema_failed",    # parseable, but not the schema the profile asked for
     "extraction_total_loss",       # every claim in the answer was dropped as unusable
+    "extraction_oversized",        # G3: longer than one call fits; waits for paging, never lost
     EXTRACTION_NEVER_RAN,          # STEP-05: kept and never read — see above
 })
 

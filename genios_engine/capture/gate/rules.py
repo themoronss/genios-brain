@@ -306,6 +306,9 @@ REASON_LABELS = {
     # Audio arrived and no speech-to-text engine exists (L1.3.4-U3: source P5 is unbuilt).
     "DOC-08": "doc_transcription_unavailable",
     "DOC-09": "doc_transcription_failed",
+    # L1 rebuild G3 · over the per-attachment byte ceiling, so not downloaded inside the sync; the
+    # refetch ladder takes it on its own (`connectors/composio._MAX_ATTACHMENT_BYTES`).
+    "DOC-10": "doc_too_large",
     # A changing object arrived with no version to change WITH — undedupable, so it would
     # freeze at first-seen state rather than update.
     "MUT-01": "versionless_mutable",
@@ -367,6 +370,8 @@ def content_integrity_rule(ctx: GateContext) -> tuple[str, str] | None:
         return ("DOC-08", "park")                # no speech engine wired anywhere yet
     if doc.get("status") == "transcription_failed":
         return ("DOC-09", "park")
+    if doc.get("status") == "too_large":
+        return ("DOC-10", "park")                # not downloaded in the sync → the refetch ladder
     if doc.get("status") == "fetch_failed":
         return ("DOC-05", "park")                # attachment download failed → retryable, never silent
 
