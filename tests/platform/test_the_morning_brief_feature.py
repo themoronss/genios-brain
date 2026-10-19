@@ -50,7 +50,9 @@ def engine():
 def test_the_switch_is_a_named_feature_with_its_wave_and_effect():
     assert ACT.FEATURE_MORNING_BRIEF == "morning_brief"
     assert ACT.require_feature("morning_brief") == "morning_brief"
-    assert ACT.L4_FEATURES[-1] == ACT.FEATURE_MORNING_BRIEF
+    # GeniOS-008 appended `l2_reasoning` after it (the L2 judgment pass, in shadow): the brief is the last
+    # feature of the YC-II waves, and the one before it.
+    assert ACT.L4_FEATURES[-2:] == (ACT.FEATURE_MORNING_BRIEF, ACT.FEATURE_L2_REASONING)
     assert ACT.FEATURE_WAVES[ACT.FEATURE_MORNING_BRIEF] == "STEP-15"
     assert ACT.PRECONDITIONS[ACT.FEATURE_MORNING_BRIEF] == ()
     assert ACT.FEATURE_MORNING_BRIEF not in ACT.CROSS_LAYER_PRECONDITIONS

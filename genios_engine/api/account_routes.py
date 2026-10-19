@@ -936,6 +936,8 @@ _ORG_SCOPED_TABLES = [
     # is recorded in the test's DRIFT set rather than papered over with an exception handler.
     "situation_interpretations", "context_angle_verdicts",
     "open_loops", "post_pass_watermarks", "pipeline_counters", "signal_bundles",
+    # GeniOS-008 L2 (0243): the judgment pass's results about this tenant's own work.
+    "reasoning_results",
     "segment_members", "graph_segments",
     # The compiled brain. A cache the next sweep rebuilds — but it is built FROM this tenant's
     # situation and quotes their own objects, so it is tenant content while it exists, and it was

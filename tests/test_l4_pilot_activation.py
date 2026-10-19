@@ -136,10 +136,14 @@ def test_the_five_features_are_the_plans_five_in_wave_order():
     never Opus, s15-D1). It landed with its wave and its effect, no precondition, and it is never
     default-on — it spends a model call every morning; its own site registration in
     `reason/bundle/sites.py` is a later unit's, waiting on the Claude 5 thinking fix's merge.
+
+    ⛔ THE ELEVENTH ARRIVED ON PURPOSE, 2026-10-18: `l2_reasoning` (GeniOS-008 L2), the switch for the Layer 2
+    judgment pass (R-9) in SHADOW. It landed with its site, its wave, its effect and no precondition, and it is
+    never default-on — it spends a strong-model call per subject a new bundle touches.
     """
     assert ACT.L4_FEATURES[:5] == ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
     assert ACT.L4_FEATURES[5:] == ("situation_reasoner", "cards_from_situations",
-                                   "calibration_apply", "expert_review", "morning_brief")
+                                   "calibration_apply", "expert_review", "morning_brief", "l2_reasoning")
     assert set(ACT.EFFECTS) == set(ACT.L4_FEATURES) == set(ACT.FEATURE_WAVES)
     assert set(ACT.PRECONDITIONS) == set(ACT.L4_FEATURES)
     assert ACT.FEATURE_WAVES["bundle"] == "Z4"

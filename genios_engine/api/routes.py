@@ -33,7 +33,7 @@ from genios_engine.platform.wiring import (make_agent_event_store,
                                            make_conflict_store,
                                            make_drop_ledger, make_floor_store,
                                            make_rejection_ledger,
-                                           make_signal_store,
+                                           make_signal_store, make_bundle_store,
                                            make_lifecycle_store,
                                            make_connection_store, make_coverage_fn,
                                            make_esqe_stage,
@@ -90,6 +90,8 @@ _drop_ledger = make_drop_ledger()
 # the floor and its ledger because the three are one decision seen from three sides: what crossed,
 # what did not, and against which threshold.
 _signal_store = make_signal_store()
+# GeniOS-008 L1 E1 — the bundles `publish_sweep` builds, kept for Layer 2 (0186).
+_bundle_store = make_bundle_store()
 # L1.6.10 — `publication_rejections`, the row the OTHER five blocking rules never left. V-1 parks
 # and the floor drops; V-2, V-3, V-4, V-6 and V-7 refused a signal and wrote nothing anywhere, so
 # "why did I never see X?" had an answer for two of the seven rules. Resolved here beside the
@@ -118,7 +120,7 @@ def _l1_stores() -> L1Stores:
     """
     return L1Stores(conflicts=_conflict_store, floors=_floor_store, drops=_drop_ledger,
                     lifecycle=_lifecycle_store, signals=_signal_store, parked=_parked,
-                    rejections=_rejection_ledger)
+                    rejections=_rejection_ledger, bundles=_bundle_store)
 
 
 # ── health / config ──────────────────────────────────────────────────────────────
@@ -3485,11 +3487,16 @@ def integrations_status(scope: str = "workspace",
     return out
 
 
-def _sync_source(org_id: str, source_type: str, limit: int):
+def _sync_source(org_id: str, source_type: str, limit: int, *, scope=None):
+    """One source's sync through the door. `scope` (GeniOS-008 L1 E2) wraps the connector so the run carries
+    ONE fetched batch — an evidence need's thread or window — instead of the cursor's next page."""
     from genios_engine.contracts.connection import Connection
     conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
     rel = make_relevance_classifier(org_id)    # ONE classifier: connector gates on snippet + fetches
-    return run_sync(make_connector_for(conn, relevance=rel),   # only keepers; pipeline reuses its cache
+    connector = make_connector_for(conn, relevance=rel)
+    if scope is not None:
+        connector = scope(connector)
+    return run_sync(connector,   # only keepers; pipeline reuses its cache
                     org_id=org_id, connection_id=conn.connection_id,
                     repo=_repo, mode="incremental", limit=limit, parked_store=_parked,
                     relevance=rel, trace_repo=_trace_repo,
@@ -3501,6 +3508,24 @@ def _sync_source(org_id: str, source_type: str, limit: int):
                     esqe=_esqe_stage_for(org_id),
                     semantic=_semantic_lane_for(org_id),
                     structured=_structured_lane_for(org_id))
+
+
+def _need_fetchers(org_id: str):
+    """GeniOS-008 L1 E2 · a tenant's evidence-need fetchers, made here because the door's stores live here.
+    The fetcher fetches with a plain Gmail connector, then carries the batch through `_sync_source` scoped to
+    it — one capture door, so the answer is gated, extracted, published and bundled like any mail."""
+    from genios_engine.capture.acquire.need_fetchers import make_fetchers
+    from genios_engine.contracts.connection import Connection
+    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type="gmail", config={})
+    return make_fetchers(
+        connector_for=lambda: make_connector_for(conn),
+        sync=lambda scoped: _sync_source(org_id, "gmail", 50,
+                                         scope=lambda _connector: scoped))
+
+
+from genios_engine.capture.acquire.need_executor import register_fetcher_factory  # noqa: E402
+
+register_fetcher_factory(_need_fetchers)
 
 
 # Onboarding backfill is WINDOW-bounded (60d email / 120d calendar), not count-bounded — the user

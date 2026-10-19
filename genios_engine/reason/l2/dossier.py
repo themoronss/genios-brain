@@ -1,0 +1,178 @@
+"""GeniOS-008 L2 · the run's input, as the six labelled blocks of the spec (§4, `02-PLAN.md` §4 A-F).
+
+  A  THE SIGNALS      what L1 published for this subject this sweep, every carried field (E8), and the
+                      mail's own words under each, so a fact can QUOTE them and the check can hold it;
+  B  THE CONTEXT      the bounded snapshot (R2): nodes and edges around the seeds, its revision, its cap;
+  C  THE HISTORY      comparable past work of the same kind (R3), each a `case:` id;
+  D  THE EXPERTISE    for a file, the STEP-12 dossier WHOLE — brief, file, timeline, promises, numbers with
+                      their n, what was checked, the playbook, its situations, what was judged before, what
+                      doing nothing does; for a seed, the company brief (no kind of work, so no playbook);
+  E  THE TOOLS        the tool results (R7), each a `tool:` id with its number;
+  F  THE COVERAGE     per source, what was read and what was not; the snapshot's cap; what L1 could not settle.
+
+⛔ THE FILE DOSSIER IS REUSED, NEVER REWRITTEN. Its ids (`ev:`, `loop:`, `pb:`, `sit:`, …), its quotes and
+its numbers are what the STEP-13 check already knows how to hold. Every id this module prints is added to
+the same catalogue, and the catalogue's numbers are read off the WHOLE text, so a number the model repeats
+from any block is a number the dossier holds.
+
+Pure: the same parts, the same dossier, byte for byte.
+"""
+from __future__ import annotations
+
+import hashlib
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Any
+
+from genios_engine.contracts.expert_review import DossierCatalogue, number_tokens
+from genios_engine.contracts.reasoning_result import HistoricalContext
+
+from .inputs import Subject
+from .snapshot import Snapshot
+from .tools import ToolResult
+
+L2_DOSSIER_VERSION = "l2-dossier.v1"
+
+TITLES = {"A": "A · THE SIGNALS — what arrived for this subject", "B": "B · THE CONTEXT — what the company knows around it",
+          "C": "C · THE HISTORY — comparable past work, and how it went",
+          "D": "D · THE EXPERTISE AND THE FILE", "E": "E · THE TOOLS — numbers code computed",
+          "F": "F · THE COVERAGE — what was read, and what was not"}
+
+
+@dataclass(frozen=True, slots=True)
+class L2Dossier:
+    org_id: str
+    subject_ref: str
+    as_of: datetime
+    text: str
+    catalogue: DossierCatalogue
+    digest: str
+    version: str = L2_DOSSIER_VERSION
+
+    @property
+    def file_id(self) -> str:
+        """The name `reason/expert` code reads a dossier's subject by."""
+        return self.subject_ref
+
+
+def _when(at: datetime | None) -> str:
+    if at is None:
+        return "unknown"
+    at = at.astimezone(timezone.utc) if at.tzinfo else at.replace(tzinfo=timezone.utc)
+    return at.strftime("%Y-%m-%d %H:%M UTC")
+
+
+class _Cite:
+    def __init__(self) -> None:
+        self.seen: set[str] = set()
+
+    def __call__(self, ref: str) -> str:
+        self.seen.add(ref)
+        return f"[{ref}]"
+
+
+def _signals(subject: Subject, cite: _Cite) -> str:
+    lines = []
+    for s in subject.signals:
+        bits = [s.signal_type]
+        if s.sender:
+            bits.append(f"from {s.sender}")
+        if s.direction:
+            bits.append(s.direction)
+        if s.ball_in_court and s.ball_in_court != "unknown":
+            bits.append(f"turn with: {s.ball_in_court}")
+        bits.append(_when(s.occurred_at))
+        if s.due_at is not None:
+            bits.append(f"due {_when(s.due_at)}")
+        if s.thread_key:
+            bits.append(f"thread {s.thread_key}")
+        if s.state and s.state != "active":
+            bits.append(s.state)
+        lines.append(f"- {cite('sig:' + s.signal_id)} {cite(s.event_id)} " + " · ".join(bits))
+        for quote in s.quotes:
+            lines.append(f"  “{quote}”")
+    return "\n".join(lines) or "Nothing arrived."
+
+
+def _context(snapshot: Snapshot, cite: _Cite) -> str:
+    if not snapshot.nodes:
+        return "No node of the company's memory was found around this subject."
+    seeds = set(snapshot.seeds)
+    lines = [f"Read at {snapshot.ref}, from {len(snapshot.seeds)} seed(s)."]
+    for n in snapshot.nodes:
+        lines.append(f"- {cite('node:' + n.node_id)} {n.node_type} · {n.name or '(no name)'}"
+                     + (" · the subject" if n.node_id in seeds else ""))
+    for edge_type, a, b in snapshot.edges:
+        lines.append(f"- {cite('node:' + a)} —{edge_type}→ {cite('node:' + b)}")
+    if snapshot.truncated:
+        lines.append(f"⛔ The read was CAPPED ({snapshot.truncated_by}): there may be more. Never say something is "
+                     "absent because it is not here.")
+    return "\n".join(lines)
+
+
+def _history(history: HistoricalContext, cite: _Cite) -> str:
+    if not history.cases:
+        return "No comparable past work of this kind is on record."
+    lines = []
+    for c in history.cases:
+        lines.append(f"- {cite(c.case_id)} {c.subject} ({c.work_kind or 'no kind'}) — {c.summary}"
+                     + (f"; it ended: {c.outcome}" if c.outcome else "; it has not ended"))
+    return "\n".join(lines)
+
+
+def _tools(tools: Sequence[ToolResult], cite: _Cite) -> str:
+    return "\n".join(f"- {cite(t.tool_id)} {t.says}" for t in tools) or "No tool had anything to compute."
+
+
+def _coverage(subject: Subject, snapshot: Snapshot) -> str:
+    lines = []
+    for cov in subject.coverage:
+        for src in cov.get("sources", ()) or ():
+            if not isinstance(src, Mapping):
+                continue
+            done = src.get("completeness_bp")
+            lines.append(f"- {src.get('source', 'a source')}: "
+                         + (f"{done} bp of it read" if done is not None else "how much was read is NOT known")
+                         + (f", window {cov.get('window_from')} → {cov.get('window_to')}"
+                            if cov.get("window_from") or cov.get("window_to") else ""))
+    if not lines:
+        lines.append("- No source said how much of it was read: a negative claim (\"nobody replied\") is not licensed.")
+    if snapshot.truncated:
+        lines.append(f"- The context read was capped ({snapshot.truncated_by}).")
+    for u in subject.unresolved:
+        lines.append(f"- L1 could not settle: {u}")
+    return "\n".join(lines)
+
+
+def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot: Snapshot,
+                     history: HistoricalContext, tools: Sequence[ToolResult], file_dossier: Any = None,
+                     brief_block: str | None = None, depth_note: str | None = None) -> L2Dossier:
+    """The six blocks, in order. `file_dossier` is the STEP-12 `Dossier` for a file subject (its text and
+    catalogue are kept whole); a seed subject passes `brief_block` instead."""
+    cite = _Cite()
+    blocks = {"A": _signals(subject, cite), "B": _context(snapshot, cite), "C": _history(history, cite)}
+    if file_dossier is not None:
+        blocks["D"] = file_dossier.text
+    else:
+        blocks["D"] = "## THE COMPANY BRIEF\n" + (brief_block or "No company brief is accepted for this tenant.") \
+            + "\n\nNo file holds this subject, so no kind of work and no playbook: judge from the brief, the signals " \
+              "and the context."
+    blocks["E"] = _tools(tools, cite)
+    blocks["F"] = _coverage(subject, snapshot)
+    head = f"L2 DOSSIER {L2_DOSSIER_VERSION} — subject {subject.subject_ref}, as of {_when(as_of)}"
+    if depth_note:
+        head += f"\n{depth_note}"
+    text = "\n\n".join([head, *(f"# {TITLES[k]}\n{blocks[k]}" for k in ("A", "B", "C", "D", "E", "F"))])
+    ids = set(cite.seen)
+    stages: tuple[str, ...] = ()
+    if file_dossier is not None:
+        ids |= set(file_dossier.catalogue.evidence_ids)
+        stages = tuple(file_dossier.catalogue.stages)
+    catalogue = DossierCatalogue(evidence_ids=frozenset(ids), numbers=number_tokens(text), stages=stages)
+    digest = "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return L2Dossier(org_id=org_id, subject_ref=subject.subject_ref, as_of=as_of, text=text,
+                     catalogue=catalogue, digest=digest)
+
+
+__all__ = ["L2Dossier", "L2_DOSSIER_VERSION", "TITLES", "build_l2_dossier"]

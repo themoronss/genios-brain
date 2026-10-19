@@ -184,7 +184,13 @@ def test_the_statement_count_did_NOT_move():
     # transaction per page — four call sites of SQL the census already counts, not new SQL text.
     # ⛔ MOVED 3,266 → 3,268, L1 rebuild B4: `capture/landing/promote._ARCHIVED_FROM` and
     # `._PROMOTE_FROM`, the retro-rescue's select and update — the engine gaining two statements.
-    assert r["statements"] == 3_268, (
+    # ⛔ MOVED 3,250 → 3,276 on 2026-10-18, deliberately, by GeniOS-008: new SQL, not a wider list — the bundle
+    # store's insert / since / by-id (L1 E1), the L2 pass's reads (signals + sender, seeds, nodes, comparable cases,
+    # the org's names), `reason/l2/store`'s five statements, the evidence loop's three, and
+    # `scripts/l2_shadow_report.py`'s three.
+    # ⛔ MOVED to 3,294 at the merge of the two (19 Oct): 3,250 + 18 (L1 rebuild, above) + 26
+    # (GeniOS-008, above) — each side counted from the same base, neither statement shared.
+    assert r["statements"] == 3_294, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

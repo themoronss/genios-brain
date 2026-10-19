@@ -36,7 +36,7 @@ from genios_engine.platform.wiring import (make_conflict_store, make_coverage_fn
                                            make_llm_client, make_ocr, make_parked_store,
                                            make_payload_store, make_prepared_store,
                                            make_rejection_ledger, make_repo,
-                                           make_semantic_lane, make_signal_store,
+                                           make_semantic_lane, make_signal_store, make_bundle_store,
                                            make_trace_repo)
 
 router = APIRouter()
@@ -160,7 +160,7 @@ def _l1_stores() -> L1Stores:
     return L1Stores(conflicts=make_conflict_store(), floors=make_floor_store(),
                     drops=make_drop_ledger(), lifecycle=make_lifecycle_store(),
                     signals=make_signal_store(), parked=_parked,
-                    rejections=make_rejection_ledger())
+                    rejections=make_rejection_ledger(), bundles=make_bundle_store())
 
 
 def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,

@@ -105,7 +105,7 @@ def test_the_tiers_are_the_shared_table_and_not_a_call_site_decision():
 
 def test_an_unknown_site_is_refused_rather_than_run():
     with pytest.raises(ValueError):
-        run(site="R-9", gate=gate(Client()))
+        run(site="R-99", gate=gate(Client()))
 
 
 def test_no_gate_is_answered_as_no_model_and_never_as_permission():

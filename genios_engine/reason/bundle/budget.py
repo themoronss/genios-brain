@@ -27,7 +27,7 @@ from decimal import Decimal
 from genios_engine.capture.semantic.batch import DEFAULT_TIER_PRICES
 from genios_engine.platform.logging import get_logger
 
-from .sites import (R_SITES, SITE_BRIEF, SITE_BRIEF_ESCALATE, SITE_EXPERT, TIER_T1, TIER_T2,
+from .sites import (R_SITES, SITE_BRIEF, SITE_BRIEF_ESCALATE, SITE_EXPERT, SITE_REASON, TIER_T1, TIER_T2,
                     require_site, tier_for)
 
 _log = get_logger("genios.reason.bundle.budget")
@@ -64,6 +64,10 @@ OWN_BUDGETS: dict[str, tuple[str, str]] = {
     SITE_EXPERT: ("2.00", "0.10"),
     SITE_BRIEF: ("0.25", "0.03"),
     SITE_BRIEF_ESCALATE: ("0.25", "0.03"),
+    # GeniOS-008 L2 · the judgment pass (R-9): $2 a day of its own (L2-Q5 default, as R-7's), and 15 cents a
+    # call — its worst case is a ~100,000-character dossier (25,000 tokens: 5 cents on T2) and the 8,000-token
+    # ceiling (8 cents), 13 cents; R-7's 10 would refuse every bounded run at its bound.
+    SITE_REASON: ("2.00", "0.15"),
 }
 
 

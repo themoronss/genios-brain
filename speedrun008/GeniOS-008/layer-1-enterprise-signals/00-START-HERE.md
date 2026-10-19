@@ -1,6 +1,8 @@
 # L1 Enterprise Signals (`capture/`) — start here
 
-**Status 2026-10-17 evening:** A1 A2 pushed (`e0996e6c`) · A3 C3 built, hermetic green, golden board unread · B waits for R1 · C4 D1 D2 moved to L3.
+**Status 18 Oct (evening):** A1 A2 A3 C3 pushed · Group E: **E1 ✅ E8 ✅ E2 ✅ (armed off) built and pushed**; E9 audited —
+two L1 model sites put mail text in the prompt unfenced (finding below, fixed together with B2); E3 E4 E5 E6 E7 E10
+**not built**, each for a stated reason (§ "Group E" in `02-PLAN`) · B waits for R1.
 
 **Layer 1's job:** say what happened, in which source, when, with what evidence — and say honestly
 what it did NOT see. It does not decide what anything means for the company; that is L3 and L2.
@@ -22,8 +24,9 @@ what it did NOT see. It does not decide what anything means for the company; tha
 |---|---|---|
 | A · never say what you do not know | A1 refusal ≠ empty · A2 truncated poll · A3 inferred time · A4 Gmail `historyId` | A1 ✅ A2 ✅ pushed · A3 ✅ built (golden unread) · A4 needs one live Composio history response (Harsh) |
 | B · the junk filter | B1 live measurement · B2 prompt · ~~B3~~ already built | ⛔ B1, B2 wait for R1 |
-| C · what L1 knows reaches L2 | C1 evidence fetcher · ~~C2~~ not a defect · C3 unchecked quotes · C4 L2 reads L1's columns · C5 bundles | C1 deferred · C3 ✅ built (golden unread) · C4 → L3 · C5 ⛔ R2 |
-| D · new objects | D1 thread end state · D2 condition | both → L3 (they need a reader there) |
+| C · what L1 knows reaches L2 | C3 unchecked quotes ✅ · C1 C2 C4 C5 → now E2 E3 E8 E1 | C3 ✅ pushed · rest in Group E |
+| D · new objects | D1 D2 → now E4 | in Group E |
+| **E · the new architecture's L1** | E1 bundle (L1→L2 contract) · E2 EvidenceNeed fetchers · E3 entity doubt · E4 six object types · E5 absence signals · E6 roles · E7 lifecycle · E8 carried fields · E9 injection boundary · E10 metric definitions | **E1 ✅ E8 ✅ E2 ✅** (18 Oct) · E9 audited, fix waits with B2 · E3 E4 E5 E6 E7 E10 not built — reasons in `02-PLAN` Group E status |
 
 ## What Rohit decides (from `02-PLAN.md`)
 

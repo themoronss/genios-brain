@@ -55,10 +55,48 @@ Items that need a decision from Rohit are marked ⛔ and wait for it; nothing el
 
 ## Not doing (and why)
 
-- **New groups G1–G7, new algorithm numbers, renaming V-1…V-7** — the structure exists; renaming
-  it moves nothing and breaks every citation.
-- **Absence signals inside L1** — absence needs memory; it stays in L3.
+- ~~New groups G1–G7, new algorithm numbers~~ ⛔ **Withdrawn 18 Oct.** Rohit's Layer 1 Blueprint (`05-BLUEPRINT-the-spec.md`) IS the spec for Layer 1: groups G1–G7 → sections → functions → components → units, its contracts (SourceReceipt, ContentArtifact, EnterpriseObservation, QualifiedEnterpriseSignal, Bundle, CoverageReceipt, EvidenceNeed, PublicationReceipt), its algorithm registry (ALG-L1-01…19 + ALG-17, ALG-19) and its acceptance tests. Layer 1 is re-planned on that structure — Blueprint Part 6 Phase 0 first: every existing file mapped to G#→section→function→component→unit with BUILT / RUNNING / TARGET / GAP / UNVERIFIED. Existing V-1…V-7 keep their meaning; the Blueprint's proposed V-mapping is reconciled against `contracts/publication.py`, not imposed.
+- ~~Absence signals inside L1~~ ⛔ **Withdrawn 18 Oct** — that was the old flow talking. Atlas v2 and the Blueprint put absence-derived signals in L1, each with its coverage receipt: Group E, E5.
 - **Delivered / read status** — Gmail does not provide it.
 - **The database-load fixes (5.1–5.4)** — real, but in L2 `reason/`, L3 `context/analytic/` and L5
   `deliver/`. They go in those layers' folders. 5.3's mechanism does not match the code (an unchanged
   value is not written, `publish.py:305`), so it needs one production query before any fix.
+
+---
+
+## Group E — what the NEW architecture puts in L1, which I had judged against the old flow (18 Oct)
+
+⛔ **Correction.** On 17 Oct I retracted, deferred or moved C1, C2, C4, C5, D1 and D2 by asking
+"what does today's code do?" — and today's code still runs the OLD flow, where `context/` forms the
+situation. Design Atlas v2 (§L1 "What L1 must add to stop starving reasoning", §II.1 contracts, §V.2
+P1·6–8) puts every one of these **in L1**. They are restored here and replace the rows above.
+
+| # | Replaces | What the new architecture asks of L1 | What the code has today | The change |
+|---|---|---|---|---|
+| E1 | C5 | **The L1 → L2 contract is a `QualifiedEnterpriseSignalBundle`** — signals, entities, candidate relationships, coverage receipt, unresolved | `esqe/bundle.py` builds bundles each sweep; `finalize_l1` passes no store, so nothing is written and nothing reads them | store the bundle every sweep (`finalize_l1` → `signal_bundles`), attach the sweep's coverage receipt and `unresolved[]`, and expose a reader for L2 |
+| E2 | C1 | **EvidenceNeed executor** — L2 asks L1 for the one missing fact: fetch the thread, backfill history, re-extract an attachment | executor + queue built and run every sweep; `build_fetchers()` returns `{}` | real fetchers: `FETCH_THREAD` (Gmail thread by id), `REEXTRACT` (stored payload), `BACKFILL_WINDOW` (bounded backfill); a refused provider leaves the need open, never "found nothing" |
+| E3 | C2 | **Entity resolution with doubt** — "probably the same person" stays probable | the alias resolver computes `alternatives` and drops them (`validate/canonical.py:542`) | carry candidates + basis on the mention; never a forced single entity |
+| E4 | D1, D2 | **Six object types**: commitment · condition · open question · delivery status · meeting follow-up link · thread terminal state | commitment ✅, open question ✅; condition only inside a commitment; delivery status = bounce only, linked in `context/`; meeting follow-up link only in `context/`; thread end only as `ball_in_court` | a `Condition` object; delivery status (sent / bounced / deferred) linked to its outbound message in L1; meeting → follow-up link in L1 correlation; thread terminal state per thread |
+| E5 | 01 §4 | **Absence-derived signals** with a coverage receipt — no reply, no owner, no approval, no delivery | absence is computed only in `context/` (`waiting.py`, `outreach_situations.py`); `SignalType` has no absence member | absence signals published by L1, each carrying the coverage receipt that makes it sayable |
+| E6 | — | **Role extraction**: sender ≠ promisor ≠ owner ≠ approver | `RoleAssertion(party, role)` with free-text role | a closed role set on the published signal |
+| E7 | — | **Version and supersession** lifecycle | `SIGNAL_STATES` = active, superseded, expired, resolved | add `new` and `revoked` (Atlas L1 "lifecycle"), with dates |
+| E8 | C4 | **Nothing computed goes uncarried** — L1's `ball_in_court`, `thread_key`, `direction`, `due_at`, `coverage` reach L2 | written to `qualified_signals`, read by nobody | carried in the bundle (E1) so L2 reads them |
+| E9 | — | **Untrusted-content boundary** | `capture/semantic/injection.py` exists (nonce fence, SAFETY block, no model-set scores) | verify it covers every L1 model site (junk gate, relevance, domains, extraction); fix any gap |
+| E10 | — | **Metric definitions** ("sales" = booked/collected/signed) | not found in `capture/` | open: confirm owner (L1 vs Plane D) before building |
+
+Order: E1 (the contract everything else rides on) → E8 → E2 → E4 → E5 → E3 → E6 → E7 → E9 → E10.
+
+### Group E status (18 Oct, evening — Rohit opened the build)
+
+| # | State | What exactly |
+|---|---|---|
+| E1 | ✅ built, pushed | `capture/esqe/bundle_store.py` (InMemory + Postgres, idempotent `put`, `since` reader); `finalize_l1` passes `L1Stores.bundles` to `publish_sweep`; both doors (`api/routes`, `api/upload_routes`) wire a store. `signal_bundles` (0186) gets rows from the deploy on |
+| E8 | ✅ built, pushed | read side in L2: `reason/l2/inputs.read_signals` reads each bundle's signals with `ball_in_court`, `thread_key`, `direction`, `due_at`, `coverage`, the quoted words and the sender (`source_events.actor`) — printed in the L2 dossier's SIGNALS block |
+| E2 | ✅ built, pushed, **armed off** | `capture/acquire/need_fetchers.py`: FETCH_THREAD (`GMAIL_FETCH_MESSAGE_BY_THREAD_ID`) and BACKFILL_WINDOW (Gmail `after:`/`before:`), each carried through `run_sync` by `ScopedBatchConnector` (one door). `build_fetchers` returns them only with `GENIOS_NEED_FETCHERS=on` and the factory `api/routes` registers. A provider refusal raises → the need closes `unavailable` with the error, never "found nothing". REEXTRACT not wired: needs asking for it stay open |
+| E9 | 🔎 audited, **not fixed** | Of the four L1 model sites, `capture/semantic/extractor` and `capture/esqe/relevance` fence the mail (`injection.fence` + the "data, not instructions" line). **`capture/gate/relevance.py` (`_GATE_PROMPT`, `_GATE_BATCH_PROMPT`) and `capture/domain/proposer.py` (`build_prompt`) put mail text in raw.** The batch gate is the one that matters: one email in a batch could write text that reads as verdicts for the OTHER emails of the batch. The fix (fence + safety line) changes the gate's prompt, so the golden recordings keyed by it must be re-recorded — it ships with B2, which already waits on the live key (R1). The new L2 prompt carries its own untrusted-content rule |
+| E3 | ⏳ not built | carrying `alternatives` on the mention needs a contract field, storage and a reader; L3 owns identity resolution, so it is built with the L3 identity work, not alone (a carried field nobody reads is the defect E8 fixed) |
+| E4 | ⏳ not built | `Condition` and the follow-up/delivery links change the extraction schema → the extractor's prompt → every golden recording; needs the live key (R1) for the re-record |
+| E5 | ⏳ not built — **decision for Rohit** | absence as published L1 signals means new members of the CLOSED `SignalType` (ALG-16 precedence, ALG-17 weights, the check constraint, the pins). Meanwhile L2 computes absence as tool evidence (`tool:unanswered_inbound`, `tool:whose_turn`, `tool:days_quiet`) and its prompt licenses "nobody replied" only where block F says the source was read. Q: keep absence in L2's tools, or add it to L1's taxonomy? |
+| E6 | ⏳ not built | a closed role set changes the extraction schema → same re-record as E4 |
+| E7 | ⏳ not built — **decision for Rohit** | adding `new` to `SIGNAL_STATES` hides the signal from every reader that filters `state = 'active'` (the live set). Needs the rule for when `new` becomes `active` first; `revoked` needs its detector |
+| E10 | ⏳ open | owner (L1 or Plane D) still to confirm |

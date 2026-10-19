@@ -44,7 +44,10 @@ def test_the_ceiling_holds_a_whole_review():
     # 4,000 → 6,000 (`yc2_w27_s18` M50.C2.L-contract.V1.U02): Haiku's reviews measured p90 3,509, max
     # 3,990, six cut at 4,000 — and Sonnet 5 asked with thinking off (`06` D71).
     assert ceiling == 6000
-    assert ceiling > max(v for k, v in S.SITE_MAX_OUTPUT_TOKENS.items() if k != S.SITE_EXPERT)
+    # GeniOS-008: every site but R-9 — the L2 judgment pass, which IS this review plus its judgment half, and so
+    # sits above it (R-9's own ceiling is pinned in tests/reason/l2).
+    assert ceiling > max(v for k, v in S.SITE_MAX_OUTPUT_TOKENS.items() if k not in (S.SITE_EXPERT, S.SITE_REASON))
+    assert S.max_output_tokens(S.SITE_REASON) > ceiling
     assert set(S.SITE_MAX_OUTPUT_TOKENS) == set(S.SITE_TIERS) == set(S.R_SITES)
 
 
