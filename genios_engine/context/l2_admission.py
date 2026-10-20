@@ -35,7 +35,9 @@ from sqlalchemy import text
 
 from genios_engine.contracts.reasoning_result import MUTATION_NEEDS_REF
 
-ADMIT, HOLD, REJECT = "admit", "hold", "reject"
+ADMIT = "admit"
+HOLD = "hold"
+REJECT = "reject"
 #: Situation statuses a seed is still live in.
 LIVE = frozenset({"active", "partial"})
 #: The subject-level key for a decision with no situation row behind it.
