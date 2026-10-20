@@ -134,6 +134,68 @@ def write_admissions(conn, admissions: Iterable[Admission], *, at: datetime) -> 
     return len(params)
 
 
+#: L3 rebuild 5a/5b · the version of what an L2 interpretation row holds.
+INTERPRETATION_VERSION = "l2-interpretation.v1"
+
+
+def interpretation_of(admission: Admission, result: Any) -> dict[str, Any] | None:
+    """L3 rebuild 5a/5b · what an ADMITTED judgment concluded about its situation, as Layer 3 records it (Atlas
+    v2, L3 §: "carried as typed, versioned fields on situation interpretations — append a new interpretation,
+    never overwrite"; "L3 records the DecisionObject without reasoning — L4 decides"). Pure. None for anything
+    but an admitted judgment of a real situation.
+
+    Holds the conclusions only — the frame and its rivals, the unknowns, the hypotheses, expected against actual,
+    the intervention, and the DECISION OBJECT (whether a human must decide, who, what, by when) — never the
+    dossier: the result and its dossier are `reasoning_results`', and a second copy is storage the free tier pays."""
+    if admission.decision != ADMIT or admission.situation_id == NO_SITUATION or result is None:
+        return None
+    m = result.as_mapping()
+    review, judgment = m.get("review") or {}, m.get("judgment") or {}
+    need = judgment.get("decision_need") or {}
+    move = review.get("next_move") or {}
+    frames = review.get("frames") or {}
+    return {
+        "version": INTERPRETATION_VERSION, "op": admission.op, "lane": admission.lane,
+        "frame": frames.get("primary"), "rivals": list(frames.get("rivals") or ()),
+        "unknowns": list(review.get("unknowns") or ()), "hypotheses": list(review.get("hypotheses") or ()),
+        "expected_vs_actual": review.get("expected_vs_actual"),
+        "intervention_mode": judgment.get("intervention_mode"),
+        "decision": {"needed": bool(need.get("needed")), "who": need.get("who"), "what": need.get("what"),
+                     "by_when": move.get("by_when") if need.get("needed") else None},
+    }
+
+
+_INTERPRET = text(
+    "insert into situation_interpretations (interpretation_id, org_id, situation_id, slice_digest, context_slice, "
+    "  proposal, outcome, reason_codes, reasoning_trace) "
+    "values (:id, :o, :sit, :fp, cast(:slice as jsonb), cast(:proposal as jsonb), :outcome, '[]'::jsonb, :why) "
+    # APPEND-ONLY: one row per (situation, judgment fingerprint) — a judgment of unchanged inputs is the same row.
+    "on conflict (org_id, situation_id, slice_digest) do nothing")
+
+
+def record_interpretations(conn, rows: Iterable[tuple[Admission, Any]]) -> int:
+    """Append what each admitted judgment concluded about its situation, on the caller's transaction. Returns rows
+    sent. One statement for all."""
+    import hashlib
+    import json
+    params = []
+    for adm, result in rows:
+        proposal = interpretation_of(adm, result)
+        if proposal is None:
+            continue
+        key = f"{adm.org_id}|{adm.situation_id}|{adm.result_fingerprint}"
+        params.append({"id": "sint_l2_" + hashlib.sha256(key.encode()).hexdigest()[:32], "o": adm.org_id,
+                       "sit": adm.situation_id, "fp": adm.result_fingerprint,
+                       "slice": json.dumps({"subject_ref": adm.subject_ref,
+                                            "context_ref": getattr(result, "context_ref", None)}),
+                       "proposal": json.dumps(proposal, sort_keys=True, default=str), "outcome": adm.op,
+                       "why": (adm.reason or "")[:500] or None})
+    if not params:
+        return 0
+    conn.execute(_INTERPRET, params)
+    return len(params)
+
+
 _ADMITTED = text(
     "select subject_ref, situation_id, op, reason, result_fingerprint, lane, decided_at from l2_admissions "
     " where org_id = :o and decision = 'admit' order by decided_at desc, subject_ref, situation_id limit :n")
@@ -144,5 +206,5 @@ def admitted(conn, org_id: str, *, limit: int = 200) -> list[Any]:
     return list(conn.execute(_ADMITTED, {"o": org_id, "n": max(1, int(limit))}))
 
 
-__all__ = ["ADMIT", "HOLD", "LIVE", "NO_SITUATION", "REJECT", "Admission", "admitted", "decide",
-           "write_admissions"]
+__all__ = ["ADMIT", "HOLD", "INTERPRETATION_VERSION", "LIVE", "NO_SITUATION", "REJECT", "Admission", "admitted",
+           "decide", "interpretation_of", "record_interpretations", "write_admissions"]

@@ -65,3 +65,48 @@ def test_a_seed_subject_with_no_situation_row_is_held_at_subject_level():
 
 def test_a_run_that_concluded_nothing_decides_nothing():
     assert _d(None, [_sit("s1")]) == []
+
+
+# ── L3 rebuild 5a/5b · what an admitted judgment concluded, recorded on the chain ─────────────────────────────
+class _Result:
+    def __init__(self, *, needed=False):
+        self.context_ref = "graph@7"
+        self._m = {"review": {"frames": {"primary": "a renewal waiting on us", "rivals": ["already sent"]},
+                              "unknowns": [{"what": "who signs"}], "hypotheses": [],
+                              "expected_vs_actual": {"expected": "signed", "actual": "not sent"},
+                              "next_move": {"who": "you", "what": "sign it", "by_when": "2026-10-20"}},
+                   "judgment": {"intervention_mode": "prepare_decision",
+                                "decision_need": {"needed": needed, "who": "the founder" if needed else None,
+                                                  "what": "renew at the new price" if needed else None}}}
+
+    def as_mapping(self):
+        return self._m
+
+
+def _adm(decision, op="update", sit="s1"):
+    from genios_engine.context.l2_admission import Admission
+    return Admission(org_id="o", subject_ref="file:n1", situation_id=sit, decision=decision, op=op, reason="r",
+                     result_fingerprint="fp1", lane="decision")
+
+
+def test_an_admitted_judgment_is_recorded_with_its_conclusions_and_a_decision_object():
+    from genios_engine.context.l2_admission import INTERPRETATION_VERSION, interpretation_of
+    rec = interpretation_of(_adm(ADMIT), _Result(needed=True))
+    assert rec["version"] == INTERPRETATION_VERSION and rec["frame"] == "a renewal waiting on us"
+    assert rec["rivals"] == ["already sent"] and rec["unknowns"] == [{"what": "who signs"}]
+    assert rec["decision"] == {"needed": True, "who": "the founder", "what": "renew at the new price",
+                               "by_when": "2026-10-20"}
+    assert "dossier" not in rec and "facts" not in rec, "conclusions only — the dossier is reasoning_results'"
+
+
+def test_no_decision_owed_carries_no_deadline():
+    from genios_engine.context.l2_admission import interpretation_of
+    assert interpretation_of(_adm(ADMIT), _Result())["decision"] == {"needed": False, "who": None, "what": None,
+                                                                     "by_when": None}
+
+
+def test_only_an_admitted_judgment_of_a_real_situation_is_recorded():
+    from genios_engine.context.l2_admission import interpretation_of
+    assert interpretation_of(_adm(HOLD), _Result()) is None
+    assert interpretation_of(_adm(REJECT, op="none"), _Result()) is None
+    assert interpretation_of(_adm(ADMIT, sit=NO_SITUATION), _Result()) is None

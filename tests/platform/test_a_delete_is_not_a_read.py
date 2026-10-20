@@ -197,7 +197,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,297 → 3,299, L3 rebuild: 2a `context/derived_provenance` deletes only departed receipts and, with
     # none left, all of the writer's (an empty `not in` is a Postgres type error) — one more statement; 4a
     # `context/bounded_read._NEIGHBOUR_SQL_AT`, the bounded walk read as of an instant — one more.
-    assert r["statements"] == 3_299, (
+    # ⛔ MOVED 3,299 → 3,300, L3 rebuild 5a/5b: `context/l2_admission._INTERPRET`, the admitted judgment's
+    # conclusions and decision object appended to the situation's chain.
+    assert r["statements"] == 3_300, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

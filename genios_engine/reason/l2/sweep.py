@@ -312,6 +312,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     rows: list[results.L2Row] = []
     needs = []
     admissions: list = []
+    interpreted: list = []           # (admission, result) — L3 records what each admitted judgment concluded
     # L2 rebuild C1 · with `l2_cards`, an ADMITTED judgment of a file is written as that file's review, keyed the
     # way the expert pass keys one, so the review path decides it and the expert pass covers it from then on.
     makes_cards = FEATURE_L2_CARDS in activated
@@ -359,6 +360,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 org_id=org_id, subject_ref=subject.subject_ref, fingerprint=fp, result=result,
                 situations=getattr(getattr(parts, "lifecycle", None), "situations", ()) or ())
             admissions.extend(decided)
+            interpreted.extend((a, result) for a in decided)
             # A judgment L3 ADMITTED or REJECTED is the file's review: "nothing owed" is a judgment too — it covers
             # the file, so the old lane's situations on it and its people stand down, exactly as the expert's
             # `nothing` review does (D1: F54, F64). Only an undecided HOLD leaves the file to the old lane.
@@ -398,6 +400,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 try:
                     with conn.begin_nested():     # a shadow admission that fails never costs the results
                         admission.write_admissions(conn, admissions, at=now)
+                        receipt["interpretations"] = admission.record_interpretations(conn, interpreted)
                     receipt["admissions"] = dict(Counter(a.decision for a in admissions))
                 except Exception:      # noqa: BLE001
                     _log.exception("the L2 admission write failed org=%s", org_id)

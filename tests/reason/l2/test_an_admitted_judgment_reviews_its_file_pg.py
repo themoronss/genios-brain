@@ -108,7 +108,8 @@ def world(pg_store):
     finally:
         with pg_store.engine.begin() as c:
             for table in ("reasoning_results", "evidence_needs", "signal_bundles", "qualified_signals",
-                          "post_pass_watermarks", "l4_r_site_calls", "l2_admissions", "expert_reviews"):
+                          "post_pass_watermarks", "l4_r_site_calls", "l2_admissions", "expert_reviews",
+                          "situation_interpretations"):
                 c.execute(text(f"delete from {table} where org_id = :o"), {"o": ORG})
         reset(pg_store, ORG)
 
@@ -203,3 +204,21 @@ def test_a_file_the_expert_hands_over_is_judged_with_no_bundle_of_its_own(world)
     assert [f for f, _kinds in expert["to_l2_files"]] == [file_id]
     receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9(), files_due=expert["to_l2_files"])
     assert receipt["subjects"] == 1 and list(receipt["covered"]) == [file_id], str(receipt)
+
+
+def test_l3_records_what_the_admitted_judgment_concluded_once_per_fingerprint(world):
+    """L3 rebuild 5a/5b · the admitted judgment's conclusions — frame, unknowns, the decision object — appended to
+    the situation's chain; the same inputs judged again append nothing."""
+    store, now, file_id = world
+    receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9())
+    assert receipt.get("interpretations") == 1, str(receipt)
+    with store.engine.begin() as c:
+        c.execute(text("delete from post_pass_watermarks where org_id = :o"), {"o": ORG})
+    l2_pass(store=store, org_id=ORG, now=now + timedelta(minutes=15), llm=_R9())
+    with store.engine.connect() as c:
+        rows = c.execute(text("select situation_id, outcome, proposal from situation_interpretations "
+                              "where org_id = :o"), {"o": ORG}).all()
+    assert len(rows) == 1, "append-only, one row per judgment fingerprint"
+    assert rows[0].situation_id == "sit_c1" and rows[0].outcome == "unchanged"
+    assert rows[0].proposal["frame"] == "a fund getting to know us"
+    assert rows[0].proposal["decision"] == {"needed": False, "who": None, "what": None, "by_when": None}
