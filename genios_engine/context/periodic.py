@@ -195,7 +195,9 @@ def refresh_period_situations(store, org_id: str, *, now: datetime | None = None
                 # Same reasoning as `derived.py`: a recompute overwrites its own version id rather
                 # than appending a row per sweep, or the table grows by seven rows an org forever.
                 "on conflict (fact_version_id) do update set value = excluded.value, "
-                "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from"),
+                "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from "
+                # L3 rebuild 2b: only when the value moved — never a re-version on the sweep clock.
+                "where graph_facts.value is distinct from excluded.value"),
                 {"vid": f"fv_period_{org_id}_{field}", "fid": f"f_period_{org_id}_{field}",
                  "o": org_id, "n": node_id, "f": field, "v": repr(round(value, 4)), "now": now,
                  "trace": f"l2:period:{key}",

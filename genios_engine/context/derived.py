@@ -158,7 +158,13 @@ _UPSERT_FACT = (
     # card could ever see. Retirement must be reversible by the same writer that performs it.
     "on conflict (fact_version_id) do update set value = excluded.value, "
     "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from, "
-    "status = 'active', valid_to = null")
+    "status = 'active', valid_to = null "
+    # ⛔ ONLY WHEN THE VALUE MOVED (L3 rebuild 2b, 20 Oct 2026) — or the row was retired and must come back. An
+    # unchanged recompute used to rewrite the row with the SWEEP's clock as `occurred_at` / `valid_from`: prod
+    # 19 Oct, 120 k updates on 2.2 k derived rows, and a fact that had held for a week read as true since this
+    # morning. The sweep clock is not world time; the value's own first instant is.
+    "where graph_facts.value is distinct from excluded.value or graph_facts.status is distinct from 'active' "
+    "   or graph_facts.valid_to is not null")
 
 
 #: A DERIVED FACT THAT STOPPED BEING TRUE, and until now there was no way to say so.

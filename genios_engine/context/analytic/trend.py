@@ -542,7 +542,9 @@ def _write_trend_fact(conn, *, org_id: str, node_id: str, field_name: str, value
         "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :vt, 'active', 100, 0.9, :now, :now, 'org', "
         "'deterministic_derived', :trace, 'graph-fact.v2', 'R100', cast(:provenance as jsonb)) "
         "on conflict (fact_version_id) do update set value = excluded.value, "
-        "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from"),
+        "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from "
+        # L3 rebuild 2b: only when the value moved — never a re-version on the sweep clock.
+        "where graph_facts.value is distinct from excluded.value"),
         {"vid": f"fv_trend_{node_id}_{field_name}", "fid": f"f_trend_{node_id}_{field_name}",
          "o": org_id, "n": node_id, "f": field_name,
          "v": json.dumps(value, default=str, sort_keys=True), "vt": TREND_VALUE_TYPE, "now": now,

@@ -1519,7 +1519,11 @@ def _write_fact(conn, *, org_id: str, node_id: str, field_name: str, value, valu
         "on conflict (fact_version_id) do update set value = excluded.value, "
         "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from, "
         "provenance_refs = case when :has_receipts then excluded.provenance_refs "
-        "else graph_facts.provenance_refs end").bindparams(
+        "else graph_facts.provenance_refs end "
+        # L3 rebuild 2b: only when the value or its receipts moved — never a re-version on the sweep clock.
+        "where graph_facts.value is distinct from excluded.value "
+        "   or (:has_receipts and graph_facts.provenance_refs is distinct from excluded.provenance_refs)"
+        ).bindparams(
             bindparam("v", type_=JSON), bindparam("provenance", type_=JSON)),
         {"vid": f"fv_desk_{key}", "fid": f"f_desk_{key}", "o": org_id, "n": node_id,
          "f": field_name, "v": value, "vt": value_type, "now": now,
