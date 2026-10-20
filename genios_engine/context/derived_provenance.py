@@ -94,37 +94,15 @@ def load_event_receipts(conn, *, org_id: str, event_ids) -> tuple[EventReceipt, 
 
 def write_fact_source_refs(conn, *, org_id: str, fact_version_id: str,
                            receipts: tuple[EventReceipt, ...]) -> None:
-    """Replace this writer's receipts in the fact transaction; repeat sweeps keep stable IDs.
+    """Make this writer's receipts for the fact exactly `receipts`, in the fact transaction; repeat sweeps keep
+    stable IDs. A membership change removes obsolete receipts; other writers' refs are never touched here.
 
-    A membership change must remove obsolete receipts, not accumulate evidence from an older
-    value of the same deterministic fact version. Other writers' refs are never deleted here.
+    ⛔ ONLY WHAT CHANGED IS WRITTEN (L3 rebuild 2a, 20 Oct 2026). This used to delete every receipt of the fact and
+    insert them all again, every sweep — measured on prod: 1.23 M inserts and 1.23 M deletes for 17 k live rows,
+    and 333 M rows read, the busiest table in the database. The ids are deterministic, so the receipts a sweep
+    keeps are the rows already there: now only the ones that LEFT are deleted, and an existing row is rewritten only
+    when its source, object, group or evidence moved. A sweep over unchanged facts writes nothing.
     """
-    conn.execute(text(
-        "delete from graph_source_refs where org_id=:org and fact_version_id=:fact "
-        "and extractor_version=:version"),
-        {"org": org_id, "fact": fact_version_id, "version": VERSION})
-    statement = text(
-        "insert into graph_source_refs (source_ref_id, org_id, fact_version_id, event_id, "
-        "source, source_object_id, independence_group, evidence, extractor_version) "
-        "values (:id,:org,:fact,:event,:source,:object,:group,:evidence,:version) "
-        "on conflict (source_ref_id) do update set source=excluded.source, "
-        "source_object_id=excluded.source_object_id, independence_group=excluded.independence_group, "
-        "evidence=excluded.evidence"
-    ).bindparams(bindparam("evidence", type_=JSON))
-    # ONE ROUND TRIP FOR THE WHOLE FACT, not one per receipt.
-    #
-    # MEASURED, NOT GUESSED. A full sweep on the pilot took ~3 hours on 2026-09-16, and eleven
-    # stack dumps taken 300s apart through it land on this function and the two `_write_fact`
-    # callers above it more than on anything else. The tenant holds 8,532 `graph_source_refs`
-    # rows and a sweep rewrites most of them; at one `execute` per receipt against a remote
-    # pooler, the cost is thousands of separate round trips of tens of milliseconds each. The SQL
-    # was never wrong — it was being asked for one row at a time.
-    #
-    # NOTHING ELSE CHANGES. Same deterministic `source_ref_id`, same `on conflict do update`,
-    # same delete before it, same de-duplication by event id — the driver is simply handed every
-    # row at once. The determinism is what makes that safe: `ref_derived_<sha256(org|fact|event)>`
-    # means a replayed sweep addresses exactly the rows it addressed before, so a batch cannot
-    # duplicate anything single-stepping would not have.
     params = [
         {"id": f"ref_derived_"
                f"{hashlib.sha256(f'{org_id}|{fact_version_id}|{receipt.event_id}'.encode()).hexdigest()[:32]}",
@@ -136,5 +114,40 @@ def write_fact_source_refs(conn, *, org_id: str, fact_version_id: str,
         # one row, and sending both would hand the driver two rows with the same primary key.
         for receipt in {r.event_id: r for r in receipts}.values()
     ]
+    if params:
+        conn.execute(text(
+            "delete from graph_source_refs where org_id=:org and fact_version_id=:fact "
+            "and extractor_version=:version and source_ref_id not in :keep"
+        ).bindparams(bindparam("keep", expanding=True)),
+            {"org": org_id, "fact": fact_version_id, "version": VERSION, "keep": [p["id"] for p in params]})
+    else:                          # nothing to keep — an empty `not in` is a type error on Postgres
+        conn.execute(text(
+            "delete from graph_source_refs where org_id=:org and fact_version_id=:fact "
+            "and extractor_version=:version"),
+            {"org": org_id, "fact": fact_version_id, "version": VERSION})
+    statement = text(
+        "insert into graph_source_refs (source_ref_id, org_id, fact_version_id, event_id, "
+        "source, source_object_id, independence_group, evidence, extractor_version) "
+        "values (:id,:org,:fact,:event,:source,:object,:group,:evidence,:version) "
+        "on conflict (source_ref_id) do update set source=excluded.source, "
+        "source_object_id=excluded.source_object_id, independence_group=excluded.independence_group, "
+        "evidence=excluded.evidence "
+        "where graph_source_refs.source is distinct from excluded.source "
+        "   or graph_source_refs.source_object_id is distinct from excluded.source_object_id "
+        "   or graph_source_refs.independence_group is distinct from excluded.independence_group "
+        "   or cast(graph_source_refs.evidence as text) is distinct from cast(excluded.evidence as text)"
+    ).bindparams(bindparam("evidence", type_=JSON))
+    # ONE ROUND TRIP FOR THE WHOLE FACT, not one per receipt.
+    #
+    # MEASURED, NOT GUESSED. A full sweep on the pilot took ~3 hours on 2026-09-16, and eleven
+    # stack dumps taken 300s apart through it land on this function and the two `_write_fact`
+    # callers above it more than on anything else. The tenant holds 8,532 `graph_source_refs`
+    # rows and a sweep rewrites most of them; at one `execute` per receipt against a remote
+    # pooler, the cost is thousands of separate round trips of tens of milliseconds each. The SQL
+    # was never wrong — it was being asked for one row at a time.
+    #
+    # The determinism is what makes that safe: `ref_derived_<sha256(org|fact|event)>` means a replayed sweep
+    # addresses exactly the rows it addressed before, so a batch cannot duplicate anything single-stepping
+    # would not have.
     if params:
         conn.execute(statement, params)
