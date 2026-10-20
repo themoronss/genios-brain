@@ -273,12 +273,18 @@ SCORE_MAX = 100
 #: `status = 'active'`. `POST /situations/{id}/resolve` records `resolved_by='human'`, and
 #: `decide_lifecycle`'s rule is that a human resolution sticks until new evidence. The facts
 #: underneath refresh either way — observations do not care what somebody decided.
+#:
+#: ⛔ SO DOES A STATEMENT RESOLUTION (L3 rebuild 1a, 20 Oct 2026). The claim ledger resolves a situation when a
+#: mail says it is done (`resolved_by='statement'`) and is the ONE thing that un-resolves it — a later
+#: contradiction, re-read on every pass (`decide_lifecycle`, `lifecycle/store`). The sweep's second reading pass
+#: runs AFTER the resolutions and re-mints every state reading; with only `human` preserved here it set each
+#: statement-resolved reading back to `active`, so it ended every sweep open and its card came back.
 SITUATION_STATUS_ON_CONFLICT = (
-    "  status = case when context_situations.resolved_by = 'human' "
+    "  status = case when context_situations.resolved_by in ('human', 'statement') "
     "                then context_situations.status else 'active' end, "
-    "  resolved_by = case when context_situations.resolved_by = 'human' "
+    "  resolved_by = case when context_situations.resolved_by in ('human', 'statement') "
     "                     then context_situations.resolved_by else null end, "
-    "  resolved_at = case when context_situations.resolved_by = 'human' "
+    "  resolved_at = case when context_situations.resolved_by in ('human', 'statement') "
     "                     then context_situations.resolved_at else null end, ")
 
 #: The score returned when a domain registers no expectations. Sentinel, not a percentage: it is

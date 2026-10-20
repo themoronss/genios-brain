@@ -46,7 +46,7 @@ def test_a_human_close_still_survives_the_next_drain() -> None:
     records `resolved_by='human'`, and `decide_lifecycle`'s rule is that a human resolution
     sticks until new evidence — the provenance must not be erased by a re-derivation."""
     for column in ("status", "resolved_by", "resolved_at"):
-        assert f"{column} = case when context_situations.resolved_by = 'human'" \
+        assert f"{column} = case when context_situations.resolved_by in ('human', 'statement')" \
             in re.sub(r"\s+", " ", SITUATION_STATUS_ON_CONFLICT), column
 
 
@@ -151,3 +151,40 @@ def test_a_human_close_is_not_revived_by_the_next_sweep() -> None:
             "select status, resolved_by, confidence_evidence from context_situations")).first()
     assert row.status == "resolved" and row.resolved_by == "human"
     assert row.confidence_evidence == 70, "the FACTS still refresh underneath the decision"
+
+
+def test_a_statement_resolution_is_not_revived_by_the_next_reading() -> None:
+    """L3 rebuild 1a (20 Oct 2026). A mail said "all sorted, we signed" and the claim ledger resolved the situation
+    (`resolved_by='statement'`). The sweep's second reading pass (`context/runner`, after the resolutions) re-mints
+    every state reading, and this clause set it back to `active` — so every statement-resolved reading ended EVERY
+    sweep open again and its card came back. The ledger is what un-resolves a statement (`decide_lifecycle`: a later
+    contradiction, read on every pass), never a re-derivation of the reading."""
+    from datetime import datetime, timezone
+
+    from sqlalchemy import create_engine, text
+
+    from genios_engine.context.support_situations import _upsert
+
+    now = datetime(2026, 9, 20, 12, 0, tzinfo=timezone.utc)
+    engine = create_engine("sqlite://")
+    with engine.begin() as c:
+        c.execute(text(
+            "create table context_situations (situation_id text primary key, org_id text, "
+            "correlation_id text, anchor_node_id text, situation_type text, domain text, "
+            "status text, confidence_overall int, confidence_evidence int, "
+            "confidence_freshness int, confidence_consistency int, confidence_identity int, "
+            "coverage int, missing text, inputs text, first_seen_at timestamp, "
+            "last_seen_at timestamp, computed_at timestamp, resolved_by text, "
+            "resolved_at timestamp, unique (org_id, correlation_id))"))
+    fields = dict(org_id="o", corr="corr_outreach_n1", node_id="n1", stype="t", domain="admin",
+                  now=now, coverage=50, missing=[], inputs={}, evidence=70, freshness=80,
+                  identity=100, first_seen=now, last_seen=now)
+    with engine.begin() as c:
+        _upsert(c, **fields)
+        c.execute(text("update context_situations set status='resolved', resolved_by='statement', "
+                       "resolved_at=:t"), {"t": now})
+    with engine.begin() as c:
+        _upsert(c, **fields)
+    with engine.connect() as c:
+        row = c.execute(text("select status, resolved_by from context_situations")).first()
+    assert (row.status, row.resolved_by) == ("resolved", "statement"), row
