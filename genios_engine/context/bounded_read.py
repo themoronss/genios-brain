@@ -33,6 +33,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 #: Two hops, because the useful question is almost always "this thing and what it touches" — and a
@@ -57,6 +58,11 @@ class ReadRequest:
     #: The asking seat's visibility. Carried on the request rather than applied afterwards: a
     #: filter after the walk has already read the rows it is meant to withhold.
     visibility: tuple[str, ...] | None = None
+    #: L3 rebuild 4a · the instant to read the graph AT — "what did we know on Tuesday" (Atlas v2, the read API
+    #: L2 uses; P2·13). `None` reads the graph as it stands now, as every caller did before. With an instant, an
+    #: edge counts only if we had learned it by then and it had not closed — `graph_store._WINDOW_AT`, the one
+    #: point-in-time predicate `read_graph` uses, never a second spelling of it.
+    as_of: datetime | None = None
 
     def __post_init__(self) -> None:
         if not self.seeds:
@@ -166,10 +172,23 @@ _NEIGHBOUR_SQL = (
     "limit :lim"
 )
 
+
+#: The same read as it stood at `:t`: the open-row predicate replaced by `graph_store._WINDOW_AT` — spelled out so
+#: the statement census can plan it, and held to that predicate word for word by
+#: `tests/context/test_the_bounded_read_reads_as_of_an_instant_pg.py`.
+_NEIGHBOUR_SQL_AT = (
+    "select edge_type, from_node_id, to_node_id, confidence, valid_from "
+    "from graph_edges "
+    "where org_id = :o and coalesce(recorded_at, valid_from) <= :t and (valid_to is null or valid_to > :t) "
+    "  and (from_node_id = :n or to_node_id = :n) "
+    "order by valid_from desc nulls last, edge_type, from_node_id, to_node_id "
+    "limit :lim"
+)
+
 _REVISION_SQL = "select graph_version from graph_versions where org_id = :o"
 
 
-def sql_neighbours(conn, org_id: str) -> Neighbours:
+def sql_neighbours(conn, org_id: str, as_of: datetime | None = None) -> Neighbours:
     """The database-backed walk. One query per node, deliberately.
 
     A single recursive CTE would be fewer round trips and would also make the cap a `limit` the
@@ -178,9 +197,13 @@ def sql_neighbours(conn, org_id: str) -> Neighbours:
     """
     from sqlalchemy import text
 
+    sql = _NEIGHBOUR_SQL if as_of is None else _NEIGHBOUR_SQL_AT
+    params: dict[str, Any] = {"o": org_id, "lim": MAX_EDGES_PER_NODE}
+    if as_of is not None:
+        params["t"] = as_of
+
     def walk(node_id: str):
-        rows = conn.execute(text(_NEIGHBOUR_SQL),
-                            {"o": org_id, "n": node_id, "lim": MAX_EDGES_PER_NODE}).mappings().all()
+        rows = conn.execute(text(sql), {**params, "n": node_id}).mappings().all()
         if len(rows) >= MAX_EDGES_PER_NODE:
             walk.capped.add(node_id)
         for row in rows:
@@ -195,7 +218,7 @@ def read_bounded(conn, org_id: str, request: ReadRequest) -> BoundedView:
     """The bounded read, against a live connection, carrying the revision it saw."""
     from sqlalchemy import text
 
-    neighbours = sql_neighbours(conn, org_id)
+    neighbours = sql_neighbours(conn, org_id, request.as_of)
     view = expand(request, neighbours)
     revision = conn.execute(text(_REVISION_SQL), {"o": org_id}).scalar()
     capped = bool(getattr(neighbours, "capped", ()))

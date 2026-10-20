@@ -194,7 +194,10 @@ def test_the_statement_count_did_NOT_move():
     # what the L2 judgment proposed, its write and the card path's read; the engine gaining two statements.
     # ⛔ MOVED 3,296 → 3,297, L2 rebuild (the money tool): `reason/l2/inputs._AMOUNTS`, the amounts each signal's
     # extraction named — one read for the whole pass.
-    assert r["statements"] == 3_297, (
+    # ⛔ MOVED 3,297 → 3,299, L3 rebuild: 2a `context/derived_provenance` deletes only departed receipts and, with
+    # none left, all of the writer's (an empty `not in` is a Postgres type error) — one more statement; 4a
+    # `context/bounded_read._NEIGHBOUR_SQL_AT`, the bounded walk read as of an instant — one more.
+    assert r["statements"] == 3_299, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
