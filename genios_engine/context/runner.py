@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
@@ -661,6 +662,44 @@ def _effective_packs(store: GraphStore, org_id: str, registry) -> dict | None:
         return None
 
 
+class _PassFailures(logging.Handler):
+    """L3 audit (21 Oct 2026) · the passes that failed THIS sweep, said in its return.
+
+    Every derived pass of `process_pending` is wrapped so one failure cannot skip the rest, and each wrapper logs
+    the failure — and only logs it: the sweep returned as if the pass had had nothing to do, and a pass dead for
+    months looked like a quiet one. This handler hears every error record with a traceback on `genios.l2` from
+    the sweep's own thread (the drain's workers and other tenants' sweeps are other threads) and the sweep returns
+    them as `failed_passes`. One per thread: a sweep that raised out before its return leaves a handler the next
+    `watch` on that thread replaces.
+    """
+    _live: dict[int, "_PassFailures"] = {}
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.ERROR)
+        self.thread = threading.get_ident()
+        self.failed: list[str] = []
+
+    @classmethod
+    def watch(cls) -> "_PassFailures":
+        log = logging.getLogger("genios.l2")
+        stale = cls._live.pop(threading.get_ident(), None)
+        if stale is not None:
+            log.removeHandler(stale)
+        handler = cls()
+        cls._live[handler.thread] = handler
+        log.addHandler(handler)
+        return handler
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if record.thread == self.thread and record.exc_info:
+            self.failed.append(record.getMessage()[:200])
+
+    def stop(self) -> list[str]:
+        logging.getLogger("genios.l2").removeHandler(self)
+        self._live.pop(self.thread, None)
+        return list(self.failed)
+
+
 def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
                     crypto_key: str, max_total: int = 5000, registry=None,
                     eval_time=None, on_progress=None) -> dict:
@@ -679,6 +718,7 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     from datetime import datetime as _dt
     from datetime import timezone as _tz
     sweep_at = eval_time or _dt.now(_tz.utc)
+    failures = _PassFailures.watch()
     # L-4 · the fixpoint's "before". Taken BEFORE anything in this function writes, so the
     # comparison at the bottom is over what THIS sweep did and not over what the last one left.
     # See the block comment above `MAX_PASSES` for why the pass is the sweep.
@@ -1717,6 +1757,9 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         convergence = {"checked": False}
 
     return {"processed": done, "outcomes": dict(out),
+            # L3 audit · every pass that failed this sweep, by its own log line — a failed pass is not
+            # "nothing to do" (`_PassFailures`).
+            "failed_passes": failures.stop(),
             "outcomes_by_source": {s: dict(c) for s, c in by_source.items()},
             "read_models_built": len(affected),
             "attention_rows": attention_rows, "situation_rows": situation_rows,

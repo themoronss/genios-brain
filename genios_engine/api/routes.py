@@ -800,6 +800,8 @@ def _run_l2_chain(org_id: str, *, eval_time: datetime | None = None) -> bool:
                                      registry=_registry,
                                      crypto_key=get_settings().crypto_key, eval_time=eval_time)
             st["processed"] = result.get("processed", 0) if isinstance(result, dict) else 0
+            # L3 audit · on the stage's one line, so a failed pass is never a quiet sweep.
+            st["failed_passes"] = len(result.get("failed_passes") or ()) if isinstance(result, dict) else 0
         _charge_ingestion(org_id, result)
         # ⛔ `signals_detected` COMES FROM CAPTURE'S PUBLISHER, AND FROM NOTHING ELSE HERE.
         #
