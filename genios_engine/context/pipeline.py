@@ -2195,7 +2195,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # exists for the READER, which resolves an owner from the `owns` edge and may find a
             # promise recorded before this fact had a writer.
             owner_basis = OWNER_DECLARED if named_actor else OWNER_INFERRED
-            due = parse_due(cm.get("due_text"), occurred_at) if occurred_at else None
+            # A CONDITIONAL PROMISE HAS NO DUE DATE (L3 audit, 21 Oct 2026). "I'll send the contract once legal
+            # confirms, by Friday" is owed only once legal confirms, and nothing here can see that happen — so a
+            # date on it is a deadline that may never have started, and on Saturday it was a "promise past due"
+            # card about work nobody owed yet (`contracts.extraction.Commitment`; the detector drops the same
+            # promises, `capture/esqe/detector`). It is tracked by the decision it waits on; dated here only
+            # when it is not conditional. Prod, 21 Oct: 9 of 28 conditional promises carried a date.
+            due = (parse_due(cm.get("due_text"), occurred_at)
+                   if occurred_at and cm.get("is_conditional") is not True else None)
             if subj and (due or transcript_mode):
                 cm_text = str(cm.get("evidence_text") or "").strip()
                 # The NORMALISED obligation ("share the updated deck"), with the verbatim quote
