@@ -397,8 +397,8 @@ def set_status(engine, org_id: str, transcript_id: str, status: str,
 
 def settle_transcripts(engine, org_id: str, event_ids) -> int:
     """After an L2 drain: every still-`extracting` transcript whose part events the drain touched
-    becomes `failed` (a part was PARKED — the drain gave up on it) or `extracted` (every part is
-    `done`). Drive transcripts reach `extracted` only this way — the sync door has no background
+    becomes `failed` (a part was PARKED — the drain gave up on it for a day) or `extracted` (every part is
+    `done`, including a `failed` one whose parked part a later drain read). Drive transcripts reach `extracted` only this way — the sync door has no background
     wait like the upload door — and group B's follow-up pass acts on `extracted`. Returns rows
     changed. Two indexed statements; a no-op when the drain touched no transcript."""
     ids = sorted({str(e) for e in event_ids if e})
@@ -413,9 +413,11 @@ def settle_transcripts(engine, org_id: str, event_ids) -> int:
             "and exists (select 1 from l2_processing_runs r where r.org_id=t.org_id "
             "  and r.event_id = any(t.event_ids) and r.status='parked')"),
             {"o": org_id, "ids": ids}).rowcount
+        # `failed` too (L3 audit, 21 Oct 2026): a parked part is tried again after a day (`context/runner
+        # .PARKED_RETRY_AFTER`), and once every part is done the transcript was read after all.
         done = c.execute(text(
             "update transcripts t set status='extracted', error=null, updated_at=now() "
-            "where t.org_id=:o and t.status='extracting' and t.event_ids && cast(:ids as text[]) "
+            "where t.org_id=:o and t.status in ('extracting', 'failed') and t.event_ids && cast(:ids as text[]) "
             "and cardinality(t.event_ids) > 0 and not exists (select 1 from unnest(t.event_ids) e "
             "  where not exists (select 1 from l2_processing_runs r where r.org_id=t.org_id "
             "  and r.event_id=e and r.status='done'))"),

@@ -418,6 +418,24 @@ def thread_label(*, objective: str | None = None, counterparty: str | None = Non
     return ""
 
 
+def bump_graph_version(conn, org_id: str) -> int:
+    """The org's graph version, one up — and its row locked until `conn` commits. Every graph writer takes this
+    step FIRST, so the writes of one org commit one at a time (the drain's parallel workers among them). A
+    function, not only `GraphStore.bump_version`, so a writer holding only a connection — the merge, L3 audit
+    21 Oct 2026 — takes the same step."""
+    conn.execute(text(
+        "insert into graph_versions (org_id, graph_version) values (:o, 1) "
+        "on conflict (org_id) do update set graph_version = graph_versions.graph_version + 1, "
+        "updated_at = now()"), {"o": org_id})
+    # P3 hot lane: every graph write takes this step, so the seats holding a live device get
+    # a new slice version + a `slice.delta` event in the SAME transaction (one statement,
+    # PostgreSQL only). See reason/moments/slice.py for why this is the hook.
+    from genios_engine.platform.realtime import bump_slice_versions
+    bump_slice_versions(conn, org_id)
+    return conn.execute(text("select graph_version from graph_versions where org_id=:o"),
+                        {"o": org_id}).scalar()
+
+
 class GraphStore:
     def __init__(self, database_url: str | None = None, *, engine=None) -> None:
         if engine is None and database_url is None:
@@ -430,17 +448,7 @@ class GraphStore:
 
     # ── versioning ────────────────────────────────────────────────────────────
     def bump_version(self, conn, org_id: str) -> int:
-        conn.execute(text(
-            "insert into graph_versions (org_id, graph_version) values (:o, 1) "
-            "on conflict (org_id) do update set graph_version = graph_versions.graph_version + 1, "
-            "updated_at = now()"), {"o": org_id})
-        # P3 hot lane: every graph write takes this step, so the seats holding a live device get
-        # a new slice version + a `slice.delta` event in the SAME transaction (one statement,
-        # PostgreSQL only). See reason/moments/slice.py for why this is the hook.
-        from genios_engine.platform.realtime import bump_slice_versions
-        bump_slice_versions(conn, org_id)
-        return conn.execute(text("select graph_version from graph_versions where org_id=:o"),
-                            {"o": org_id}).scalar()
+        return bump_graph_version(conn, org_id)
 
     # ── identity (B5): find-or-create by deterministic canonical_key ───────────
     def find_or_create_node(self, conn, *, org_id: str, node_type: str,

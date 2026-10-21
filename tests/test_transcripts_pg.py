@@ -364,6 +364,13 @@ def test_drive_transcripts_settle_to_extracted_or_failed_after_the_drain():
     assert rows[ok.transcript["transcript_id"]] == "extracted:"
     assert rows[bad.transcript["transcript_id"]] == "failed:model unavailable"
     assert settle_transcripts(_engine(), o.org, ok.emitted_ids) == 0      # settled once
+    # L3 audit · a parked part is read again after a day (`runner.PARKED_RETRY_AFTER`): once it is done, the
+    # transcript was extracted after all — `failed` is not the last word.
+    _record_done(o.store, o.org, bad.emitted_ids[0])
+    assert settle_transcripts(_engine(), o.org, bad.emitted_ids) == 1
+    with _engine().connect() as c:
+        assert c.execute(text("select status from transcripts where transcript_id=:t"),
+                         {"t": bad.transcript["transcript_id"]}).scalar() == "extracted"
 
 
 def test_personal_scope_is_private_to_the_uploader_alone():

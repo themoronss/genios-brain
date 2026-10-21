@@ -31,6 +31,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import text
 
 from genios_engine.context.availability import WINDOWED_FIELDS
+from genios_engine.context.graph_store import bump_graph_version
 from genios_engine.context.identity import strong_proposal_reasons
 from genios_engine.platform.ids import new_id
 
@@ -297,6 +298,12 @@ def apply_merge(conn, *, org_id: str, survivor_node_id: str, merged_node_id: str
     """
     if survivor_node_id == merged_node_id:
         raise ValueError("cannot merge a node into itself")
+    # ⛔ THE ORG'S GRAPH VERSION FIRST, as every graph writer takes it (L3 audit, 21 Oct 2026): it locks the org's
+    # version row until this transaction commits, so a drain cannot write onto the merged node between the
+    # snapshot below and the close — the merge was the one graph writer that skipped it, and a fact committed in
+    # that gap landed on a closed node no reader sees (`health.orphan_fact`). It also moves the version, so every
+    # read keyed on it (the L2 snapshot's `graph@<revision>`, the device slices) sees the merge.
+    bump_graph_version(conn, org_id)
     snapshots = {"survivor": _snapshot(conn, org_id, survivor_node_id),
                  "merged": _snapshot(conn, org_id, merged_node_id)}
     if snapshots["merged"]["node"] is None:
@@ -374,6 +381,7 @@ def reverse_merge(conn, *, org_id: str, merge_id: str) -> dict:
     just restored. A human resolution carried across during the fold stays where it went;
     that was somebody's decision about a real situation, not an artefact of the merge.
     """
+    bump_graph_version(conn, org_id)          # first, as `apply_merge` takes it
     record = conn.execute(text(
         "select survivor_node_id, merged_node_id, snapshots, reversed "
         "from merge_history where org_id=:o and id=:id"),

@@ -386,8 +386,14 @@ PENDING_FROM = ROADS_FROM + (
             # They are different rows and the second one is what stops the model being paid twice
             # for one message on every sweep, for ever.
             f"and se.event_id not in ({_L2_OWN_EXTRACTIONS}) "
+            # A parked event is tried again once a day (`PARKED_RETRY_AFTER`, L3 audit): parked was terminal, so a
+            # failure the next deploy fixed — or a database blip — kept the event out of memory for good.
             "and se.event_id not in (select event_id from l2_processing_runs "
-            "                        where org_id=:o and status in ('done','parked')) ")
+            "                        where org_id=:o and (status = 'done' or (status = 'parked' "
+            "                          and updated_at > now() - interval '1 day'))) ")
+
+#: How long a parked event waits before the drain tries it once more (see `PENDING_FROM`).
+PARKED_RETRY_AFTER = "1 day"
 
 
 def pending_params(org_id: str) -> dict:
@@ -410,8 +416,9 @@ def _record_done(store, org_id: str, event_id: str) -> None:
 
 
 def _record_failure(store, org_id: str, event_id: str, error: str | None) -> int:
-    """Upsert a transient failure, bump attempts, and PARK (terminal) once the cap is hit so the
-    drain loop stops re-charging the LLM. Returns the new attempt count."""
+    """Upsert a failure, bump attempts, and PARK once the cap is hit so one broken event does not fail every
+    drain of the day. Parked is not forever: the pull offers it again after `PARKED_RETRY_AFTER`. A transient
+    database failure never reaches here (`_is_transient`). Returns the new attempt count."""
     with store.engine.begin() as c:
         n = c.execute(text(
             "insert into l2_processing_runs (org_id, event_id, status, attempts, last_error) "
@@ -609,7 +616,25 @@ def _safe_process_one(row, *, org_id, store, llm, crypto_key, internal_emails=fr
                                      self_identity=self_identity, company_brief=company_brief)
         return outcome, node, None
     except Exception as e:      # noqa: BLE001 — quarantine this event, keep the batch alive
+        if _is_transient(e):
+            return HELD_DATABASE_UNAVAILABLE, None, str(e)[:400]
         return "error", None, str(e)[:400]
+
+
+#: L3 audit (21 Oct 2026) · A DATABASE BLIP IS NOT THE EVENT'S FAULT. Every exception counted toward
+#: `_MAX_ATTEMPTS`, so a connection drop, a pool timeout or a deadlock during one sweep — and the warm lane
+#: re-runs within minutes — parked the same events three times over and for good: their facts and cards never
+#: came, and the progress bar still read complete. A transient database failure is now HELD (retried by the
+#: next drain, no attempt spent), and a parked event is tried again once a day (`PARKED_RETRY_AFTER`). No
+#: road into memory calls a model (`_process_one`), so neither costs a cent.
+HELD_DATABASE_UNAVAILABLE = "held_database_unavailable"
+
+
+def _is_transient(exc: BaseException) -> bool:
+    from sqlalchemy import exc as sa
+    if isinstance(exc, (sa.OperationalError, sa.InterfaceError, sa.TimeoutError, sa.DisconnectionError)):
+        return True
+    return isinstance(exc, sa.DBAPIError) and bool(getattr(exc, "connection_invalidated", False))
 
 
 def _effective_packs(store: GraphStore, org_id: str, registry) -> dict | None:
