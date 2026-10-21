@@ -459,6 +459,24 @@ def lane_for(judgment: L2Judgment) -> tuple[str, str]:
     return LANE_DECISION, f"{judgment.intervention_mode}, with evidence and framing confidence at medium or better"
 
 
+def judgment_hold(lane: str, problems: tuple[tuple[str, str], ...]) -> str | None:
+    """L3 audit (21 Oct 2026) · why the judgment says a move must not be shown as one to make — a
+    `contracts/claim_check.JUDGMENT_HOLDS` reason for the claim check — or None. Pure, first match wins: an
+    open conflict (a ruling settles it), then what `review_required` names (a person looks first), then an act
+    on low evidence or framing confidence (`lane_for`'s monitor). The check holds only an act's shown move."""
+    from .claim_check import MOVE_DATE_PASSED, NO_DECIDER, OPEN_CONFLICT, WEAK_GROUND
+    kinds = {kind for kind, _ in problems}
+    if lane == LANE_CONFLICT:
+        return OPEN_CONFLICT
+    if DECISION_WITHOUT_OWNER in kinds:
+        return NO_DECIDER
+    if MOVE_IN_THE_PAST in kinds:
+        return MOVE_DATE_PASSED
+    if lane == LANE_MONITOR:
+        return WEAK_GROUND
+    return None
+
+
 # ── the result ─────────────────────────────────────────────────────────────────────────────────
 
 def _checked_from(raw: Any) -> Any:
@@ -662,5 +680,5 @@ __all__ = ["CONFIDENCE_DIMENSIONS", "CONFIDENCE_LEVELS", "ConfidenceDimension", 
            "L2Judgment", "L2Request", "LANES", "LANE_CONFLICT", "LANE_DECISION", "LANE_INVESTIGATION",
            "LANE_MONITOR", "LANE_SUPPRESS", "MODE_FITS", "MODE_MISMATCH", "MUTATION_OPS", "NEEDS_REVIEW",
            "OpenConflict", "Option", "ProposedMutation", "REASONING_RESULT_VERSION", "RaisedNeed",
-           "ReasoningReceipt", "ReasoningResult", "STRUCTURAL", "TRIGGERS", "drop_unprinted", "lane_for",
-           "stable_ref", "validate_judgment"]
+           "ReasoningReceipt", "ReasoningResult", "STRUCTURAL", "TRIGGERS", "drop_unprinted", "judgment_hold",
+           "lane_for", "stable_ref", "validate_judgment"]

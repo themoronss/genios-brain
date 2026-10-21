@@ -34,8 +34,8 @@ from genios_engine.contracts.expert_review import REFUSALS, ExpertReview, valida
 from genios_engine.contracts.reasoning_result import (DEPTH_DEEP, ENDED_FAILED, ENDED_OVER_BUDGET,
                                                       ENDED_REFUSED, ENDED_RESULT, ENDED_TRUNCATED,
                                                       STRUCTURAL as JUDGMENT_STRUCTURAL, L2Judgment,
-                                                      ReasoningResult, drop_unprinted, lane_for,
-                                                      validate_judgment)
+                                                      ReasoningResult, drop_unprinted, judgment_hold,
+                                                      lane_for, validate_judgment)
 from genios_engine.platform.l4_activation import FEATURE_L2_REASONING
 from genios_engine.reason.bundle.gate import MALFORMED, REPAIR_ANY, REPAIR_SYNTAX
 from genios_engine.reason.bundle.sites import (OUTCOME_FAILED_GENERATION, OUTCOME_FAILED_VALIDATION,
@@ -96,14 +96,16 @@ def judge(*, org_id: str, request_ref: str, dossier: L2Dossier, plan: L2Plan, ga
         if structure:
             last["reason"] = "; ".join(f"{k}: {d}" for k, d in structure)
             raise SiteRejection(structure[0][0], last["reason"])
-        checked = check_review(review, dossier.text, people, evidence_ids=dossier.catalogue.evidence_ids)
+        problems = validate_judgment(review, judgment, dossier.catalogue, as_of=at)
+        kept = drop_unprinted(judgment, dossier.catalogue, len(review.facts))
+        lane, why = lane_for(kept)
+        # L3 audit · the lane and `review_required` reach the card through the check (`judgment_hold`).
+        checked = check_review(review, dossier.text, people, evidence_ids=dossier.catalogue.evidence_ids,
+                               judged=judgment_hold(lane, problems))
         if checked.fate == CHECK_REFUSED:
             last["reason"] = f"{NOTHING_STANDS}: " + "; ".join(
                 f"{v.line} {v.reason}" + (f" ({v.detail})" if v.detail else "") for v in checked.dropped)
             raise SiteRejection(NOTHING_STANDS, last["reason"])
-        problems = validate_judgment(review, judgment, dossier.catalogue, as_of=at)
-        kept = drop_unprinted(judgment, dossier.catalogue, len(review.facts))
-        lane, why = lane_for(kept)
         last["result"] = ReasoningResult(
             request_ref=request_ref, subject_ref=dossier.subject_ref, context_ref=context_ref,
             expertise_ref=expertise_ref, depth=plan.depth, review=review, judgment=kept, lane=lane,

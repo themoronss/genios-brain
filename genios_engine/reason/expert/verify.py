@@ -1094,10 +1094,12 @@ def repeats(move: str | None, headline: str | None) -> bool:
 
 
 def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
-                 evidence_ids: Iterable[str] | None = None) -> C.CheckedReview:
+                 evidence_ids: Iterable[str] | None = None, judged: str | None = None) -> C.CheckedReview:
     """`review`, checked line by line against the dossier it was written from (see the module docstring).
     `evidence_ids` — the dossier's own catalogue — narrows what counts as printed to exactly what the
-    dossier cited; without it, every bracketed id of the text counts."""
+    dossier cited; without it, every bracketed id of the text counts. `judged` — one of `C.JUDGMENT_HOLDS`, from
+    the L2 judgment beside the review (`contracts/reasoning_result.judgment_hold`) — holds an act's move that
+    would otherwise be shown (L3 audit, 21 Oct 2026); None for an expert review, which has no judgment."""
     run = _Run(review=review, lines=lines_by_id(dossier_text, evidence_ids), people=people)
     rested = _rested_on(review)
     if strays := _strays(review):
@@ -1283,6 +1285,12 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         elif fate == C.SHOWN and repeated:
             fate, held = C.HELD, C.HELD_BECAUSE[C.CALLED_WRONG]
             question = C.called_wrong_question(repeated[0].headline)
+        elif fate == C.SHOWN and judged is not None and review.mode == "act":
+            # The judgment's own lane says this is not a move to make yet (see `judged` above): one question, in
+            # our closed words — never the judgment's, which no check has read.
+            run.say("judgment", C.DROPPED, judged)
+            fate, held = C.HELD, C.HELD_BECAUSE[judged]
+            question = _held_question(people, held)
     elif unheeded:
         run.say("correction", C.NOTED, C.UNCITED_CORRECTION, ", ".join(c.ref for c in unheeded))
     # A QUESTION TO YOU NEVER NAMES YOU (M36.C2.L-logic.V2.U19, second crosscheck F3): a held question that names

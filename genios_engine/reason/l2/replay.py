@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from genios_engine.contracts.expert_review import DossierCatalogue
-from genios_engine.contracts.reasoning_result import ReasoningResult, validate_judgment
+from genios_engine.contracts.reasoning_result import ReasoningResult, judgment_hold, validate_judgment
 from genios_engine.reason.expert.review import NOBODY
 from genios_engine.reason.expert.verify import check_review
 
@@ -38,8 +38,9 @@ def replay_row(row: results.StoredResult, people=None) -> Replayed | None:
         return None
     result = ReasoningResult.from_mapping(row.result)
     catalogue = catalogue_of(row.dossier)
+    # The lane's hold, as the live run applied it (`judge.judge`): the problems are the stored result's own.
     checked = check_review(result.review, row.dossier.get("text") or "", people or NOBODY,
-                           evidence_ids=catalogue.evidence_ids)
+                           evidence_ids=catalogue.evidence_ids, judged=judgment_hold(result.lane, result.problems))
     from dataclasses import replace
     unstamped = replace(result, receipt_ref="")
     recorded = (row.receipt or {}).get("output_hash")

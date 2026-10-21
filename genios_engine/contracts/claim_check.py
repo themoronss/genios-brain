@@ -70,10 +70,21 @@ DECLINED_BY_YOU = "declined_by_you"          # …and you did not confirm it
 # an ignored correction.
 CORRECTION_UNHEEDED = "correction_unheeded"  # a move over a correction no fact, inference or pattern cites
 CALLED_WRONG = "called_wrong"                # a move in the words of a card you called wrong, citing neither
+# ⛔ L3 audit (21 Oct 2026) · THE JUDGMENT'S LANE REACHES THE CARD. Under `l2_cards` the L2 judgment's review is the
+# file's, and L2 computes a lane beside it (`contracts/reasoning_result.lane_for`): an open conflict, or an act whose
+# evidence or framing confidence is low, is not a decision; a decision nobody is named to make, or a move dated before
+# the run, is one a person looks at first (spec §15 `review_required`). The card read only the review's mode, so each
+# was still a decision card. The check now holds that move as ONE question, on the `judgment` line.
+OPEN_CONFLICT = "open_conflict"              # two sources on the file disagree, and the disagreement is open
+WEAK_GROUND = "weak_ground"                  # an act whose evidence or framing confidence is low or unknown
+NO_DECIDER = "no_decider"                    # a decision is needed and nobody is named to make it
+MOVE_DATE_PASSED = "move_date_passed"        # the move's own date is before the run
+JUDGMENT_HOLDS: tuple[str, ...] = (OPEN_CONFLICT, NO_DECIDER, MOVE_DATE_PASSED, WEAK_GROUND)
 REASONS: tuple[str, ...] = (UNCITED, UNKNOWN_EVIDENCE, UNQUOTED, MISQUOTED, UNSUPPORTED, WRONG_NUMBER,
                             UNGROUNDED, NO_RECIPIENT, RECIPIENT_NOT_ON_FILE, RECIPIENT_IS_US,
                             RECIPIENT_IS_CONNECTOR, NOT_OURS_TO_ANSWER, ANSWERED, NOTHING_STANDS,
-                            ON_YOUR_ANSWER, DECLINED_BY_YOU, CORRECTION_UNHEEDED, CALLED_WRONG)
+                            ON_YOUR_ANSWER, DECLINED_BY_YOU, CORRECTION_UNHEEDED, CALLED_WRONG,
+                            *JUDGMENT_HOLDS)
 #: How a line is corrected — closed, as a reason is.
 BY_CALCULATOR = "by_calculator"              # a number replaced by the one its calculator line holds
 BY_ALTERNATIVE = "by_alternative"            # a move to a connector replaced by the review's alternative
@@ -105,7 +116,9 @@ CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", 
                                "alternative", "wait_or_stop",
                                # STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V3.U06): how the review stands with your
                                # corrections and with the cards you called wrong — never silently.
-                               "correction", "called_wrong")
+                               "correction", "called_wrong",
+                               # L3 audit (21 Oct 2026): how the move stands with the L2 judgment's own lane.
+                               "judgment")
 #: What a file asks when nothing checked can be asked — ours, closed (`reason/expert/asks`, and a held question
 #: that would name you, M36.C2.L-logic.V2.U19).
 NOTHING_TO_ASK = "Can you tell us where this file stands?"
@@ -133,6 +146,10 @@ HELD_BECAUSE: dict[str, str] = {
     # (`reason/expert/verify`, "you said … on <date>; does it still hold?").
     CORRECTION_UNHEEDED: "the move does not say how it stands with a correction you made",
     CALLED_WRONG: "the move repeats a card you called wrong",
+    OPEN_CONFLICT: "two things on the file disagree, and the move depends on which is right",
+    WEAK_GROUND: "what the file shows is too thin to act on yet",
+    NO_DECIDER: "the move needs a decision and nobody on the file is named to make it",
+    MOVE_DATE_PASSED: "the date the move was for has already passed",
 }
 
 
@@ -299,7 +316,8 @@ class CheckedReview:
 
 __all__ = ["ANSWERED", "BY_ALTERNATIVE", "BY_CALCULATOR", "CALLED_WRONG", "CARD_LINES", "CHECK_VERSION",
            "CORRECTED", "CORRECTION_UNHEEDED", "UNCITED_CORRECTION", "called_wrong_question", "correction_question",
-           "HELD_BECAUSE", "HELD_MOVE",
+           "HELD_BECAUSE", "HELD_MOVE", "JUDGMENT_HOLDS", "MOVE_DATE_PASSED", "NO_DECIDER", "OPEN_CONFLICT",
+           "WEAK_GROUND",
            "CORRECTIONS", "CardWords", "CheckedReview", "DROPPED", "FATES", "HELD", "KEPT", "LINE_KINDS",
            "LineVerdict", "MISQUOTED", "NOTED", "NOTES", "NOTHING_STANDS", "NOT_OURS_TO_ANSWER",
            "NO_RECIPIENT", "REASONS", "RECIPIENT_IS_CONNECTOR", "RECIPIENT_IS_US",
