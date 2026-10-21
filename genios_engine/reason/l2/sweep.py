@@ -40,7 +40,7 @@ from genios_engine.contracts.reasoning_result import (ENDED_OVER_BUDGET, TRIGGER
 from genios_engine.platform.l4_activation import FEATURE_L2_CARDS, FEATURE_L2_REASONING, activated_features
 from genios_engine.platform.logging import get_logger
 from genios_engine.reason import llm_sites
-from genios_engine.reason.bundle.budget import NarrativeBudget
+from genios_engine.reason.bundle.budget import REASON_PER_CALL, NarrativeBudget
 from genios_engine.reason.bundle.gate import RSiteGate
 from genios_engine.reason.bundle.sites import SITE_REASON, tier_for
 from genios_engine.reason.bundle.store import BundleStore
@@ -50,7 +50,7 @@ from genios_engine.context import l2_admission as admission
 from . import evidence, store as results
 from .dossier import L2_DOSSIER_VERSION, build_l2_dossier
 from .history import history_for
-from .inputs import Subject, read_signals, read_subjects, seed_of
+from .inputs import Subject, conflicts_for, read_open_conflicts, read_signals, read_subjects, seed_of
 from .judge import judge
 from .plan import PLAN_VERSION, compile_plan
 from .prompt import PROMPT_VERSION, depth_note
@@ -82,6 +82,9 @@ def fingerprint_of(subject: Subject, *, file_inputs: Any, need_states: dict[str,
         "file": file_inputs,
         "needs": sorted(need_states.items()),
         "due_rung": _rung(due.get("hours")) if due else None,
+        # L2 audit · an open L1 conflict is an input: a new one is judged again. Named only when there is one, so a
+        # subject with none fingerprints as it did.
+        **({"conflicts": sorted(c.conflict_id for c in subject.conflicts)} if subject.conflicts else {}),
         "who_decides": {"model": model, "prompt": PROMPT_VERSION, "dossier": L2_DOSSIER_VERSION,
                         "plan": PLAN_VERSION},
     }
@@ -190,6 +193,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     receipt: dict[str, Any] = {"subjects": 0, "ours": 0, "unchanged": 0, "waiting": Counter(), "unreadable": 0,
                                "ended": Counter(), "not_reached": Counter(), "carried": 0, "needs_filed": 0,
                                "reentries": 0, "lanes": Counter(), "depths": Counter(), "cost_micro_usd": 0,
+                               "too_big": 0,
                                "covered": {}, "people": {}}
     with engine.connect() as conn:
         files = files_for(conn, org_id, now=now).files
@@ -197,6 +201,12 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
         org = conn.execute(text("select name, company from orgs where id = :o"), {"o": org_id}).first()
         brief = brief_for(conn, org_id)
         after = results.read_watermark(conn, org_id)
+        open_conflicts: tuple = ()
+        try:
+            with conn.begin_nested():
+                open_conflicts = read_open_conflicts(conn, org_id)
+        except Exception:      # noqa: BLE001 — a missing ledger is no conflict, never a failed pass
+            _log.exception("the L2 pass could not read L1's open conflicts org=%s", org_id)
         subjects, newest = read_subjects(conn, org_id, after=after, files=files)
         seen = {s.subject_ref for s in subjects}
         # L2 rebuild C1 · with `l2_cards` the expert hands over every file that moved (`to_l2_files`): each is a
@@ -256,6 +266,10 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 importance = max((s.importance_bp for s in subject.signals if s.importance_bp is not None),
                                  default=None)
                 file_inputs = fingerprint_inputs(parts, model=model, prompt_version=EXPERT_PROMPT) if parts else None
+                touched = (*subject.events, *(t.event_id for t in (getattr(getattr(parts, "timeline", None),
+                                                                            "touches", None) or ())))
+                if (mine := conflicts_for(open_conflicts, touched)):
+                    subject = replace(subject, conflicts=mine)
                 fp, _inputs = fingerprint_of(subject, file_inputs=file_inputs, need_states=states, model=model,
                                              tools=measured)
                 row = results.read_result(conn, org_id, subject.subject_ref, fp)
@@ -301,7 +315,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                     held.append(subject.oldest_bundle_at)
                 continue
             plan = compile_plan(tools=measured, file_id=subject.file_id, unresolved=subject.unresolved,
-                                truncated=snapshot.truncated,
+                                truncated=snapshot.truncated, conflicts=len(subject.conflicts),
                                 situations=len(getattr(getattr(parts, "lifecycle", None), "situations", ()) or ()),
                                 importance_bp=importance, asked_deeper=asked_deeper)
             ready.append((subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp))
@@ -381,6 +395,14 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
             output_tokens=int(getattr(rcpt, "output_tokens", 0) or 0),
             cost_micro_usd=int(getattr(rcpt, "cost_micro_usd", 0) or 0), reasoned_at=now,
             bundle_ids=subject.bundle_ids))
+        if judged.ended == ENDED_OVER_BUDGET and REASON_PER_CALL in (judged.reason or ""):
+            # L2 audit · ONE prompt over the per-call ceiling is that subject's, not the day's: it is carried (its row
+            # says over_budget, so it is tried tomorrow) and the pass goes on. It broke the pass, so one oversized
+            # subject sorted first carried every other subject every day.
+            receipt["too_big"] += 1
+            if subject.oldest_bundle_at is not None:
+                held.append(subject.oldest_bundle_at)
+            continue
         if judged.ended == ENDED_OVER_BUDGET:
             receipt["carried"] += len(ready) - i - 1
             held.extend(d[0].oldest_bundle_at for d in ready[i:] if d[0].oldest_bundle_at is not None)

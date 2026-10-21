@@ -199,7 +199,9 @@ def test_the_statement_count_did_NOT_move():
     # `context/bounded_read._NEIGHBOUR_SQL_AT`, the bounded walk read as of an instant — one more.
     # ⛔ MOVED 3,299 → 3,300, L3 rebuild 5a/5b: `context/l2_admission._INTERPRET`, the admitted judgment's
     # conclusions and decision object appended to the situation's chain.
-    assert r["statements"] == 3_300, (
+    # ⛔ MOVED 3,300 → 3,301, L2 audit (21 Oct): `reason/l2/inputs.OPEN_CONFLICTS`, L1's open disagreements read
+    # once per pass so the judgment sees both sides — the engine gaining one statement.
+    assert r["statements"] == 3_301, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

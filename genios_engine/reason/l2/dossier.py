@@ -125,7 +125,17 @@ def _tools(tools: Sequence[ToolResult], cite: _Cite) -> str:
     return "\n".join(f"- {cite(t.tool_id)} {t.says}" for t in tools) or "No tool had anything to compute."
 
 
-def _coverage(subject: Subject, snapshot: Snapshot) -> str:
+def _conflicts(subject: Subject, cite: _Cite) -> list[str]:
+    """L2 audit · each open L1 disagreement this subject rests on — both sides by their own words, no winner."""
+    lines = []
+    for c in subject.conflicts:
+        sides = " vs ".join(f"“{q}”" for q in c.quotes) or "both sides kept, no words to show"
+        lines.append(f"- L1 found sources that disagree on {c.field} and did not settle it {cite(c.conflict_id)}: "
+                     f"{sides} — in {', '.join(cite(e) for e in c.event_ids) or 'no event named'}")
+    return lines
+
+
+def _coverage(subject: Subject, snapshot: Snapshot, cite: _Cite | None = None) -> str:
     lines = []
     for cov in subject.coverage:
         for src in cov.get("sources", ()) or ():
@@ -138,6 +148,8 @@ def _coverage(subject: Subject, snapshot: Snapshot) -> str:
                             if cov.get("window_from") or cov.get("window_to") else ""))
     if not lines:
         lines.append("- No source said how much of it was read: a negative claim (\"nobody replied\") is not licensed.")
+    if cite is not None:
+        lines.extend(_conflicts(subject, cite))
     if snapshot.truncated:
         lines.append(f"- The context read was capped ({snapshot.truncated_by}).")
     for u in subject.unresolved:
@@ -159,7 +171,7 @@ def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot
             + "\n\nNo file holds this subject, so no kind of work and no playbook: judge from the brief, the signals " \
               "and the context."
     blocks["E"] = _tools(tools, cite)
-    blocks["F"] = _coverage(subject, snapshot)
+    blocks["F"] = _coverage(subject, snapshot, cite)
     head = f"L2 DOSSIER {L2_DOSSIER_VERSION} — subject {subject.subject_ref}, as of {_when(as_of)}"
     if depth_note:
         head += f"\n{depth_note}"

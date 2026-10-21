@@ -87,6 +87,8 @@ class Subject:
     #: carried, so its bundles are read again rather than passed over.
     oldest_bundle_at: datetime | None = None
     trigger: str = "bundle"
+    #: L2 audit · L1's open disagreements about the events this subject rests on (`conflicts_for`), set by the pass.
+    conflicts: tuple["L1Conflict", ...] = ()
 
     @property
     def events(self) -> tuple[str, ...]:
@@ -216,5 +218,55 @@ def read_subjects(conn, org_id: str, *, after: datetime | None, files: Sequence[
     return subjects_for(bundles, signals, file_of_event), newest
 
 
-__all__ = ["L2Signal", "QUOTES_PER_SIGNAL", "Subject", "read_signals", "read_subjects", "seed_of",
-           "subjects_for"]
+# ── what L1 found disagreeing (L2 audit, 21 Oct 2026) ─────────────────────────────────────────────
+
+#: L1's open disagreements (`signal_conflicts`, ALG-12 `unresolved_surface_both`: both sides go to the reader, no
+#: winner). L1 kept them on the signals (`qualified_signals.conflict_ids`) and the L2 pass read neither, so a
+#: thread holding two dates for one meeting was judged as if it held one — the dossier never said so and the plan
+#: never went deeper (`plan.compile_plan(conflicts=)` was always 0). Read ONCE per pass, every open one of the
+#: org (prod, 21 Oct: 3), and matched to a subject by the events it rests on. Each claim is printed by its own
+#: quote, cut at `CONFLICT_QUOTE_CHARS`: the receipt, never a value the model could take for ours.
+OPEN_CONFLICTS = text(
+    "select conflict_id, field, claims, event_ids from signal_conflicts "
+    " where org_id = :o and resolution = 'unresolved_surface_both' order by conflict_id")
+CONFLICT_QUOTE_CHARS = 160
+
+
+@dataclass(frozen=True, slots=True)
+class L1Conflict:
+    conflict_id: str
+    field: str
+    quotes: tuple[str, ...]          # one per side, verbatim, cut
+    event_ids: tuple[str, ...]
+
+
+def _claim_quote(claim: Any) -> str | None:
+    if not isinstance(claim, Mapping):
+        return None
+    value = claim.get("value")
+    spans = (value.get("evidence") if isinstance(value, Mapping) else None) or claim.get("evidence") or ()
+    for span in spans if isinstance(spans, (list, tuple)) else ():
+        quote = " ".join(str((span or {}).get("quote") or "").split()) if isinstance(span, Mapping) else ""
+        if quote:
+            return quote[:CONFLICT_QUOTE_CHARS]
+    return None
+
+
+def read_open_conflicts(conn, org_id: str) -> tuple[L1Conflict, ...]:
+    out = []
+    for row in conn.execute(OPEN_CONFLICTS, {"o": org_id}).fetchall():
+        claims = _loads(row.claims, []) or []
+        quotes = tuple(q for q in (_claim_quote(c) for c in claims) if q)
+        out.append(L1Conflict(conflict_id=str(row.conflict_id), field=str(row.field), quotes=quotes,
+                              event_ids=tuple(str(e) for e in (_loads(row.event_ids, []) or ()))))
+    return tuple(out)
+
+
+def conflicts_for(conflicts: Sequence[L1Conflict], events: Iterable[str]) -> tuple[L1Conflict, ...]:
+    """The open conflicts resting on any of these events, in id order. Pure."""
+    mine = {str(e) for e in events if e}
+    return tuple(c for c in conflicts if mine & set(c.event_ids))
+
+
+__all__ = ["CONFLICT_QUOTE_CHARS", "L1Conflict", "L2Signal", "OPEN_CONFLICTS", "QUOTES_PER_SIGNAL", "Subject",
+           "conflicts_for", "read_open_conflicts", "read_signals", "read_subjects", "seed_of", "subjects_for"]

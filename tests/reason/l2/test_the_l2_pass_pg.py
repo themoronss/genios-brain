@@ -235,3 +235,38 @@ def test_the_amounts_a_signal_names_reach_the_prompt_as_the_money_tool(store):
     l2_pass(store=store, org_id=ORG, now=NOW, llm=client)
     assert "[tool:amounts]" in client.prompts[0] or "tool:amounts" in client.prompts[0]
     assert "the largest is 32% above the smallest (USD 320.00 more)" in client.prompts[0]
+
+
+def _two_subjects(store):
+    _seed(store)
+    row = QualifiedSignalRow(
+        signal_id="sig_g008_2", org_id=ORG, subject_key="vendor:acme", event_id="evt_g008_2", trace_id="tr_g008",
+        signal_type="contract_renewal", importance_bp=5000, importance_version="v", confidence_bp=8000,
+        extraction_ref="struct:evt_g008_2", state="active", occurred_at=NOW - timedelta(hours=10),
+        thread_key="th_other", direction="inbound", ball_in_court="us",
+        evidence_refs=({"source_ref": "evt_g008_2", "quote": QUOTE, "start_offset": 0, "end_offset": len(QUOTE)},))
+    PostgresSignalStore(os.environ["GENIOS_TEST_DATABASE_URL"]).put([row])
+    PostgresBundleStore(engine=store.engine).put(build_bundles(ORG, "tr_g008", [_Sig2()]))
+
+
+def test_one_prompt_over_the_per_call_ceiling_is_that_subjects_not_the_days(store):
+    """L2 audit, 21 Oct 2026: a per-call refusal broke the pass, so one oversized subject sorted first carried every
+    other subject every day. Now it is carried alone (its row says over_budget) and the pass goes on."""
+    from genios_engine.reason.bundle.budget import NarrativeBudget
+    from genios_engine.reason.bundle.sites import SITE_REASON
+    _two_subjects(store)
+    tight = NarrativeBudget(org_id=ORG, site=SITE_REASON, daily_cap_micro_usd=2_000_000, per_call_cap_micro_usd=1)
+    client = _Client()
+    out = l2_pass(store=store, org_id=ORG, now=NOW, llm=client, budget=tight)
+    assert out["too_big"] == 2 and out["carried"] == 0, out
+    assert client.prompts == [], "a refused call is never made"
+
+
+def test_a_spent_day_still_carries_the_rest(store):
+    """The half that must not move: the day's cap reached stops the pass and carries what is left."""
+    from genios_engine.reason.bundle.budget import NarrativeBudget
+    from genios_engine.reason.bundle.sites import SITE_REASON
+    _two_subjects(store)
+    spent = NarrativeBudget(org_id=ORG, site=SITE_REASON, daily_cap_micro_usd=1, per_call_cap_micro_usd=150_000)
+    out = l2_pass(store=store, org_id=ORG, now=NOW, llm=_Client(), budget=spent)
+    assert out["carried"] == 1 and out["too_big"] == 0, out
