@@ -201,7 +201,9 @@ def test_the_statement_count_did_NOT_move():
     # conclusions and decision object appended to the situation's chain.
     # ⛔ MOVED 3,300 → 3,301, L2 audit (21 Oct): `reason/l2/inputs.OPEN_CONFLICTS`, L1's open disagreements read
     # once per pass so the judgment sees both sides — the engine gaining one statement.
-    assert r["statements"] == 3_301, (
+    # ⛔ MOVED 3,301 → 3,303, L3 audit X6: `context/situations._ORG_FACTS` and `._ORG_MEMBER_FIELDS`, the refresh's two
+    # fact reads org-visible on PostgreSQL (a seat's private overlay decided team situations) — two statements.
+    assert r["statements"] == 3_303, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

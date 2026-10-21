@@ -279,18 +279,44 @@ SCORE_MAX = 100
 #: contradiction, re-read on every pass (`decide_lifecycle`, `lifecycle/store`). The sweep's second reading pass
 #: runs AFTER the resolutions and re-mints every state reading; with only `human` preserved here it set each
 #: statement-resolved reading back to `active`, so it ended every sweep open and its card came back.
+#:
+#: ⛔ …AND A HUMAN CLOSE YIELDS TO NEW EVIDENCE (L3 audit, 21 Oct 2026). "Sticks until new evidence" was half true
+#: here: the clause kept a human close FOREVER, so a synthetic reading the founder marked handled never came back
+#: when the customer wrote again — work hidden — while `POST /situations/{id}/resolve` answers
+#: `reopens_on_new_evidence: true` (correlation-backed rows do reopen, through `decide_lifecycle`). It now yields
+#: when the re-mint's `last_seen_at` is EVIDENCE newer than the close: later than `resolved_at`, and earlier than
+#: the sweep's own instant (`computed_at`). The second half is what tells evidence from the clock — a writer with
+#: no evidence time stamps `last_seen_at` with the sweep instant itself (`periodic`, a desk's `now`), and a meeting
+#: booked ahead stamps its future start; neither is something that arrived, and neither reopens anything. An
+#: unknown time (NULL) is no evidence either: `coalesce(…, false)`, or the CASE would read NULL as "reopen".
+_DECISION_STANDS = (
+    "(context_situations.resolved_by = 'statement' or (context_situations.resolved_by = 'human' and not coalesce("
+    "excluded.last_seen_at > context_situations.resolved_at and excluded.last_seen_at < excluded.computed_at, "
+    "false)))")
 SITUATION_STATUS_ON_CONFLICT = (
-    "  status = case when context_situations.resolved_by in ('human', 'statement') "
-    "                then context_situations.status else 'active' end, "
-    "  resolved_by = case when context_situations.resolved_by in ('human', 'statement') "
-    "                     then context_situations.resolved_by else null end, "
-    "  resolved_at = case when context_situations.resolved_by in ('human', 'statement') "
-    "                     then context_situations.resolved_at else null end, ")
+    "  status = case when " + _DECISION_STANDS + " then context_situations.status else 'active' end, "
+    "  resolved_by = case when " + _DECISION_STANDS + " then context_situations.resolved_by else null end, "
+    "  resolved_at = case when " + _DECISION_STANDS + " then context_situations.resolved_at else null end, ")
 
 #: The score returned when a domain registers no expectations. Sentinel, not a percentage: it is
 #: outside 0..100 on purpose so no consumer can average it into a number and lose the distinction
 #: between "nothing is missing" and "we never said what complete means here".
 COVERAGE_UNKNOWN = -1
+
+
+#: `refresh_situations`' two fact reads, org-visible on PostgreSQL (see there) and whole on the SQLite schemas.
+_ALL_FACTS = ("select subject_node_id, field, value from graph_facts "
+              "where org_id = :o and valid_to is null and status = 'active'")
+_ORG_FACTS = ("select subject_node_id, field, value from graph_facts "
+              "where org_id = :o and valid_to is null and status = 'active' "
+              "and visibility_scope is distinct from 'private'")
+_ALL_MEMBER_FIELDS = ("select distinct m.correlation_id, f.field from context_correlation_members m "
+                      "join graph_facts f on f.org_id = m.org_id and f.created_by_event_id = m.event_id "
+                      "where m.org_id = :o and f.valid_to is null and f.status = 'active'")
+_ORG_MEMBER_FIELDS = ("select distinct m.correlation_id, f.field from context_correlation_members m "
+                      "join graph_facts f on f.org_id = m.org_id and f.created_by_event_id = m.event_id "
+                      "where m.org_id = :o and f.valid_to is null and f.status = 'active' "
+                      "and f.visibility_scope is distinct from 'private'")
 
 
 def window_coverage_gaps(conn, org_id: str, *, since: datetime, until: datetime) -> tuple[str, ...]:
@@ -1104,11 +1130,13 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
             f"where m.org_id = :o and {_email} is not null "
             "group by m.correlation_id", {"o": org_id})}
 
+        # ⛔ ORG-VISIBLE ONLY (L3 audit, 21 Oct 2026), as `correlation_people` reads: a seat's private overlay (a
+        # personal transcript's, a screen's) is its own active version BESIDE the org one, and these reads took
+        # both, unordered — the dict kept whichever came last, so a team situation was decided by one seat's
+        # private fact, and could flip between sweeps. PostgreSQL only: the SQLite schemas carry no visibility.
+        org_only = getattr(getattr(conn, "dialect", None), "name", "") == "postgresql"
         facts_by_node: dict[str, dict[str, str]] = {}
-        for row in _bulk(conn,
-                "select subject_node_id, field, value from graph_facts "
-                "where org_id = :o and valid_to is null and status = 'active'",
-                {"o": org_id}):
+        for row in _bulk(conn, _ORG_FACTS if org_only else _ALL_FACTS, {"o": org_id}):
             facts_by_node.setdefault(row.subject_node_id, {})[row.field] = row.value
 
         # Fields the situation's own evidence established, wherever they landed.
@@ -1119,12 +1147,7 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
         # right and never informative, which is the exact failure this module's docstring
         # warns about. Coverage asks what THIS SITUATION knows, not what one node holds.
         fields_by_correlation: dict[str, set[str]] = {}
-        for row in _bulk(conn,
-                "select distinct m.correlation_id, f.field from context_correlation_members m "
-                "join graph_facts f on f.org_id = m.org_id "
-                "  and f.created_by_event_id = m.event_id "
-                "where m.org_id = :o and f.valid_to is null and f.status = 'active'",
-                {"o": org_id}):
+        for row in _bulk(conn, _ORG_MEMBER_FIELDS if org_only else _ALL_MEMBER_FIELDS, {"o": org_id}):
             fields_by_correlation.setdefault(row.correlation_id, set()).add(row.field)
 
         discrepancies: dict[str, int] = {r.subject_node_id: int(r.n) for r in _bulk(conn,

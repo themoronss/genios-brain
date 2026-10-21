@@ -243,8 +243,10 @@ def test_the_drain_preserves_a_human_resolution():
 
     assert "resolved_by = null" not in source
     assert "SITUATION_STATUS_ON_CONFLICT" in source
-    # L3 rebuild 1a: a statement resolution is preserved beside the human one (the ledger un-resolves it).
-    assert "context_situations.resolved_by in ('human', 'statement')" in SITUATION_STATUS_ON_CONFLICT
+    # L3 rebuild 1a: a statement resolution is preserved beside the human one (the ledger un-resolves it); L3 audit:
+    # the human one yields to newer EVIDENCE only (`test_a_human_close_yields_to_new_evidence_pg` runs it).
+    assert "context_situations.resolved_by = 'statement'" in SITUATION_STATUS_ON_CONFLICT
+    assert "context_situations.resolved_by = 'human' and not coalesce(" in SITUATION_STATUS_ON_CONFLICT
 
 
 def test_the_facts_underneath_still_refresh():

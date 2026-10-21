@@ -45,9 +45,11 @@ def test_a_human_close_still_survives_the_next_drain() -> None:
     """Which is why this is a CASE and not `status = 'active'`. `POST /situations/{id}/resolve`
     records `resolved_by='human'`, and `decide_lifecycle`'s rule is that a human resolution
     sticks until new evidence — the provenance must not be erased by a re-derivation."""
+    from genios_engine.context.situations import _DECISION_STANDS
+    assert "resolved_by = 'human'" in _DECISION_STANDS and "resolved_by = 'statement'" in _DECISION_STANDS
     for column in ("status", "resolved_by", "resolved_at"):
-        assert f"{column} = case when context_situations.resolved_by in ('human', 'statement')" \
-            in re.sub(r"\s+", " ", SITUATION_STATUS_ON_CONFLICT), column
+        assert f"{column} = case when {_DECISION_STANDS} then context_situations.{column}" \
+            in SITUATION_STATUS_ON_CONFLICT, column
 
 
 def test_nothing_but_the_decision_columns_is_preserved() -> None:
