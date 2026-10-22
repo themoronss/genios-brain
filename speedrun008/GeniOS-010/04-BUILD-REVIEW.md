@@ -3,9 +3,9 @@
 **Written for:** Rohit and Harsh, to analyse the work before deciding the next step.
 
 **Status, 22 Oct 2026:**
-- **Branch:** `rohit/nav-grouping` in `genios-brain-dashbaord`, pushed. HEAD is `9130f84`.
-  - 23 commits on top of `origin/main` `6ddc4db`: 33 files, +6,703 / −906 lines.
-  - `tsc --noEmit` and `next build` are green at `9130f84`.
+- **Branch:** `rohit/nav-grouping` in `genios-brain-dashbaord`, pushed. HEAD is `972d122`.
+  - 24 commits on top of `origin/main` `6ddc4db`: 33 files, +6,958 / −906 lines.
+  - `tsc --noEmit` and `next build` are green at `972d122`.
 - **Not merged, so not live:** brain.thegenios.com serves `main`.
 - **No brain code changed.** Every brain change the design needs is named in §6 and in the folder docs.
 
@@ -240,7 +240,7 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
 
 ## 4 · Screen
 
-**Details:** `05-SCREEN/README.md` (it replaces `02-DASHBOARD-HOME/04-SCREEN.md`). **Commits:** `0ab7b03` (first version) · `f151019` (shared card parts) · `9130f84` (rebuilt).
+**Details:** `05-SCREEN/README.md` (it replaces `02-DASHBOARD-HOME/04-SCREEN.md`). **Commits:** `0ab7b03` (first version) · `f151019` (shared card parts) · `9130f84` (rebuilt) · `972d122` (by category).
 
 **What was there:** Desktop ▸ **Moments**: the popups the desktop app raised, with Useful / Wrong feedback, and This week / Open follow-ups.
 
@@ -265,6 +265,7 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
 |---|---|---|---|
 | `0ab7b03` | show what the screen catches; does reasoning need its own part? | two lanes on top of Moments; reasoning lane links to Cards | — |
 | `9130f84` | details on how and what; a dummy; screen and cards together but apart | the six stages and rules; items with their path; the card nested; cards fed; popups; preview | the two-lane block, This week and Open follow-ups as separate boxes |
+| `972d122` | *"aadha adhoora kyun"*: tag it, sort it by category (reminder, update, risk, promise) inside each day; show the screen; one clear line; where/when properly; important → context graph, temporary → let go; think like the customer | five categories inside each day with counts; category + show filters; tags on every row; the screen rebuilt from the kept words with the due words marked; in one line; who · where · when · due; kept-or-temporary with its steps | the at-once → memory → card track on the row; the bare quote box |
 
 **How it integrates:**
 - **Live today:** items with their words, who, due, reminders, how they ended and whether they are in memory; all actions; popups.
