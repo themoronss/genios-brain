@@ -240,7 +240,7 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
 
 ## 4 · Screen
 
-**Details:** `05-SCREEN/README.md` (it replaces `02-DASHBOARD-HOME/04-SCREEN.md`). **Commits:** `0ab7b03` (first version) · `f151019` (shared card parts) · `9130f84` (rebuilt) · `972d122` (by category) · `9a13d87` (the goal it moves; fill, not borders) · `847eeac` (what matters first; Show more). Wiring for Harsh: `05-SCREEN/01-INTEGRATION.md`.
+**Details:** `05-SCREEN/README.md` (it replaces `02-DASHBOARD-HOME/04-SCREEN.md`). **Commits:** `0ab7b03` (first version) · `f151019` (shared card parts) · `9130f84` (rebuilt) · `972d122` (by category) · `9a13d87` (the goal it moves; fill, not borders) · `847eeac` (what matters first; Show more). Wiring for Harsh: `05-SCREEN/01-INTEGRATION.md`. The whole story, round by round with screenshots: `05-SCREEN/02-WHAT-WHY-HOW.md`.
 
 **What was there:** Desktop ▸ **Moments**: the popups the desktop app raised, with Useful / Wrong feedback, and This week / Open follow-ups.
 
@@ -336,6 +336,7 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
 | What are AER and HIR, and what must the brain serve? | `02-DASHBOARD-HOME/03-AER-HIR.md` |
 | The Screen page, and Agents locked | `05-SCREEN/README.md` |
 | Wiring Screen in: fields, buttons, brain changes S1–S8, checks | `05-SCREEN/01-INTEGRATION.md` |
+| Screen's story: what, why, how, the five rounds (with screenshots), open points | `05-SCREEN/02-WHAT-WHY-HOW.md` |
 | All brain work, B1–B9 | `02-DASHBOARD-HOME/05-BRAIN-WORK.md` |
 | Run, test, ship | `02-DASHBOARD-HOME/06-RUN-AND-TEST.md` |
 | Goals: decisions and wiring | `03-GOALS/README.md` |

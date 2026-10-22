@@ -1,6 +1,9 @@
 # 05 · Screen: what the screen caught, and what became of it
 
-**Written for:** Harsh (to wire it in) and Rohit (to review it). The step-by-step wiring — every field, every route, every brain change, the checks — is in **[`01-INTEGRATION.md`](01-INTEGRATION.md)**.
+**Written for:** Harsh (to wire it in) and Rohit (to review it). Three files:
+- this one — what the page is;
+- **[`01-INTEGRATION.md`](01-INTEGRATION.md)** — the wiring: every field, every route, every brain change, the checks;
+- **[`02-WHAT-WHY-HOW.md`](02-WHAT-WHY-HOW.md)** — the story for analysis: what was there, what we built, why, how, the five rounds with a screenshot each (`rounds/`), and what is open.
 
 **Status, 22 Oct 2026:**
 - Built on the dashboard branch `rohit/nav-grouping`, in four rounds: `9130f84` (the page), `972d122` (by category, tags, the screen rebuilt, kept or temporary), `9a13d87` (the goal each item moves; cards that stand out by fill, not borders), `847eeac` (an opened item shows what matters first; the rest under Show more). With `f151019` (the shared card parts) and `5c0504f` (Agents locked). **Not merged, so not live.**

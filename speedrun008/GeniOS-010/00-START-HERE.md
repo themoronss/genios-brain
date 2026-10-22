@@ -23,7 +23,7 @@
 | [`02-DASHBOARD-HOME/`](02-DASHBOARD-HOME/README.md) | The home page, section by section: what each shows, which brain route feeds it, what is sample-only, AER/HIR, the Screen page, how to run and test it, and the brain work it needs. | When you wire the home page to real data or merge the branch. |
 | [`03-GOALS/`](03-GOALS/README.md) | **The Goals page** (Intelligence ▸ Goals): one goal, one card, with its reasoning and numbered cards inside, Admin only. It shows what is live today and the fields `GET /v1/goals` must return (GeniOS-009 G1/G3/G4/G5/G7/G9), plus the open decisions. | Before building GeniOS-009 G1–G5, so the API returns what the page draws. |
 | [`04-BUILD-REVIEW.md`](04-BUILD-REVIEW.md) | **The review across all of it:** was there → built → why → how → rounds (what was tried and dropped) → how it integrates; risks R1–R12; the integration checklist. | First, when deciding what to do next. |
-| [`05-SCREEN/`](05-SCREEN/README.md) | **The Screen page** (Intelligence ▸ Screen): how Screen works in six stages, each item with its path (at once → memory → card), the card it fed nested inside it, popups; a screen item vs a card; live vs preview; the goal each item moves; the look (fill, not borders). **`01-INTEGRATION.md`** is the wiring for Harsh: every field, every button, brain changes S1–S8 in order, the checks. Also: Agents locked. | Before B8, and before the Cards page, which shares its card parts. |
+| [`05-SCREEN/`](05-SCREEN/README.md) | **The Screen page** (Intelligence ▸ Screen): how Screen works in six stages, each item with its path (at once → memory → card), the card it fed nested inside it, popups; a screen item vs a card; live vs preview; the goal each item moves; the look (fill, not borders). **`01-INTEGRATION.md`** is the wiring for Harsh: every field, every button, brain changes S1–S8 in order, the checks. **`02-WHAT-WHY-HOW.md`** is the story for analysis, round by round with a screenshot each. Also: Agents locked. | Before B8, and before the Cards page, which shares its card parts. |
 
 ## How the pieces connect
 
@@ -65,5 +65,5 @@ These matter more than any one screen:
 3. `01-NAVIGATION/README.md`
 4. `02-DASHBOARD-HOME/README.md` → `01-SECTIONS.md` → `02-DATA-WIRING.md` → `03-AER-HIR.md` → `04-SCREEN.md` → `05-BRAIN-WORK.md` → `06-RUN-AND-TEST.md`
 5. `03-GOALS/README.md` → `03-GOALS/01-GOALS-PAGE.md`
-6. `05-SCREEN/README.md` → `05-SCREEN/01-INTEGRATION.md`
+6. `05-SCREEN/02-WHAT-WHY-HOW.md` (the story, for analysis) → `05-SCREEN/README.md` → `05-SCREEN/01-INTEGRATION.md`
 7. `LOG.md`: what happened, in order.
