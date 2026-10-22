@@ -587,3 +587,54 @@ Screens: `screens/23-app-screen-line.png`, `24-app-screen-view.png`, `25-app-scr
 4. Open it. If macOS stops it, right-click it → Open.
 5. Go to System Settings → Privacy & Security → Accessibility. Remove every GeniOS entry with −. Press +, add `/Applications/GeniOS.app`, and switch it on. Every new build is a new app to macOS, until the app is signed with an Apple Developer account.
 6. Come back to GeniOS. The line under the header should turn green: "Reading your screen · …". If it does not, open it and press "I've allowed it · Check again".
+
+## 13 · 0.3.2: Fix Accessibility, and a Refresh that stops
+
+**Rohit, 22 Oct, 23:24, on 0.3.1:**
+- Refresh kept spinning for 2–3 minutes.
+- "Not reading · Accessibility is off", although GeniOS was switched on in Settings. Switching it off and on, and pressing Check again, changed nothing.
+
+### What was found: macOS's own log (`log show --process tccd`)
+
+When the reader asked for Accessibility:
+- macOS attributed the request to GeniOS correctly (`responsible = ai.genios.desktop, /Applications/GeniOS.app`).
+- It then compared the app with the code hash its Accessibility entry holds: `cdhash H"85a8e081…"`. The running 0.3.1 is `dc5c9727…`, so the result was `-67050`, and macOS answered **Denied**.
+- The entry in Settings belonged to an **older build**. Every build here is ad-hoc signed, so every build has a new hash. Switching the entry off and on keeps the hash it holds; only removing the entry clears it.
+- `tccutil reset Accessibility ai.genios.desktop` (no admin needed) removed **five** such entries, one for each older copy. I ran it on 22 Oct at 23:40, so the old entries are gone.
+
+**Refresh** waited for the whole card reload: the queue, then every card's body, four at a time. Each press, the 45-second timer and every focus started another reload on top of the ones still running, and brain requests had no time limit.
+
+### What changed
+
+| Where | Change |
+|---|---|
+| Rust | New command `capture_fix_accessibility`, in four steps: `tccutil reset Accessibility <bundle id>`; `genios-ax trust --prompt`, so macOS asks again and makes a fresh entry for this build; open Privacy & Security › Accessibility; start a fresh reader. |
+| Screen view (Accessibility off) | The main button is now **Fix Accessibility**, with Check again as the second. The line under the title says why an entry that shows as on can still fail. The steps are: 1) press Fix Accessibility, 2) switch GeniOS on in the list, 3) come back here. |
+| Line under the header | "Not reading your screen · fix Accessibility" |
+| Refresh | The spinner stops after **3 s** at most: "Refreshed · 11:42 pm · cards are still coming in" when the brain is slower. **One card load at a time**: a press, the timer and focus share the load that is already running. Every brain request gives up after **20 s**. |
+
+### How it was checked
+
+- **Rust:** `cargo test --lib -- lane moments capture` gives 201 passed.
+- **Render checks:** 35, all passing. The new ones:
+  - Fix Accessibility calls `capture_fix_accessibility`, then the view reads "Reading your screen";
+  - with a brain that takes 12 s, Refresh stops at 3.4 s and says the cards are still coming in;
+  - three presses while it loads make **1** card-list request, not 3.
+- **Mutations:** two, both caught: a spinner that waits for the cards; the one-load-at-a-time guard removed.
+- **macOS:** `tccutil reset` exits 0 without admin on this Mac.
+- **Not exercisable here:** the real macOS prompt and switch. Rohit's next install exercises them.
+
+### Where it is, and how to install it
+
+| What | Where |
+|---|---|
+| The DMG | `~/Downloads/GeniOS_0.3.2_aarch64.dmg` (22 MB; `hdiutil verify` reports it VALID; version 0.3.2) |
+| The code | dashboard branch `rohit/desktop-ux`, commit `fe150a4`, pushed, not merged |
+
+1. Quit GeniOS. Drag the new GeniOS from the DMG into Applications, and replace the old one.
+2. Open GeniOS. Tap the gold line under the header, then press **Fix Accessibility**.
+3. If macOS shows "GeniOS would like to control this computer", press **Open System Settings**.
+4. In the list, switch **GeniOS** on.
+5. Come back to GeniOS. Within a few seconds the line turns green: "Reading your screen · …".
+
+Every future build needs step 2 once. That stops only when the app is signed with a fixed identity: an Apple Developer ID, or a local signing certificate.
