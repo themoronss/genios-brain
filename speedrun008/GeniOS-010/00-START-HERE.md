@@ -1,4 +1,4 @@
-# GeniOS-010 · The dashboard: navigation, home page, goals
+# GeniOS-010 · The dashboard: navigation, home page, goals, screen, cards
 
 **Written for:** Harsh, to wire the new dashboard design in without asking, and Rohit, to review what was built (`04-BUILD-REVIEW.md`).
 
@@ -6,7 +6,8 @@
 - Built and tested, but **not live**.
 - Everything is on the dashboard branch `rohit/nav-grouping` in `github.com/themoronss/genios-brain-dashbaord`: 26 commits on top of `origin/main` `6ddc4db` (33 files, +7,272 / −906), HEAD `847eeac`. `f137d41` … `cc1b58f` are the Goals page; `5c0504f` locks Agents; `f151019`, `9130f84`, `972d122`, `9a13d87` and `847eeac` rebuild the Screen page.
 - **For the analysis, start with [`04-BUILD-REVIEW.md`](04-BUILD-REVIEW.md):** for every part, what was there, what we built, why, how, each round of review and what was dropped, how it integrates, the risks, and Harsh's integration order.
-- brain.thegenios.com serves `main`, so nothing here is visible until that branch is merged.
+- **The Cards page** is on its own branch, `rohit/cards-ux`, three commits on top of `847eeac` (`b5527dc` · `9d565e6` · `25553ab`; 3 files, +1,675 / −687). Merge it after, or with, `rohit/nav-grouping`. See [`06-CARDS/`](06-CARDS/README.md).
+- brain.thegenios.com serves `main`, so nothing here is visible until those branches are merged.
 - No brain code changed for any of this. Every brain change the design needs is listed in `02-DASHBOARD-HOME/05-BRAIN-WORK.md` and `03-GOALS/README.md`.
 
 **Who decided what:**
@@ -24,6 +25,7 @@
 | [`03-GOALS/`](03-GOALS/README.md) | **The Goals page** (Intelligence ▸ Goals): one goal, one card, with its reasoning and numbered cards inside, Admin only. It shows what is live today and the fields `GET /v1/goals` must return (GeniOS-009 G1/G3/G4/G5/G7/G9), plus the open decisions. | Before building GeniOS-009 G1–G5, so the API returns what the page draws. |
 | [`04-BUILD-REVIEW.md`](04-BUILD-REVIEW.md) | **The review across all of it:** was there → built → why → how → rounds (what was tried and dropped) → how it integrates; risks R1–R12; the integration checklist. | First, when deciding what to do next. |
 | [`05-SCREEN/`](05-SCREEN/README.md) | **The Screen page** (Intelligence ▸ Screen): how Screen works in six stages, each item with its path (at once → memory → card), the card it fed nested inside it, popups; a screen item vs a card; live vs preview; the goal each item moves; the look (fill, not borders). **`01-INTEGRATION.md`** is the wiring for Harsh: every field, every button, brain changes S1–S8 in order, the checks. **`02-WHAT-WHY-HOW.md`** is the story for analysis, round by round with a screenshot each. Also: Agents locked. | Before B8, and before the Cards page, which shares its card parts. |
+| [`06-CARDS/`](06-CARDS/README.md) | **The Cards page** (Intelligence ▸ Cards): cards grouped by what they ask (Decide · Answer · Waiting); each row a clear subject with what to do and how; the card opened in a side panel in Rohit's order: recommendation · what · why · how · what doing it gets you · goal · deadline · details · where the data came from; only each card's own details; Done · Delegate · Later · Feedback · Answer. **`02-CARD-DEFINITION.md`** is what a card is, field by field, with where each comes from in the brain. **`01-INTEGRATION.md`** is the wiring for Harsh and brain changes C1–C9 in order (the card writer, card-scoped context, delegate). **`04-WHAT-WHY-HOW.md`** is the story, round by round with a screenshot each. | Before the card writer (C1) and before moving Goals and the Mac app onto the one card reader. |
 
 ## How the pieces connect
 
@@ -41,6 +43,8 @@
  /v1/expertise/domains|request ───► Expertise page (01)
  /v1/company-brief (+ decide, + lines) ──► Goals page (03): goals, proposals, add a goal
  /cards, /cards/{id}           ───► Goals page: situations, scenario, reasoning (by domain)
+ /cards, /cards/{id}, /timeline, /history, POST /cards/{id}/action
+                               ───► Cards page (06): lib/card-read.ts → list · side panel · buttons
  /v1/goals  (GeniOS-009 G1, not built) ─► goal department, progress, links — sample-only until then
 ```
 
@@ -66,4 +70,5 @@ These matter more than any one screen:
 4. `02-DASHBOARD-HOME/README.md` → `01-SECTIONS.md` → `02-DATA-WIRING.md` → `03-AER-HIR.md` → `04-SCREEN.md` → `05-BRAIN-WORK.md` → `06-RUN-AND-TEST.md`
 5. `03-GOALS/README.md` → `03-GOALS/01-GOALS-PAGE.md`
 6. `05-SCREEN/02-WHAT-WHY-HOW.md` (the story, for analysis) → `05-SCREEN/README.md` → `05-SCREEN/01-INTEGRATION.md`
-7. `LOG.md`: what happened, in order.
+7. `06-CARDS/04-WHAT-WHY-HOW.md` (the story) → `06-CARDS/README.md` → `06-CARDS/02-CARD-DEFINITION.md` → `06-CARDS/01-INTEGRATION.md` → `06-CARDS/03-WHAT-WAS-THERE.md`
+8. `LOG.md`: what happened, in order.
