@@ -19,7 +19,7 @@ They are ordered by what a customer sees first.
 | B5 | Weekly change counts in `home-summary` | "What changed this week" can't show facts learned or updated live | small |
 | B6 | Cards raised this week, counted in the brain | `/activity` lists live cards only, capped at 100 | small |
 | B7 | `policy_safe` when nothing was decided | A fresh workspace reads "0% Policy-safe actions" | one line |
-| B8 | Screen: per-item read path, memory time, popup and card links; week counts | The Screen page cannot say how an item was read, which popup or card it led to, or how many screens were read/skipped | `../05-SCREEN/README.md` §5 (expanded 22 Oct) |
+| B8 | Screen: per-item read path, memory time, popup and card links; week counts | The Screen page cannot say how an item was read, which popup or card it led to, or how many screens were read/skipped | `../05-SCREEN/01-INTEGRATION.md` §5, S1–S8 (expanded 22 Oct) |
 | B9 | Drop the hard-coded notice | `snapshot.notice` "Your company is becoming more proactive." is no longer shown | one line, plus delete `notice-board.tsx` on the dashboard |
 
 ---
@@ -63,7 +63,7 @@ Better still, measure it: the share of gated actions this week that passed every
 
 ## B8 · Screen: links and counts
 
-Expanded on 22 Oct, when the Screen page was rebuilt. The full field list is `../05-SCREEN/README.md` §5:
+Expanded on 22 Oct, when the Screen page was rebuilt. The full list, in order and with where each goes, is `../05-SCREEN/01-INTEGRATION.md` §5 (S1–S8):
 - per follow-up: `read_by` (rule · quick read · hourly batch), `graph_written_at`, the `moment_id` of its popup, and `card_ids[]` (cards whose evidence includes its `observation_id`);
 - per card: `screen_items[]`, the same join the other way;
 - per seat, per week, on `/v1/seats/me/weekly-report`: `screens_read`, `screens_skipped`, `threads_to_memory`, `cards_from_screen`.
