@@ -17,7 +17,7 @@
 | **What** | A real goal object: `company_goals` plus its revisions, synced from the company brief's accepted goal lines, with an API to set owner, metric, target and deadline. |
 | **Why** | Today a goal is free text in `company_brief_lines` (section `goals`). Nothing can point to it, measure it, or link a situation to it. MD N1: *goals as first-class business objects*. |
 | **For what** | Every later step needs a goal **id**: G2 prints it, G3 names it, G4 links it, G6 shows it, G9 moves it. |
-| **How** | The contract `contracts/goal.py`; migration 0250; `context/goals.py` with an idempotent `sync_from_brief`, called as the first stage of every sweep; `api/goal_routes.py`. **The founder's accept on the brief stays the only approval door.** |
+| **How** | The contract `contracts/goal.py`; a new migration (the next free number at build time, ≥0251); `context/goals.py` with an idempotent `sync_from_brief`, called as the first stage of every sweep; `api/goal_routes.py`. **The founder's accept on the brief stays the only approval door.** |
 | **What changes after** | The golden tenant has 5 active goals with ids. A drafter's goal proposal is a `proposed` goal that can never become active without the founder. **Nothing a founder sees changes yet.** |
 | **Done when** | `GET /v1/goals` shows the golden tenant's 5 active goals · tests + mutation proofs green · CI green. |
 | **Do not** | Make a goal active from code or a model · import `context/` from `platform/` · write goal rows on every sweep · change any prompt (G1 must cause **zero** cassette misses). |
@@ -37,6 +37,12 @@
   5. Land design partners
 - **What a goal line lacks:** id for other layers, owner, metric, target, deadline, department, revisions.
 - **Similar names that are something else:** `contracts/reasoning.Goal` (a reasoning run's purpose) and `contracts/execution.goal` (an execution's text). Neither is touched.
+- **Two goal-shaped tables already exist.** Neither is a company goal, neither links to a situation, and G1 does not touch them:
+
+  | Table | What it is | Who reads it |
+  |---|---|---|
+  | `team_milestones` (`migrations/0151_team_milestones.sql:3`, :8-21) | "a dated goal with an owner seat": `title`, `due_at`, `owner_seat_id`, an optional scope | the team readiness pass (`reason/team/readiness.py:77` `load_milestones`; `:178` turns a milestone due soon into a team item keyed `readiness:{milestone_id}`, stored in `team_situations` by `reason/team/emit.py:190`, never in `context_situations`) and `GET/POST /v1/team/milestones` (`api/team_routes.py:84`, `:94`) |
+  | `seat_objectives` (`migrations/0133_seat_objectives.sql:35-52`) | one person's focus: a `domain` per seat, with an optional `valid_until` | the card queue read: cards in that domain come first for that person, nothing is hidden and no score moves (`deliver/store.py:988` `_objective_order`); set through `PUT /qualification/objectives` (`api/routes.py:2297`) |
 
 ## 2 · Design — and why that way
 
@@ -104,9 +110,11 @@ class Goal:
 - `approved` when approved and `starts_on` is in the future;
 - `completed` / `superseded` / `cancelled` are set by G1.4 or G9 only.
 
-### G1.2 · Migration `migrations/0250_company_goals.sql` (new)
+### G1.2 · Migration `migrations/<next free ≥0251>_company_goals.sql` (new)
 
-The number is the next free one **at build time**. Check `origin/harsh/mvp` first; that is the 0191 → 0212 lesson.
+The number is the next free one **at build time**, at least `0251`: `0250` is `0250_screen_followup_read_path.sql`
+(`93ea3cbe`), and local-only STEP-13b branches also hold a `0250_expert_review_attempts.sql`. Find it with the
+check command in `00-START-HERE.md` (Migrations), which reads every branch. That is the 0191 → 0212 lesson.
 
 ```sql
 create table if not exists company_goals (
@@ -225,7 +233,7 @@ existing brief drafter.
 ## Harsh's checklist — in order
 
 1. **Confirm D1, D2 and D7 with Rohit** (`08-DECISIONS.md`); otherwise the defaults stand.
-2. **Pick the migration number** after `git ls-tree origin/harsh/mvp migrations/ | tail` and the same for `origin/speedrun008`.
+2. **Pick the migration number** with the check command in `00-START-HERE.md` (Migrations): the next free one, ≥0251.
 3. **Write the contract first:**
    - `tests/contracts/test_goal_contract.py` (one case per refusal code, §3 G1.1), red;
    - then `contracts/goal.py`, green.
@@ -263,7 +271,7 @@ Paste `10-AGENT-BRIEFS.md` §1 first, then this.
 - `tests/replays/specs/founder/brief/company_brief.json`.
 
 **You own (create):**
-- `contracts/goal.py`, `migrations/0250_company_goals.sql` (or the next free number), `context/goals.py`, `api/goal_routes.py`;
+- `contracts/goal.py`, `migrations/<next free ≥0251>_company_goals.sql`, `context/goals.py`, `api/goal_routes.py`;
 - `tests/contracts/test_goal_contract.py`, `tests/context/test_goals_sync.py`, `tests/api/test_goal_routes.py`.
 
 **You may change (one line each):**

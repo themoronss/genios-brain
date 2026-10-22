@@ -2,8 +2,8 @@
 
 **Written for:** Harsh (to build against) and Rohit (we edit goals here next).
 
-**Status, 22 Oct 2026:**
-- **The Goals page is built:** Intelligence ▸ Goals, `/dashboard/goals`, commits `f137d41` … `cc1b58f` on the unmerged branch.
+**Status, 22 Oct 2026 (corrected 23 Oct: the Goals page is merged; two goal-shaped tables named):**
+- **The Goals page is built and merged:** Intelligence ▸ Goals, `/dashboard/goals`, commits `f137d41` … `cc1b58f`. Dashboard `origin/main` at `2edfb86` (22 Oct) contains them (`git merge-base --is-ancestor cc1b58f origin/main`).
   - It follows Rohit's model: **one goal, one card**. Its face shows the scenario, what to do, the target and where it comes from, and where it was captured.
   - Two toggles: **Details** opens only the goal (small cards: the goal · plan and reasoning · metrics); **Cards N** opens only its numbered cards, one at a time, in place.
   - Goals are grouped by month and filtered by predefined tags; each has a deadline and a plan.
@@ -15,6 +15,7 @@
   - add your own goal;
   - every open situation under its domain, with its real scenario and reasoning.
 - **The goal object does not exist yet:** GeniOS-009 G1–G5 are planned, not built. A goal is still a free-text `company_brief_lines` row with `section = 'goals'`. So a live goal has no department, progress or linked situations yet. The page says so, and never shows 0.
+  - Two goal-shaped tables exist in the brain, and neither is the goal object: `team_milestones` (migration 0151, a dated milestone with an owner seat, for the team readiness pass) and `seat_objectives` (migration 0133, one person's focus domain, which reorders that person's card queue). The Goals page reads neither: its data comes from `src/lib/api-goals.ts` (the brief) and `src/lib/api-cards.ts` (open cards) only (`goals-page.tsx:55-56`). See GeniOS-009 `STEP-G1` §1.
 - This folder is where the goals edits happen. Rohit opens each step.
 
 ---
