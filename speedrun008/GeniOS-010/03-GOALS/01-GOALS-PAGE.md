@@ -24,7 +24,7 @@
 |---|---|
 | `goals-sample-top.png` · `goals-sample-bottom.png` | The target, in sample mode. The first goal is open. |
 | `goals-signed-in.png` | A signed-in owner, against the stand-in brain. |
-| `goals-preview-as-it-opens.png` · `goals-preview-details-open.png` | **The preview Rohit reviews:** `/dashboard/goals?demo=1`. The first shows it as it opens (goal 1's cards as a list, card 1 open in place). The second has one goal's **Details** open (taken at `cb962fa`). |
+| `goals-preview-as-it-opens.png` · `goals-preview-details-open.png` | **The preview Rohit reviews:** `/dashboard/goals?demo=1`. The first shows it as it opens. The second has the seed goal's Details and its card 1 open as small cards, with the month groups and the tag row (`cc1b58f`). |
 
 ---
 
@@ -89,6 +89,34 @@
 - **Short text:** one line per field. Confidence is a row of chips (word + dots, the reason on hover).
 - In the preview, goal 1's cards open with card 1 open. Every other goal starts closed.
 - A "Proposed goal" card is dashed and accent-tagged, so a goal waiting for approval never reads as a live one.
+
+
+## 2a · Details as small cards, goals by month, tags, a plan (dashboard `cc1b58f`)
+
+**Rohit, 22 Oct, on an open goal:** *"bahut mess lag raha hai — is card ke andar bhi kai cards daal do"*. He asked for the same treatment inside an opened card. Goals are to be arranged by calendar (August, September, October 2026), with predefined tags for each, and a deadline, details and plan per goal.
+
+- **An open goal**, in three groups of small cards (`Mini`):
+  - **The goal:** Scenario (wide) · What to do (wide) · Target (+ source) · Deadline (+ "N days left") · Owner · tags · Captured from (+ source).
+  - **Plan and reasoning:** Plan (steps ✓ done / ● doing / ○ next, each with a date) · Why it exists (+ proof) · Reasoning.
+  - **Metrics:** What happened · From your side · What GeniOS did.
+- **An open card**, in two groups of small cards:
+  - **Scenario:** What's going on (wide) · Who · Why now · What remains · If you do nothing.
+  - **Reasoning:** What it does to the goal · Done when · What to do (+ steps) · Otherwise (else / avoid / wait) · Confidence · Proof.
+- **Goals by month:**
+  - Admin's goals are grouped under the month they belong to, newest first: "October 2026 · 3 goals · 1 done".
+  - Inside a month, open goals come before done ones.
+  - Live, the month is the goal line's `accepted_at`.
+- **Predefined tags:** Fundraising · Investors · Compliance · Finance · Vendors · Hiring · Legal · Operations (`types.ts` `ADMIN_TAGS`).
+  - The filter row above the months shows a count per tag.
+  - The tags also show on the goal's face and in its Owner · tags card.
+  - Live goals have no tags yet; the brain has no field for them.
+- **Plan and deadline:** `Goal.plan[]` holds `{step, state: done|doing|next, when}`, and `Goal.dueDate` (ISO) drives "N days left".
+
+**Brain fields this adds** to `GET /v1/goals`; see §5:
+- `tags[]`: from `ADMIN_TAGS`, set by the founder, or proposed by the drafter and approved;
+- `month` (or `created_at`);
+- `plan[]`: G1 milestones, i.e. child goals with `parent_goal_id`, or a `plan` list on the goal;
+- `deadline` as an ISO date.
 
 **Ids:**
 - **A goal's code** = `G-` + the first six hex characters of its id (`cbl_…` today, `goal_id` after G1). The full id is printed at the foot of the open card.
