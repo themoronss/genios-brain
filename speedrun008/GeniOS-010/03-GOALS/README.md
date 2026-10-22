@@ -3,9 +3,14 @@
 **Written for:** Harsh (to build against) and Rohit (we edit goals here next).
 
 **Status, 22 Oct 2026:**
-- The **screen** for goals is built, but shows sample data only.
-- The **goal object** does not exist: GeniOS-009 G1–G5 are planned, not built. Today a goal is a free-text `company_brief_lines` row with `section = 'goals'`.
-- This folder is where the goals edits happen next. Rohit opens each step; nothing here is started before he does.
+- **The Goals page is built and live:** Intelligence ▸ Goals, `/dashboard/goals`, commit `f137d41`. It runs Domain → Goal → Situation → Scenario → Reasoning. See **`01-GOALS-PAGE.md`**.
+- **Live today:**
+  - the brief's goals;
+  - accept or reject what GeniOS proposes;
+  - add your own goal;
+  - every open situation under its domain, with its real scenario and reasoning.
+- **The goal object does not exist yet:** GeniOS-009 G1–G5 are planned, not built. A goal is still a free-text `company_brief_lines` row with `section = 'goals'`. So a live goal has no department, progress or linked situations yet. The page says so, and never shows 0.
+- This folder is where the goals edits happen. Rohit opens each step.
 
 ---
 
@@ -13,8 +18,9 @@
 
 | Place | What it shows now | File (dashboard repo, `src/`) |
 |---|---|---|
-| Nav: Intelligence ▸ **Goals** 🔒 | a locked item: "Goals are coming next: what the company wants to achieve, and how far along it is." | `components/layout/sidebar.tsx` |
-| Home §1 **This month's goal** | live: the month ring and a faded preview · sample: donut + pace + rows | `product/internal/dashboard/homepage/sections/genios-at-work.tsx` (`MonthOnly`, `MonthPace`, `GoalRows`, `SAMPLE_GOALS`) |
+| Nav: Intelligence ▸ **Goals** | **unlocked**, opens `/dashboard/goals` | `components/layout/sidebar.tsx` |
+| **The Goals page** | Domain → Goal → Situation → Scenario → Reasoning; live brief goals, proposals, add a goal, situations under their domain (`01-GOALS-PAGE.md`) | `app/dashboard/goals/page.tsx`, `product/internal/dashboard/goals/*`, `lib/api-goals.ts` |
+| Home §1 **This month's goal** | live: the month ring and a faded preview · sample: donut + pace + rows · heading links to **Open goals** | `product/internal/dashboard/homepage/sections/genios-at-work.tsx` (`MonthOnly`, `MonthPace`, `GoalRows`, `SAMPLE_GOALS`) |
 | Home §4 **Goals formed** card | live: 0 with flat weeks · sample: 5 this month | `homepage/live.ts · liveHeadlineCards`, `homepage/data.ts · headlineCards` |
 | Home §5 checks | "No goals set yet, so progress toward them cannot be shown" | `homepage/live.ts · liveChecks` |
 
@@ -80,20 +86,23 @@ These are `STEP-G1` (goal object) and `STEP-G5` (progress). G1.4 serves `GET /v1
 | **D-010-G1** | How is a goal's **status** (done / on track / at risk / blocked) decided? | **done:** `status = completed`. **blocked:** an open link with relation `depends_on` whose situation is not moving (or a person marks it). **at risk:** `pct` is more than 15 pts behind the goal's own pace, or a `threatens` link is open. **on track:** otherwise. Computed in the brain (`GET /v1/goals`), not in the browser, so every surface agrees. |
 | **D-010-G2** | What are **"this month's goals"**? Rohit: *"monthly goals kya hain, is mahine ke goals ke kitne poore ho rahe hain"*. | Every live goal whose `deadline` falls in the current month, **plus** any longer goal's milestone due this month. That needs a `parent_goal_id` child per month (G1 already has `parent_goal_id`). Until milestones exist: deadline in this month. |
 | **D-010-G3** | Pace for a goal that is not a month long. | Expected progress = time elapsed between `starts_on` and `deadline`. The screen then draws each row's marker at that goal's own pace. Today it uses the month for every row. |
-| **D-010-G4** | Where is the full **Goals page** (Intelligence ▸ Goals, now locked)? | It shows the same rows as home §1, then per goal the open situations (advances / threatens / depends on) and the cards that move it (G6's board, `GET /v1/insights?group=goal`). |
+| **D-010-G4** | ~~Where is the full Goals page?~~ **Built** (`01-GOALS-PAGE.md`). Domain → goal → situations (advances / threatens / depends on) → scenario → reasoning, with "not linked" per domain. | — |
 
 ## 5 · What we edit next, in this folder
 
 Rohit opens these. Each gets its own file here:
 
-1. `01-GOALS-PAGE.md`: the Intelligence ▸ Goals page (D-010-G4): layout, states, empty and unknown handling.
+1. ✅ `01-GOALS-PAGE.md`: the Intelligence ▸ Goals page: built, with what is live and what waits for G1/G3/G4/G5/G7.
 2. `02-HOME-GOALS-LIVE.md`: switching home §1 and the "Goals formed" card from sample to `GET /v1/goals`, once G1 + G5 exist.
 3. `03-STATUS-AND-PACE.md`: D-010-G1 to G3, written as the brain rule with tests.
 
 ## 6 · Wiring it in (when G1 + G5 land)
 
-1. Add `getGoals()` to `src/lib/` (a `seatCall`- or `v2Get`-style client, whichever `GET /v1/goals` is mounted under).
-2. In `GeniosAtWork`, replace `const goals = sample ? SAMPLE_GOALS : []` with the mapped goals (§3). Keep `[]` → `MonthOnly` for a workspace with none.
-3. In `live.ts · liveHeadlineCards`, set "Goals formed" from the count of `approved_at` in this month. Its 12 bars come from the same field, by week.
-4. In `live.ts · liveChecks`, drop the always-on "No goals set yet" row when goals exist. Add "N goals at risk" (watch) and "N goals blocked" (broken).
-5. In `sidebar.tsx`, unlock **Goals**: give it `href: "/dashboard/goals"` and drop `locked`.
+1. Add `getGoals()` to `src/lib/api-goals.ts`, beside `getCompanyBrief`.
+   - It is a `v2Get`, because `/v1/goals` sits with the brief.
+   - The page then reads goals from it, not from brief lines.
+   - Proposals still come from the brief until G1 makes them `status = proposed` goals.
+2. **Goals page:** in `goals/live.ts`, map `GET /v1/goals` and group by `department`. Put each card under its goal by its G4 link, and set `linked: true` (`01-GOALS-PAGE.md` §5).
+3. **Home:** in `GeniosAtWork`, replace `const goals = sample ? SAMPLE_GOALS : []` with the mapped goals (§3). Keep `[]` → `MonthOnly` for a workspace with none.
+4. In `homepage/live.ts · liveHeadlineCards`, set "Goals formed" from the count of `approved_at` in this month. Its 12 bars come from the same field, by week.
+5. In `homepage/live.ts · liveChecks`, drop the always-on "No goals set yet" row when goals exist. Add "N goals at risk" (watch) and "N goals blocked" (broken).

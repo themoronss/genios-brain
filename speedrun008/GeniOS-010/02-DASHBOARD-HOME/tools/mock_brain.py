@@ -1,9 +1,11 @@
-"""A stand-in brain for a local render check: brain-shaped JSON for the home page's routes.
+"""A stand-in brain for a local render check: brain-shaped JSON for the home and Goals pages' routes.
 
-Serves on 127.0.0.1:8000 and allows CORS from http://localhost:3917 (change ORIGIN for another
-port). Paths use the org id `org_preview` — plant that as `genios_org_id` in the browser (see
-../06-RUN-AND-TEST.md §4). Every body mirrors the shape the real route returns; edit a value to
-see an edge case (a failing source, a succeeded delegation, outcomes > 0). Unknown paths → 404.
+Serves on 127.0.0.1:8000 and allows CORS (with credentials) from http://localhost:3917 — change ORIGIN
+for another port. Paths use the org id `org_preview`; plant it as `genios_org_id` in the browser (see
+../06-RUN-AND-TEST.md §4). Every body mirrors the shape the real route returns; edit a value to see an
+edge case (a failing source, a succeeded delegation, outcomes > 0). The Goals page's writes work too:
+POST /v1/company-brief/lines adds a goal, POST …/proposals/{id}/decide accepts or rejects one (in memory).
+Unknown paths → 404.
 """
 import json
 from datetime import datetime, timedelta, timezone
@@ -47,24 +49,137 @@ ROUTES = {
     "/v1/agents": {"agents": [{"agent_id": "a1", "name": "Default", "status": "active", "connectors": [], "is_default": True}], "count": 1},
     "/v1/delegations": {"delegations": []},
     "/auth/me": {"role": "owner", "seat_id": "s1", "email": "preview@example.com"},
+    # Goals page: the brief's goal lines (accepted) and one goal the drafter proposed.
+    "/v1/company-brief": {
+        "version": "b1", "text": "", "truncated": [], "last_review": None,
+        "lines": [
+            {"line_id": "l-seed", "section": "goals", "text": "Raise the seed round", "kind": None,
+             "proposed_by": "brief_drafter", "accepted_at": iso(400)},
+            {"line_id": "l-dpiit", "section": "goals", "text": "StartupSetu recognition for Nimbus Labs", "kind": None,
+             "proposed_by": "brief_drafter", "accepted_at": iso(390)},
+            {"line_id": "l-hire", "section": "goals", "text": "Hire a Founding AI Engineer", "kind": None,
+             "proposed_by": "founder", "accepted_at": iso(200)},
+            {"line_id": "l-who", "section": "who_we_are", "text": "Nimbus Labs builds GeniOS", "kind": None,
+             "proposed_by": "founder", "accepted_at": iso(500)},
+        ],
+        "proposals": [
+            {"line_id": "p-design", "section": "goals", "text": "Land three design partners", "kind": None,
+             "proposed_by": "brief_drafter", "evidence": [], "proposed_at": iso(20)},
+        ],
+    },
+    "/cards": {"cards": [
+        {"card_id": "c-dpiit", "signal_id": "s1", "assignee": None, "urgency_band": "high",
+         "headline": "Download the DPIIT recognition certificate", "score": 70, "state": "surfaced",
+         "situation": "The portal says the certificate is issued; nobody has downloaded it.",
+         "created_at": iso(3), "expires_at": iso(-200)},
+        {"card_id": "c-incub", "signal_id": "s2", "assignee": None, "urgency_band": "standard",
+         "headline": "Reply owed to the incubator's programme office", "score": 40, "state": "surfaced",
+         "situation": "The programme office asked whether you are incubated on campus; no reply yet.",
+         "created_at": iso(20), "expires_at": iso(-200)},
+        {"card_id": "c-vendor", "signal_id": "s3", "assignee": None, "urgency_band": "critical",
+         "headline": "Northwind renewal: notice date in 12 days", "score": 85, "state": "surfaced",
+         "situation": "Northwind renews automatically on 3 Dec unless notice is given 30 days before.",
+         "created_at": iso(50), "expires_at": iso(-200)},
+    ]},
+    "/v1/expertise/domains": {"active_count": 2, "available_count": 2, "domains": [
+        {"id": "founder_office", "name": "Founder Office", "version": "1", "status": "ga", "description": "",
+         "question": "", "subdomain_count": 0, "capability_count": 0, "artifact_count": 0, "subdomains": [],
+         "active": True},
+        {"id": "admin", "name": "Admin", "version": "1", "status": "ga", "description": "", "question": "",
+         "subdomain_count": 0, "capability_count": 0, "artifact_count": 0, "subdomains": [], "active": True},
+    ]},
+}
+
+# GET /cards/{id}: card.v1 plus the decision projection, the way the brain's get_card returns it.
+CARD_DETAILS = {
+    "c-dpiit": {"domain": "founder_office", "output_lane": "decision", "business_subject": "StartupSetu desk",
+                "relationship_role": "the programme", "why_now": "Banks and two programmes asked for it this month.",
+                "unresolved_item": "Download it and save it to Compliance.",
+                "do_nothing_consequence": "The tax-holiday application waits on a file you already have.",
+                "success_signal": "The PDF is in the Compliance folder.",
+                "why": [{"field": "certificate.status", "value": "issued", "source": "Gmail · StartupSetu · 13 Oct"},
+                        {"sentence": "headline", "question": "Has the certificate been downloaded?",
+                         "because": "no download seen", "source": "expert_check"}],
+                "decision": {"card_version": "v2", "recommendation": {
+                    "verdict": "Download the certificate today and save it to Compliance.",
+                    "objective": "Recognition in hand", "steps": ["Sign in to the portal", "Download the PDF"],
+                    "avoid": None},
+                    "confidence": {"evidence": 0.9, "identity": 0.95, "situation": 0.7, "recommendation": 0.8},
+                    "grounding": {}}},
+    "c-incub": {"domain": "founder_office", "output_lane": "investigation", "business_subject": "Programme office",
+                "relationship_role": "incubator", "why_now": "Forms close on 31 Oct.",
+                "unresolved_item": "One answer: on campus or virtual.",
+                "why": [{"field": "thread.last_from", "value": "programme office", "source": "Gmail · 15 Oct"}],
+                "decision": {"card_version": "v1", "recommendation": {"verdict": "Answer: virtual incubation.",
+                    "objective": "", "steps": [], "avoid": None},
+                    "confidence": {"evidence": 0.8, "identity": 0.6, "situation": 0.5, "recommendation": 0.45},
+                    "grounding": {}}},
+    "c-vendor": {"domain": "admin", "output_lane": "decision", "business_subject": "Northwind Traders",
+                 "relationship_role": "vendor", "why_now": "12 days left to give notice; usage fell 40% since July.",
+                 "unresolved_item": "Renew, renegotiate or give notice.",
+                 "do_nothing_consequence": "It renews for a year at the old price.",
+                 "alternative": "Give notice now and renegotiate from there.",
+                 "success_signal": "Northwind confirms the new tier in writing, or notice is sent.",
+                 "why": [{"statement": "Renewal notice periods are counted back from the renewal date.",
+                          "source": "expertise"},
+                         {"field": "contract.notice_days", "value": {"days": 30, "clause": "9.2"},
+                          "source": "Drive · Northwind MSA.pdf"}],
+                 "decision": {"card_version": "v3", "recommendation": {
+                     "verdict": "Ask Northwind for the lower tier before 3 Nov; give notice if they refuse.",
+                     "objective": "", "steps": ["Send the usage figures", "Ask for the lower tier"],
+                     "avoid": "Letting it renew silently"},
+                     "confidence": {"evidence": 0.92, "identity": 0.9, "situation": 0.85, "recommendation": 0.7},
+                     "grounding": {}}},
 }
 
 class H(BaseHTTPRequestHandler):
     def _cors(self):
         self.send_header("Access-Control-Allow-Origin", ORIGIN)
         self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-GeniOS-Source, X-Dev-Org, If-None-Match")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+        self.send_header("Access-Control-Allow-Credentials", "true")
 
     def do_OPTIONS(self):
         self.send_response(204); self._cors(); self.end_headers()
 
     def do_GET(self):
-        body = ROUTES.get(self.path.split("?")[0])
+        path = self.path.split("?")[0]
+        if path.startswith("/cards/") and path.count("/") == 2:
+            card_id = path.rsplit("/", 1)[1]
+            card = next((c for c in ROUTES["/cards"]["cards"] if c["card_id"] == card_id), None)
+            body = None if card is None else {**card, **CARD_DETAILS.get(card_id, {})}
+        else:
+            body = ROUTES.get(path)
         self.send_response(200 if body is not None else 404)
         self._cors(); self.send_header("Content-Type", "application/json"); self.end_headers()
         self.wfile.write(json.dumps(body if body is not None else {"detail": "not in mock"}).encode())
 
-    do_POST = do_GET
+    def do_POST(self):
+        path = self.path.split("?")[0]
+        size = int(self.headers.get("Content-Length") or 0)
+        sent = json.loads(self.rfile.read(size) or b"{}")
+        brief = ROUTES["/v1/company-brief"]
+        body = None
+        if path == "/v1/company-brief/lines":
+            line_id = f"l-{len(brief['lines']) + 1}"
+            brief["lines"].append({"line_id": line_id, "section": sent.get("section"), "text": sent.get("text"),
+                                   "kind": None, "proposed_by": "founder", "accepted_at": iso(0)})
+            body = {"line_id": line_id, "status": "accepted", "promoted": 0}
+        elif path.startswith("/v1/company-brief/proposals/") and path.endswith("/decide"):
+            line_id = path.split("/")[4]
+            proposal = next((p for p in brief["proposals"] if p["line_id"] == line_id), None)
+            if proposal is not None:
+                brief["proposals"].remove(proposal)
+                if sent.get("decision") == "accept":
+                    brief["lines"].append({**{k: proposal[k] for k in ("line_id", "section", "text", "kind", "proposed_by")},
+                                           "accepted_at": iso(0)})
+                body = {"line_id": line_id, "status": "accepted" if sent.get("decision") == "accept" else "rejected",
+                        "promoted": 0}
+        else:
+            body = ROUTES.get(path)
+        self.send_response(200 if body is not None else 404)
+        self._cors(); self.send_header("Content-Type", "application/json"); self.end_headers()
+        self.wfile.write(json.dumps(body if body is not None else {"detail": "not in mock"}).encode())
 
     def log_message(self, *a):
         pass

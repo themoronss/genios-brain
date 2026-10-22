@@ -5,7 +5,8 @@
 **Branch:** `rohit/nav-grouping` in `genios-brain-dashbaord`. These commits matter here:
 - `db422da`: the sidebar;
 - `690def6`: the Expertise page;
-- `0ab7b03`: Screen under Intelligence.
+- `0ab7b03`: Screen under Intelligence;
+- `f137d41`: Goals unlocked; the page is in `03-GOALS`.
 
 **Files:** `src/components/layout/sidebar.tsx` and `src/app/dashboard/expertise/page.tsx`. `src/app/dashboard/moments/page.tsx` is covered in `02-DASHBOARD-HOME/04-SCREEN.md`.
 
@@ -35,7 +36,7 @@ Desktop ▸ Moments · My capture · Devices
 Dashboard
 Intelligence            — what the brain concluded
   ├ Cards               /dashboard/cards
-  ├ Goals    🔒          locked: "Goals are coming next…"            (GeniOS-009 G1/G6)
+  ├ Goals               /dashboard/goals                             (unlocked 22 Oct — 03-GOALS/01-GOALS-PAGE.md)
   └ Screen              /dashboard/moments                           (was Desktop ▸ Moments)
 Agents                  /dashboard/agents                            (unchanged — Rohit: revisit later)
 

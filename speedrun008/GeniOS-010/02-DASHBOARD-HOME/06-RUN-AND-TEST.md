@@ -29,14 +29,14 @@ Open `http://localhost:3000/auth/login` and sign in with a real account. Hot rel
 Add `NEXT_PUBLIC_DEV_SKIP_LOGIN=1` to the command above.
 
 - `app/dashboard/layout.tsx` then opens the app with no session.
-- Every page that honours sample mode (home, Screen) shows sample numbers under the orange banner. Its link reads "Sign in to see yours".
+- Every page that honours sample mode (home, Screen, Goals) shows sample numbers under the orange banner. Its link reads "Sign in to see yours".
 - The flag is `DEV_SKIP_LOGIN` in `lib/session.ts`. It is gated on `NODE_ENV === "development"`, so it is **false in every `next build`**, whatever the env says.
 
 `?demo=1` shows sample mode signed in too.
 
 ## 4 · Run against a stand-in brain (signed-in render, no real account)
 
-`tools/mock_brain.py` serves the exact JSON shapes of the routes the home page reads. These are the shapes in `02-DATA-WIRING.md`:
+`tools/mock_brain.py` serves the exact JSON shapes of the routes the home and Goals pages read. These are the shapes in `02-DATA-WIRING.md` and `03-GOALS/01-GOALS-PAGE.md`. On the Goals page, adding a goal and accepting or rejecting a proposal work against it, in memory:
 
 ```bash
 python3 tools/mock_brain.py                 # 127.0.0.1:8000, CORS for http://localhost:3917
@@ -77,5 +77,5 @@ npx next build               # green on the branch
 2. Make sure **neither** `GENIOS_DEV_API_PROXY` nor `NEXT_PUBLIC_DEV_SKIP_LOGIN` is set in the Vercel project.
 3. **After deploy, on brain.thegenios.com signed in:**
    - the home page order is: this month's goal → AER (locked) / HIR → activity → this week → what is working → what the brain holds;
-   - the nav shows Intelligence ▸ Cards · Goals 🔒 · Screen;
+   - the nav shows Intelligence ▸ Cards · Goals · Screen, and `/dashboard/goals` lists your brief's goals and open situations by domain;
    - `?demo=1` shows the sample banner.

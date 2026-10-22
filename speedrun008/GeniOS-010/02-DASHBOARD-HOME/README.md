@@ -17,6 +17,7 @@
 | `bc52077` | Rohit's priority order; AER locked; lists scroll in fixed boxes |
 | `c8f896c` | Checks under the week; one formal "What the brain holds" card |
 | `9c71f07` | AER and HIR end at the chart; the rest opens on Show |
+| `f137d41` | The Goals page (`03-GOALS/01-GOALS-PAGE.md`); home §1's heading gets "Open goals" |
 
 **Screenshots** (in `screens/`):
 

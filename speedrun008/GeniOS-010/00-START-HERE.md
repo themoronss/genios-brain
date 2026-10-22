@@ -4,7 +4,7 @@
 
 **Status, 22 Oct 2026:**
 - Built and tested, but **not live**.
-- Everything is on the dashboard branch `rohit/nav-grouping` in `github.com/themoronss/genios-brain-dashbaord`: 13 commits on top of `origin/main` `6ddc4db`.
+- Everything is on the dashboard branch `rohit/nav-grouping` in `github.com/themoronss/genios-brain-dashbaord`: 14 commits on top of `origin/main` `6ddc4db`. The last one, `f137d41`, is the Goals page.
 - brain.thegenios.com serves `main`, so nothing here is visible until that branch is merged.
 - No brain code changed for any of this. Every brain change the design needs is listed in `02-DASHBOARD-HOME/05-BRAIN-WORK.md` and `03-GOALS/README.md`.
 
@@ -20,7 +20,7 @@
 |---|---|---|
 | [`01-NAVIGATION/`](01-NAVIGATION/README.md) | The sidebar regrouping (Intelligence · Context · Workspace · Desktop), locked items, Screen under Intelligence, the Expertise page showing locked domains. | First. It is small and explains where every page now lives. |
 | [`02-DASHBOARD-HOME/`](02-DASHBOARD-HOME/README.md) | The home page, section by section: what each shows, which brain route feeds it, what is sample-only, AER/HIR, the Screen page, how to run and test it, and the brain work it needs. | When you wire the home page to real data or merge the branch. |
-| [`03-GOALS/`](03-GOALS/README.md) | What the dashboard already draws for goals, the exact shape it expects, how that maps onto GeniOS-009's `GET /v1/goals` (G1/G5), and the open questions. We edit goals here next. | Before building GeniOS-009 G1/G5, so the API returns what the screen draws. |
+| [`03-GOALS/`](03-GOALS/README.md) | **The Goals page** (Intelligence ▸ Goals): Domain → Goal → Situation → Scenario → Reasoning. It shows what is live today and what waits for GeniOS-009 G1/G3/G4/G5/G7, plus the goal shape, its mapping onto `GET /v1/goals`, and the open decisions. | Before building GeniOS-009 G1–G5, so the API returns what the page draws. |
 
 ## How the pieces connect
 
@@ -35,7 +35,9 @@
  /v1/seats/me/weekly-report    ───► GeniOS at work tiles, Screen page lanes
  /v1/agents, /v1/delegations   ───► AER readiness (what is in place)
  /v1/expertise/domains|request ───► Expertise page (01)
- /v1/goals  (GeniOS-009 G1, not built) ─► This month's goal (03) — sample-only until then
+ /v1/company-brief (+ decide, + lines) ──► Goals page (03): goals, proposals, add a goal
+ /cards, /cards/{id}           ───► Goals page: situations, scenario, reasoning (by domain)
+ /v1/goals  (GeniOS-009 G1, not built) ─► goal department, progress, links — sample-only until then
 ```
 
 ## Ground rules the design keeps
@@ -57,5 +59,5 @@ These matter more than any one screen:
 1. `00-START-HERE.md` (this file)
 2. `01-NAVIGATION/README.md`
 3. `02-DASHBOARD-HOME/README.md` → `01-SECTIONS.md` → `02-DATA-WIRING.md` → `03-AER-HIR.md` → `04-SCREEN.md` → `05-BRAIN-WORK.md` → `06-RUN-AND-TEST.md`
-4. `03-GOALS/README.md`
+4. `03-GOALS/README.md` → `03-GOALS/01-GOALS-PAGE.md`
 5. `LOG.md`: what happened, in order.
