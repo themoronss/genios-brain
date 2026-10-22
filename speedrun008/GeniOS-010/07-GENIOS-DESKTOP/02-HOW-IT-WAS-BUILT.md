@@ -638,3 +638,53 @@ When the reader asked for Accessibility:
 5. Come back to GeniOS. Within a few seconds the line turns green: "Reading your screen · …".
 
 Every future build needs step 2 once. That stops only when the app is signed with a fixed identity: an Apple Developer ID, or a local signing certificate.
+
+## 14 · 0.3.3: a fixed signature, popup sound, the version on screen
+
+**Rohit, 22 Oct, 23:50:**
+- "Refresh ka button kahan gaya?"
+- Accessibility still did not work.
+- He asked for a sound when a popup drops.
+
+### What was found
+
+| Problem | Cause |
+|---|---|
+| No Refresh button | The app in Applications was **0.3.0**. The disk images of 0.3.0 and 0.3.1 were still mounted, as "GeniOS" and "GeniOS 1", and the app was dragged from the old "GeniOS" window. 0.3.2 had never been opened. |
+| Accessibility | tccd now held cdhash `dc5c9727…` (0.3.1), while 0.3.0 (`edf4cc52…`) was running. This is the same refusal as §13, one build later. Each ad-hoc build gets a new hash, so each install is refused again. |
+
+### What changed
+
+| Where | Change |
+|---|---|
+| Signing | `Extension/scripts/mac-dev-dmg.sh` (new) does four things: builds the app; signs it with a local identity, **"GeniOS Local Development"** (`~/.genios-dev-signing`, its own keychain, created on the first run, never in the repo or the login keychain); makes a DMG; and checks it. Every build now has the same designated requirement, `identifier "ai.genios.desktop" and certificate leaf = H"79e08c30…"`. Accessibility granted once therefore holds for every later build. This is the way yabai and others keep Accessibility across self-built versions. It is not a Developer ID, which does not matter for a DMG built and opened on the same Mac. |
+| DMG | The volume is named **"GeniOS 0.3.3"**, so an old image left mounted cannot be mistaken for it. |
+| Account | Shows "Signed in on this Mac · GeniOS 0.3.3". A new **Popup sound** setting offers: Mac alert sound (default; System Settings › Sound › Alert sound, Tink on Rohit's Mac), Glass, Pop, Ping, Purr, Off. Picking one plays it once, and the choice is remembered. |
+| Rust (`lane/sound.rs`) | One sound per **new** popup. The same popup coming back after a reminder, or after quiet, is silent. Silenced popups and quiet hours show nothing, so they make no sound. Only listed choices are accepted. When the Mac's alert sound cannot be read, it plays Glass. The sound plays through `afplay` at 70% volume, without blocking. |
+| On Rohit's Mac | I ejected the two old disk images and moved the old DMGs to `~/Downloads/GeniOS-old-builds/`. I cleared GeniOS's stale Accessibility entry again (`tccutil reset`). |
+
+### How it was checked
+
+- **Rust:** `cargo test --lib -- lane moments capture` gives 203 passed. The sound has 2 tests and 3 mutations, all caught: the same popup sounding twice; a missing alert-sound file not falling back; any choice being accepted.
+- **Render checks:** 41, all passing. The new ones:
+  - the version shows in the account;
+  - the sound starts on the Mac alert sound;
+  - picking Glass sets it and plays it;
+  - after a restart, the pick is sent again silently.
+- **Signature:** `codesign --verify --deep --strict` passes. The designated requirement matches the certificate's SHA-1 (79E08C30…). The bundle has no non-system libraries, so hardened runtime's library validation has nothing to refuse.
+- **DMG:** mounted and checked: the volume is "GeniOS 0.3.3", the app inside is 0.3.3, and it has the same signature.
+- **Not exercised here:** the first launch of the newly signed app on Rohit's Mac. macOS may ask once for the Keychain, because the saved sign-in was stored by an ad-hoc build.
+
+### Where it is, and how to install it
+
+| What | Where |
+|---|---|
+| The DMG | `~/Downloads/GeniOS_0.3.3_aarch64.dmg` (the only GeniOS DMG left in Downloads) |
+| The code | dashboard `rohit/desktop-ux`, commit `d2c2b4e`, pushed, not merged |
+
+1. Quit GeniOS.
+2. Open `GeniOS_0.3.3_aarch64.dmg`. Its window is titled **GeniOS 0.3.3**. Drag GeniOS onto Applications and replace the old one.
+3. Open GeniOS. If macOS asks for your Mac password so GeniOS can use its Keychain item, type it and press **Always Allow**.
+4. Check that the account (top right) says **GeniOS 0.3.3**, and that **↻** is next to ×.
+5. Tap the gold line under the header and press **Fix Accessibility**. Press **Open System Settings** if asked, then switch GeniOS on.
+6. That grant now holds for every later build.
