@@ -511,3 +511,79 @@ Every card press goes through `pressCard` (`src/desktop/api.ts`). It posts `/car
 **Not done yet:**
 - The panel's old render checks (Today · This week · History) still test the panel. The app no longer opens it, so they need rewriting for the menu.
 - The app is not signed or notarised; that needs an Apple Developer account.
+
+## 12 · 0.3.1: Refresh, screen reading you can see, five-second popups
+
+**Rohit, 22 Oct, after installing 0.3.0:**
+- *"ek refresh ka button daalo"*: the device-code screen stayed on the code after he approved it, and screen reading did not start after he removed and re-added GeniOS in Accessibility.
+- *"Cards jo hain, mark done hone ke baad bhi wahin pe tike reh rahe hain … 3 seconds baad … hata do, swipe kar do"*
+- *"show nahi ho raha hai ki yeh screen padh raha hai"*: the app was reading, but nothing said so.
+- *"jo card pop up ho raha hai, wo bhi 5 second rukna chahiye … lining … right se left"*: each popup should stay five seconds, with a line along the top that runs out.
+
+### What was found
+
+| Problem | Cause |
+|---|---|
+| Stuck on the code | The Rust core had signed in (the Keychain had the session), but the window kept showing the code. The screen relied on one event and on timers that a hidden window can pause. |
+| Accessibility "not working" | Two copies were installed: `/Applications/GeniOS.app` (0.3.0) and `/Applications/GeniOS 2.app` (0.2.4). Both have the same bundle id, and both are ad-hoc signed. macOS keys the Accessibility grant to the exact build, so a grant given to one copy, or to an older build, does not cover the running one. A reader that started before the grant can also keep the old answer. |
+| Screen reading invisible | Its status lived only inside the Account popover. |
+| Done cards staying | In the Card view, the card kept showing "Marked done · Undo" with no end. In Pending, a sent item came back as soon as the list was reloaded. |
+| Popups | Advice stayed 12 s, a team toast 30 s. Reminders and screen insights stayed until acted on, for up to 10 minutes. Nothing showed the time left. |
+
+### What changed
+
+| Where | Change |
+|---|---|
+| Header | A **↻ Refresh** button next to ×. It does five things: checks sign-in, fetches the capture policy, starts a fresh screen reader (only when it is not reading), reloads the cards, follow-ups and popups, and shows "Refreshed · time" for 3 s. |
+| Sign-in | The code screen follows the core in four ways: the auth event, a one-second check, the window coming back into view, and a new **I've approved it · Refresh** button. If the code is not approved yet, it says so. |
+| Coming back to the window | The app checks sign-in again. If Accessibility is off, it restarts the reader, and a new reader asks macOS again. Coming back from System Settings is enough. |
+| Rust | A new `capture_restart_reader` command stops the screen reader and starts a fresh one. |
+| Screen reading line | Under the header, always. Its states: **Reading your screen · Neha Kapoor — WhatsApp · 12 s ago** (green, pulsing); **Not reading your screen · allow Accessibility** (gold); paused, away, off for your seat, or the reader stopped. Pressing it opens **Screen**. |
+| Screen view | Everything about screen reading, in five parts. **Status**, with its buttons: Pause 15 min / Restart reader / Resume / Open Settings / I've allowed it · Check again. **Right now**: what it is reading, when it last read, what is waiting to send (Send now), what it found, and AI checks used today. **What it noticed**: this session's popups, so one that came and went is not lost. **How it works**: four plain lines, below. **Accessibility**: the steps, including what to do when GeniOS is listed twice. When Accessibility is off, the steps sit right under the status. |
+| Done / Later | The note and its **Undo** stay **3 s**. Then the card slides away to the right and the menu goes back to Pending. A sent item stays off the list for 10 minutes, so a brain that has not caught up yet cannot put it back. A refusal brings it back at once and says why. |
+| Popups | Every popup stays **5 s**. A gold line along its top runs out from right to left over those 5 s. Hovering holds the popup and keeps the line full; moving away starts the 5 s again. Done, Later, Feedback and × slide it away first. The one exception is an **agent proposal** (Approve · Edit · Reject): it waits for a decision, so it has no line. Nothing is lost when a popup goes. A follow-up stays in Pending, a card stays on the website, and every popup stays in Screen › What it noticed. |
+| Rust queue | One rule, `POPUP_SHOW_MS = 5000`, for advice, reminders, team toasts and insights. Hover still holds a popup. Quiet still holds reminders and insights for later. |
+
+**How it works**, as the Screen view says it (each line checked against the code):
+1. It reads the words in the app in front of you: chats, email, documents and websites. It never takes a picture of your screen. The reader (`genios-ax`) uses Accessibility text only; it has no screen-capture API.
+2. It skips what is private:
+   - password managers, Terminal and code editors (from `sensitive_defaults.json`);
+   - banking and payment sites;
+   - private windows.
+   Nothing is read while paused, away or locked (`capture/gate.rs`).
+3. What it read goes to your GeniOS, which looks for promises, asks, deadlines and risks.
+4. When something needs you, a card drops for five seconds. Follow-ups wait in Pending.
+
+Screens: `screens/23-app-screen-line.png`, `24-app-screen-view.png`, `25-app-screen-accessibility-off.png`, `26-app-popup-countdown.png`, `27-app-done-undo.png`, `28-app-refreshed.png`.
+
+### How it was checked
+
+- **Rust:** `cargo test --lib -- lane moments` gives 110 passed. The queue's own 13 tests were rewritten to the new rule:
+  - `every_popup_goes_after_five_seconds_unless_hovered`
+  - `insight_shows_five_seconds_and_only_one_is_visible`
+  - plus the proposal and quiet tests, kept.
+- **Rust mutations:** three, all caught: 10 s instead of 5 s; insights exempt again; hover ignored.
+- **Render check:** 29 checks in Chromium against the stand-in brain, all passing three runs in a row. They cover:
+  - the line's text and time, and the Screen view's parts;
+  - Refresh;
+  - Accessibility off, then Check again, then reading;
+  - Done: the card slides at 3.01 s and is back on Pending, and it does not come back after the send and reload;
+  - the popup's line: half left at 2.5 s, held full on hover, gone at 5 s;
+  - no line on a proposal;
+  - Done on a popup slides it away, then reports "done".
+- **Render mutations:** two, both caught: 5 s instead of 3 s; the line ending without the slide.
+- **What the stand-in brain cannot show:** a brain that still lists a card right after it was marked done. The 10-minute hold exists for that case. It was reasoned through, not exercised.
+
+### Where it is, and how to install it
+
+| What | Where |
+|---|---|
+| The DMG | `~/Downloads/GeniOS_0.3.1_aarch64.dmg` (22 MB, Apple Silicon, debug profile). `hdiutil verify` reports it VALID. The bundle says version 0.3.1. |
+| The code | dashboard repo, branch `rohit/desktop-ux`, commit `b0fe619`, pushed. **Not merged.** |
+
+1. Quit GeniOS (menu bar G → Quit).
+2. In Applications, delete **both** `GeniOS.app` and `GeniOS 2.app`, so only one copy exists.
+3. Open the DMG and drag GeniOS into Applications.
+4. Open it. If macOS stops it, right-click it → Open.
+5. Go to System Settings → Privacy & Security → Accessibility. Remove every GeniOS entry with −. Press +, add `/Applications/GeniOS.app`, and switch it on. Every new build is a new app to macOS, until the app is signed with an Apple Developer account.
+6. Come back to GeniOS. The line under the header should turn green: "Reading your screen · …". If it does not, open it and press "I've allowed it · Check again".
