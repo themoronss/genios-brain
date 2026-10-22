@@ -24,12 +24,16 @@
 |---|---|
 | `goals-sample-top.png` · `goals-sample-bottom.png` | The target, in sample mode. The first goal is open. |
 | `goals-signed-in.png` | A signed-in owner, against the stand-in brain. |
+| `goals-preview-as-it-opens.png` · `goals-preview-everything-open.png` | **The preview Rohit reviews:** `/dashboard/goals?demo=1`, as it opens (the first goal and its card C01 open) and with every goal open. |
 
 ---
 
 ## 1 · The page, top to bottom
 
 1. **Header** and the chain: **Domain → Goal → Reasoning → Cards**.
+   - There is no "See it with sample numbers" link; Rohit found it unclear.
+   - The preview opens at `/dashboard/goals?demo=1`. Its banner reads "Preview — not your data. This is how Goals looks once goals, their cards and their details are connected."
+   - In the preview, the first goal and its first card open by themselves.
 2. **Domain tabs:** All domains · **Admin** · 🔒 Sales · 🔒 Marketing · 🔒 Product · 🔒 Project. A locked tab opens a "{Domain} is locked" panel with a link to Domains ▸ Expertise. Nothing of a locked domain is drawn.
 3. **Overview:** a donut of goals by status, then three tiles: **cards working** · **cards done** (verified, not only reported) · **goals to finalise**.
 4. **Goals to finalise:** for every goal GeniOS proposes, the ProposedGoalCard shows:
