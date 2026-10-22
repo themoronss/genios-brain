@@ -259,6 +259,7 @@ def test_an_ask_is_saved_silently_answered_by_its_quote_and_in_the_slice(  # noq
     (fu,) = _q("select * from screen_followups where org_id=:o", o=org)
     assert (fu.kind, fu.who, fu.text, fu.seat_id, fu.quote) == (
         "ask", "Priya Shah", ASK_ITEM["text"], seat, ASK_ITEM["quote"])
+    assert fu.read_by == "quick_read", "GeniOS-010 B8: the instant call read it"
     with _engine().connect() as c:                  # +3 h, capped at 18:00 local (P10)
         assert fu.nudge_at == F.ask_nudge_at(fu.created_at, F.seat_tz(c, org, seat))
     assert _q("select 1 from moments where org_id=:o", o=org) == []
@@ -496,8 +497,9 @@ def test_budget_promises_personal_resolve_expiry_and_week(client, monkeypatch): 
                    "asks_answered": 0, "deadlines_flagged": 0, "risks_flagged": 0,
                    "popups_shown": 1, "useful": 1, "not_useful": 1, "nudged_then_closed": 0,
                    "handled_elsewhere": 0,
-                   # GeniOS-010 B8 · the screen's reasoning lane; nothing was promoted in this test
-                   "threads_to_memory": 0, "screen_cards": 0}
+                   # GeniOS-010 B8 · the screen's lanes: three screens reached a decision here, none was
+                   # skipped, nothing was promoted, no card was raised
+                   "threads_to_memory": 0, "cards_from_screen": 0, "screens_read": 3, "screens_skipped": 0}
     last = client.get(f"/v1/seats/me/weekly-report?week_start={monday - timedelta(days=7)}",
                       headers=dev_h).json()
     assert last["promises_caught"] == 0 and last["popups_shown"] == 0
@@ -633,9 +635,10 @@ def test_router_check_5_answers_a_known_thread_with_no_model_at_all(client, monk
     monkeypatch.setattr(SI, "llm_insight", never)
     assert _look(client, dev, ["Priya Shah: kal tak revised quote bhej dena"],
                  thread="wa:priya").status_code == 204          # saved, nothing to add
-    (fu,) = _q("select kind, who, text, quote, due_at from screen_followups "
+    (fu,) = _q("select kind, who, text, quote, due_at, read_by from screen_followups "
                "where org_id=:o and kind='ask'", o=org)
     assert (fu.kind, fu.who) == ("ask", "Priya Shah")
+    assert fu.read_by == "rule", "GeniOS-010 B8: a screen rule read it, no model"
     assert fu.quote == "kal tak revised quote bhej dena"
     assert fu.text == fu.quote, "the quote IS the item — nothing was paraphrased"
 
@@ -643,6 +646,9 @@ def test_router_check_5_answers_a_known_thread_with_no_model_at_all(client, monk
     used = _q("select count from rate_counters where scope_key=:k and kind='screen_insight'",
               k=f"{org}:{seat}")
     assert used and used[0].count == 1, "one call for the first sighting, none after"
+    ruled = _q("select count from rate_counters where scope_key=:k and kind='screen_insight_ruled'",
+               k=f"{org}:{seat}")
+    assert ruled and ruled[0].count == 1, "GeniOS-010 B8: the screen a rule read is counted as read"
 
 
 @pytest.mark.pg

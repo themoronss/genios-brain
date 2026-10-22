@@ -5577,6 +5577,17 @@ def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) 
     # server-side effect on each CTA. All deterministic, no extra LLM.
     card["context"], card["actionability"], card["decision"] = _card_intelligence(ctx.org_id, card)
     card["actions"] = _annotate_effects(card.get("actions"))
+    # GeniOS-010 B8 · "Fed by": the viewer's own screen items behind this card (the join `card_ids` lists the
+    # other way). Never another seat's screen. An unreadable list is no list, never a 500.
+    card["screen_items"] = []
+    if _graph is not None:
+        from genios_engine.reason.moments import followups as _F
+        try:
+            with _graph.engine.connect() as c:
+                card["screen_items"] = _F.screen_items(c, org_id=ctx.org_id, card_id=card_id,
+                                                       seat_id=getattr(ctx, "seat_id", None))
+        except Exception:                                     # noqa: BLE001
+            _log.warning("card %s: screen items unreadable", card_id)
     return card
 
 

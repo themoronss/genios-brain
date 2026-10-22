@@ -187,7 +187,12 @@ def test_the_empty_intervention_summary_stub_is_gone():
     assert "/v1/metrics/intervention_rate/summary" not in {getattr(r, "path", None) for r in router.routes}
 
 
-# ── B8 · the screen's reasoning lane in the seat's week ─────────────────────────────────────────
+# ── B8 · the Screen page: how each item was read, what it led to, and the seat's week ───────────
+
+#: A Wednesday, as the seat's week [Mon 00:00, next Mon 00:00) is read (`followups.week_bounds`).
+WEEK_NOW = datetime(2026, 10, 7, 12, tzinfo=timezone.utc)
+ME, OTHER = "seat_me", "seat_other"
+
 
 def _promoted(c, org, seat, event_ids, *, days_ago=0):
     c.execute(text(
@@ -198,48 +203,126 @@ def _promoted(c, org, seat, event_ids, *, days_ago=0):
          "at": WEEK_NOW - timedelta(days=days_ago)})
 
 
-def _screen_observation(c, org, subject, event_id):
+def _screen_item(c, org, seat, subject, *, thread="wa:priya", app="whatsapp"):
+    """A follow-up the screen caught, written on `subject` the way `screen_memory` writes it."""
+    fid, obs = f"fu_{uuid.uuid4().hex[:12]}", f"obs_{uuid.uuid4().hex[:12]}"
+    at = WEEK_NOW - timedelta(days=1)
     c.execute(text(
         "insert into graph_observations (observation_id, org_id, subject_node_id, kind, occurred_at, "
         "created_by_event_id, created_at) values (:i, :o, :n, 'screen.ask', :at, :e, :at)"),
-        {"i": f"obs_{uuid.uuid4().hex[:12]}", "o": org, "n": subject, "e": event_id,
-         "at": WEEK_NOW - timedelta(days=1)})
+        {"i": obs, "o": org, "n": subject, "e": _event(c, org, "screen_session"), "at": at})
+    c.execute(text(
+        "insert into screen_followups (id, org_id, seat_id, thread_key, app, kind, text, topic_key, created_at, "
+        "updated_at, subject_node_id, observation_id, graph_written_at) values (:i, :o, :s, :t, :app, 'ask', "
+        "'send the quote', :i, :at, :at, :n, :obs, :at)"),
+        {"i": fid, "o": org, "s": seat, "t": thread, "app": app, "n": subject, "obs": obs, "at": at})
+    return fid
 
 
-#: A Wednesday, as the seat's week [Mon 00:00, next Mon 00:00) is read (`followups.week_bounds`).
-WEEK_NOW = datetime(2026, 10, 7, 12, tzinfo=timezone.utc)
+def _week_cards(c, org):
+    """Two people seen on screens (one on mine, one on theirs), one never seen, and their cards."""
+    on_mine, on_theirs, plain = (_node(c, org, "person", 30) for _ in range(3))
+    mine, theirs = _screen_item(c, org, ME, on_mine), _screen_item(c, org, OTHER, on_theirs)
+    cards = {
+        "mine": _card(c, org, "high", subject=on_mine, assignee=ME),             # fed by my item
+        "theirs_to_me": _card(c, org, "high", subject=on_theirs, assignee=ME),   # another seat's screen
+        "plain": _card(c, org, "high", subject=plain, assignee=ME),              # no screen behind it
+        "mine_to_other": _card(c, org, "high", subject=on_mine, assignee=OTHER),  # not my card
+        "mine_as_recipient": _card(c, org, "high", subject=on_mine),             # reaches me as a recipient
+        "theirs": _card(c, org, "high", subject=on_theirs, assignee=OTHER),      # theirs, fed by theirs
+    }
+    c.execute(text("update cards set created_at = :at where card_id = any(:ids)"),
+              {"at": WEEK_NOW, "ids": list(cards.values())})
+    c.execute(text(
+        "insert into card_recipients (org_id, card_id, seat_id, accountability, scope_kind, scope_key, source) "
+        "values (:o, :c, :s, 'covers', 'account', 'acme', 'admin_declared')"),
+        {"o": org, "c": cards["mine_as_recipient"], "s": ME})
+    return mine, theirs, cards
 
 
-def test_the_seat_week_counts_its_own_screen_and_the_cards_it_stands_behind(pg_store, org):
+def test_the_seat_week_counts_its_own_screen_and_the_cards_it_fed(pg_store, org):
     from genios_engine.reason.moments import followups as F
-    me, other = "seat_me", "seat_other"
+    from genios_engine.reason.moments import screen_insight as SI
     with pg_store.engine.begin() as c:
-        mine = [_event(c, org, "screen_session") for _ in range(3)]
-        theirs = _event(c, org, "screen_session")
-        _promoted(c, org, me, mine[:2])
-        _promoted(c, org, me, mine[2:], days_ago=9)                 # last week's promotion
-        _promoted(c, org, other, [theirs])
-        seen_on_my_screen, seen_on_theirs, plain = (_node(c, org, "person", 30) for _ in range(3))
-        _screen_observation(c, org, seen_on_my_screen, mine[0])
-        _screen_observation(c, org, seen_on_theirs, theirs)
-        cards = [
-            _card(c, org, "high", subject=seen_on_my_screen, assignee=me),       # counts
-            _card(c, org, "high", subject=seen_on_theirs, assignee=me),          # another seat's screen
-            _card(c, org, "high", subject=plain, assignee=me),                   # no screen evidence
-            _card(c, org, "high", subject=seen_on_my_screen, assignee=other),    # not this seat's card
-            _card(c, org, "high", subject=seen_on_my_screen),                    # reaches me as a recipient
-        ]
-        c.execute(text("update cards set created_at = :at where card_id = any(:ids)"),
-                  {"at": WEEK_NOW, "ids": cards})
+        events = [_event(c, org, "screen_session") for _ in range(4)]
+        _promoted(c, org, ME, events[:2])
+        _promoted(c, org, ME, events[2:3], days_ago=9)              # last week's promotion
+        _promoted(c, org, OTHER, events[3:])
+        _week_cards(c, org)
+        for kind, n, days_ago in ((SI.COUNTER_KIND, 3, 0), (SI.RULED_KIND, 2, 1), (SI.SKIPPED_KIND, 4, 2),
+                                  (SI.SKIPPED_KIND, 5, 9), (SI.UNVERIFIED_KIND, 7, 0)):
+            c.execute(text("insert into rate_counters (scope_key, kind, window_start, count) values (:k, :kind, :d, :n)"),
+                      {"k": f"{org}:{ME}", "kind": kind, "d": (WEEK_NOW - timedelta(days=days_ago)).date(), "n": n})
+    r = F.weekly_report(pg_store.engine, org_id=org, seat_id=ME, capability_id=SI.CAPABILITY_ID, now=WEEK_NOW)
+    assert (r["threads_to_memory"], r["cards_from_screen"]) == (2, 2)
+    assert (r["screens_read"], r["screens_skipped"]) == (9, 4), "read = model + rule + skipped, this week only"
+    r = F.weekly_report(pg_store.engine, org_id=org, seat_id=OTHER, capability_id=SI.CAPABILITY_ID, now=WEEK_NOW)
+    assert (r["threads_to_memory"], r["cards_from_screen"], r["screens_read"]) == (1, 1, 0)
+
+
+def test_each_item_names_the_cards_it_fed_and_its_popup_and_why_it_is_kept(pg_store, org):
+    from genios_engine.reason.moments import followups as F
+    with pg_store.engine.begin() as c:
+        mine, _theirs, cards = _week_cards(c, org)
+        personal = _screen_item(c, org, ME, None, thread="wa:mom")
+        c.execute(text("update screen_followups set subject_node_id = null, graph_written_at = null where id = :i"),
+                  {"i": personal})
+        c.execute(text("insert into screen_thread_verdicts (org_id, seat_id, thread_key, work, memory, judged_at) "
+                       "values (:o, :s, 'wa:mom', false, false, :at)"), {"o": org, "s": ME, "at": WEEK_NOW})
         c.execute(text(
-            "insert into card_recipients (org_id, card_id, seat_id, accountability, scope_kind, scope_key, source) "
-            "values (:o, :c, :s, 'covers', 'account', 'acme', 'admin_declared')"),
-            {"o": org, "c": cards[4], "s": me})
-    r = F.weekly_report(pg_store.engine, org_id=org, seat_id=me, capability_id="moment.screen_insight",
-                        now=WEEK_NOW)
-    assert r["threads_to_memory"] == 2
-    assert r["screen_cards"] == 2
-    r = F.weekly_report(pg_store.engine, org_id=org, seat_id=other, capability_id="moment.screen_insight",
-                        now=WEEK_NOW)
-    assert r["threads_to_memory"] == 1
-    assert r["screen_cards"] == 0, "the other seat's card stands on MY screen's observation, not theirs"
+            "insert into moments (moment_id, org_id, seat_id, origin, kind, priority, capability_id, "
+            "capability_version, headline, actions, evidence, display, created_at, expires_at) values ('mom_1', :o, "
+            ":s, 'server', 'advice', 'normal', 'moment.screen_insight', '4', 'h', cast(:a as jsonb), '[]'::jsonb, "
+            "true, :at, :at + interval '10 minutes')"),
+            {"o": org, "s": ME, "at": WEEK_NOW,
+             "a": '[{"action": "useful", "payload": {"followup_id": "%s"}}]' % mine})
+    items = {f["id"]: f for f in F.listing(pg_store.engine, org_id=org, seat_id=ME, status="all",
+                                           now=WEEK_NOW)["followups"]}
+    assert set(items) == {mine, personal}, "only my own screen's items"
+    assert sorted(items[mine]["card_ids"]) == sorted([cards["mine"], cards["mine_as_recipient"]])
+    assert items[mine]["moment_id"] == "mom_1" and items[personal]["moment_id"] is None
+    assert items[mine]["remember"] is True and items[mine]["graph_written_at"] is not None
+    assert items[personal]["remember"] is False and items[personal]["keep_reason"].startswith("Temporary")
+    assert items[personal]["card_ids"] == []
+    with pg_store.engine.connect() as c:
+        assert F.screen_items(c, org_id=org, card_id=cards["mine"], seat_id=ME) == [
+            {"followup_id": mine, "app": "whatsapp"}]
+        assert F.screen_items(c, org_id=org, card_id=cards["mine"], seat_id=OTHER) == [], "never another seat's screen"
+        assert F.screen_items(c, org_id=org, card_id=cards["mine"], seat_id=None) == []
+        assert F.screen_items(c, org_id=org, card_id=cards["plain"], seat_id=ME) == []
+
+
+def test_the_first_read_path_is_kept_and_the_due_words_move_with_the_due(pg_store, org):
+    from genios_engine.reason.moments import followups as F
+    due = WEEK_NOW + timedelta(days=1)
+    one = dict(engine=pg_store.engine, org_id=org, seat_id=ME, kind="ask", note="send the quote", who="Priya",
+               thread_key="wa:priya", app="whatsapp", topic="t1", tz_name="Asia/Kolkata", now=WEEK_NOW)
+    first = F.upsert(**one, due_at=due, read_by="rule", due_phrase="kal tak")
+    assert first is not None
+    F.upsert(**one, due_at=None, read_by="hourly_batch", due_phrase=None)          # a later, dateless sighting
+    (row,) = F.listing(pg_store.engine, org_id=org, seat_id=ME, status="all", now=WEEK_NOW)["followups"]
+    assert (row["read_by"], row["due_phrase"]) == ("rule", "kal tak")
+    F.upsert(**one, due_at=due + timedelta(days=2), read_by="quick_read", due_phrase="by Friday")
+    (row,) = F.listing(pg_store.engine, org_id=org, seat_id=ME, status="all", now=WEEK_NOW)["followups"]
+    assert (row["read_by"], row["due_phrase"]) == ("rule", "by Friday")
+    F.upsert(**{**one, "topic": "t2"}, due_at=None, read_by="quick_read", due_phrase="someday")
+    rows = {f["id"]: f for f in F.listing(pg_store.engine, org_id=org, seat_id=ME, status="all",
+                                          now=WEEK_NOW)["followups"]}
+    assert rows[F.followup_id(org, ME, "t2")]["due_phrase"] is None, "no due parsed, so no due words"
+    with pytest.raises(ValueError):
+        F.upsert(**{**one, "topic": "t3"}, due_at=None, read_by="guess")
+
+
+def test_the_card_route_lists_the_viewers_screen_items(pg_store, monkeypatch, org):
+    """The call site: `GET /cards/{id}` attaches `screen_items` for the seat reading it."""
+    from types import SimpleNamespace
+    from genios_engine.api import routes
+    with pg_store.engine.begin() as c:
+        mine, _theirs, cards = _week_cards(c, org)
+    monkeypatch.setattr(routes, "_graph", pg_store)
+    monkeypatch.setattr(routes, "_require_l5", lambda: None)
+    monkeypatch.setattr(routes, "_owns_authoritative_card", lambda card_id, org_id: {"card_id": card_id})
+    monkeypatch.setattr(routes, "_card_intelligence", lambda org_id, card: (None, None, None))
+    for seat, expected in ((ME, [{"followup_id": mine, "app": "whatsapp"}]), (OTHER, [])):
+        ctx = SimpleNamespace(org_id=org, seat_id=seat, sees_org_queue=True)
+        assert routes.get_card(cards["mine"], ctx=ctx)["screen_items"] == expected

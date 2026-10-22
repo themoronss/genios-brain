@@ -206,7 +206,10 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,303 → 3,310, GeniOS-010 B5/B6/B8 (22 Oct): `api/home_routes.home_summary`'s week of changes (facts
     # added / corrected, people and companies new, `_ENTITIES_UPDATED_7D`, `_FACTS_7D_BY_SOURCE`) and its cards by band
     # (`_CARDS_7D`) — six; `reason/moments/followups._SCREEN_LANE_WEEK`, the seat's screen-to-memory lane — one.
-    assert r["statements"] == 3_310, (
+    # ⛔ MOVED 3,310 → 3,315, GeniOS-010 B8 expanded (22 Oct): `reason/moments/followups` — `_CARDS_FED` (the cards
+    # each screen item fed), `_POPUPS` (its popup), `_VERDICTS` (why it is kept or temporary), `_SCREEN_ITEMS` (a
+    # card's screen items, the other way) and `_SCREEN_COUNTS` (the week's screens read / skipped) — five.
+    assert r["statements"] == 3_315, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

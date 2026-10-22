@@ -57,6 +57,9 @@ SKIPPED_KIND = "screen_insight_skipped"
 #: A note the model proposed and code could not stand behind. The suppression rate is the
 #: earliest drift signal the design has, so it is counted rather than logged and forgotten.
 UNVERIFIED_KIND = "screen_insight_unverified"
+#: GeniOS-010 B8 · a screen a rule read outright (`screen_rules`), no model call. With `COUNTER_KIND` and
+#: `SKIPPED_KIND` it makes the Screen page's "screens read" (`followups.weekly_report`).
+RULED_KIND = "screen_insight_ruled"
 DEFAULT_DAILY_CAP = 300
 MAX_TEXT_CHARS = 4000
 MIN_TEXT_CHARS = 30

@@ -316,7 +316,11 @@ def verdict_key(thread_key: str | None) -> str | None:
 
 # ── reads ─────────────────────────────────────────────────────────────────────────────────────
 _COLS = ("id, kind, text, who, thread_key, app, due_at, nudge_at, created_at, updated_at, "
-         "resolved_at, resolution, subject_node_id, snoozed_at, quote")
+         "resolved_at, resolution, subject_node_id, snoozed_at, quote, read_by, due_phrase, graph_written_at")
+
+#: GeniOS-010 B8 · the path that first wrote an item (migration 0250): a screen rule, the instant
+#: screen-insight call, or the hourly memory batch.
+READ_BY = frozenset({"rule", "quick_read", "hourly_batch"})
 
 
 def item_out(r, *, full: bool = False) -> dict:
@@ -331,7 +335,11 @@ def item_out(r, *, full: bool = False) -> dict:
            "quote": r.quote}
     if full:
         out.update({"updated_at": iso(aware(r.updated_at)),
-                    "resolved_at": iso(aware(r.resolved_at)), "resolution": r.resolution})
+                    "resolved_at": iso(aware(r.resolved_at)), "resolution": r.resolution,
+                    # GeniOS-010 B8, the Screen page only — the device slice keeps its pinned shape:
+                    # how it was read, the words its due came from, when memory wrote it.
+                    "read_by": getattr(r, "read_by", None), "due_phrase": getattr(r, "due_phrase", None),
+                    "graph_written_at": iso(aware(getattr(r, "graph_written_at", None)))})
     return out
 
 
@@ -600,11 +608,18 @@ def learn_from_feedback(engine, *, org_id: str, seat_id: str, moment_id: str, ac
 
 def upsert(engine, *, org_id: str, seat_id: str, kind: str, note: str, who: str | None,
            due_at: datetime | None, thread_key: str | None, app: str | None, topic: str,
-           tz_name: str | None, now: datetime, quote: str | None = None) -> dict | None:
+           tz_name: str | None, now: datetime, quote: str | None = None,
+           read_by: str | None = None, due_phrase: str | None = None) -> dict | None:
     """Open (or refresh) the topic's follow-up. A topic already resolved today stays closed →
-    None. The nudge clock runs from the row's FIRST sighting, so a repeat never delays it."""
+    None. The nudge clock runs from the row's FIRST sighting, so a repeat never delays it.
+
+    `read_by` (B8) is kept from the FIRST sighting; `due_phrase` — the words the due was parsed from —
+    moves with the due it explains, and is kept when a sighting brings no new due."""
     if kind not in KINDS:
         raise ValueError(f"unknown follow-up kind: {kind}")
+    if read_by is not None and read_by not in READ_BY:
+        raise ValueError(f"unknown read path: {read_by}")
+    due_phrase = (" ".join(due_phrase.split())[:WHO_MAX] or None) if (due_phrase and due_at) else None
     note = " ".join((note or "").split())[:TEXT_MAX]
     who = (" ".join(who.split())[:WHO_MAX] or None) if who else None
     fid = followup_id(org_id, seat_id, topic)
@@ -620,11 +635,14 @@ def upsert(engine, *, org_id: str, seat_id: str, kind: str, note: str, who: str 
         due = due_at or (aware(prev.due_at) if prev is not None else None)
         r = c.execute(text(
             "insert into screen_followups as f (id, org_id, seat_id, thread_key, app, kind, text, "
-            "who, due_at, nudge_at, topic_key, created_at, updated_at, quote) values (:id, :o, "
-            ":s, :t, :app, :kind, :text, :who, :due, :nudge, :k, :now, :now, :quote) "
+            "who, due_at, nudge_at, topic_key, created_at, updated_at, quote, read_by, due_phrase) "
+            "values (:id, :o, :s, :t, :app, :kind, :text, :who, :due, :nudge, :k, :now, :now, :quote, "
+            ":read_by, :due_phrase) "
             "on conflict (org_id, seat_id, topic_key) do update set text = excluded.text, "
             "who = coalesce(excluded.who, f.who), due_at = excluded.due_at, "
             "quote = coalesce(excluded.quote, f.quote), "
+            "read_by = coalesce(f.read_by, excluded.read_by), "
+            "due_phrase = coalesce(excluded.due_phrase, f.due_phrase), "
             # what memory holds changed → it is written to the graph again (0162)
             "graph_written_at = case when f.text is distinct from excluded.text "
             "or f.due_at is distinct from excluded.due_at "
@@ -637,6 +655,7 @@ def upsert(engine, *, org_id: str, seat_id: str, kind: str, note: str, who: str 
             {"id": fid, "o": org_id, "s": seat_id, "t": thread_key, "app": app, "kind": kind,
              "text": note, "who": who, "due": due, "k": topic, "now": now,
              "quote": (" ".join(quote.split())[:200] or None) if quote else None,
+             "read_by": read_by, "due_phrase": due_phrase,
              "nudge": nudge_at(kind, created_at=created, due_at=due, tz_name=tz_name)}).first()
         if r is not None:
             shown = _bump(c, org_id, seat_id)
@@ -762,7 +781,87 @@ def listing(engine, *, org_id: str, seat_id: str, status: str = "open", limit: i
             f"select {_COLS} from screen_followups where org_id = :o and seat_id = :s "
             "and (:all or resolved_at is null) order by created_at desc, id desc limit :n"),
             {"o": org_id, "s": seat_id, "all": status == "all", "n": limit}).fetchall()
-    return {"followups": [item_out(r, full=True) for r in rows]}
+        found = links(c, org_id=org_id, seat_id=seat_id, rows=rows)
+    return {"followups": [{**item_out(r, full=True), **found[r.id]} for r in rows]}
+
+
+# ── GeniOS-010 B8 · what each screen item led to ─────────────────────────────────────────────────
+#: A card is fed by a screen item when it is about the person or company the item was written on
+#: (`screen_memory`: one observation per item, `observation_id` on the row, 0211) and that observation
+#: existed when the card was raised — the card body loads its quotes from its subject's observations
+#: (`deliver/card_builder._QUOTES_SQL`). Only cards that reach the seat (`deliver/seat_access`): a screen
+#: item is the seat's own, and so is the list of what it fed. ⛔ The same join as `_SCREEN_LANE_WEEK`'s card
+#: count, written out in both (one literal each for the statement census): change one, change the other.
+_CARDS_FED = text(
+    "select f.id as followup_id, k.card_id from screen_followups f "
+    "join graph_observations o on o.org_id = f.org_id and o.observation_id = f.observation_id "
+    "join signals g on g.org_id = f.org_id and g.subject_node_id = o.subject_node_id "
+    "join cards k on k.org_id = g.org_id and k.signal_id = g.signal_id and o.created_at <= k.created_at "
+    "where f.org_id = :o and f.seat_id = :s and f.id = any(:ids) "
+    "and (k.assignee = :s or exists (select 1 from card_recipients cr where cr.org_id = k.org_id "
+    "     and cr.card_id = k.card_id and cr.seat_id = :s)) "
+    "order by k.created_at, k.card_id")
+#: The popup an item rode on: the screen-insight moment whose actions name the follow-up.
+_POPUPS = text(
+    "select a.fid as followup_id, m.moment_id from moments m "
+    "cross join lateral (select x -> 'payload' ->> 'followup_id' as fid from jsonb_array_elements("
+    " case when jsonb_typeof(m.actions) = 'array' then m.actions else '[]'::jsonb end) x) a "
+    "where m.org_id = :o and m.seat_id = :s and a.fid = any(:ids) order by m.created_at, m.moment_id")
+_VERDICTS = text("select thread_key, work, memory from screen_thread_verdicts "
+                 "where org_id = :o and seat_id = :s and thread_key = any(:keys)")
+
+
+def keep(row, verdict: dict | None) -> tuple[bool | None, str | None]:
+    """Is the item kept in the context graph, and why — the same routing the promoter applies
+    (`screen_memory_batch.personal`, `screen_memory`'s known-person rule), said in a line."""
+    if row.subject_node_id:
+        return True, "Saved on the person or company it is about."
+    if verdict is not None and (verdict.get("work") is False or verdict.get("memory") is False):
+        return False, "Temporary: this chat was judged personal or not worth keeping, so it stays a private follow-up."
+    if getattr(row, "graph_written_at", None) is not None:
+        return True, "Kept, but GeniOS does not know the person it names yet, so it is on no one in the graph."
+    if verdict is not None:
+        return True, "Kept: it is saved within the hour on the person it is about, once GeniOS knows them."
+    return None, None
+
+
+def links(conn, *, org_id: str, seat_id: str, rows) -> dict[str, dict]:
+    """`{followup_id: {moment_id, card_ids, remember, keep_reason}}` for listed rows, in three reads."""
+    ids = [r.id for r in rows]
+    out = {i: {"moment_id": None, "card_ids": [], "remember": None, "keep_reason": None} for i in ids}
+    if not ids:
+        return out
+    p = {"o": org_id, "s": seat_id, "ids": ids}
+    for fid, card_id in conn.execute(_CARDS_FED, p):
+        if card_id not in out[fid]["card_ids"]:
+            out[fid]["card_ids"].append(card_id)
+    for fid, moment_id in conn.execute(_POPUPS, p):
+        out[fid]["moment_id"] = moment_id                   # the latest popup wins
+    keys = sorted({k for k in (verdict_key(r.thread_key) for r in rows) if k})
+    verdicts = {t: {"work": w, "memory": m} for t, w, m in conn.execute(
+        _VERDICTS, {"o": org_id, "s": seat_id, "keys": keys})} if keys else {}
+    for r in rows:
+        out[r.id]["remember"], out[r.id]["keep_reason"] = keep(r, verdicts.get(verdict_key(r.thread_key)))
+    return out
+
+
+#: A card's screen items, the same join the other way (`GET /cards/{id}`), for the seat reading it.
+_SCREEN_ITEMS = text(
+    "select f.id as followup_id, f.app from cards k "
+    "join signals g on g.org_id = k.org_id and g.signal_id = k.signal_id "
+    "join graph_observations o on o.org_id = k.org_id and o.subject_node_id = g.subject_node_id "
+    " and o.created_at <= k.created_at "
+    "join screen_followups f on f.org_id = o.org_id and f.observation_id = o.observation_id "
+    "where k.org_id = :o and k.card_id = :c and f.seat_id = :s order by f.created_at, f.id")
+
+
+def screen_items(conn, *, org_id: str, card_id: str, seat_id: str | None) -> list[dict]:
+    """The viewer's own screen items that fed this card. No seat (an org key) → none: a screen
+    item is private to the seat whose screen it was."""
+    if not seat_id:
+        return []
+    return [{"followup_id": fid, "app": app}
+            for fid, app in conn.execute(_SCREEN_ITEMS, {"o": org_id, "c": card_id, "s": seat_id})]
 
 
 def week_bounds(week_start: date | None, *, tz_name: str | None,
@@ -823,6 +922,7 @@ def weekly_report(engine, *, org_id: str, seat_id: str, capability_id: str,
             "and resolved_at >= :a and resolved_at < :b"),
             {**p, "kinds": list(NUDGED_KINDS)}).scalar()
         lane = c.execute(_SCREEN_LANE_WEEK, p).mappings().first()
+        screens = _screens_week(c, org_id=org_id, seat_id=seat_id, start=start, end=end)
     return {"week_start": ws.isoformat(), "week_end": (ws + timedelta(days=6)).isoformat(),
             "promises_caught": int(f["caught"] or 0), "promises_kept": int(f["kept"] or 0),
             "asks_flagged": int(f["asks"] or 0), "asks_answered": int(f["answered"] or 0),
@@ -830,30 +930,46 @@ def weekly_report(engine, *, org_id: str, seat_id: str, capability_id: str,
             "popups_shown": int(m["shown"] or 0), "useful": int(m["useful"] or 0),
             "not_useful": int(m["not_useful"] or 0), "nudged_then_closed": int(nudged or 0),
             "handled_elsewhere": int(f["handled"] or 0),
-            "threads_to_memory": int(lane["to_memory"] or 0), "screen_cards": int(lane["cards"] or 0)}
+            "threads_to_memory": int(lane["to_memory"] or 0), "cards_from_screen": int(lane["cards"] or 0),
+            **screens}
+
+
+def _screens_week(conn, *, org_id: str, seat_id: str, start: datetime, end: datetime) -> dict:
+    """GeniOS-010 B8 · stages 1–2: the screens the instant path read this week, and those it skipped.
+
+    Read = every screen that reached a decision — the model read it (`COUNTER_KIND`, reserved per call), a
+    rule read it outright (`RULED_KIND`) or it was skipped (`SKIPPED_KIND`: triage refused it, or nothing
+    on it was worth asking about). The counters are per UTC day (`rate_counters`), so the week is the UTC
+    days that are mostly inside the seat's local week."""
+    from genios_engine.reason.moments import screen_insight as SI
+    d0, d1 = (start + timedelta(hours=12)).date(), (end + timedelta(hours=12)).date()
+    kinds = [SI.COUNTER_KIND, SI.RULED_KIND, SI.SKIPPED_KIND]
+    got = {k: int(n or 0) for k, n in conn.execute(_SCREEN_COUNTS, {
+        "k": f"{org_id}:{seat_id}", "kinds": kinds, "d0": d0, "d1": d1})}
+    return {"screens_read": sum(got.values()), "screens_skipped": got.get(SI.SKIPPED_KIND, 0)}
+
+
+_SCREEN_COUNTS = text("select kind, sum(count) from rate_counters where scope_key = :k "
+                      "and kind = any(:kinds) and window_start >= :d0 and window_start < :d1 group by kind")
 
 
 #: GeniOS-010 B8 · the screen's reasoning lane, the seat's week: what of its screen went to memory, and the cards
-#: that screen evidence stands behind. `threads_to_memory` — the seat's screen-session source events promoted that
-#: week (`screen_promoter` records each delta's event ids). `screen_cards` — the cards raised that week that reach
-#: the seat (`deliver/seat_access`, the same reach) on a subject holding a `screen.*` observation (`screen_memory`)
-#: written from one of THOSE events — so another seat's screen never counts here — before the card was raised.
+#: its screen items fed. `threads_to_memory` — the seat's screen-session source events promoted that week
+#: (`screen_promoter` records each delta's event ids). `cards_from_screen` — the cards raised that week that one of
+#: the seat's screen items fed (`_CARDS_FED`'s join, the one `card_ids` lists per item), so another seat's screen
+#: never counts.
 _SCREEN_LANE_WEEK = text(
-    "with promoted as ("
-    " select distinct unnest(d.event_ids) as event_id from screen_session_deltas d "
-    " where d.org_id = :o and d.seat_id = :s and d.status = 'promoted' and d.event_ids is not null "
-    " and d.promoted_at < :b) "
     "select (select count(distinct x.event_id) from screen_session_deltas d "
     "         cross join lateral unnest(d.event_ids) as x(event_id) "
     "        where d.org_id = :o and d.seat_id = :s and d.status = 'promoted' "
     "          and d.promoted_at >= :a and d.promoted_at < :b) as to_memory, "
-    "       (select count(*) from cards k join signals g on g.org_id = k.org_id and g.signal_id = k.signal_id "
-    "        where k.org_id = :o and k.created_at >= :a and k.created_at < :b "
+    "       (select count(distinct k.card_id) from screen_followups f "
+    "         join graph_observations o on o.org_id = f.org_id and o.observation_id = f.observation_id "
+    "         join signals g on g.org_id = f.org_id and g.subject_node_id = o.subject_node_id "
+    "         join cards k on k.org_id = g.org_id and k.signal_id = g.signal_id and o.created_at <= k.created_at "
+    "        where f.org_id = :o and f.seat_id = :s and k.created_at >= :a and k.created_at < :b "
     "          and (k.assignee = :s or exists (select 1 from card_recipients cr where cr.org_id = k.org_id "
-    "                and cr.card_id = k.card_id and cr.seat_id = :s)) "
-    "          and exists (select 1 from graph_observations o join promoted pe on pe.event_id = o.created_by_event_id "
-    "                       where o.org_id = k.org_id and o.subject_node_id = g.subject_node_id "
-    "                         and o.kind like 'screen.%' and o.created_at <= k.created_at)) as cards")
+    "                and cr.card_id = k.card_id and cr.seat_id = :s))) as cards")
 
 
 def purge(conn, *, now: datetime) -> dict:

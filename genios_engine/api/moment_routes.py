@@ -511,7 +511,8 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         saved = F.upsert(engine, org_id=p.org_id, seat_id=p.seat_id, kind=it["kind"],
                          note=it["text"], who=it["who"],
                          due_at=F.parse_due(it["due"], tz_name=tz, now=now), thread_key=thread,
-                         app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"])
+                         app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"],
+                         read_by="quick_read", due_phrase=it["due"])
         if not topics and saved is not None:           # the popup's first item is a follow-up
             first_followup = F.followup_id(p.org_id, p.seat_id, topic)
         topics.append(topic)
@@ -590,6 +591,8 @@ def _rule_items(items: list[dict], body: EvaluateRequest, p: Principal, engine, 
     from genios_engine.reason.moments import followups as F
     from genios_engine.reason.moments import screen_insight as SI
     from genios_engine.reason.moments import screen_rules as RU
+    # GeniOS-010 B8: one more screen read — by a rule, for free (the week's "screens read").
+    SI.note_skipped(engine, org_id=p.org_id, seat_id=p.seat_id, now=now, kind=SI.RULED_KIND)
     local_date = now.astimezone(F.zone(tz)).date()
     meetings = _meetings_soon(engine, p, now)
     with engine.connect() as c:
@@ -603,7 +606,8 @@ def _rule_items(items: list[dict], body: EvaluateRequest, p: Principal, engine, 
         saved = F.upsert(engine, org_id=p.org_id, seat_id=p.seat_id, kind=it["kind"],
                          note=it["text"], who=it["who"],
                          due_at=F.parse_due(it["due"], tz_name=tz, now=now), thread_key=thread,
-                         app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"])
+                         app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"],
+                         read_by="rule", due_phrase=it["due"])
         if not topics and saved is not None:
             first_followup = F.followup_id(p.org_id, p.seat_id, topic)
         topics.append(topic)
