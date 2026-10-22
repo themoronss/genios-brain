@@ -3,11 +3,12 @@
 **Written for:** Harsh (to build against) and Rohit (we edit goals here next).
 
 **Status, 22 Oct 2026:**
-- **The Goals page is built and live:** Intelligence ▸ Goals, `/dashboard/goals`, commits `f137d41` and `e4ff9ce`.
+- **The Goals page is built:** Intelligence ▸ Goals, `/dashboard/goals`, commits `f137d41` … `cc1b58f` on the unmerged branch.
   - It follows Rohit's model: **one goal, one card**. Its face shows the scenario, what to do, the target and where it comes from, and where it was captured.
-  - **Show more** opens why it exists, its reasoning, its metrics and its numbered cards.
+  - Two toggles: **Details** opens only the goal (small cards: the goal · plan and reasoning · metrics); **Cards N** opens only its numbered cards, one at a time, in place.
+  - Goals are grouped by month and filtered by predefined tags; each has a deadline and a plan.
   - A goal is finalised by questions, then approved.
-  - Only Admin is open. See **`01-GOALS-PAGE.md`**.
+  - Only Admin is open. See **`01-GOALS-PAGE.md`**; the seven review rounds are in `../04-BUILD-REVIEW.md` §3.
 - **Live today:**
   - the brief's goals;
   - accept or reject what GeniOS proposes;

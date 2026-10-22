@@ -36,7 +36,7 @@ Add `NEXT_PUBLIC_DEV_SKIP_LOGIN=1` to the command above.
 
 ## 4 · Run against a stand-in brain (signed-in render, no real account)
 
-`tools/mock_brain.py` serves the exact JSON shapes of the routes the home and Goals pages read. These are the shapes in `02-DATA-WIRING.md` and `03-GOALS/01-GOALS-PAGE.md`. On the Goals page, adding a goal and accepting or rejecting a proposal work against it, in memory:
+`tools/mock_brain.py` serves the exact JSON shapes of the routes the home, Goals and Screen pages read. These are the shapes in `02-DATA-WIRING.md` and `03-GOALS/01-GOALS-PAGE.md`. On the Goals page, adding a goal and accepting or rejecting a proposal work against it, in memory; on the Screen page, Done, Snooze, Draft a reply, Done elsewhere, Dismiss and popup feedback do too:
 
 ```bash
 python3 tools/mock_brain.py                 # 127.0.0.1:8000, CORS for http://localhost:3917

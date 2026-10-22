@@ -18,6 +18,9 @@
 | `c8f896c` | Checks under the week; one formal "What the brain holds" card |
 | `9c71f07` | AER and HIR end at the chart; the rest opens on Show |
 | `f137d41` | The Goals page (`03-GOALS/01-GOALS-PAGE.md`); home §1's heading gets "Open goals" |
+| `9322382` | "See it with sample numbers" removed from home §1 (the preview stays at `?demo=1`) |
+
+What each round changed, and what was dropped: `../04-BUILD-REVIEW.md` §2. The Screen page (`0ab7b03`, rebuilt in `9130f84`) is now in `../05-SCREEN/`.
 
 **Screenshots** (in `screens/`):
 
@@ -25,7 +28,6 @@
 |---|---|
 | `home-signed-in.png` | A signed-in owner, against the stand-in brain in `tools/mock_brain.py`. It shows what a real customer sees today. |
 | `home-sample.png` | `?demo=1`, with every section filled with labelled sample numbers. It shows the target state. |
-| `screen-page-signed-in.png` | The Screen page. |
 
 ---
 
@@ -54,8 +56,7 @@ All paths are under `src/`.
 
 ```
 app/dashboard/layout.tsx                        session gate; DEV_SKIP_LOGIN lets localhost open signed-out
-app/dashboard/moments/page.tsx                  the Screen page (route kept); header + ScreenLanes
-components/moments/screen-lanes.tsx            NEW · "Done instantly" / "Sent for reasoning" lanes
+app/dashboard/moments/page.tsx                  the Screen page (route kept) — now renders ScreenPage, see ../05-SCREEN
 components/layout/sidebar.tsx                   nav (01-NAVIGATION)
 lib/session.ts                                  + DEV_SKIP_LOGIN constant
 product/internal/shared/sample-mode.tsx         NEW · useSampleMode() + SampleBanner (used by home + Screen)
