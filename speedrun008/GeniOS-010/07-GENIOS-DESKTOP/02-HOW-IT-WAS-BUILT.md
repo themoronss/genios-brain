@@ -688,3 +688,55 @@ Every future build needs step 2 once. That stops only when the app is signed wit
 4. Check that the account (top right) says **GeniOS 0.3.3**, and that **↻** is next to ×.
 5. Tap the gold line under the header and press **Fix Accessibility**. Press **Open System Settings** if asked, then switch GeniOS on.
 6. That grant now holds for every later build.
+
+## 15 · 0.3.4: Minimize on the Screen view, fewer Keychain dialogs, the folder brought up to date
+
+**Rohit, 23 Oct, on 0.3.3:**
+- Reading works, Refresh works, cards and Pending work.
+- The Screen view opens but has no way back: *"minimize hoke normal view ho jana chahiye. Wo ek button lagao."*
+- On opening GeniOS, macOS asks for the Mac password two or three times. "Always Allow" does not make it stop.
+- Bring the codebase analysis and this folder up to date, and say where every file is.
+- *"ab kuch bhi kharab nahi karna hai aur existing cheezein … chhedna nahi hai"*
+
+### What was found: the Keychain, from macOS's own log (`securityd`) and the items' access lists
+
+- One start of 0.3.3 read the same item **twice**. Each read raised **two** dialogs:
+  - first, "this app is not on the item's list";
+  - then, the XARA partition: "this build is not on the item's partition list".
+  That made six dialogs. All were answered **Allow** (one time), and the last one Deny. Nothing was added to the items' lists, so the next start asked again.
+- Both items (`session`, `capture-db-key`) still listed only old ad-hoc builds (`cdhash:edf4cc52…`).
+- Measured with a tiny Swift program signed by the same local certificate, with dialogs switched off:
+  - an item that build A made in the login Keychain carries partition `cdhash:<A>`;
+  - build B is refused it (`-25293`, which would be a dialog);
+  - deleting it is silent.
+  So a new test build asks once per item, and that ends only with a team (Developer ID) signature. It does not depend on how the app is written.
+
+### What changed (nothing else was touched)
+
+| Where | Change |
+|---|---|
+| `src/menu/MenuPanel.tsx` | With Screen open, the line under the header stays on top as **Minimize ⌃** and goes back to the view Screen was opened from (Pending, a card, Goals). Pressing the line opens Screen again. |
+| `src-tauri/src/auth/secret.rs` | **`CachedSecretStore`** wraps the macOS Keychain store. A key read, written or deleted is remembered until the app quits, so macOS is asked about each item at most **once per run**. A failed read (Deny) is not remembered, so it can be answered next time. |
+| `scripts/preview/menu-check.mjs` (new) | The 46 render checks of the menu and popups, kept in the repo. Until now they lived only in a scratch folder. |
+| This folder | New `00-README.md`: where everything is, how the app works, and what is live and what waits. New `03`, `04`, `05`: the real app's code at `ed2724d`, commented out. Screenshot 31. |
+
+### How it was checked
+
+- **Rust:** `cargo test` gives **258 passed**: the whole app, including two new Keychain-cache tests. Three mutations of the cache were all caught: no cache; errors cached; a write not remembered.
+- **Render checks:** 46, all passing in two runs in a row. The new ones:
+  - Minimize is shown and says Minimize;
+  - opened from Pending, it goes back to Pending;
+  - opened from a card, it goes back to that card.
+
+  One mutation (Minimize always going to Pending) was caught. Three older checks now find the Screen view's **heading**, because the line above it says "Reading your screen" too. That is the same check made exact, not a weaker one.
+- **Code docs:** the scripts inside 03/04/05 wrote out **200 files, byte-for-byte identical** to commit `ed2724d`.
+- **DMG:** `GeniOS_0.3.4_aarch64.dmg`, volume "GeniOS 0.3.4", app 0.3.4, signed with the local identity (`certificate leaf = H"79e08c30…"`), and `codesign --verify --deep --strict` passes. The 0.3.3 disk image, still mounted, was ejected. 0.3.3 was moved to `~/Downloads/GeniOS-old-builds/`.
+
+### Install 0.3.4
+
+1. Quit GeniOS.
+2. Open `GeniOS_0.3.4_aarch64.dmg` (window **GeniOS 0.3.4**) and drag GeniOS onto Applications.
+3. Open it. Expect up to **four** Keychain dialogs this one time: two items, each asking once for the app and once for this build.
+   - Type the Mac password and click **Always Allow** with the mouse each time. Return means Allow, which is one time only.
+   - Later starts of 0.3.4 ask nothing. A future build asks at most twice (once per item).
+4. Accessibility holds: same signature as 0.3.3.
