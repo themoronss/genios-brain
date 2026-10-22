@@ -77,9 +77,15 @@
 
 - **Cards are a vertical list.** A click opens that card in place, and the others stay closed: one open at a time.
   - Each row shows: a lane-coloured left strip, a number badge (✓ when done), the lane, the headline, the relation and the due date.
-- **The dashboard's own theme** (DESIGN.md): 12px cards (`rounded-xl`), 8–10px controls (`rounded-lg`/`md`), hairlines, `eyebrow` labels, and soft lane badges (not solid blocks). Actions use ink (Approve, Add goal, the open toggle); the burgundy accent marks the Goal tag and icons. The site's buttons, tabs and inputs are the same shapes as on the Cards and Moments pages.
+- **The dashboard's own theme** (DESIGN.md): 12px cards (`rounded-xl`), 8–10px controls (`rounded-lg`/`md`), hairlines and `eyebrow` labels. Actions use ink (Approve, Add goal, the open toggle). The site's buttons, tabs and inputs are the same shapes as on the Cards and Moments pages. Card rows are aligned columns: number · lane · title · relation · due.
 - **Shadows** (`L1` · `L2` · `L3`) still step down a level at a time, softer than before. A closed goal with cards shows a two-layer stack behind it.
-- **Lane colours:** decision → ink · question → accent · conflict → red · waiting → grey · done → green with a check.
+- **Colour, professional (`273b858`, Rohit: "rang-biranga" no more):**
+  - ink and its greys carry everything;
+  - the burgundy accent appears only where something needs you: at-risk and blocked dots, "↓ Threatens", "From your side", and the thin line on an open card;
+  - status is a small dot and a word;
+  - every goal's ring and bar are ink;
+  - lanes are a quiet uppercase word;
+  - done cards show a grey check.
 - **Short text:** one line per field. Confidence is a row of chips (word + dots, the reason on hover).
 - In the preview, goal 1's cards open with card 1 open. Every other goal starts closed.
 - A "Proposed goal" card is dashed and accent-tagged, so a goal waiting for approval never reads as a live one.
