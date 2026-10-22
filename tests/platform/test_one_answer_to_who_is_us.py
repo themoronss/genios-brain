@@ -61,6 +61,10 @@ DECLARED: dict[tuple[str, str], str] = {
     ("scripts/screen_flow_report.py", "<module>"):
         "Harsh's read-only screen report (`649208f2`, merged 2026-10-09): it lists each org's seats "
         "beside their devices and capture policy — a directory, never a test of who is us",
+    ("scripts/g011_prod_readings.py", "<module>"):
+        "GeniOS-011 S01.U1's read-only production readings: `l3-d14-d35` asks what the tenant "
+        "declared and who declared it (`kind, value, declared_by`) — a record of the declarations, "
+        "printed into the readings file, never a test of who is us",
 }
 
 #: The shapes the twenty sites used, copied from the code STEP-04 replaced (`f0ee8225`). Each must

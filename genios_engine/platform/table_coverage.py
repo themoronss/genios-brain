@@ -150,13 +150,6 @@ UNREAD_WRITES: dict[str, tuple[str, str, str]] = {
         "MOVES WHEN a precision-by-layer surface exists. ⛔ `feedback/calibrate` consumes the RAW "
         "judgments directly, so the metric rows are for a reader rather than for the loop — the "
         "same conclusion `feedback_health` reached about `attribution.ranked_precision`"),
-    "human_events": (
-        "capture/events_store.py + deliver/actions.py",
-        "⛔ Two packages write it and nothing reads it. A human action ledger spanning capture and "
-        "delivery is exactly the join an outcome question needs, and `execution_outcomes` answers "
-        "that question from a different table",
-        "MOVES WHEN outcome reconciliation (Atlas L7 #3) needs a human-action timeline, or the "
-        "second writer is removed"),
     "card_feedback_revisions": (
         "deliver/verdicts.py",
         "⛔ A revision history for card feedback, written by the verdict's one writer (STEP-16 "
@@ -204,6 +197,9 @@ UNREAD_WRITES: dict[str, tuple[str, str, str]] = {
 #: ⛔ They are recorded rather than deleted because the next reader of this module will be
 #: tempted to re-derive the list with a simpler scan and will get them back. *An invalid finding
 #: is not a finding* — and the measurement that produced them is in `resolution()`.
+#:
+#: ⛔ `human_events` is here for a different reason (GeniOS-011 S01.U1): its finding was not
+#: invalid; a reader arrived — an operator script — and the entry says what still holds.
 RETRACTED_UNREAD_WRITES: dict[str, str] = {
     "source_identity_map": (
         "⛔ RETRACTED 2026-10-04 by `3.1b`'s loop hop — and the retracted entry had PREDICTED its "
@@ -221,6 +217,15 @@ RETRACTED_UNREAD_WRITES: dict[str, str] = {
         "⛔ RETRACTED — read by `context/lifecycle/resolution.py`. The first classification pass "
         "sampled line 103 of that module, which is prose; the READ is in a SQL constant further "
         "down. *A bare-name grep hands over a sentence without its subject*",
+    "human_events":
+        "⛔ MOVED 2026-10-23 by GeniOS-011 S01.U1 — the finding was true when made, and a reader "
+        "has since arrived: `scripts/g011_prod_readings.py` reads it to size `l5-wrong-without-"
+        "reason` (every card action by surface and reason since 1 Oct — a missing 'desktop' wrong "
+        "is every Mac 'Not useful' lost). An operator read is a read (trap 2). ⛔ What the old "
+        "entry said of the ENGINE still holds: written by `capture/events_store.py` and "
+        "`deliver/actions.py`, read by no package in `genios_engine/`, and an outcome question "
+        "still answers from `execution_outcomes` — it moves when outcome reconciliation (Atlas "
+        "L7 #3) needs a human-action timeline",
 }
 
 

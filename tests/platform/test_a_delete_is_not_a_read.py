@@ -209,7 +209,10 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,310 → 3,315, GeniOS-010 B8 expanded (22 Oct): `reason/moments/followups` — `_CARDS_FED` (the cards
     # each screen item fed), `_POPUPS` (its popup), `_VERDICTS` (why it is kept or temporary), `_SCREEN_ITEMS` (a
     # card's screen items, the other way) and `_SCREEN_COUNTS` (the week's screens read / skipped) — five.
-    assert r["statements"] == 3_315, (
+    # ⛔ MOVED 3,315 → 3,400, GeniOS-011 S01.U1 (23 Oct): `scripts/g011_prod_readings.py`, one read-only runner
+    # holding every production read GeniOS-011 is blocked on — 85 statements, its 86 readings but the one
+    # `show`. New SQL text in an operator script, not a wider list.
+    assert r["statements"] == 3_400, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -752,7 +755,10 @@ def test_the_write_only_count_held_while_its_MEMBERSHIP_turned_over():
     """⛔⛔ THE FINDING A BARE COUNT WOULD HAVE HIDDEN. Nine before, nine after — and one left and
     one arrived. A step that reported only the count would have reported *no change*."""
     now = set(TC.written_and_unread())
-    assert len(now) == 9, sorted(now)
+    # ⛔ 9 → 8 on 2026-10-23 (GeniOS-011 S01.U1): `human_events` gained an operator reader,
+    # `scripts/g011_prod_readings.py` — a new reader, not this step's resolver; the turnover below
+    # is what this test pins, and it still holds.
+    assert len(now) == 8, sorted(now)
     assert "source_identity_map" not in now
     assert "warm_lane_slots" in now
 
