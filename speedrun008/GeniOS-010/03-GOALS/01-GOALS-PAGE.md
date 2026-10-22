@@ -24,7 +24,7 @@
 |---|---|
 | `goals-sample-top.png` · `goals-sample-bottom.png` | The target, in sample mode. The first goal is open. |
 | `goals-signed-in.png` | A signed-in owner, against the stand-in brain. |
-| `goals-preview-as-it-opens.png` · `goals-preview-details-open.png` | **The preview Rohit reviews:** `/dashboard/goals?demo=1`. The first shows it as it opens (goal 1's cards, with card 1 open). The second has one goal's **Details** open. |
+| `goals-preview-as-it-opens.png` · `goals-preview-details-open.png` | **The preview Rohit reviews:** `/dashboard/goals?demo=1`. The first shows it as it opens (goal 1's cards as a list, card 1 open in place). The second has one goal's **Details** open (taken at `cb962fa`). |
 
 ---
 
@@ -46,42 +46,43 @@
 6. **Cards not linked to a goal yet:** counted, never hidden, each numbered `C-XXXXXX`.
 7. **Cards of locked domains:** counted in one line ("1 card belongs to a locked domain…"), not drawn.
 
-## 2 · The goal card: three levels, two toggles (dashboard `cb962fa`)
+## 2 · The goal card: three levels, two toggles, cards in a list (dashboard `6850f07`)
 
-Rohit, 22 Oct: *"goal aur card ko differentiate karo … ek bada card ke andar chhote cards, aur unke andar aur chhote cards … shadow dheere-dheere kam hota jata hai"*. He also asked that opening a goal opens only the goal, and opening its cards opens only the cards.
+**What Rohit asked for, 22 Oct:**
+- *"goal aur card ko differentiate karo … ek bada card ke andar chhote cards … shadow dheere-dheere kam"*.
+- Opening a goal opens only the goal; opening its cards opens only the cards.
+- Then: *"cards … horizontal ho gaye hain — use vertical kar lo; jab kisi card par click hoga, to wahi card khulega"*.
+- And: *"website theme se match kar lo"*.
 
 ```
-┌▌GOAL  #G-3F2A9C  On track ─────────────────────────────── [Details ▾] [Cards 5 ▾] ┐  level 1: status-coloured
-│▌ (40%)  Raise the seed round                                                      │  left edge, GOAL tag,
-│▌        You · due 31 Dec · 2 of 5 funds in diligence                              │  progress ring, the
-│▌ ━━━━━━━━━━━━━━━━━━━░░░░░░░│░░░░░                                                  │  deepest shadow
+┌▌[GOAL] #G-3F2A9C  On track ─────────────────────────────── [Details ▾] [Cards 5 ▾] ┐  level 1
+│▌ (40%)  Raise the seed round                                                      │
+│▌        You · due 31 Dec · 2 of 5 funds in diligence                              │
+│▌ ━━━━━━━━━━━━━━━━━━━░░░░░░░│░░░░░                                                  │
 ├─ Details (only the goal) ──────────────────────────────────────────────────────────┤
 │  SCENARIO · WHAT TO DO · TARGET (+source) · CAPTURED FROM (+source)   — 2 columns  │
-│  [ Why it exists + proof | Reasoning ]                                — one band   │
-│  [ What happened 3 ] [ From your side 2 ] [ What GeniOS did 3 ]       — 3 boxes    │
-├─ Cards (only the cards) ───────────────────────────────────────────────────────────┤
-│  4 working · 1 done                                                                │
-│  ┌▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀┐ ┌▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀┐ ┌▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀┐   level 2: numbered tiles,     │
-│  │ 1 DECISION    │ │ 2 DECISION    │ │ 3 QUESTION    │   a lane-coloured top strip,   │
-│  │ Write to Rahul│ │ Email Mohit…  │ │ Five funds…   │   done ones get a green check  │
-│  └───────────────┘ └───────────────┘ └───────────────┘                                │
-│  ┌ CARD 1 OF 5  #G-3F2A9C · C01  Decision  Advances  Due today        Open in Cards ✕ ┐ │
-│  │  ┌ SCENARIO ─────────────┐  ┌ REASONING ────────────────────────┐  level 3: the   │ │
-│  │  │ Who · What's going on │  │ Advances the goal, through …      │  smallest boxes, │ │
-│  │  │ Why now · What remains│  │ Do (+steps) · Else · Done when    │  the lightest    │ │
-│  │  │ If nothing            │  │ confidence chips ●●● · quotes     │  shadow          │ │
-│  │  └───────────────────────┘  └───────────────────────────────────┘                  │ │
-│  └─────────────────────────────────────────────────────────────────────────────────────┘ │
-└────────────────────────────────────────────────────────────────────────────────────────┘
+│  [ Why it exists + proof | Reasoning ]  ·  [ What happened ][ Your side ][ GeniOS did ] │
+├─ Cards (only the cards) — a numbered list, one under another ──────────────────────┤
+│  ▏[1] DECISION  Write to Rahul Menon directly…            Advances   today   ▴     │  level 2 (open)
+│  ▏    #G-3F2A9C · C01  Due today                               Open in Cards →     │
+│  ▏    ┌ SCENARIO ────────────┐  ┌ REASONING ───────────────────────┐   level 3      │
+│  ▏    └──────────────────────┘  └──────────────────────────────────┘                │
+│  ▏[2] DECISION  Email Mohit a one-page traction summary…  Advances   Mon 27 Oct ▾   │  closed
+│  ▏[3] QUESTION  Five funds, eight weeks silent…           Threatens            ▾   │
+│  ▏[4] WAITING   Wait — Tom asked for real news only       Depends on next check ▾  │
+│  ▏[✓] DONE      Share the data room with Kiran — verified opened               ▾   │
+└────────────────────────────────────────────────────────────────────────────────────┘
    └ two stacked layers peek under a closed goal that holds cards (each lighter)
 ```
 
-- **Shadows** (`goals-page.tsx` `L1` · `L2` · `L3`) step down a level at a time. A closed goal with cards shows a two-layer stack behind it.
-- **Lane colours** for the tile strip, the label and the number badge: decision → ink · question → accent · conflict → red · waiting → grey · done → green with a check.
-- **One card is open at a time**, below its tiles. A tile toggles it, and ✕ closes it.
-- **The text is short on purpose.** Each field is a line, not a paragraph. Confidence is a row of chips (word + dots, the reason on hover), not a table.
-- The preview opens goal 1's cards with card 1 open, so the depth shows at once. Every other goal starts closed.
-- "Proposed goal" cards are dashed and accent-tagged, so a goal waiting for approval never reads as a live one.
+- **Cards are a vertical list.** A click opens that card in place, and the others stay closed: one open at a time.
+  - Each row shows: a lane-coloured left strip, a number badge (✓ when done), the lane, the headline, the relation and the due date.
+- **The dashboard's own theme** (DESIGN.md): 12px cards (`rounded-xl`), 8–10px controls (`rounded-lg`/`md`), hairlines, `eyebrow` labels, and soft lane badges (not solid blocks). Actions use ink (Approve, Add goal, the open toggle); the burgundy accent marks the Goal tag and icons. The site's buttons, tabs and inputs are the same shapes as on the Cards and Moments pages.
+- **Shadows** (`L1` · `L2` · `L3`) still step down a level at a time, softer than before. A closed goal with cards shows a two-layer stack behind it.
+- **Lane colours:** decision → ink · question → accent · conflict → red · waiting → grey · done → green with a check.
+- **Short text:** one line per field. Confidence is a row of chips (word + dots, the reason on hover).
+- In the preview, goal 1's cards open with card 1 open. Every other goal starts closed.
+- A "Proposed goal" card is dashed and accent-tagged, so a goal waiting for approval never reads as a live one.
 
 **Ids:**
 - **A goal's code** = `G-` + the first six hex characters of its id (`cbl_…` today, `goal_id` after G1). The full id is printed at the foot of the open card.
