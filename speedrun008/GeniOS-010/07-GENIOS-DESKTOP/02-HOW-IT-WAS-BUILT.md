@@ -5,10 +5,10 @@
 - **Rohit**, as the record of what was agreed.
 
 **Status, 22 Oct 2026:**
-- This is a **dummy**, agreed screen by screen with Rohit.
-- No GeniOS code was changed for it.
-- The whole code is in [`01-CODEBASE.md`](01-CODEBASE.md), commented out so it cannot run from there.
+- The design was agreed screen by screen with Rohit on a **dummy**.
+- The whole dummy code is in [`01-CODEBASE.md`](01-CODEBASE.md), commented out so it cannot run from there.
 - The live dummy is `~/Downloads/Artifacts/Product/genios-desktop-dummy`, outside every repo.
+- On Rohit's word ("ab DMG app do") the design went into the app: **GeniOS 0.3.0**, on the dashboard branch `rohit/desktop-ux` (not merged), built as an installable DMG. See [§11](#11--the-installable-app-030).
 
 ---
 
@@ -199,6 +199,8 @@ All are in [`screens/`](screens/): the dummy at its real size (Retina, 2×), wit
 | [`10-menu-pending.png`](screens/10-menu-pending.png) | Pending: numbered, Now → High → the rest |
 | [`11-menu-account.png`](screens/11-menu-account.png) | The account, with a new device code shown |
 | [`12-all-side-by-side.png`](screens/12-all-side-by-side.png) | The three drops and the menu's three views together |
+| [`13-app-pending.png`](screens/13-app-pending.png) … [`18-app-signin.png`](screens/18-app-signin.png) | **The app 0.3.0** (§11), drawn against the stand-in brain: Pending, a card, Later open, the account, Goals with sample data, sign-in |
+| [`19-app-drop-insight.png`](screens/19-app-drop-insight.png) … [`22-app-drop-brief.png`](screens/22-app-drop-brief.png) | The app's drops: a screen insight, a reminder, an agent's proposal, the morning brief |
 
 ### 3.4 The panel (⌘⇧G)
 
@@ -441,3 +443,71 @@ Every card press goes through `pressCard` (`src/desktop/api.ts`). It posts `/car
 6. **Inter, 400; headings at 560.** Nothing bold. No icons in front of Approach, Goal and Importance. "screen", not "your screen".
 7. **The dummy's size ratio is the app's.**
 8. **The dummy first.** Real files change only when Rohit says so.
+
+---
+
+## 11 · The installable app (0.3.0)
+
+**Rohit, 22 Oct:** *"ab DMG app do taaki main usko install karke check kar sakun"*. The agreed design went into the real app.
+
+| What | Where |
+|---|---|
+| The DMG | `~/Downloads/GeniOS_0.3.0_aarch64.dmg` (22 MB, Apple Silicon). Also at `Extension/src-tauri/target/debug/bundle/dmg/` in the dashboard worktree. |
+| The code | dashboard repo, branch `rohit/desktop-ux`, commit `e04b1ae` ("Desktop 0.3.0 …"). **Not merged.** `main` and the live app are untouched. |
+| What changed in `Extension/` | `src/menu/` (new): `MenuApp.tsx` (the main window, live), `MenuPanel.tsx`, `Drop.tsx`, `live.ts`, `sample.ts`, `menu.css`. `src/lane/Lane.tsx`: every popup drawn as the drop. `src/desktop/main.tsx`: the main window opens the menu. `src/desktop/theme.css`: the agreed tokens. `src-tauri/src/lib.rs`: a new `lane_silence` command. `src-tauri/src/lane/mod.rs`: the lane is 432 wide. `tauri.conf.json`: the menu window is 376 × 600; version 0.3.0. `src-tauri/icons/`: the GeniOS G. |
+
+### Install
+
+1. Open the DMG and drag **GeniOS** into Applications. Replace the old one.
+2. The build is not signed by an Apple developer account, so macOS stops the first launch.
+   - Right-click GeniOS → **Open**, or run `xattr -dr com.apple.quarantine /Applications/GeniOS.app`.
+3. **Accessibility again.** A new build is a new app to macOS.
+   - Go to System Settings → Privacy & Security → Accessibility.
+   - Remove the old GeniOS, add the new one, switch it on.
+   - Until then, screen reading says "Needs Accessibility", and the account's Open settings button goes there.
+4. Sign in with the device code if asked.
+
+### What to check
+
+| Where | What you should see |
+|---|---|
+| Menu bar | The **G** icon. Clicking it, or ⌘⇧G, opens the GeniOS menu at the top right. |
+| Pending | Your real open cards and the screen's follow-ups, numbered, most pressing first, each tagged ("Gmail · mail thread", "WhatsApp · screen"). |
+| Card | Click a row. You get the dark card with Done · Delegate · Later · Feedback, then **Why it came up**, then **Approach · Goal · Importance**. |
+| Done / Later | "Marked done · Undo" / "Put off · …". The press is sent after 5 s; Undo cancels it. A refusal shows as one line at the top. |
+| Feedback | The card's own reasons, plus your words. "Feedback sent". |
+| Question cards | An answer box inside the card. |
+| Goals | Your company brief's goal lines. Each says progress and counts "show here when the brain serves goals". |
+| Account (top right) | Who is signed in; New code (sign in again); screen reading with Pause/Resume; Silence popups; connected tools (opens the website); the server (Change signs out to set it); **Show sample data**; Open on the web; Sign out (asks first). |
+| Show sample data | Every part with the dummy's example cards and goals, including the funnel. A gold line reads "Sample data · not your cards". Nothing is sent. |
+| Drops | When GeniOS catches something on your screen, it drops at the top right: Done (or dismiss), Delegate ("Ask my agent" when offered), Later (the popup's reminders), Feedback (useful / not useful / mute). Show more opens the menu on it. Agent proposals keep Approve · Edit · Reject. Screen reading must be on for your seat. |
+
+### What is live, and what waits
+
+| Part | State |
+|---|---|
+| Pending, Card, Done, Later, Feedback, Answer, Undo, refusals | **Live** (`/cards`, `/cards/{id}`, `/cards/{id}/action` with `surface: desktop`; the Rust core for screen items) |
+| Drops | **Live**: the existing popups (same queue, quiet hours and rate limits), drawn as the drop |
+| Silence popups, Pause/Resume, Accessibility, Sign out | **Live** |
+| Goals | Goal **names** live (`/v1/company-brief`). Progress, due date, status and counts wait for `GET /v1/goals`. |
+| The goal line on a card | "Not linked yet" until the brain links cards to goals (06-CARDS C1/C8) |
+| Delegate | Locked until the brain's delegate route (C5). A popup's own "Ask my agent" works. |
+| Feedback on a screen item | Locked: there is no route yet. Rate its popup instead. |
+| Connected tools list | Opens the website's Integrations page. The app does not read the list yet. |
+| API key | Not supported by the app (device sign-in only). |
+
+### How it was built and checked
+
+**Checks:**
+- `tsc --noEmit` is clean.
+- The main window and the popups were drawn in Chromium against the stand-in brain: real card shapes, the server's own refusals.
+- The bundle carries version 0.3.0 and the G icon (`icon.icns`).
+- `hdiutil verify` on the DMG: VALID.
+
+**Build profile:**
+- It was built with Tauri's **debug** profile. The release build failed twice on this Mac's Rust cache: the proc-macro libraries (`phf_macros`, then `derive_more`, `serde`, `zerofrom`) would not load. This is a build-cache problem, not the code. A clean CI build, or a `cargo clean`, gives the smaller, faster release DMG from the same commit.
+- It is Apple Silicon only. An Intel or universal build is one more build (`--target universal-apple-darwin`).
+
+**Not done yet:**
+- The panel's old render checks (Today · This week · History) still test the panel. The app no longer opens it, so they need rewriting for the menu.
+- The app is not signed or notarised; that needs an Apple Developer account.
