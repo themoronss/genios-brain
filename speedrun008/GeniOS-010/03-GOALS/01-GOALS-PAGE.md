@@ -1,118 +1,142 @@
-# 03.1 · The Goals page: Intelligence → Goals
+# 03.1 · The Goals page: one goal, one card
 
 **Written for:** Harsh.
 
 **Status, 22 Oct 2026:** built, and live where the brain allows it.
+- **Commits** on `rohit/nav-grouping` (`genios-brain-dashbaord`):
+  - `f137d41`: first version;
+  - `e4ff9ce`: reworked to Rohit's model below.
+- **Route:** `/dashboard/goals`, at Intelligence ▸ **Goals**. The home page's "This month's goal" heading links to it.
 
-- **Commit:** `f137d41` on `rohit/nav-grouping` (`genios-brain-dashbaord`).
-- **Route:** `/dashboard/goals`. It is unlocked in the nav (Intelligence ▸ Cards · **Goals** · Screen), and the home page's "This month's goal" heading links to it.
-
-**Rohit's ask:**
-- *"domain-wise goals honge, goals-wise situations honge, situation-wise scenarios honge, aur uske regarding reasoning"*.
-- That chain is the page.
+**Rohit's model, in his words (22 Oct):**
+- *"Goals banenge, goals ke regarding cards banenge. Cards ki reasoning wo apna part hoga."*
+- *"Ek goal ka ek card."* Its face shows *kya scenario hai · kya karna hai · target kahan se hai · capture kahan se hai*.
+- **Show more** holds why the goal exists, where it was captured, the reasoning, and all its cards.
+- *"Pehle sawaal pooch kar hum goals final kar lein, phir approve karwa lein."*
+- *"Ek goal ke andar kai cards … jab tak goal complete nahi ho jata."*
+- Metrics without bombarding: what happened, the loopholes from your side, and what we did.
+- Every goal has a UUID-style id, and its cards are numbered, so anything is identified at once. Behind everything sits a proof.
+- **Domains:** Admin only. Sales, Marketing, Product and Project are shown but locked. Founder Office is removed (folded into Admin).
 
 **Screenshots** (in `screens/`):
 
 | File | What it shows |
 |---|---|
-| `goals-sample-top.png` · `goals-sample-bottom.png` | The target, in sample mode. The first situation is opened. |
-| `goals-signed-in.png` | A signed-in owner, against the stand-in brain (`../02-DASHBOARD-HOME/tools/mock_brain.py`). Northwind is opened. |
+| `goals-sample-top.png` · `goals-sample-bottom.png` | The target, in sample mode. The first goal is open. |
+| `goals-signed-in.png` | A signed-in owner, against the stand-in brain. |
 
 ---
 
-## 1 · What the page shows, top to bottom
+## 1 · The page, top to bottom
 
-1. **Header:** "Intelligence · October 2026", **Goals**, one line on what the page is. In live mode, a "See it with sample numbers" link.
-2. **The chain as pills:** Domain → Goal → Situation → Scenario → Reasoning. It tells the reader how to read everything below.
-3. **Overview:**
-   - a **donut of goals by status**: done · on track · at risk · blocked · not measured;
-   - three tiles: **open situations** (and how many are linked to a goal), **domains with work**, and **waiting for your approval**.
-4. **Waiting for your approval:**
-   - the goals GeniOS **proposed** from what it read, each with **Not a goal** / **Make it a goal**;
-   - invariant: *an inferred goal never becomes approved without a human* (GeniOS-009 05 §5).
-5. **A filter row:** All domains · each domain (scopes everything below), and **Add a goal** (the founder's own goal, in force at once).
-6. **One section per domain:**
-   - **Header:** icon, name, one line on what it covers, and pills (N goals · N situations · average progress when measurable).
-   - **A card per goal:**
-     - the statement, a status chip and "set by you" when the founder added it;
-     - owner · due · number of situations;
-     - **progress % with a bar and a dark "today" marker**. Unknown progress is a striped bar with "?", never 0;
-     - a **"Situations moving this goal"** row with relation chips (N advances · N threatens · N depends on) and **Show / Hide**.
-   - **Situations under a goal, ordered decision → conflict → question → waiting, then by urgency.** Each row shows an urgency dot, a lane chip, the headline, a relation chip and the due date. **Click it to open:**
-     - **Scenario:** who · what is going on · why now · what remains · if you do nothing;
-     - **Reasoning:**
-       - what it does to the goal ("Advances *Raise the seed round* through a sixth fund entering diligence");
-       - recommended, with numbered steps;
-       - alternative · avoid · wait or stop;
-       - **done when**;
-       - **confidence, dimension by dimension**, with the word and its reason;
-       - **what it stands on**: the quoted lines and their source;
-     - **Open this card →** (`/dashboard/cards?card=<id>`) for a live card.
-   - **Not linked to a goal (N), "counted, never hidden"**: the situations in this domain that no goal claims. GeniOS-009 06 §3 and §6: a card with no goal is shown and counted, never dropped.
+1. **Header** and the chain: **Domain → Goal → Reasoning → Cards**.
+2. **Domain tabs:** All domains · **Admin** · 🔒 Sales · 🔒 Marketing · 🔒 Product · 🔒 Project. A locked tab opens a "{Domain} is locked" panel with a link to Domains ▸ Expertise. Nothing of a locked domain is drawn.
+3. **Overview:** a donut of goals by status, then three tiles: **cards working** · **cards done** (verified, not only reported) · **goals to finalise**.
+4. **Goals to finalise:** for every goal GeniOS proposes, the ProposedGoalCard shows:
+   - its id `G-XXXXXX` and a **Proposed** chip;
+   - where GeniOS saw it (proof);
+   - **four questions**: what counts and how many · by when · who owns it · how we will know it is done;
+   - **"The goal will read …"**: the line the answers make, at most 200 characters (the brief's limit);
+   - **Not a goal** / **Approve goal**.
+5. **Admin:** a header with goal and card counts, and **Add a goal**. Then one **goal card** per goal.
+6. **Cards not linked to a goal yet:** counted, never hidden, each numbered `C-XXXXXX`.
+7. **Cards of locked domains:** counted in one line ("1 card belongs to a locked domain…"), not drawn.
 
-## 2 · Live vs sample
+## 2 · The goal card
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ #G-3F2A9C  On track  from your brief                                   40%  │
+│ Raise the seed round                                              progress  │
+│ Owner: You · Due 31 Dec · 4 cards working · 1 done                          │
+│ ████████████░░░░░░░░░│░░░░░░░  (the dark mark = where it should be today)   │
+│ 2 of 5 funds in diligence                                                   │
+│ ┌ SCENARIO ─────────────────────┐ ┌ WHAT TO DO ──────────────────────────┐ │
+│ │ Five funds in play: …         │ │ Reply to Rahul today; send Mohit …   │ │
+│ ├ TARGET ───────────────────────┤ ├ CAPTURED FROM ───────────────────────┤ │
+│ │ ₹4 Cr committed by 31 Dec     │ │ "We're raising a ₹4 Cr seed round…"  │ │
+│ │ Source: your brief, 2 Oct …   │ │ Gmail · your mail to Anil · 28 Sep   │ │
+│ └───────────────────────────────┘ └──────────────────────────────────────┘ │
+│ [Cards 4 open · 1 done] [What happened 3] [From your side 2 gaps] [GeniOS did 3] │
+├ Why this goal exists, its reasoning, metrics and cards          Show more ▾ ┤
+│ Why this goal exists — the reason, with proof lines (source · date)         │
+│ Reasoning — how progress is counted, what moves it, what threatens it       │
+│ Metrics — What happened · From your side (loopholes) · What GeniOS did,     │
+│           each line with its proof                                          │
+│ Cards for this goal — they keep coming until the goal is done               │
+│   ● #G-3F2A9C · C01  Decision  Write to Rahul Menon…   Advances   today ▾   │
+│       → Scenario (who · what · why now · what remains · if nothing)         │
+│       → The card's reasoning (impact on the goal · recommended + steps ·    │
+│         alternative · done when · confidence by dimension · proof)          │
+│   ● #G-3F2A9C · C05  Done — verified                                        │
+│ Goal ID cbl_3f2a9c1e07b84d6a9e52c1d0                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Ids:**
+- **A goal's code** = `G-` + the first six hex characters of its id (`cbl_…` today, `goal_id` after G1). The full id is printed at the foot of the open card.
+- **A card's number** = `{goal code} · C{nn}`, numbered within its goal. An unlinked card is `C-` + the first six hex characters of its `card_<hex>` id.
+- ⚠ **Brain:** today `nn` is the card's position in the list. For a number that never shifts, G4 should store an ordinal per link (`goal_situation_links.ordinal`, assigned when first admitted) and return it. See §5.
+
+## 3 · Live vs sample
 
 | | Sample (`?demo=1`, or localhost signed out) | Live, signed in, today |
 |---|---|---|
-| Domains | Founder Office, Admin | **Company-wide** (the brief's goals; they have no department yet), plus every domain that has an open card (`card.domain`, named from `/v1/expertise/domains`) |
-| Goals | 6, with status, %, pace, owner, due | the brief's **accepted** goal lines: status **Not measured**, progress unknown (no G5) |
-| Situations under a goal | linked, with a relation | **none yet.** The goal says so ("Situations are linked to goals by the goal object…"), because there is no G4 |
-| Not linked | 1 (F22) | **every open card**, under its domain |
-| Scenario | sample lines | the card's real lines: `business_subject · relationship_role`, `situation`, `why_now`, `unresolved_item`, `do_nothing_consequence` |
-| Reasoning | full target: impact, six confidence dimensions | the card's real reasoning: `decision.recommendation` (verdict, steps, avoid), `alternative`, `wait_or_stop`, `success_signal` (done when), `decision.confidence` (each 0–1 → strong ≥ 75% · medium ≥ 50% · weak), `why[]` (readings, doctrine, check lines) |
-| Proposals · add a goal | buttons shown, disabled | **work**: `POST …/proposals/{id}/decide` and `POST /v1/company-brief/lines` |
+| Goals | 5 Admin goals with status, %, owner, due and the full face | the brief's **accepted** goal lines, in Admin. Status **Not measured**; target "Not set yet"; scenario and what-to-do say no card is linked yet |
+| Captured from | a mail, a calendar entry or "added by you", with date | **real**: "GeniOS proposed it from what it read; you accepted it" or "You added this goal yourself", with the accepted date |
+| Why it exists + proof | sample reason with proof lines | **real**: it is a goal in your brief, with the goal line and its date as proof |
+| Metrics | three lists with proof | "—". Counted per goal once cards are linked |
+| Cards in a goal | numbered, linked, each with reasoning | none yet (no G4). Every Admin card is under "Cards not linked to a goal yet" with its **real** scenario and reasoning |
+| Goals to finalise | one proposal, two of four questions answered, buttons disabled | **works**: the answers make the line, and **Approve goal** accepts it *in those words* (`decide` with `text`). **Not a goal** rejects it |
+| Add a goal | disabled | **works**: `POST /v1/company-brief/lines` |
+| Locked domains | — | cards whose `domain` is not `admin` / `founder_office` are counted, not shown |
 
-## 3 · Files
+Checked against the stand-in brain:
+1. Answering "3 signed pilot agreements · 31 Dec · Rohit" and approving left the brief holding exactly `Land three design partners — 3 signed pilot agreements by 31 Dec · owner: Rohit`.
+2. The proposal left the list.
+3. The new goal card appeared.
+
+## 4 · Files
 
 All paths are under `src/`.
 
 ```
-app/dashboard/goals/page.tsx                    the route
+app/dashboard/goals/page.tsx                   the route
 product/internal/dashboard/goals/
-  types.ts                                      Domain · Goal · Situation · Scenario · Reasoning (+ GoalStatus, Relation, Lane)
-  sample.ts                                     SAMPLE_GOALS_VIEW — built from GeniOS-009 06 §2–§4 (F02, F03, F13, F14, F15, F22, F24, F25)
-  live.ts                                       liveGoalsView(brief, cards, details, domainNames) · situationFromCard · sortSituations
-  goals-page.tsx                                GoalsPage, DomainSection, GoalCard, SituationRow, ScenarioPanel, ReasoningPanel, Proposals, AddGoal
-lib/api-goals.ts                                getCompanyBrief · addGoal · decideGoalProposal
-components/layout/sidebar.tsx                   Goals: { href: "/dashboard/goals" } (was locked)
-product/internal/dashboard/homepage/sections/genios-at-work.tsx   "Open goals" in §1's heading
+  types.ts        Goal (uuid, code, face: scenario · nextMove · target · captured; why + proof; reasoning;
+                  metrics; cards) · GoalCardItem (number, lane, state, scenario, reasoning) · ProposedGoal
+                  (questions) · Proof · GoalsView
+  sample.ts       SAMPLE_GOALS_VIEW — Admin, 5 goals, 11 cards, 1 proposal (from GeniOS-009 06 §2–§4)
+  live.ts         OPEN_DOMAIN, LOCKED_DOMAINS, shortCode, cardItem, finalGoalLine, liveGoalsView, sortCards
+  goals-page.tsx  GoalsPage · GoalCardView · ProposedGoalCard · CardRow · CardScenario · CardReasoning · AddGoal
+lib/api-goals.ts                               getCompanyBrief · addGoal · decideGoalProposal(lineId, decision, text?)
 ```
 
-It reuses the home page's `ui.tsx` (CARD, Pill, IconBox) and `charts.tsx` (Donut, PaceBar), so the two pages look like one product.
+## 5 · What the brain should return so every part is real
 
-## 4 · Calls it makes, live
+GeniOS-009 G1–G9, read through this page. `GET /v1/goals` (G1.4) should carry, per goal:
 
-```
-GET  /v1/company-brief                        → lines (section "goals") → goals; proposals (section "goals") → waiting
-GET  /cards                                   → open cards
-GET  /cards/{id}            ×N (≤ 40, parallel) → domain, scenario lines, decision, why
-GET  /v1/expertise/domains                    → domain names
-POST /v1/company-brief/lines                  { section: "goals", text }       (Add goal)
-POST /v1/company-brief/proposals/{id}/decide  { decision: "accept" | "reject" } (Make it a goal / Not a goal)
-```
+| On screen | Field (proposal) | From |
+|---|---|---|
+| `G-XXXXXX`, full id | `goal_id` | G1 |
+| Statement, status chip | `statement`, `status` + the D-010-G1 rule | G1 + README §4 |
+| Owner · due | `owner_seat`, `deadline` | G1 |
+| % and progress line | `progress.state / share_bp / actual / target / why` | G5 |
+| **Scenario** | `scenario`: one or two sentences on where the goal stands, written from its counted links ("5 funds: 2 in diligence, …"). The counted line is G5's; the wording is L2's, claim-checked | G5 `counted` + G3 |
+| **What to do** | `next_move`: the recommendation of the goal's top open card (decision lane, nearest due) | G6 board order |
+| **Target · source** | `target_text` (metric + target + unit + deadline in words), `target_source` (who set it, when) | G1 `metric`, `target`, `unit`, `deadline`, `approved_by/at` |
+| **Captured from** | `captured`: `{text, source, at}`. The founder's own line, or the drafter's evidence quote and its mail/meeting | G1 `source` + the brief proposal's `evidence` |
+| **Why it exists + proof** | `why`, `why_proof[]` | G1 (the approval) + the proposal's evidence |
+| **Reasoning** | `reasoning[]`: how progress is counted, what moves it, what threatens it | G5 + G4 relations |
+| **Metrics** | `metrics.happened[]`, `metrics.your_gaps[]`, `metrics.genios_did[]`, each `{text, source, at}` | G9 progress events, G7 check-in states (owed by the founder, overdue), L4/L5 actions (drafts, reminders, verifications) |
+| **Cards** | `cards[]`: `{card_id, ordinal, relation, state}`, ordered decision → conflict → question → waiting, then due | G4 links (with a stable `ordinal`) + G6 `goal_refs` + G7 `verified_complete` |
 
-- The first three are read in parallel. The page is ready when either the brief or the cards answer.
-- The card details fill in afterwards; until then an opened situation's reasoning reads "Reading the reasoning…".
-- The two writes need an **account owner** (`require_account_owner`). A member gets 403, shown as the notice line.
+**How the dashboard uses it:**
+- Each card's own scenario and reasoning keep coming from `GET /cards/{id}`, exactly as today.
+- Once `GET /v1/goals` returns the fields above, `goals/live.ts` maps them and sets `linked: true`.
+- The components do not change; sample mode already draws this shape.
 
-⚠ **N+1:** reading every open card's detail is fine for tens of cards. If an org has hundreds, add `GET /cards?detail=1` (or a `domain` field on `/cards`) and drop the per-card reads. See `README.md` §6.
-
-## 5 · What makes it fully live: the brain side (GeniOS-009)
-
-| Piece | Today | Needs | Then the page |
-|---|---|---|---|
-| A goal's **department** | none, so goals are "Company-wide" | **G1** `Goal.department` | each goal sits under its domain |
-| **Owner, due, measure** | none | **G1** `owner_seat`, `deadline`, `metric`/`target` | owner · due · % appear on the card |
-| **Progress** | unknown | **G5** `GoalProgress` (measured / counted / unknown + why) | the bar, the %, "progress unknown — {why}" |
-| **Status** (done / on track / at risk / blocked) | "Not measured" | **D-010-G1** rule in `GET /v1/goals` (`README.md` §4) | chips and the donut |
-| **Goal ↔ situation** | none, so all "not linked" | **G4** `goal_situation_links` (advances / threatens / depends_on / unclear) | situations move under their goal with a relation |
-| **Impact line** in reasoning | "Not linked to a goal yet" | **G3** goal impact in the judgment (`relation` + `through`) | "Advances X through Y" |
-| **Six confidence dimensions** | the card's four (evidence, identity, situation, recommendation) | GeniOS-008 L2-9 six dimensions on the card | the six rows |
-| **Done when** as a definition of done | `success_signal` | **G7** `definition_of_done` | stays the same field on screen |
-
-**When `GET /v1/goals` ships:**
-1. Write `mapGoal()` in `goals/live.ts` from the shape in `README.md` §3.
-2. Group goals by `department`, and put each card under the goal its G4 link names (`goal_refs` from G6 on the card, or a `links` array on the goal).
-3. Set `linked: true`.
-
-The component code does not change: sample mode already draws exactly that.
+**The proposed goal's four questions:**
+- They are client-side today. The answers become the accepted words.
+- After G1 they should land as structured fields, via `PATCH /v1/goals/{id}`: `metric`/`target`/`unit` from "what counts", `deadline` from "by when", `owner_seat` from "who owns it", `definition_of_done` from "done when".
+- The questions can also be served by the brain (G1 + D-010-G1), so the drafter asks what it actually lacks.

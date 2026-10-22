@@ -4,7 +4,7 @@
 
 **Status, 22 Oct 2026:**
 - Built and tested, but **not live**.
-- Everything is on the dashboard branch `rohit/nav-grouping` in `github.com/themoronss/genios-brain-dashbaord`: 14 commits on top of `origin/main` `6ddc4db`. The last one, `f137d41`, is the Goals page.
+- Everything is on the dashboard branch `rohit/nav-grouping` in `github.com/themoronss/genios-brain-dashbaord`: 15 commits on top of `origin/main` `6ddc4db`. The last two (`f137d41` and `e4ff9ce`) are the Goals page.
 - brain.thegenios.com serves `main`, so nothing here is visible until that branch is merged.
 - No brain code changed for any of this. Every brain change the design needs is listed in `02-DASHBOARD-HOME/05-BRAIN-WORK.md` and `03-GOALS/README.md`.
 
@@ -20,7 +20,7 @@
 |---|---|---|
 | [`01-NAVIGATION/`](01-NAVIGATION/README.md) | The sidebar regrouping (Intelligence · Context · Workspace · Desktop), locked items, Screen under Intelligence, the Expertise page showing locked domains. | First. It is small and explains where every page now lives. |
 | [`02-DASHBOARD-HOME/`](02-DASHBOARD-HOME/README.md) | The home page, section by section: what each shows, which brain route feeds it, what is sample-only, AER/HIR, the Screen page, how to run and test it, and the brain work it needs. | When you wire the home page to real data or merge the branch. |
-| [`03-GOALS/`](03-GOALS/README.md) | **The Goals page** (Intelligence ▸ Goals): Domain → Goal → Situation → Scenario → Reasoning. It shows what is live today and what waits for GeniOS-009 G1/G3/G4/G5/G7, plus the goal shape, its mapping onto `GET /v1/goals`, and the open decisions. | Before building GeniOS-009 G1–G5, so the API returns what the page draws. |
+| [`03-GOALS/`](03-GOALS/README.md) | **The Goals page** (Intelligence ▸ Goals): one goal, one card, with its reasoning and numbered cards inside, Admin only. It shows what is live today and the fields `GET /v1/goals` must return (GeniOS-009 G1/G3/G4/G5/G7/G9), plus the open decisions. | Before building GeniOS-009 G1–G5, so the API returns what the page draws. |
 
 ## How the pieces connect
 

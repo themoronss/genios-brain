@@ -4,7 +4,8 @@ Serves on 127.0.0.1:8000 and allows CORS (with credentials) from http://localhos
 for another port. Paths use the org id `org_preview`; plant it as `genios_org_id` in the browser (see
 ../06-RUN-AND-TEST.md §4). Every body mirrors the shape the real route returns; edit a value to see an
 edge case (a failing source, a succeeded delegation, outcomes > 0). The Goals page's writes work too:
-POST /v1/company-brief/lines adds a goal, POST …/proposals/{id}/decide accepts or rejects one (in memory).
+POST /v1/company-brief/lines adds a goal; POST …/proposals/{id}/decide accepts (in the sent `text`,
+as the brain does) or rejects one — in memory. One card is in the locked Sales domain on purpose.
 Unknown paths → 404.
 """
 import json
@@ -80,6 +81,10 @@ ROUTES = {
          "headline": "Northwind renewal: notice date in 12 days", "score": 85, "state": "surfaced",
          "situation": "Northwind renews automatically on 3 Dec unless notice is given 30 days before.",
          "created_at": iso(50), "expires_at": iso(-200)},
+        {"card_id": "c-sales", "signal_id": "s4", "assignee": None, "urgency_band": "standard",
+         "headline": "Follow up on the Acme pilot proposal", "score": 30, "state": "surfaced",
+         "situation": "A sales thread — its domain is locked for this workspace.",
+         "created_at": iso(60), "expires_at": iso(-200)},
     ]},
     "/v1/expertise/domains": {"active_count": 2, "available_count": 2, "domains": [
         {"id": "founder_office", "name": "Founder Office", "version": "1", "status": "ga", "description": "",
@@ -92,6 +97,7 @@ ROUTES = {
 
 # GET /cards/{id}: card.v1 plus the decision projection, the way the brain's get_card returns it.
 CARD_DETAILS = {
+    "c-sales": {"domain": "sales", "output_lane": "decision"},
     "c-dpiit": {"domain": "founder_office", "output_lane": "decision", "business_subject": "StartupSetu desk",
                 "relationship_role": "the programme", "why_now": "Banks and two programmes asked for it this month.",
                 "unresolved_item": "Download it and save it to Compliance.",
@@ -171,8 +177,9 @@ class H(BaseHTTPRequestHandler):
             if proposal is not None:
                 brief["proposals"].remove(proposal)
                 if sent.get("decision") == "accept":
-                    brief["lines"].append({**{k: proposal[k] for k in ("line_id", "section", "text", "kind", "proposed_by")},
-                                           "accepted_at": iso(0)})
+                    # The brain accepts in the founder's own words when `text` is sent (store.accept words=…).
+                    brief["lines"].append({**{k: proposal[k] for k in ("line_id", "section", "kind", "proposed_by")},
+                                           "text": sent.get("text") or proposal["text"], "accepted_at": iso(0)})
                 body = {"line_id": line_id, "status": "accepted" if sent.get("decision") == "accept" else "rejected",
                         "promoted": 0}
         else:
