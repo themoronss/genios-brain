@@ -24,7 +24,7 @@
 |---|---|
 | `goals-sample-top.png` · `goals-sample-bottom.png` | The target, in sample mode. The first goal is open. |
 | `goals-signed-in.png` | A signed-in owner, against the stand-in brain. |
-| `goals-preview-as-it-opens.png` · `goals-preview-everything-open.png` | **The preview Rohit reviews:** `/dashboard/goals?demo=1`, as it opens (the first goal and its card C01 open) and with every goal open. |
+| `goals-preview-as-it-opens.png` · `goals-preview-details-open.png` | **The preview Rohit reviews:** `/dashboard/goals?demo=1`. The first shows it as it opens (goal 1's cards, with card 1 open). The second has one goal's **Details** open. |
 
 ---
 
@@ -46,36 +46,42 @@
 6. **Cards not linked to a goal yet:** counted, never hidden, each numbered `C-XXXXXX`.
 7. **Cards of locked domains:** counted in one line ("1 card belongs to a locked domain…"), not drawn.
 
-## 2 · The goal card
+## 2 · The goal card: three levels, two toggles (dashboard `cb962fa`)
+
+Rohit, 22 Oct: *"goal aur card ko differentiate karo … ek bada card ke andar chhote cards, aur unke andar aur chhote cards … shadow dheere-dheere kam hota jata hai"*. He also asked that opening a goal opens only the goal, and opening its cards opens only the cards.
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ #G-3F2A9C  On track  from your brief                                   40%  │
-│ Raise the seed round                                              progress  │
-│ Owner: You · Due 31 Dec · 4 cards working · 1 done                          │
-│ ████████████░░░░░░░░░│░░░░░░░  (the dark mark = where it should be today)   │
-│ 2 of 5 funds in diligence                                                   │
-│ ┌ SCENARIO ─────────────────────┐ ┌ WHAT TO DO ──────────────────────────┐ │
-│ │ Five funds in play: …         │ │ Reply to Rahul today; send Mohit …   │ │
-│ ├ TARGET ───────────────────────┤ ├ CAPTURED FROM ───────────────────────┤ │
-│ │ ₹4 Cr committed by 31 Dec     │ │ "We're raising a ₹4 Cr seed round…"  │ │
-│ │ Source: your brief, 2 Oct …   │ │ Gmail · your mail to Anil · 28 Sep   │ │
-│ └───────────────────────────────┘ └──────────────────────────────────────┘ │
-│ [Cards 4 open · 1 done] [What happened 3] [From your side 2 gaps] [GeniOS did 3] │
-├ Why this goal exists, its reasoning, metrics and cards          Show more ▾ ┤
-│ Why this goal exists — the reason, with proof lines (source · date)         │
-│ Reasoning — how progress is counted, what moves it, what threatens it       │
-│ Metrics — What happened · From your side (loopholes) · What GeniOS did,     │
-│           each line with its proof                                          │
-│ Cards for this goal — they keep coming until the goal is done               │
-│   ● #G-3F2A9C · C01  Decision  Write to Rahul Menon…   Advances   today ▾   │
-│       → Scenario (who · what · why now · what remains · if nothing)         │
-│       → The card's reasoning (impact on the goal · recommended + steps ·    │
-│         alternative · done when · confidence by dimension · proof)          │
-│   ● #G-3F2A9C · C05  Done — verified                                        │
-│ Goal ID cbl_3f2a9c1e07b84d6a9e52c1d0                                        │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌▌GOAL  #G-3F2A9C  On track ─────────────────────────────── [Details ▾] [Cards 5 ▾] ┐  level 1: status-coloured
+│▌ (40%)  Raise the seed round                                                      │  left edge, GOAL tag,
+│▌        You · due 31 Dec · 2 of 5 funds in diligence                              │  progress ring, the
+│▌ ━━━━━━━━━━━━━━━━━━━░░░░░░░│░░░░░                                                  │  deepest shadow
+├─ Details (only the goal) ──────────────────────────────────────────────────────────┤
+│  SCENARIO · WHAT TO DO · TARGET (+source) · CAPTURED FROM (+source)   — 2 columns  │
+│  [ Why it exists + proof | Reasoning ]                                — one band   │
+│  [ What happened 3 ] [ From your side 2 ] [ What GeniOS did 3 ]       — 3 boxes    │
+├─ Cards (only the cards) ───────────────────────────────────────────────────────────┤
+│  4 working · 1 done                                                                │
+│  ┌▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀┐ ┌▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀┐ ┌▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀┐   level 2: numbered tiles,     │
+│  │ 1 DECISION    │ │ 2 DECISION    │ │ 3 QUESTION    │   a lane-coloured top strip,   │
+│  │ Write to Rahul│ │ Email Mohit…  │ │ Five funds…   │   done ones get a green check  │
+│  └───────────────┘ └───────────────┘ └───────────────┘                                │
+│  ┌ CARD 1 OF 5  #G-3F2A9C · C01  Decision  Advances  Due today        Open in Cards ✕ ┐ │
+│  │  ┌ SCENARIO ─────────────┐  ┌ REASONING ────────────────────────┐  level 3: the   │ │
+│  │  │ Who · What's going on │  │ Advances the goal, through …      │  smallest boxes, │ │
+│  │  │ Why now · What remains│  │ Do (+steps) · Else · Done when    │  the lightest    │ │
+│  │  │ If nothing            │  │ confidence chips ●●● · quotes     │  shadow          │ │
+│  │  └───────────────────────┘  └───────────────────────────────────┘                  │ │
+│  └─────────────────────────────────────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+   └ two stacked layers peek under a closed goal that holds cards (each lighter)
 ```
+
+- **Shadows** (`goals-page.tsx` `L1` · `L2` · `L3`) step down a level at a time. A closed goal with cards shows a two-layer stack behind it.
+- **Lane colours** for the tile strip, the label and the number badge: decision → ink · question → accent · conflict → red · waiting → grey · done → green with a check.
+- **One card is open at a time**, below its tiles. A tile toggles it, and ✕ closes it.
+- **The text is short on purpose.** Each field is a line, not a paragraph. Confidence is a row of chips (word + dots, the reason on hover), not a table.
+- The preview opens goal 1's cards with card 1 open, so the depth shows at once. Every other goal starts closed.
+- "Proposed goal" cards are dashed and accent-tagged, so a goal waiting for approval never reads as a live one.
 
 **Ids:**
 - **A goal's code** = `G-` + the first six hex characters of its id (`cbl_…` today, `goal_id` after G1). The full id is printed at the foot of the open card.
