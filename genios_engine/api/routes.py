@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import threading
+import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:                 # the two chain doors' `eval_time` annotations only
@@ -137,6 +139,56 @@ def _bind_gate_costs(gate, org_id: str, seat_id: str | None = None) -> None:
         gate.bind_costs(_graph.record_cost, org_id, seat_id, brief_source=_graph)
 
 
+def _build_sha() -> str:
+    """The commit this process was built from: `GENIOS_BUILD_SHA`, or `'dev'` when nothing bound it.
+
+    GeniOS-011 S03.U1 (`process-live-sha-not-observable`). Read per request, not frozen at import, so
+    the answer is this process's environment. A BLANK value is read as unset: an empty string on
+    `/health` would look like a SHA a deploy check failed to match, when it means nobody bound one.
+    The deploy host binds its commit hash to this variable (Harsh, the DO app spec); until it does,
+    production says `'dev'` here — which is itself the finding, visible from outside.
+    """
+    return (os.environ.get("GENIOS_BUILD_SHA") or "").strip() or "dev"
+
+
+# GeniOS-011 S03.U1 — the schema head `/health` reports, held for a short TTL. `/health` is what an
+# uptime monitor polls, so the ledger read must not be a query per probe; and during a database
+# outage each read waits out the engine's connect/pool timeouts (10–15 s, `platform/db.py`), so a
+# FAILED read is held for the TTL too — otherwise every probe would pay that wait, and consecutive
+# slow probes are what an orchestrator restarts a box for, turning a database outage into an API
+# outage (the trap the degraded boot below exists to avoid). The cost of holding it: right after a
+# hand-run migration the head can be up to one TTL old.
+_SCHEMA_HEAD_TTL_S = 60.0
+_SCHEMA_HEAD_CACHE: tuple[float, str | None] | None = None
+
+
+def _schema_head() -> str | None:
+    """The latest migration filename in `schema_migrations` — the schema this database stands at.
+
+    GeniOS-011 S03.U1. `max(filename)`, not the newest `applied_at`: `apply_migrations` applies in
+    filename order, so the highest filename applied is the head a deploy compares with the repo's
+    newest `migrations/*.sql`, even when an older file was applied by hand later. `None` when there
+    is no database (in-memory dev has no ledger) or when the read fails for ANY reason: this runs
+    inside the liveness check, and a liveness check that raises on a database fault is the outage
+    it exists to report — so the failure is logged and answered as null, never raised.
+    """
+    global _SCHEMA_HEAD_CACHE
+    now = time.monotonic()
+    hit = _SCHEMA_HEAD_CACHE
+    if hit is not None and now - hit[0] <= _SCHEMA_HEAD_TTL_S:
+        return hit[1]
+    head: str | None = None
+    if _graph is not None:
+        try:
+            with _graph.engine.connect() as conn:
+                head = conn.execute(text("select max(filename) from schema_migrations")).scalar()
+        except Exception as exc:      # noqa: BLE001 — liveness must answer; see the docstring
+            _log.warning("schema head unreadable for /health — reporting null: %s", exc)
+            head = None
+    _SCHEMA_HEAD_CACHE = (now, head)
+    return head
+
+
 @router.get("/health")
 def health(request: Request) -> dict:
     """Liveness — and, when the process is alive but the database will not take writes, that too.
@@ -145,12 +197,19 @@ def health(request: Request) -> dict:
     four-hour write outage passed every check that was watching. The process really was up; the
     product was not. A degraded boot is reported here because it is the only signal that reaches
     an uptime monitor, and a silent partial outage is the failure mode that costs the most.
+
+    GeniOS-011 S03.U1 — and WHICH build is up, against WHICH schema: `build_sha` and `schema_head`
+    (`_build_sha`, `_schema_head`). Without them nobody outside could tell which commit production
+    ran or which migration its database stood at (`process-live-sha-not-observable`; 08 §0.2 step 9
+    read both by hand). Both keys are in BOTH shapes: a degraded boot is precisely when a deploy
+    check needs to know what code is up and how far its schema got.
     """
+    build = {"build_sha": _build_sha(), "schema_head": _schema_head()}
     degraded = getattr(request.app.state, "degraded_read_only", None)
     if degraded:
         return {"status": "degraded", "layer": "L1 capture", "writes": "unavailable",
-                "reason": degraded}
-    return {"status": "ok", "layer": "L1 capture"}
+                "reason": degraded, **build}
+    return {"status": "ok", "layer": "L1 capture", **build}
 
 
 @router.get("/health/readiness")
