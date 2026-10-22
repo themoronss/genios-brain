@@ -148,6 +148,10 @@ PARK_SUPERSEDED = "superseded"
 #: every older row that was due, and the ladder read nothing until the burst came due. The due test
 #: is here now, so the limit counts only due rows; `find_parked_extractions` still reads it again in
 #: Python, and `tests/capture/test_the_ladder_never_starves_pg.py` holds the two equal.
+#: ⛔ THE PARKS COUNTED ONCE PER MESSAGE (GeniOS-009 G0.1, 22 Oct 2026). `message_parks` was a correlated
+#: subquery the planner ran for every candidate PAIR in the join — 202 parked rows, 40,804 runs, 1-24 s locally
+#: and CI's 120 s statement timeout on a fuller database. It is now one grouped read of the org's parks, joined
+#: by message (source + source object); the count, and a null object id counting 0, are what they were.
 #: ⛔ TWO WHOLE LITERALS, SAME INNER SELECT. `_OVER_THE_LIMIT` reads the rows this one now leaves
 #: out; built from a shared fragment, the SQL resolver would read each `+` as a statement with a hole
 #: (`platform/table_coverage`), so the inner select is spelled twice and the ladder's test holds the
@@ -158,14 +162,15 @@ _FIND_PARKED = text(
     "       se.parent_object_id, se.dedup_key, se.actor, se.recipients, se.internal_kind, "
     "       se.occurred_at, rp.enc_content, pe.reason_code, pe.created_at as parked_at, "
     "       pe.refetch_attempts as row_attempts, pe.refetch_next_attempt_at as next_attempt_at, "
-    "       (select count(*) from parked_events p2 "
-    "          join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
-    "         where p2.org_id = se.org_id and s2.source = se.source "
-    "           and s2.source_object_id = se.source_object_id "
-    "           and p2.reason_code in :codes) as message_parks "
+    "       coalesce(mp.parks, 0) as message_parks "
     "  from source_events se "
     "  join parked_events pe on pe.org_id = se.org_id and pe.event_id = se.event_id "
     "  join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
+    "  left join (select s2.source, s2.source_object_id, count(*) as parks from parked_events p2 "
+    "               join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
+    "              where p2.org_id = :o and p2.reason_code in :codes "
+    "              group by s2.source, s2.source_object_id) mp "
+    "    on mp.source = se.source and mp.source_object_id = se.source_object_id "
     " where se.org_id = :o and se.outcome = 'emitted' "
     "   and pe.status = 'pending' and pe.reason_code in :codes "
     "   and (rp.expires_at is null or rp.expires_at > :now) "
@@ -185,14 +190,15 @@ _OVER_THE_LIMIT = text(
     "       se.parent_object_id, se.dedup_key, se.actor, se.recipients, se.internal_kind, "
     "       se.occurred_at, rp.enc_content, pe.reason_code, pe.created_at as parked_at, "
     "       pe.refetch_attempts as row_attempts, pe.refetch_next_attempt_at as next_attempt_at, "
-    "       (select count(*) from parked_events p2 "
-    "          join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
-    "         where p2.org_id = se.org_id and s2.source = se.source "
-    "           and s2.source_object_id = se.source_object_id "
-    "           and p2.reason_code in :codes) as message_parks "
+    "       coalesce(mp.parks, 0) as message_parks "
     "  from source_events se "
     "  join parked_events pe on pe.org_id = se.org_id and pe.event_id = se.event_id "
     "  join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
+    "  left join (select s2.source, s2.source_object_id, count(*) as parks from parked_events p2 "
+    "               join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
+    "              where p2.org_id = :o and p2.reason_code in :codes "
+    "              group by s2.source, s2.source_object_id) mp "
+    "    on mp.source = se.source and mp.source_object_id = se.source_object_id "
     " where se.org_id = :o and se.outcome = 'emitted' "
     "   and pe.status = 'pending' and pe.reason_code in :codes "
     "   and (rp.expires_at is null or rp.expires_at > :now) "
