@@ -209,7 +209,10 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,310 → 3,315, GeniOS-010 B8 expanded (22 Oct): `reason/moments/followups` — `_CARDS_FED` (the cards
     # each screen item fed), `_POPUPS` (its popup), `_VERDICTS` (why it is kept or temporary), `_SCREEN_ITEMS` (a
     # card's screen items, the other way) and `_SCREEN_COUNTS` (the week's screens read / skipped) — five.
-    assert r["statements"] == 3_315, (
+    # ⛔ MOVED 3,315 → 3,318, GeniOS-011 S27.U1 (23 Oct): `reason/brief_patterns` — `_SITUATIONS` (the open situations
+    # on the founder's files), `_IN_MOTION` (the brief's in-motion lines, accepted or proposed) and `_GOALS` (the work
+    # a goal already rests on) — three reads, so the drafter sees what is in motion.
+    assert r["statements"] == 3_318, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
