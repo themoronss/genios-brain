@@ -69,7 +69,7 @@ def _corpus_domains() -> list[dict]:
                 "note": " ".join((s.get("note") or "").split())[:280],
                 "capabilities": [str(x) for x in (s.get("capabilities") or [])],
             } for s in subs],
-            "active": True,             # authored + present in the corpus
+            "active": True,             # authored + present in the corpus; per workspace in `expertise_domains`
         })
     return out
 
@@ -111,8 +111,14 @@ def _domain_from_pack(pack: dict, active: bool) -> dict:
 @router.get("/v1/expertise/domains")
 def expertise_domains(org_id: str = Depends(get_current_org)) -> dict:
     """The authored Layer-3 Domain Expertise (Sales / Admin / Customer Support) with real detail —
-    reads the corpus, NOT the legacy BUILTIN_PACKS."""
-    domains = _corpus_domains()
+    reads the corpus, NOT the legacy BUILTIN_PACKS.
+
+    `active` is THIS workspace's (GeniOS-010 B4): a domain switched on for it (`l3_activation`), not merely authored.
+    Every authored domain read "Active" for every workspace, so the Expertise page told a workspace with Sales off
+    that Sales was running. No graph → nothing is active (fail-closed, as `activated_domains` is)."""
+    from genios_engine.platform.l3_activation import activated_domains
+    live = activated_domains(_graph.engine, org_id) if _graph is not None else frozenset()
+    domains = [{**d, "active": d["id"] in live} for d in _corpus_domains()]
     return {"domains": domains,
             "active_count": sum(1 for d in domains if d["active"]),
             "available_count": sum(1 for d in domains if not d["active"])}

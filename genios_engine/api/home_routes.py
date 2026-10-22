@@ -180,6 +180,29 @@ def _delta(series: list[int]) -> tuple[str, str]:
     return (f"{'+' if pct >= 0 else ''}{pct}%", "up" if pct >= 0 else "down")
 
 
+#: GeniOS-010 B6 / B5 · the two grouped reads of `home_summary` (`_rows`).
+_CARDS_7D = ("select urgency_band, count(*) from cards where org_id = :o "
+             "and created_at > now() - interval '7 days' group by urgency_band")
+_FACTS_7D_BY_SOURCE = ("select se.source, count(*) from graph_facts f "
+                       "join source_events se on se.org_id = f.org_id and se.event_id = f.created_by_event_id "
+                       "where f.org_id = :o and f.status = 'active' and f.created_at > now() - interval '7 days' "
+                       "group by se.source")
+_ENTITIES_UPDATED_7D = ("select count(distinct n.node_id) from graph_nodes n "
+                        "join graph_facts f on f.org_id = n.org_id and f.subject_node_id = n.node_id "
+                        "where n.org_id = :o and n.valid_to is null and n.node_type in ('person','company') "
+                        "and n.valid_from <= now() - interval '7 days' "
+                        "and f.status = 'active' and f.created_at > now() - interval '7 days'")
+
+
+def _rows(conn, sql: str, org: str) -> list:
+    """A grouped read for the home; an unreadable one is no rows, never a 500 (as `one` is 0)."""
+    try:
+        with conn.begin_nested():
+            return list(conn.execute(text(sql), {"o": org}).fetchall())
+    except Exception:          # noqa: BLE001 — a tile is never worth the page
+        return []
+
+
 @router.get("/api/org/{org_id}/home-summary")
 def home_summary(org_id: str, org: str = Depends(_org)) -> dict:
     """The whole dashboard home, computed live: coverage snapshot + 4 headline cards + graph
@@ -188,7 +211,9 @@ def home_summary(org_id: str, org: str = Depends(_org)) -> dict:
     with _store().engine.connect() as conn:
         def one(sql: str) -> int:
             try:
-                return int(conn.execute(text(sql), {"o": org}).scalar() or 0)
+                # a savepoint, so one unreadable tile is 0 and not every tile after it (an aborted transaction)
+                with conn.begin_nested():
+                    return int(conn.execute(text(sql), {"o": org}).scalar() or 0)
             except Exception:
                 return 0
 
@@ -225,17 +250,40 @@ def home_summary(org_id: str, org: str = Depends(_org)) -> dict:
                      "and created_at > now() - interval '7 days' "
                      "and route in ('notify','flag','human','human_approval')")
 
+        # GeniOS-010 B6 · the cards raised this week, counted here over EVERY state — `/activity` lists live cards
+        # only and stops at 100 rows, so a busy week, or one whose cards were already handled, read short.
+        cards_7d = {"critical": 0, "high": 0, "standard": 0}
+        for band, n in _rows(conn, _CARDS_7D, org):
+            key = band if band in ("critical", "high") else "standard"
+            cards_7d[key] += int(n or 0)
+        # GeniOS-010 B5 · what memory learned and corrected this week, for "What changed this week".
+        changes = {
+            "facts_added": one("select count(*) from graph_facts where org_id=:o and status='active' "
+                               "and created_at > now() - interval '7 days'"),
+            "facts_updated": one("select count(*) from graph_facts where org_id=:o and status='superseded' "
+                                 "and valid_to > now() - interval '7 days'"),
+            "entities_added": one("select count(*) from graph_nodes where org_id=:o and valid_to is null "
+                                  "and node_type in ('person','company') "
+                                  "and valid_from > now() - interval '7 days'"),
+            # ⛔ NOT `version > 1` (the item's first sketch): no writer ever writes a second node version — a renamed
+            # node is amended in place (`graph_store`) — so that read is 0 for every workspace forever. Updated = a
+            # person or company known BEFORE this week that learned something during it.
+            "entities_updated": one(_ENTITIES_UPDATED_7D),
+            "by_source": {str(src): int(n or 0) for src, n in _rows(conn, _FACTS_7D_BY_SOURCE, org) if src},
+        }
+
     coverage = min(100, round(100 * decisions_7d / situations_total)) if situations_total else 0
     # Human intervention = share of this week's decisions that needed a human (0 when none yet).
     intervention = round(100 * notify / decisions_7d) if decisions_7d else 0
     evidence_cov = round(100 * grounded / facts) if facts else 0
     freshness = round(100 * fresh_facts / facts) if facts else 0
-    policy_safe = 100 if decisions_7d else 0                # fail-closed gating; nothing yet → 0
+    # GeniOS-010 B7 · nothing decided is nothing to grade: "—", never "0% Policy-safe", which read as a failure.
+    policy_safe = 100 if decisions_7d else None
     health = [
         {"label": "Evidence coverage", "value": f"{evidence_cov}%",
          "note": "Facts backed by source evidence"},
         {"label": "Freshness", "value": f"{freshness}%", "note": "Facts confirmed recently"},
-        {"label": "Policy-safe actions", "value": f"{policy_safe}%",
+        {"label": "Policy-safe actions", "value": f"{policy_safe}%" if policy_safe is not None else "—",
          "note": "No action bypassed a hard rule"},
     ]
     dec_delta, dec_dir = _delta(dec_series)
@@ -252,18 +300,11 @@ def home_summary(org_id: str, org: str = Depends(_org)) -> dict:
             "outcomeRate": min(100, round(100 * outcomes_7d / max(1, decisions_7d))),
             "humanEffortReduction": 100 - intervention,
             "health": health,
-            "notice": {
-                "title": "Your company is becoming more proactive.",
-                "summary": ("GeniOS identified meaningful changes across your company, prepared "
-                            "decisions before they were requested, and kept routine work from "
-                            "becoming executive work."),
-                "highlights": [
-                    f"{situations_7d} material situations were understood before anyone had to ask.",
-                    f"{decisions_7d} decisions were safely handed to the right owner or agent.",
-                    f"{risks} follow-through risks were caught before their due window closed.",
-                ],
-            },
+            # GeniOS-010 B9 · the hard-coded notice ("Your company is becoming more proactive.") is gone: the same
+            # sentence for every workspace, whatever happened, is not a measurement.
         },
+        "cards_7d": cards_7d,
+        "changes": changes,
         "cards": [
             {"key": "decisions", "label": "Intelligent Decisions", "value": str(decisions_7d),
              "unit": "this week", "delta": dec_delta, "direction": dec_dir,

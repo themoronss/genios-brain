@@ -495,7 +495,9 @@ def test_budget_promises_personal_resolve_expiry_and_week(client, monkeypatch): 
                    "promises_caught": 3, "promises_kept": 1, "asks_flagged": 0,
                    "asks_answered": 0, "deadlines_flagged": 0, "risks_flagged": 0,
                    "popups_shown": 1, "useful": 1, "not_useful": 1, "nudged_then_closed": 0,
-                   "handled_elsewhere": 0}
+                   "handled_elsewhere": 0,
+                   # GeniOS-010 B8 · the screen's reasoning lane; nothing was promoted in this test
+                   "threads_to_memory": 0, "screen_cards": 0}
     last = client.get(f"/v1/seats/me/weekly-report?week_start={monday - timedelta(days=7)}",
                       headers=dev_h).json()
     assert last["promises_caught"] == 0 and last["popups_shown"] == 0

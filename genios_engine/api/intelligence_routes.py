@@ -750,7 +750,7 @@ def insight_stats(days: int = 7, org_id: str = Depends(get_current_org)) -> dict
 
     ⛔ CORRECTED 2026-10-02. This docstring said *"ROI / intervention rate stay null until the
     feedback→L6 loop of Phase 4 records outcomes"* and **both halves were stale**:
-    `intervention_rate` is computed from `acted / fired` whenever anything has fired, and
+    `card_action_rate` (was `intervention_rate`) is computed from `acted / fired` whenever anything has fired, and
     `outcomes_recorded` is a real `count(*)` over `execution_outcomes`. Only `value_recovered_inr`
     is still null, and the reason is in the comment above the `return` — a different one from the
     reason that was recorded there. **A docstring describing two fields that have since been
@@ -813,7 +813,10 @@ def insight_stats(days: int = 7, org_id: str = Depends(get_current_org)) -> dict
             # ⛔ A client OUTSIDE this checkout cannot be measured from here; one that string-matches
             # falls through to its default, which is strictly better than displaying a false cause.
             "value_state": "unavailable_macv_ledger_has_no_writer",
-            "intervention_rate": (round(acted / fired, 3) if fired else None),
+            # GeniOS-010 B3 · RENAMED from `intervention_rate`: acted ÷ fired is how often a card was acted on, not
+            # the human-intervention rate (HIR) the home will report, and two numbers must not share one name.
+            # Measured first: its one dashboard reader, `actions-card.tsx`, is mounted nowhere.
+            "card_action_rate": (round(acted / fired, 3) if fired else None),
             "headline": (f"{fired} insight(s) surfaced" if fired else "No insights yet")}
 
 

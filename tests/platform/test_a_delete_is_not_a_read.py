@@ -203,7 +203,10 @@ def test_the_statement_count_did_NOT_move():
     # once per pass so the judgment sees both sides — the engine gaining one statement.
     # ⛔ MOVED 3,301 → 3,303, L3 audit X6: `context/situations._ORG_FACTS` and `._ORG_MEMBER_FIELDS`, the refresh's two
     # fact reads org-visible on PostgreSQL (a seat's private overlay decided team situations) — two statements.
-    assert r["statements"] == 3_303, (
+    # ⛔ MOVED 3,303 → 3,310, GeniOS-010 B5/B6/B8 (22 Oct): `api/home_routes.home_summary`'s week of changes (facts
+    # added / corrected, people and companies new, `_ENTITIES_UPDATED_7D`, `_FACTS_7D_BY_SOURCE`) and its cards by band
+    # (`_CARDS_7D`) — six; `reason/moments/followups._SCREEN_LANE_WEEK`, the seat's screen-to-memory lane — one.
+    assert r["statements"] == 3_310, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

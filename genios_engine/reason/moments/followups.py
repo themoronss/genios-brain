@@ -822,13 +822,38 @@ def weekly_report(engine, *, org_id: str, seat_id: str, capability_id: str,
             "and nudge_at is not null and resolved_at > nudge_at "
             "and resolved_at >= :a and resolved_at < :b"),
             {**p, "kinds": list(NUDGED_KINDS)}).scalar()
+        lane = c.execute(_SCREEN_LANE_WEEK, p).mappings().first()
     return {"week_start": ws.isoformat(), "week_end": (ws + timedelta(days=6)).isoformat(),
             "promises_caught": int(f["caught"] or 0), "promises_kept": int(f["kept"] or 0),
             "asks_flagged": int(f["asks"] or 0), "asks_answered": int(f["answered"] or 0),
             "deadlines_flagged": int(f["deadlines"] or 0), "risks_flagged": int(f["risks"] or 0),
             "popups_shown": int(m["shown"] or 0), "useful": int(m["useful"] or 0),
             "not_useful": int(m["not_useful"] or 0), "nudged_then_closed": int(nudged or 0),
-            "handled_elsewhere": int(f["handled"] or 0)}
+            "handled_elsewhere": int(f["handled"] or 0),
+            "threads_to_memory": int(lane["to_memory"] or 0), "screen_cards": int(lane["cards"] or 0)}
+
+
+#: GeniOS-010 B8 · the screen's reasoning lane, the seat's week: what of its screen went to memory, and the cards
+#: that screen evidence stands behind. `threads_to_memory` — the seat's screen-session source events promoted that
+#: week (`screen_promoter` records each delta's event ids). `screen_cards` — the cards raised that week that reach
+#: the seat (`deliver/seat_access`, the same reach) on a subject holding a `screen.*` observation (`screen_memory`)
+#: written from one of THOSE events — so another seat's screen never counts here — before the card was raised.
+_SCREEN_LANE_WEEK = text(
+    "with promoted as ("
+    " select distinct unnest(d.event_ids) as event_id from screen_session_deltas d "
+    " where d.org_id = :o and d.seat_id = :s and d.status = 'promoted' and d.event_ids is not null "
+    " and d.promoted_at < :b) "
+    "select (select count(distinct x.event_id) from screen_session_deltas d "
+    "         cross join lateral unnest(d.event_ids) as x(event_id) "
+    "        where d.org_id = :o and d.seat_id = :s and d.status = 'promoted' "
+    "          and d.promoted_at >= :a and d.promoted_at < :b) as to_memory, "
+    "       (select count(*) from cards k join signals g on g.org_id = k.org_id and g.signal_id = k.signal_id "
+    "        where k.org_id = :o and k.created_at >= :a and k.created_at < :b "
+    "          and (k.assignee = :s or exists (select 1 from card_recipients cr where cr.org_id = k.org_id "
+    "                and cr.card_id = k.card_id and cr.seat_id = :s)) "
+    "          and exists (select 1 from graph_observations o join promoted pe on pe.event_id = o.created_by_event_id "
+    "                       where o.org_id = k.org_id and o.subject_node_id = g.subject_node_id "
+    "                         and o.kind like 'screen.%' and o.created_at <= k.created_at)) as cards")
 
 
 def purge(conn, *, now: datetime) -> dict:

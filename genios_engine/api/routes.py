@@ -4723,12 +4723,9 @@ def llm_usage_breakdown(days: int = 7, org_id: str = Depends(get_current_org)) -
     return {"window_days": days, "rows": out}
 
 
-@router.get("/v1/metrics/intervention_rate/summary")
-def intervention_rate_summary(on_date: str | None = None,
-                              org_id: str = Depends(get_current_org)) -> dict:
-    """Per-module intervention rate. Empty until decisions are emitted + corrections recorded
-    (an L6 rollup) — the dashboard shows a 'no rollups yet' state, not an error."""
-    return {}
+# GeniOS-010 B3 · `/v1/metrics/intervention_rate/summary` is GONE. It always answered `{}` — an empty stub wearing the
+# name the human-intervention rate (HIR) will carry — and nothing calls it: the dashboard's `getInterventionSummary`
+# has no caller. HIR comes as its own route, from `completed_by`, when it is measured (GeniOS-010 B2).
 
 
 @router.get("/v1/metrics/headline")
