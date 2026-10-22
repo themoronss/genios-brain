@@ -1,4 +1,4 @@
-"""A stand-in brain for a local render check: brain-shaped JSON for the home and Goals pages' routes.
+"""A stand-in brain for a local render check: brain-shaped JSON for the home, Goals and Screen pages' routes.
 
 Serves on 127.0.0.1:8000 and allows CORS (with credentials) from http://localhost:3917 — change ORIGIN
 for another port. Paths use the org id `org_preview`; plant it as `genios_org_id` in the browser (see
@@ -6,6 +6,8 @@ for another port. Paths use the org id `org_preview`; plant it as `genios_org_id
 edge case (a failing source, a succeeded delegation, outcomes > 0). The Goals page's writes work too:
 POST /v1/company-brief/lines adds a goal; POST …/proposals/{id}/decide accepts (in the sent `text`,
 as the brain does) or rejects one — in memory. One card is in the locked Sales domain on purpose.
+The Screen page's follow-ups and popups are here too: resolve, snooze, draft a reply and popup feedback
+work in memory; one follow-up names a person GeniOS does not know (no `subject_node_id`).
 Unknown paths → 404.
 """
 import json
@@ -46,10 +48,42 @@ ROUTES = {
         "gmail": {"connected": True, "freshness": "healthy", "lastSyncAt": iso(1), "metadata": {"recordsPulled": 402, "factsExtracted": 1510, "entitiesExtracted": 180}},
         "googlecalendar": {"connected": True, "freshness": "aging", "lastSyncAt": iso(14), "metadata": {"recordsPulled": 68, "factsExtracted": 320, "entitiesExtracted": 32}},
         "slack": {"connected": False}},
-    "/v1/seats/me/weekly-report": {"week_start": "2026-10-19", "week_end": "2026-10-25", "promises_caught": 3, "promises_kept": 1, "asks_flagged": 4, "asks_answered": 2, "deadlines_flagged": 1, "risks_flagged": 0, "popups_shown": 2, "useful": 1, "not_useful": 0},
+    "/v1/seats/me/weekly-report": {"week_start": "2026-10-19", "week_end": "2026-10-25", "promises_caught": 3, "promises_kept": 1, "asks_flagged": 4, "asks_answered": 2, "deadlines_flagged": 1, "risks_flagged": 0, "popups_shown": 2, "useful": 1, "not_useful": 0,
+                                    "nudged_then_closed": 1, "handled_elsewhere": 0},
     "/v1/agents": {"agents": [{"agent_id": "a1", "name": "Default", "status": "active", "connectors": [], "is_default": True}], "count": 1},
     "/v1/delegations": {"delegations": []},
     "/auth/me": {"role": "owner", "seat_id": "s1", "email": "preview@example.com"},
+    # Screen page: the seat's follow-ups (GET /v1/followups, item_out(full=True)) and its popups.
+    "/v1/followups": {"followups": [
+        {"id": "fu_4c1a2e77d0b94f13a8e5c602", "kind": "ask", "text": "Send Priya the October purchase invoices",
+         "who": "Priya Shah", "thread_key": "wa:priya", "app": "whatsapp", "due_at": iso(-20), "nudge_at": iso(-12),
+         "created_at": iso(2), "subject_node_id": "n_priya", "remind_at": [iso(-12), iso(-19)],
+         "quote": "kal tak October ke purchase invoices bhej dena", "updated_at": iso(2), "resolved_at": None, "resolution": None},
+        {"id": "fu_7a2c19e3b5d04c8f91a6e270", "kind": "risk", "text": "Northwind renews at the old price unless notice by 3 Nov",
+         "who": "Northwind Traders", "thread_key": "ol:northwind", "app": "outlook", "due_at": iso(-260), "nudge_at": None,
+         "created_at": iso(5), "subject_node_id": "n_northwind", "remind_at": [iso(-200)],
+         "quote": "renews on 3 Dec unless written notice is received 30 days prior", "updated_at": iso(5), "resolved_at": None, "resolution": None},
+        {"id": "fu_a90c57d3e2b84f16c7a0d9e3", "kind": "ask", "text": "Sameer asked for the pitch deck",
+         "who": "Sameer", "thread_key": "wa:sameer", "app": "whatsapp", "due_at": None, "nudge_at": iso(-10),
+         "created_at": iso(26), "subject_node_id": None, "remind_at": [iso(-10)],
+         "quote": "Can you share the deck?", "updated_at": iso(26), "resolved_at": None, "resolution": None},
+        {"id": "fu_e6d9a0b17c3f4a28d0e9b6c4", "kind": "ask", "text": "Meera needs the ESOP pool size by Friday",
+         "who": "Meera Iyer", "thread_key": "sl:meera", "app": "slack", "due_at": iso(-30), "nudge_at": iso(20),
+         "created_at": iso(30), "subject_node_id": "n_meera", "remind_at": [],
+         "quote": "can you confirm the pool by Friday?", "updated_at": iso(4), "resolved_at": iso(4), "resolution": "answered"},
+        {"id": "fu_0f4d88a6b3c24e97d1a5f2b0", "kind": "my_promise", "text": "Signed PO to Cloudline by Wednesday",
+         "who": "Cloudline", "thread_key": "ol:cloudline", "app": "outlook", "due_at": iso(30), "nudge_at": iso(40),
+         "created_at": iso(52), "subject_node_id": "n_cloudline", "remind_at": [],
+         "quote": "I'll send the signed PO by Wednesday", "updated_at": iso(28), "resolved_at": iso(28), "resolution": "done"},
+    ]},
+    "/v1/moments": {"moments": [
+        {"moment_id": "mo_1", "kind": "verify", "priority": "high", "headline": "Northwind renews on 3 Dec — notice is due by 3 Nov",
+         "body": None, "origin": "server", "capability_id": "moment.screen_insight", "display": True, "suppressed_reason": None,
+         "created_at": iso(5), "expires_at": None, "actions": [], "feedback": [{"action": "shown", "reason": None, "at": iso(5)}]},
+        {"moment_id": "mo_2", "kind": "reminder", "priority": "normal", "headline": "Priya's invoices are due tomorrow 18:00",
+         "body": None, "origin": "server", "capability_id": "moment.screen_insight", "display": False, "suppressed_reason": "dnd",
+         "created_at": iso(2), "expires_at": None, "actions": [], "feedback": []},
+    ], "next_before": None},
     # Goals page: the brief's goal lines (accepted) and one goal the drafter proposed.
     "/v1/company-brief": {
         "version": "b1", "text": "", "truncated": [], "last_review": None,
@@ -166,7 +200,23 @@ class H(BaseHTTPRequestHandler):
         sent = json.loads(self.rfile.read(size) or b"{}")
         brief = ROUTES["/v1/company-brief"]
         body = None
-        if path == "/v1/company-brief/lines":
+        if path.startswith("/v1/followups/") and path.count("/") == 4:
+            fid, verb = path.split("/")[3], path.split("/")[4]
+            item = next((f for f in ROUTES["/v1/followups"]["followups"] if f["id"] == fid), None)
+            if item is not None and verb == "resolve":
+                item.update(resolution=sent.get("resolution"), resolved_at=iso(0))
+                body = item
+            elif item is not None and verb == "snooze":
+                body = item
+            elif item is not None and verb == "draft":
+                body = {"text": f"Hi {(item['who'] or '').split()[0]}, on it — you'll have it by tomorrow evening."}
+        elif path.startswith("/v1/moments/") and path.endswith("/feedback"):
+            mid = path.split("/")[3]
+            m = next((x for x in ROUTES["/v1/moments"]["moments"] if x["moment_id"] == mid), None)
+            if m is not None:
+                m["feedback"].append({"action": sent.get("action"), "reason": sent.get("reason"), "at": iso(0)})
+                body = {"moment_id": mid, "recorded": True}
+        elif path == "/v1/company-brief/lines":
             line_id = f"l-{len(brief['lines']) + 1}"
             brief["lines"].append({"line_id": line_id, "section": sent.get("section"), "text": sent.get("text"),
                                    "kind": None, "proposed_by": "founder", "accepted_at": iso(0)})

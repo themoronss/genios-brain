@@ -38,7 +38,7 @@ Intelligence            — what the brain concluded
   ├ Cards               /dashboard/cards
   ├ Goals               /dashboard/goals                             (unlocked 22 Oct — 03-GOALS/01-GOALS-PAGE.md)
   └ Screen              /dashboard/moments                           (was Desktop ▸ Moments)
-Agents                  /dashboard/agents                            (unchanged — Rohit: revisit later)
+Agents        🔒        /dashboard/agents                            (locked 22 Oct — the page shows a locked panel)
 
 Context                 — what the brain knows and reads
   Graph                 /dashboard/graph                             (was Intelligence ▸ Graph)
@@ -59,7 +59,7 @@ Workspace               — unchanged
 Desktop                 ▸ My capture · Devices                       (Moments moved to Intelligence ▸ Screen)
 ```
 
-Screenshot: `sidebar.png`.
+Screenshot: `sidebar.png` (taken before Agents was locked; `agents-locked.png` shows the locked item and page).
 
 **Why this shape (Rohit's words, condensed):**
 - **Intelligence** = conclusions: cards and goals, plus Screen, because what the screen catches becomes instant actions or cards.
@@ -79,6 +79,7 @@ type NavSection = { title: string; items: NavItem[] };
 - **`navSections`:**
   - owners and admins get `[ untitled (Dashboard · Intelligence · Agents), Context, Workspace, desktopSection ]`.
   - **Intelligence starts open:** `useState({ Intelligence: true })`. Cards is the page people come for.
+- **Locked items** (22 Oct, for Agents): a top-level item with `locked: true` renders its icon, its label, a lock and "Locked", with `lockedNote` as the tooltip — no link.
 - **Locked children:** a child with `locked: true` has no `href`. It renders a lock icon and a "Locked" tag, and shows `lockedNote` as its tooltip. To unlock one, give it an `href` and drop `locked`.
 - **`memberNavSections`:** a member seat sees `Cards · Screen · Sources (My accounts · Resources) · Desktop`. "Needs review" was removed there too, and Uploads became Resources.
   - `/dashboard/moments` is already in `MEMBER_ROUTES` (`lib/session-context.tsx`), so a member can open Screen.
@@ -117,7 +118,7 @@ Screenshots: `expertise.png` and `expertise-locked.png`. Both were taken against
 
 - The pages behind each link: `Brain`, `Graph`, `Company`, `Integrations`, `Resources` and `Memory` are as they were.
 - Workspace and its Governance children.
-- The Agents page. Rohit: "Agents wala section abhi ke liye chhod do".
+- The Agents page, until 22 Oct. Rohit first said "Agents wala section abhi ke liye chhod do"; on 22 Oct: *"Agent wale part ko lock kar do"*. Now the menu item is locked and `/dashboard/agents` shows a locked panel; agents already connected stay connected. See `../05-SCREEN/README.md` §7 and `agents-locked.png`.
 
 ## 5 · Merge notes
 

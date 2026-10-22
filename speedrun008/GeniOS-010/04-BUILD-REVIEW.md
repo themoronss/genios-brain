@@ -3,9 +3,9 @@
 **Written for:** Rohit and Harsh, to analyse the work before deciding the next step.
 
 **Status, 22 Oct 2026:**
-- **Branch:** `rohit/nav-grouping` in `genios-brain-dashbaord`, pushed. HEAD is `cc1b58f`.
-  - 20 commits on top of `origin/main` `6ddc4db`: 25 files, +4,915 / −207 lines.
-  - `tsc --noEmit` is green at `cc1b58f`.
+- **Branch:** `rohit/nav-grouping` in `genios-brain-dashbaord`, pushed. HEAD is `9130f84`.
+  - 23 commits on top of `origin/main` `6ddc4db`: 33 files, +6,703 / −906 lines.
+  - `tsc --noEmit` and `next build` are green at `9130f84`.
 - **Not merged, so not live:** brain.thegenios.com serves `main`.
 - **No brain code changed.** Every brain change the design needs is named in §6 and in the folder docs.
 
@@ -23,10 +23,10 @@
 
 | Part | Was there | Now | Live today, signed in | Waits on |
 |---|---|---|---|---|
-| **Navigation** | A flat list: Brain/Graph/Context under "Intelligence", Needs review, Expertise top-level, Moments under Desktop | Intelligence (Cards · Goals · Screen) · Context (Graph · Company · Domains · Sources) · Workspace · Desktop | everything, once merged | B4: `active` per workspace on `/v1/expertise/domains` |
+| **Navigation** | A flat list: Brain/Graph/Context under "Intelligence", Needs review, Expertise top-level, Moments under Desktop | Intelligence (Cards · Goals · Screen) · Agents 🔒 · Context (Graph · Company · Domains · Sources) · Workspace · Desktop | everything, once merged | B4: `active` per workspace on `/v1/expertise/domains` |
 | **Home** | Header, the "becoming more proactive" notice, 4 headline cards, a counts strip, all from `home-summary` | 7 sections in Rohit's order, with real charts | goal month ring, AER/HIR readiness, activity, the week, checks, the brain card | B1 goals, B2 AER/HIR rollup, B5–B9 |
 | **Goals** | No page; a locked "Goals" item | One goal = one card, with details, plan, metrics and numbered cards; Admin only; by month; tags | the brief's goals, finalise-then-approve, add a goal, every Admin card with its real scenario and reasoning | GeniOS-009 G1 · G4 · G5 (+ G7 · G9) |
-| **Screen** | Desktop ▸ Moments: a list of popups with Useful / Wrong | Intelligence ▸ Screen: "Done instantly" and "Sent for reasoning" lanes on top of the old list | the instant lane's weekly counts, and the old list | B8: reasoning-lane counts |
+| **Screen** | Desktop ▸ Moments: a list of popups with Useful / Wrong | Intelligence ▸ Screen: how it works in six stages, every item with its path (at once → memory → card), the card each fed nested inside it, popups | every item with its words, who, due, reminders, how it ended and whether it is in memory; Done · Snooze · Draft a reply · Done elsewhere · Dismiss; popups | B8: how each item was read, its popup and card links, read/skipped counts |
 | **Dev tooling** | — | dev proxy, skip-login, sample mode, a stand-in brain | local only | — |
 
 ---
@@ -68,6 +68,7 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
 | 2 | Regroup only, keep every page (`db422da`) | Kept |
 | 3 | Locked domains on Expertise (`690def6`) | Kept |
 | 4 | Moments → Intelligence ▸ Screen (`0ab7b03`); Goals unlocked (`f137d41`) | Kept |
+| 5 | Agents locked: the menu item, the page, and the home links to it (`5c0504f`) | Kept |
 
 **How it integrates:**
 - No brain change is needed for the nav.
@@ -148,7 +149,7 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
   - B5 weekly change counts in `home-summary`;
   - B6 cards raised this week, counted in the brain;
   - B7 `policy_safe` when nothing was decided;
-  - B8 Screen reasoning-lane counts;
+  - B8 Screen links and counts (`05-SCREEN/README.md` §5);
   - B9 drop `snapshot.notice`, then delete `notice-board.tsx`.
 - **When B1 lands:** `03-GOALS/README.md` §6, steps 3–5 (home §1, the Goals formed card, the checks).
 - **When B2 lands:** `03-AER-HIR.md` §4. The trend chart already takes a weekly series.
@@ -237,34 +238,38 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
 
 ---
 
-## 4 · Screen (built so far, the starting point for the next phase)
+## 4 · Screen
 
-**Details:** `02-DASHBOARD-HOME/04-SCREEN.md`. **Commit:** `0ab7b03`.
+**Details:** `05-SCREEN/README.md` (it replaces `02-DASHBOARD-HOME/04-SCREEN.md`). **Commits:** `0ab7b03` (first version) · `f151019` (shared card parts) · `9130f84` (rebuilt).
 
 **What was there:** Desktop ▸ **Moments**: the popups the desktop app raised, with Useful / Wrong feedback, and This week / Open follow-ups.
 
 **What we built:**
-- The page moved to **Intelligence ▸ Screen**; the route stays `/dashboard/moments`.
-- **Two lanes** sit on top of the old list:
-  - **Done instantly:** promises, asks, deadlines and risks the instant judge saved as `screen_followups`, plus popups shown;
-  - **Sent for reasoning:** links to Cards.
-- Everything that was on Moments stays, below the lanes.
+- **How Screen works**, on the page: Read → Sort → at once (Save · Remind/popup) and next (Memory · Reason → card), each with this week's count, plus **The rules** (never read, what is kept, when a popup shows, who sees it, what it costs, where it ends up).
+- **What your screen caught:** every item (`S-XXXXXX`) grouped by day, its path on the row — **At once → Memory → Card** — opening into small cards: on your screen · at once (seconds) · next (memory and reasoning, hourly) · the card it fed, nested as its own card.
+- **Cards your screen fed** (each once, with the items that fed it) and **Popups** (shown or held back, Useful / Wrong).
+- A preview at `?demo=1`: 10 items, 5 cards (the Goals preview's own), 5 popups.
 
 **Why:**
-- Rohit: what the desktop app catches from the screen shows up here. Instant things are saved at once; things with context need reasoning and become a card.
-- *"iska koi alag part banana padega ki nahi, wahi dekh lena"*. **Answer: no separate part.** What reasoning produces *is* a card, and cards live in Cards.
+- Rohit (first round): what the screen catches shows here; instant things are saved at once, things with context are reasoned over and become a card — *"iska koi alag part banana padega ki nahi"*. **No separate part**: what reasoning produces is a card.
+- Rohit (22 Oct): *"kaise, kya, kis tareeke se hoga … ek dummy dikhayein"*, and *"screen aur card ek saath ho jaayein, lekin alag-alag rahein"*.
 
 **How:**
-- `components/moments/screen-lanes.tsx` reads `/v1/seats/me/weekly-report`: promises_caught · asks_flagged · deadlines_flagged · risks_flagged · popups_shown.
-- `app/dashboard/moments/page.tsx` has the new header.
+- `screen/types.ts` · `sample.ts` · `live.ts` · `screen-page.tsx`, the same shape-twice pattern as Goals.
+- The card inside an item and in the cards section is Goals' own `CardItem` / `CardBody`, moved to `intel/parts.tsx`, so a card reads the same on every page. An item is drawn differently: the app's mark, an ink edge, its own sections.
+- Live: `GET /v1/followups?status=all`, the weekly report and `GET /v1/moments`; actions call resolve, snooze and draft.
 
-**How it integrates, and where it stands today:**
-- The **instant lane is live.**
-- The **reasoning lane shows "—"** with a line saying why. The brain does not count either of these yet (**B8**):
-  - threads promoted to memory (`platform/screen_promoter.py` → `screen_memory_batch`);
-  - cards whose evidence came from a screen observation (kind `screen.<item kind>`).
-- The page has had **one round**: it does not yet have the visual treatment the home and Goals pages got (charts, small cards, the theme pass).
-- Screenshot: `02-DASHBOARD-HOME/screens/screen-page-signed-in.png`.
+**How it changed:**
+
+| Commit | Rohit said | What changed | Dropped |
+|---|---|---|---|
+| `0ab7b03` | show what the screen catches; does reasoning need its own part? | two lanes on top of Moments; reasoning lane links to Cards | — |
+| `9130f84` | details on how and what; a dummy; screen and cards together but apart | the six stages and rules; items with their path; the card nested; cards fed; popups; preview | the two-lane block, This week and Open follow-ups as separate boxes |
+
+**How it integrates:**
+- **Live today:** items with their words, who, due, reminders, how they ended and whether they are in memory; all actions; popups.
+- **Waits on B8** (`05-SCREEN/README.md` §5): `read_by`, `graph_written_at`, each item's popup and `card_ids[]`, `screen_items[]` on a card, and the read / skipped / threads / cards counts. Until then the page says "not served yet" in those places.
+- **Cards, next:** a card fed by the screen should say so in Cards too (`screen_items[]`); the Cards page can reuse `intel/parts`.
 
 ---
 
@@ -304,13 +309,15 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
 | R8 | Decisions over time and Recent decisions | Sample only, hidden in live mode | no live source planned yet |
 | R9 | No automated tests in the dashboard repo | Regressions are caught by `tsc`, `next build` and eyes | a test runner is a separate decision |
 | R10 | Phone layout | Content is squeezed below about 700px | `app/dashboard/layout.tsx`, a separate fix |
+| R11 | Screen: which card an item fed, and how it was read, are not served | Live items show the card step as "not served yet" | B8 (`05-SCREEN/README.md` §5) |
+| R12 | Agents locked in the dashboard only | An agent already connected keeps working in the brain; only the page is closed | intended — unlock steps in `05-SCREEN/README.md` §7 |
 
 ## 7 · Integration checklist for Harsh, in order
 
 1. **Merge** `rohit/nav-grouping` into `main` (Rohit approves). Resolve any new nav items into their groups (§1).
 2. **Check Vercel:** neither `GENIOS_DEV_API_PROXY` nor `NEXT_PUBLIC_DEV_SKIP_LOGIN` is set.
 3. **Small brain fixes:** B4 (Expertise `active`), B7 (`policy_safe`), B9 (the notice), B3 (the rename).
-4. **Counts:** B5 (weekly changes in `home-summary`), B6 (cards raised this week), B8 (Screen reasoning lane).
+4. **Counts and links:** B5 (weekly changes in `home-summary`), B6 (cards raised this week), B8 (Screen: per-item read path, popup and card links; read/skipped/threads/cards counts).
 5. **GeniOS-009 G1 + G5 → `GET /v1/goals`** with the fields in `03-GOALS/01-GOALS-PAGE.md` §5, including `tags` and `plan`. Then wire it in following `03-GOALS/README.md` §6.
 6. **G4 with a stable ordinal** per link. Goals then hold their cards, and R3 closes.
 7. **R2 (dashboard):** declare `domain` on `OpenCard`, show an empty domain as "unknown" rather than Admin, and page card details past 40.
@@ -324,7 +331,7 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
 | What does each home section show, live and sample? | `02-DASHBOARD-HOME/01-SECTIONS.md` |
 | Which route feeds which number? | `02-DASHBOARD-HOME/02-DATA-WIRING.md` |
 | What are AER and HIR, and what must the brain serve? | `02-DASHBOARD-HOME/03-AER-HIR.md` |
-| The Screen page | `02-DASHBOARD-HOME/04-SCREEN.md` |
+| The Screen page, and Agents locked | `05-SCREEN/README.md` |
 | All brain work, B1–B9 | `02-DASHBOARD-HOME/05-BRAIN-WORK.md` |
 | Run, test, ship | `02-DASHBOARD-HOME/06-RUN-AND-TEST.md` |
 | Goals: decisions and wiring | `03-GOALS/README.md` |
