@@ -4,7 +4,7 @@
 
 **Status, 22 Oct 2026:**
 - Built and tested, but **not live**.
-- Everything is on the dashboard branch `rohit/nav-grouping` in `github.com/themoronss/genios-brain-dashbaord`: 25 commits on top of `origin/main` `6ddc4db` (33 files, +7,152 / −906), HEAD `9a13d87`. `f137d41` … `cc1b58f` are the Goals page; `5c0504f` locks Agents; `f151019`, `9130f84`, `972d122` and `9a13d87` rebuild the Screen page.
+- Everything is on the dashboard branch `rohit/nav-grouping` in `github.com/themoronss/genios-brain-dashbaord`: 26 commits on top of `origin/main` `6ddc4db` (33 files, +7,272 / −906), HEAD `847eeac`. `f137d41` … `cc1b58f` are the Goals page; `5c0504f` locks Agents; `f151019`, `9130f84`, `972d122`, `9a13d87` and `847eeac` rebuild the Screen page.
 - **For the analysis, start with [`04-BUILD-REVIEW.md`](04-BUILD-REVIEW.md):** for every part, what was there, what we built, why, how, each round of review and what was dropped, how it integrates, the risks, and Harsh's integration order.
 - brain.thegenios.com serves `main`, so nothing here is visible until that branch is merged.
 - No brain code changed for any of this. Every brain change the design needs is listed in `02-DASHBOARD-HOME/05-BRAIN-WORK.md` and `03-GOALS/README.md`.

@@ -3,16 +3,17 @@
 **Written for:** Harsh (to wire it in) and Rohit (to review it). The step-by-step wiring — every field, every route, every brain change, the checks — is in **[`01-INTEGRATION.md`](01-INTEGRATION.md)**.
 
 **Status, 22 Oct 2026:**
-- Built on the dashboard branch `rohit/nav-grouping`, in three rounds: `9130f84` (the page), `972d122` (by category, tags, the screen rebuilt, kept or temporary), `9a13d87` (the goal each item moves; cards that stand out by fill, not borders). With `f151019` (the shared card parts) and `5c0504f` (Agents locked). **Not merged, so not live.**
+- Built on the dashboard branch `rohit/nav-grouping`, in four rounds: `9130f84` (the page), `972d122` (by category, tags, the screen rebuilt, kept or temporary), `9a13d87` (the goal each item moves; cards that stand out by fill, not borders), `847eeac` (an opened item shows what matters first; the rest under Show more). With `f151019` (the shared card parts) and `5c0504f` (Agents locked). **Not merged, so not live.**
 - **Route:** `/dashboard/moments`, Intelligence ▸ **Screen**. Members can open it too.
 - **Preview** (the full target, labelled "Preview — not your data"): `/dashboard/moments?demo=1`.
-- `tsc --noEmit` and `next build` are green at `9a13d87`. Checked in the preview at 1440 and 1024 wide, and signed in against the stand-in brain (`../02-DASHBOARD-HOME/tools/mock_brain.py`): Draft a reply and Done ran end to end. The Goals page is unchanged by the shared-part changes (all 10 of its small cards keep their hairline).
+- `tsc --noEmit` and `next build` are green at `847eeac`. Checked in the preview at 1440 and 1024 wide, and signed in against the stand-in brain (`../02-DASHBOARD-HOME/tools/mock_brain.py`): Draft a reply and Done ran end to end. The Goals page is unchanged by the shared-part changes (all 10 of its small cards keep their hairline).
 - It replaces `../02-DASHBOARD-HOME/04-SCREEN.md` (the first, two-lane version).
 
-**What Rohit asked, 22 Oct, in three rounds:**
+**What Rohit asked, 22 Oct, in four rounds:**
 1. *"Screen wale part mein thodi details daal do: kaise, kya, kis tareeke se hoga. Isi tarah ek dummy dikhayein."* and *"Screen aur cards … ek saath ho jaayein, lekin alag-alag rahein."* — and lock Agents.
 2. On the built page: tag every row; *"categories honi chahiye ki Thursday ko kaun-kaun si cheezein kis-kis category mein aayi hain — reminder, update, risk, promise"*; show what was on screen; *"NLP ki madad se one-liner, clear cut"*; where and when properly; *"kuch important hoga to … context graph mein save ho jaayega; temporary rahega to wahin miss ho jaayega"*; *"customer ke hisaab se UX"*.
 3. *"Ye kaun se goal ke saath connected hai … isse goal help ho raha hai aur ye cheezein ho rahi hain"*; and the look: *"kuch cards ko dark kar do, kuch ko white … border mat do; uski jagah thoda sa color idhar-udhar"*.
+4. *"Card ke andar ki details bahut cluttered … zaroori information hi dikhai de; baaki cheezein Show More ke through … clearly segregated."*
 
 **Screenshots** (in `screens/`):
 
@@ -20,13 +21,14 @@
 |---|---|
 | `screen-preview-top.png` | The preview as it opens: the week as a dark band, How Screen works. |
 | `screen-preview-how-and-rules.png` | How Screen works with **The rules** open. |
-| `screen-preview-by-category.png` | What your screen caught: the filters, Thursday's items under their categories, every row with its tags (the goal tag in accent). |
-| `screen-preview-item-open.png` | An item open: the screen rebuilt (due words marked), in one line (dark), who · where · when · due. |
-| `screen-preview-item-goal.png` | The same item: **the goal it moves**, what GeniOS did right away, and what happens next. |
-| `screen-preview-item-card.png` | The card it fed, open inside the item. |
-| `screen-preview-temporary.png` | A temporary item: no goal, not saved to the graph, and why. |
+| `screen-preview-by-category.png` | What your screen caught: the filters, Thursday's items under their categories, rows with their tags. |
+| `screen-preview-item-open.png` | An item opened: only what matters — the line, who and due, the screen rebuilt, the goal strip, the kept strip, Show more. |
+| `screen-preview-show-more.png` | Show more open on *What GeniOS did*. |
+| `screen-preview-item-goal.png` | Show more on *The goal*. |
+| `screen-preview-item-card.png` | Show more on *The card it fed*, the card open. |
+| `screen-preview-temporary.png` | A temporary item: no goal, a follow-up only. |
 | `screen-preview-cards-popups.png` | Cards your screen fed, and the popups. |
-| `screen-signed-in.png` | A signed-in seat against the stand-in brain: real items by category, one open; the goal block says the link is not served yet. |
+| `screen-signed-in.png` | A signed-in seat against the stand-in brain: real items, one open; the goal strip says the link is not served yet. |
 
 ---
 
@@ -78,36 +80,51 @@ Every **work** screen takes **both** paths. The instant path saves what to do no
 
 **Tags on every row:** the category tag first, then — after who · app · time — the next reminder (`Reminder Fri 10:00`), `Popup shown`, `Saved to graph` or `Temporary`, the card it fed (`Card G-3F2A9C · C02`, dark), and **the goal it moves** (`↑ Raise the seed round`, accent). On the right: when it is due, or how it ended.
 
-## 4 · An item, opened
+## 4 · An item, opened (round four: what matters first, the rest under Show more)
+
+Rohit: *"card ke andar ki details bahut cluttered, messed up, aur over-detailed … zaroori information hi dikhai de; baaki Show More … clearly segregated."*
+
+**What a customer sees first** — five things, nothing else:
 
 ```
-SCREEN ITEM #S-9E07B3 · seen on WhatsApp, Thursday 11:40         [Done][Snooze▾][Draft a reply][Done elsewhere][Dismiss]
-ON YOUR SCREEN
- ┌ WhatsApp · chat with Mohit Rao ──────── 11:40 ┐  ┌█ IN ONE LINE (dark) ████████████████████████████████████┐
- │ ┌ Mohit Rao ───────────────────────────────┐   │  █ Mohit wants your traction one-pager before Northgate's  █
- │ │ Partners meet Monday — one-pager on       │   │  █ partner meeting on Monday, 9:00.                         █
- │ │ traction bhej doge _before that_?         │   │  └██████████████████████████████████████████████████████████┘
- │ Rebuilt from the words GeniOS kept — the screen itself is never stored.
- [Who: Mohit Rao · Northgate Capital] [Where: WhatsApp · a chat] [When: Today, 11:40] [Due: Mon 26 Oct, 09:00 · read from "before that"]
-THE GOAL IT MOVES  (accent tint)
- (40%)  GOAL #G-3F2A9C ● On track   Raise the seed round · 2 of 5 funds in diligence · due 31 Dec      [Open the goal →]
- [How this item bears on it: ↑ Advances. This helps the goal: Northgate moving to a partner discussion.]
- [What is happening on the goal: 2 of 5 funds in diligence. Next · Reply to Rahul today; send Mohit the one-pager …]
-WHAT GENIOS DID RIGHT AWAY · IN SECONDS     [Saved as: Deadline] [How it was read] [Reminders] [Popup]
-WHAT HAPPENS TO IT NEXT · WITHIN THE HOUR
- [Kept or temporary: Important — saved to your context graph, on Mohit Rao at 12:00 …
-   ✓ Follow-up › ✓ Context graph · Mohit Rao › ✓ Reasoning › ✓ Card G-3F2A9C · C02]    [Reasoned with] [Outcome]
-THE CARD IT FED     [02] DECISION  Email Mohit a one-page traction summary …   (opens on its own: scenario · reasoning)
+Seen on WhatsApp · today, 11:40                                   [Done] [Snooze ▾] [Draft a reply] [⋯]
+┌█ IN ONE LINE ███████████████████████████████████████┐ ┌ WhatsApp · chat with Mohit Rao ── 11:40 ┐
+█ Mohit wants your traction one-pager before            █ │ ┌ Mohit Rao ─────────────────────────┐ │
+█ Northgate's partner meeting on Monday, 9:00.          █ │ │ Partners meet Monday — one-pager … │ │
+█ ─────────────────────────────────────────────────────█ │ │ bhej doge _before that_?            │ │
+█ 👤 Mohit Rao · Northgate Capital   ⏰ Due Mon 26 Oct, 09:00 · Reminder Fri 16:00 █ │ Rebuilt from the kept words … │
+└██████████████████████████████████████████████████████┘ └──────────────────────────────────────────┘
+┌ ↑ HELPS THE GOAL (accent) ──────────────────────────┐ ┌ KEPT (ink tint) ────────────────────────┐
+│ Raise the seed round                              › │ │ Saved to your context graph · Mohit Rao › │
+│ ● On track · 40% · through Northgate moving …       │ │ Fed card G-3F2A9C · C02                   │
+└─────────────────────────────────────────────────────┘ └───────────────────────────────────────────┘
+Show more ▾ — What GeniOS did · Where it goes · The goal · The card it fed
 ```
 
-- **The screen, rebuilt.** The screen is never stored, so there is no screenshot to show. The page rebuilds what was seen from what *is* kept — the app, the person, the time and the ≤ 12 words — as a chat bubble (WhatsApp, Slack, LinkedIn …; your own message on the right, dark), a mail line (Outlook, Gmail) or a page line (a browser). The words that set the due date are marked.
-- **In one line.** The instant read writes each item as one line (`text`, ≤ 140 characters) from the words on screen; the page shows it with the due it resolved. In the preview the lines read as who · what · by when.
-- **The goal it moves.** See §5.
-- **Kept or temporary.** Important → *saved to your context graph* on the person or company, private to you, reasoned over; the steps show how far it got. Temporary → *not saved to the graph*, with the reason, and the steps follow-up › reminders › closes › removed 90 days after. A temporary item has no "reasoned with" or "outcome": nothing reasons over it.
+1. **Where and when it was seen**, and the actions. Done, Snooze and Draft a reply are up front; Done elsewhere and Dismiss sit under **⋯**.
+2. **In one line** (dark), with **who** and **when it is due** (and the next reminder) underneath — the old Who / Where / When / Due boxes are gone; where and when are in the first line.
+3. **What was on screen**, rebuilt from the kept words.
+4. **The goal it moves**, one strip: helps / puts at risk / waits on · the goal · status · % · through what. Or "Not connected to a goal".
+5. **Where it went**, one strip: kept (saved to your context graph on whom, and the card it fed) or temporary (a follow-up only, removed 90 days after it closes).
+
+**Show more** opens a panel with **one section at a time** (tabs), so it never all shows at once:
+
+| Tab | Holds |
+|---|---|
+| What GeniOS did | saved as (category) · how it was read · reminders (and the words the due was read from) · popup |
+| Where it goes | kept or temporary, with the steps (follow-up › context graph › reasoning › card) · reasoned with · outcome |
+| The goal | the goal with its ring, how this item bears on it, what is happening on the goal, Open the goal — only when there is a goal |
+| The card it fed | the card itself, opening on its own — only when there is one |
+
+- Clicking a strip opens Show more at its tab: the goal strip → *The goal*; the kept strip → *The card it fed* (or *Where it goes*).
+- The item's ids (`S-XXXXXX`, `fu_…`) sit at the foot of the panel.
+- An **open row hides its tags** — the item says the same things below, in words.
+- **The screen, rebuilt.** The screen is never stored, so there is no screenshot to show. The page rebuilds what was seen from what *is* kept — the app, the person, the time and the ≤ 12 words — as a chat bubble (your own message on the right, dark), a mail line or a page line. The words that set the due date are marked.
+- **In one line.** The instant read writes each item as one line (`text`, ≤ 140 characters); the page shows it with the due it resolved.
 
 ## 5 · The goal it moves (round three)
 
-**What it shows, in an accent-tinted block right after "On your screen":**
+**What it shows.** First, as a strip in the opened item (helps / puts at risk / waits on · the goal · status · % · through what). In full under Show more › *The goal*:
 
 | Part | Says | From (preview) | From (live, once served) |
 |---|---|---|---|
@@ -116,7 +133,7 @@ THE CARD IT FED     [02] DECISION  Email Mohit a one-page traction summary …  
 | What is happening on the goal | the goal's progress line, and its next move | the goal's `progress` and `nextMove` | `GET /v1/goals` (`progress`, `next_move`) |
 | Open the goal | a link to Goals | `/dashboard/goals?demo=1` | `/dashboard/goals` |
 
-- **On the row**, a connected item carries the goal as an accent tag: `↑ Raise the seed round`.
+- **On the row** (closed), a connected item carries the goal as an accent tag: `↑ Raise the seed round`.
 - **An item with no goal** says so in a grey line: "Not connected to a goal — nothing on your goal list depends on it." Temporary items have none.
 - **An item can be connected without a card yet** — the preview's Anil item (two angel intros) advances the seed round before any card exists.
 - **Live today** the block says: "Which goal it moves shows once goals and cards are linked (GeniOS-009 G4)." Nothing is guessed.
@@ -129,11 +146,11 @@ Rohit: *"kuch cards ko dark kar do, kuch ko white … border mat do; uski jagah 
 
 | Fill | Used for | Why |
 |---|---|---|
-| **Dark** (`bg-ink`, white text) | the week band at the top · "In one line" in an open item · your own message in the rebuilt chat · the `Card …` tag | what must be read first |
+| **Dark** (`bg-ink`, white text) | the week band at the top · "In one line" (with who and due) in an open item · your own message in the rebuilt chat · the `Card …` tag | what must be read first |
 | **White** with a soft shadow | sections · item rows · the rebuilt screen · "right away" small cards · "reasoned with" · "outcome" · popups · the cards inside an item and in "Cards your screen fed" | the content itself |
-| **Grey tint** (`bg-surface/70`) | who · where · when · due · Read and Sort tiles · the "Right away" lane · the rules · a temporary item's keep box · the box around a nested card | facts and framing, one step back |
+| **Grey tint** (`bg-surface/70`) | Read and Sort tiles · the "Right away" lane · the rules · the Show more tab bar and its small cards · a temporary item's strip · the box around a nested card | facts and framing, one step back |
 | **Accent tint** (`bg-accent/[0.06]`) | the goal block · the "Next" lane · the goal tag on a row | what ties to a goal |
-| **Ink tint** (`bg-ink/[0.05]`) | the keep box of an item saved to the graph | kept, quietly marked |
+| **Ink tint** (`bg-ink/[0.05]`) | the kept strip and keep box of an item saved to the graph | kept, quietly marked |
 
 - Controls keep a hairline (buttons, filter chips, menus): a button should look pressable.
 - **How:** `intel/parts.tsx` · `Mini` takes `tone` — `line` (the default, the Goals look), `white`, `tint`, `accent`; `CardItem`, `CardDeck` and `CardBody` take `flat` (no hairline, white small cards inside). **Goals passes nothing, so Goals is unchanged.** If Rohit likes this look, Goals can switch by passing the same props.
@@ -181,7 +198,8 @@ product/internal/dashboard/screen/
   sample.ts       SAMPLE_SCREEN_VIEW — 10 items, 5 cards and 6 goals (the Goals preview's own), 5 popups
   live.ts         liveScreenView(followups, report, moments) · appName
   screen-page.tsx ScreenPage · Overview (ON_DARK) · HowItWorks (Stage, RULES) · CATEGORY · ItemRow · ItemTags · CategoryTag
-                  · ItemDetails · ScreenSnippet (Marked) · GoalLink · KeepBox · ItemActionsBar · FedBy · PopupRow · FilterChip
+                  · ItemDetails (essentials + Show more tabs) · ScreenSnippet (Marked) · GoalStrip · KeepStrip · DidPanel
+                  · GoesPanel · GoalLink · KeepBox · ItemActionsBar (⋯ menu) · FedBy · PopupRow · FilterChip
 product/internal/dashboard/intel/parts.tsx    shared with Goals: CardItem (+ note, flat) · CardDeck (+ noteOf, flat)
                                               · CardBody (+ tone) · Mini (+ tone, MINI_TONE) · GroupLabel · Sub · Code
                                               · Toggle · RelationTag · RELATION · L1/L2/L3

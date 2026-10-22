@@ -3,9 +3,9 @@
 **Written for:** Rohit and Harsh, to analyse the work before deciding the next step.
 
 **Status, 22 Oct 2026:**
-- **Branch:** `rohit/nav-grouping` in `genios-brain-dashbaord`, pushed. HEAD is `9a13d87`.
-  - 25 commits on top of `origin/main` `6ddc4db`: 33 files, +7,152 / −906 lines.
-  - `tsc --noEmit` and `next build` are green at `9a13d87`.
+- **Branch:** `rohit/nav-grouping` in `genios-brain-dashbaord`, pushed. HEAD is `847eeac`.
+  - 26 commits on top of `origin/main` `6ddc4db`: 33 files, +7,272 / −906 lines.
+  - `tsc --noEmit` and `next build` are green at `847eeac`.
 - **Not merged, so not live:** brain.thegenios.com serves `main`.
 - **No brain code changed.** Every brain change the design needs is named in §6 and in the folder docs.
 
@@ -240,7 +240,7 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
 
 ## 4 · Screen
 
-**Details:** `05-SCREEN/README.md` (it replaces `02-DASHBOARD-HOME/04-SCREEN.md`). **Commits:** `0ab7b03` (first version) · `f151019` (shared card parts) · `9130f84` (rebuilt) · `972d122` (by category) · `9a13d87` (the goal it moves; fill, not borders). Wiring for Harsh: `05-SCREEN/01-INTEGRATION.md`.
+**Details:** `05-SCREEN/README.md` (it replaces `02-DASHBOARD-HOME/04-SCREEN.md`). **Commits:** `0ab7b03` (first version) · `f151019` (shared card parts) · `9130f84` (rebuilt) · `972d122` (by category) · `9a13d87` (the goal it moves; fill, not borders) · `847eeac` (what matters first; Show more). Wiring for Harsh: `05-SCREEN/01-INTEGRATION.md`.
 
 **What was there:** Desktop ▸ **Moments**: the popups the desktop app raised, with Useful / Wrong feedback, and This week / Open follow-ups.
 
@@ -267,6 +267,7 @@ Dashboard · Cards · Intelligence ▸ Brain · Graph · Context · Sources ▸ 
 | `9130f84` | details on how and what; a dummy; screen and cards together but apart | the six stages and rules; items with their path; the card nested; cards fed; popups; preview | the two-lane block, This week and Open follow-ups as separate boxes |
 | `972d122` | *"aadha adhoora kyun"*: tag it, sort it by category (reminder, update, risk, promise) inside each day; show the screen; one clear line; where/when properly; important → context graph, temporary → let go; think like the customer | five categories inside each day with counts; category + show filters; tags on every row; the screen rebuilt from the kept words with the due words marked; in one line; who · where · when · due; kept-or-temporary with its steps | the at-once → memory → card track on the row; the bare quote box |
 | `9a13d87` | say which goal an item is connected to and how it helps; some cards dark, some white, colour instead of borders | "The goal it moves" block (goal, how this item bears on it, what is happening on the goal) and an accent goal tag on the row; no hairlines on Screen's cards — dark week band and "In one line", white rows and sections, grey and accent tints; `Mini` tones and `flat` cards in `intel/parts` (Goals unchanged) | hairlines on Screen's cards |
+| `847eeac` | the opened item is cluttered and over-detailed; show what a customer needs, the rest under Show more, clearly separated | first: seen where/when and the actions (⋯ for Done elsewhere / Dismiss), the line with who and due, the screen rebuilt, a goal strip and a kept strip; Show more opens one tab at a time (What GeniOS did · Where it goes · The goal · The card it fed); open rows hide their tags | the Who / Where / When / Due boxes; every section open at once |
 
 **How it integrates:**
 - **Live today:** items with their words, who, due, reminders, how they ended and whether they are in memory; all actions; popups.

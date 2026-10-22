@@ -2,7 +2,7 @@
 
 **Written for:** Harsh. Everything needed to take the Screen page live and make every part of it real, without asking: how to run it, what feeds each part, what each button calls, the brain changes in order (with where they go), the dashboard change each one needs, and the checks.
 
-**State:** dashboard `9a13d87` on `rohit/nav-grouping` (not merged). What the page is and why: `README.md`.
+**State:** dashboard `847eeac` on `rohit/nav-grouping` (not merged). What the page is and why: `README.md`.
 
 ---
 
@@ -85,8 +85,8 @@ The stand-in brain serves `GET /v1/followups`, `GET /v1/moments`, the weekly rep
 | Button | Client | Route | Body | Brain | Page after |
 |---|---|---|---|---|---|
 | Done | `resolveFollowup(id, "done")` | `POST /v1/followups/{id}/resolve` | `{resolution:"done"}` | `followups.resolve` | row closes, "S-… done." |
-| Done elsewhere | `resolveFollowup(id, "handled")` | same | `{resolution:"handled"}` | counted as `handled_elsewhere` | row closes |
-| Dismiss | `resolveFollowup(id, "dismissed")` | same | `{resolution:"dismissed"}` | | row closes |
+| ⋯ › Done elsewhere | `resolveFollowup(id, "handled")` | same | `{resolution:"handled"}` | counted as `handled_elsewhere` | row closes |
+| ⋯ › Dismiss | `resolveFollowup(id, "dismissed")` | same | `{resolution:"dismissed"}` | | row closes |
 | Snooze ▾ | `snoozeFollowup(id, "1h" \| "tonight" \| "tomorrow")` | `POST /v1/followups/{id}/snooze` | `{preset}` | `followups.snooze` (seat's zone) | "the next reminder moved to …" |
 | Draft a reply | `draftFollowupReply(id)` | `POST /v1/followups/{id}/draft` | — | `reply_draft.draft` — in the quote's language; never stored or sent; 204 when no model | the draft, with Copy |
 | Useful / Wrong ▾ | `sendMomentFeedback(id, "acted", "useful")` / `(id, "wrong", reason)` | `POST /v1/moments/{id}/feedback` | `{action, reason, at}` | `record_feedback`; on a screen popup, "Wrong" mutes that thread's popups for 7 days (`followups.learn_from_feedback`) | "Noted" |
@@ -132,7 +132,7 @@ Each is small and independent. After each, change `screen/live.ts` as shown; no 
 ## 6 · Checks before you call a part done
 
 1. `npx tsc --noEmit -p .` and `npx next build` green.
-2. **Preview** (`?demo=1`) at 1440 and 1024 wide: no horizontal scroll; Mohit's item (S-9E07B3) opens by itself, with its goal and the card it fed.
+2. **Preview** (`?demo=1`) at 1440 and 1024 wide: no horizontal scroll; Mohit's item (S-9E07B3) opens by itself showing only the line, who and due, the screen, the goal strip and the kept strip; Show more opens one tab at a time.
 3. **Signed in** against the stand-in brain: 5 items over three days; Priya's item shows the rebuilt chat, the line with its due, "Saved to graph"; **Draft a reply** shows "Hi Priya, on it …"; **Done** closes it and the stand-in brain's `GET /v1/followups` returns `"resolution": "done"` for it.
 4. **After each brain change S1–S8**, the matching "not served yet" text is gone from a signed-in page, and nothing else changed (compare against `screens/screen-signed-in.png`).
 5. Goals is untouched: on `/dashboard/goals?demo=1` every small card still has its hairline.
