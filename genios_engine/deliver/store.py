@@ -19,16 +19,24 @@ from genios_engine.reason.authority import (
     authority_time,
 )
 
-#: P4 SITUATION CARDS (reason/team/emit.py): the durable copy of a team/verify situation. They have
-#: no Layer 4 run by construction, so the authority joins would hide them; the queue reads them
-#: through a second door that matches ONLY what emit_situation writes — its builder stamp, a
-#: signal with no reasoning run, and a `team.*` / `verify.*` capability that is also the rule id.
+#: P4 SITUATION CARDS (reason/team/emit.py): the durable copy of a situation a deterministic post-pass
+#: observed. They have no Layer 4 run by construction, so the authority joins would hide them; the
+#: queue reads them through a second door that matches ONLY what emit_situation writes — its builder
+#: stamp, a signal with no reasoning run, and a rule id that IS the signal's capability.
 #: Every other card still needs the full authority chain. Kept equal to emit.BUILDER_VERSION by
 #: tests/test_team_unit.py (a literal here: deliver must not import the reasoning hot path).
+#:
+#: ⛔ THE DOOR KEYS ON ITS WRITER, NEVER ON A CAPABILITY'S PREFIX (GeniOS-011 S36.U1,
+#: `l5-meeting-followup-cards-fail-every-door`). It also required `split_part(capability_id, '.', 1)
+#: in ('team', 'verify')`, and emit_situation is called with any capability its caller names: the P-16
+#: post-meeting follow-up writes `meeting.followup` (reason/meetings/passes.FOLLOWUP_CAPABILITY), so
+#: that card passed no door — never in the queue, and the desktop moment's pinned `open_card` answered
+#: 404. The builder stamp is what proves who wrote the card; a prefix list only had to be kept in step
+#: with every caller, and was not. tests/test_a_meeting_followup_card_opens_pg.py holds both sides.
 SITUATION_CARD_BUILDER = "team.emit.v1"
 SITUATION_CARD_SQL = (
     "k.builder_version = :situation_builder and s.reasoning_run_id is null "
-    "and s.rule_id = s.capability_id and split_part(s.capability_id, '.', 1) in ('team', 'verify')")
+    "and s.rule_id = s.capability_id")
 
 # STEP-13 · A QUESTION CARD'S OWN DOOR (`yc2_w27_s13` M36.C2.L-interface.V2.U09). A held file asks the founder
 # one question on its own card (`06` D60), and its signal is authorised AS A QUESTION
@@ -774,8 +782,9 @@ class CardStore:
              " as score, k.state, k.render_mode, k.created_at, k.expires_at "
              "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
              + AUTHORITATIVE_SIGNAL_JOINS + common + "and " + AUTHORITATIVE_SIGNAL_PREDICATE)
-        # THE SECOND DOOR, for P4 situation cards only (see SITUATION_CARD_SQL). Same states,
-        # surface, expiry and seat-visibility clauses; the L4 query above is untouched.
+        # THE SECOND DOOR, for P4 situation cards only (see SITUATION_CARD_SQL) — team, verify and the
+        # meeting follow-up alike: it keys on emit_situation's builder stamp (GeniOS-011 S36.U1). Same
+        # states, surface, expiry and seat-visibility clauses; the L4 query above is untouched.
         sq = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
               "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at "
               "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id"
