@@ -100,8 +100,8 @@ These are `STEP-G1` (goal object) and `STEP-G5` (progress). G1.4 serves `GET /v1
 Rohit opens these. Each gets its own file here:
 
 1. ✅ `01-GOALS-PAGE.md`: the Intelligence ▸ Goals page (one goal, one card). It is built, and covers what is live and what each GeniOS-009 step adds (§5 lists the fields `GET /v1/goals` must return).
-2. `02-HOME-GOALS-LIVE.md`: switching home §1 and the "Goals formed" card from sample to `GET /v1/goals`, once G1 + G5 exist.
-3. `03-STATUS-AND-PACE.md`: D-010-G1 to G3, written as the brain rule with tests.
+2. `02-HOME-GOALS-LIVE.md` (not written yet): switching home §1 and the "Goals formed" card from sample to `GET /v1/goals`, once G1 + G5 exist.
+3. `03-STATUS-AND-PACE.md` (not written yet): D-010-G1 to G3, written as the brain rule with tests.
 
 ## 6 · Wiring it in (when G1 + G5 land)
 

@@ -10,6 +10,19 @@
 - brain.thegenios.com serves `main`, so nothing here is visible until those branches are merged.
 - No brain code changed for any of this. Every brain change the design needs is listed in `02-DASHBOARD-HOME/05-BRAIN-WORK.md` and `03-GOALS/README.md`.
 
+**Where everything stands — the close of the dashboard phase, 22 Oct 2026** (checked the same evening):
+
+| What | Where | State |
+|---|---|---|
+| Navigation, home, Goals, Screen, Agents locked | dashboard `rohit/nav-grouping` | `847eeac`, 26 commits on `main` `6ddc4db`, pushed, working tree clean; `tsc` and `next build` green; **not merged** |
+| Cards page | dashboard `rohit/cards-ux` | `25553ab`, 3 commits on `847eeac`, pushed (another session's work) |
+| This folder | brain `speedrun008` · `speedrun008/GeniOS-010/` | pushed; CI green up to `04284111`, later docs-only runs still running when checked (each takes about 1½ hours) |
+| Every file reference in this folder | — | resolves, except four that name files still to be written (`03-GOALS/02-…`, `03-…`, and in `06-CARDS` the proposed `deliver/card_copy.py`) |
+| Harsh's L2/L3 work (32 commits) | `origin/harsh/mvp` `21b7ae10` | on GitHub in `harsh/mvp`; **not in `speedrun008`** — its CI is red (golden-pg cassette misses, database) — Harsh's or Rohit's call |
+| Brain code | — | unchanged by this folder; every brain change the pages need is listed (B1–B9, S1–S8, C1–C9) |
+
+**What changes next:** the dashboard phase is closed. The next work is **the cards GeniOS produces** — what a card is and how good it is when it comes out of the brain and into the app — not the pages that show them.
+
 **Who decided what:**
 - Rohit set the grouping, the priority order of the home page and the look, over one afternoon of reviews.
 - The design follows his words: *"existing dashboard ko change nahi karna hai, bas update karna hai"*. Pages were regrouped and updated, not replaced.
