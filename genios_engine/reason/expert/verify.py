@@ -1152,6 +1152,9 @@ def printed_ids(payload, evidence_ids: Iterable[str]):
     return walk(payload) if alias else payload
 
 
+#: G012 H-12 · what a fact may cite that was READ FROM MAIL — a signal L1 extracted with its quote, a promise memory
+#: kept from one: a move standing on one of these stands on the mail behind it (P-c), as on the mail itself.
+READ_FROM_MAIL: tuple[str, ...] = ("sig:", "promise:")
 #: A section of the dossier as it prints one: `# C · THE HISTORY — …` or `## WHAT WAS CHECKED`.
 _SECTION = re.compile(r"^(#{1,2})\s+(?:(?P<letter>[A-Z])\s+·\s+)?(?P<title>[A-Z][A-Z' ]+?)(?:\s+—.*)?$")
 
@@ -1243,8 +1246,11 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     standing_figures, move_figures = corpus(standing, figures=True), corpus(rested & standing, figures=True)
     move = review.next_move
     said = move.what if move is not None else review.frames.primary
-    headline = run.text("move", said, move_corpus if move is not None else standing_corpus,
-                        figures=move_figures if move is not None else standing_figures)
+    # G012 H-12 · THE MOVE'S WORDS HOLD ON THE REVIEW'S STANDING FACTS — every one of them, not only those `rests_on`
+    # lists: a date or a name the move writes must still be on a line the check let stand, so nothing is invented,
+    # but a move that left the fact holding its date out of `rests_on` ("find out whether the 22 Jul meeting…") was
+    # held as saying what its facts do not hold (4 of the design partner's 8 held moves, 23 Oct).
+    headline = run.text("move", said, standing_corpus, figures=standing_figures)
     situation = run.text("situation", review.frames.primary, standing_corpus, figures=standing_figures)
     done_when = run.text("done_when", review.done_when, standing_corpus, figures=standing_figures)
     # WHAT DOING NOTHING COSTS reaches every shown card as its "cost of ignoring" (crosscheck X03): a card
@@ -1360,7 +1366,8 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         # MAIL still stands; its own words are still checked on the standing facts alone (`headline`, against
         # `rested & standing` — the branch below holds a move whose words need a fallen fact), and the fallen
         # facts are dropped from the card as before. A move whose every mail-fact fell is held as it was.
-        if fell and any(run.mail(e) for n in rested & standing for e in review.facts[n - 1].evidence):
+        if fell and any(run.mail(e) or e.startswith(READ_FROM_MAIL) for n in rested & standing
+                        for e in review.facts[n - 1].evidence):
             fell = []
         if fell:
             held = C.HELD_BECAUSE.get(run.reason(f"fact:{fell[0]}"), C.HELD_BECAUSE[C.HELD_MOVE])

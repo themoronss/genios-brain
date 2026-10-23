@@ -147,3 +147,37 @@ def test_h11_a_stored_review_with_bare_ids_is_checked_as_printed():
     printed, so a recheck never drops it as `unknown_evidence`."""
     checked = _check(fact2={"evidence": ["ask_deck"]})
     assert _verdict(checked, "fact:2").verdict == C.KEPT, _verdict(checked, "fact:2")
+
+
+# ── H-12 · the move's words on every standing fact; a promise or signal read from mail is mail ────────────────
+
+def test_h12_a_move_may_write_what_a_standing_fact_it_did_not_list_holds():
+    """fact 3 (Marco's reply time, 6 days) stands but is not in `rests_on`: the move may still write its 6."""
+    checked = _check(move={"what": "Send Marco the short deck and offer two times for a call within 6 days"})
+    assert checked.fate == C.SHOWN, (checked.fate, checked.because)
+
+
+def test_h12_a_move_writing_what_no_standing_fact_holds_is_still_held():
+    checked = _check(move={"what": "Send Marco the short deck and offer two times for a call within 9 days"})
+    assert checked.fate == C.HELD, checked.fate
+
+
+def _with_a_signal(**over) -> C.CheckedReview:
+    dossier, people = W.world()
+    text = dossier.text + "\n- [sig:sig_marco_ask] Marco asked for a short deck before setting up a call"
+    review = W.review(**over)
+    return check_review(review, text, people, evidence_ids=(*dossier.catalogue.evidence_ids, "sig:sig_marco_ask"))
+
+
+def test_h12_a_move_standing_on_a_signal_read_from_mail_stands_when_its_mail_fact_falls():
+    checked = _with_a_signal(fact1={"claim": "Priya asked for a short deck before setting up a call"},
+                             fact2={"claim": "Marco asked for a short deck before setting up a call",
+                                    "evidence": ["sig:sig_marco_ask"]})
+    assert _verdict(checked, "fact:1").reason == C.UNSUPPORTED, "the premise: the mail-fact falls"
+    assert checked.fate == C.SHOWN, (checked.fate, checked.because)
+
+
+def test_h12_a_move_standing_only_on_a_reading_not_from_mail_is_still_held():
+    """fact 2 cites the open ask (`loop:`), a reading — not mail: with the mail-fact fallen, the move is held."""
+    checked = _check(fact1={"claim": "Priya asked for a short deck before setting up a call"})
+    assert checked.fate == C.HELD, checked.fate

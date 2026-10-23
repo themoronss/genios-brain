@@ -40,7 +40,9 @@ from typing import Any
 #: so a review v4 checked is checked again, with no model call.
 #: ⛔ check.v6 since 23 Oct (G012 H-10): a sample size a claim repeats from its calculator is no number.
 #: ⛔ check.v7 since 23 Oct (G012 H-11): every review is checked with its ids as the dossier printed them.
-CHECK_VERSION = "check.v7"
+#: ⛔ check.v8 since 24 Oct (G012 H-12): a move's words hold on every standing fact; a signal or a promise read from
+#: mail anchors a move as its mail does.
+CHECK_VERSION = "check.v8"
 
 # ── what happened to a line ────────────────────────────────────────────────────────────────────
 # One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments,
