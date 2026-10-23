@@ -436,7 +436,7 @@ def _version_file_card(card_store, card: dict, copy: dict, token: str, out: dict
     out["versioned"] += 1
     if not material:
         out["renewed" if change == "renewed" else "reworded"] += 1
-    card["_versioned"] = {"card_id": _card_id, "material": material, "change": change}
+    card["_versioned"] = {"card_id": _card_id, "material": material, "change": change, "version": _version}
     return True
 
 
@@ -796,6 +796,13 @@ def _cohort_absorbed(graph, org_id: str, signals: list[dict]) -> set[str]:
     return absorbed
 
 
+def _word_the_card(copy_writer, card_store, card_id, version, draft: dict, copy: dict, sig: dict) -> None:
+    """GeniOS-011 S34.U3 (C1): a NEW card version — created, refreshed or versioned — worded once by the card
+    writer, when the tenant's switch is on. Never raises (`CopyWriter.write`): no copy is today's fields."""
+    if copy_writer is not None and card_id is not None:
+        copy_writer.write(card_store, card_id=card_id, version=version, card=draft, copy=copy, signal=sig)
+
+
 def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                         registry=None, eval_time: datetime | None = None) -> dict:
     """E0→E1→E3→persist for every open, un-carded signal. Returns delivery counts."""
@@ -878,8 +885,15 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
     # THE FLIP, PER TENANT AND OFF UNTIL A ROW SAYS OTHERWISE. `live_lane` recorded what a global
     # boolean costs: "one boolean for every tenant at once… it only ever turns lanes ON". The way
     # back is deleting the activation row, and until one exists the loop below is unchanged.
-    _situation_lane = cards_from_situations(activated=_activated_features(graph, org_id))
+    activated = _activated_features(graph, org_id)
+    _situation_lane = cards_from_situations(activated=activated)
     out["cards_lane"] = "situation" if _situation_lane else "signal"
+    # GeniOS-011 S34.U3 (C1) · THE CARD WRITER, built once per pass: one checked call per NEW card version, never
+    # per view (`deliver/card_copy`). Off — the default — it is None: nothing is built, read or spent, and every
+    # card keeps today's fields.
+    from genios_engine.deliver.card_copy import CopyWriter
+    copy_writer = CopyWriter.for_pass(graph=graph, org_id=org_id, activated=activated, eval_time=eval_time,
+                                      identities=identities)
 
     absorbed = _cohort_absorbed(graph, org_id, signals)
     for sig in signals:
@@ -1041,6 +1055,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                     continue
                 tally_lane(out, lane=draft.get("output_lane"))
                 card_id = draft["_versioned"]["card_id"]
+                _word_the_card(copy_writer, card_store, card_id, draft["_versioned"].get("version"), draft, copy,
+                               sig)
                 if not draft["_versioned"]["material"]:
                     # A rewording or a renewal is a quiet version — kept in its history, pushed to nobody (s14-D1).
                     out["quiet_version_not_pushed"] += 1
@@ -1055,6 +1071,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                     # correctly skipped — and deliberately NOT pushed: the user has already been
                     # shown this card, and a rewrite is not a new event to interrupt them with.
                     out["refreshed"] += 1
+                    # The words were rewritten in place, so their copy was cleared with them: word them again.
+                    _word_the_card(copy_writer, card_store, card_id, None, draft, copy, sig)
                     out["llm" if copy["render_mode"] == "llm" else "raw_slot"] += 1
                     tally_lane(out, lane=draft.get("output_lane"))
                 elif card_id is not None:
@@ -1062,6 +1080,7 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 continue
             if versioned is None:
                 out["built"] += 1
+                _word_the_card(copy_writer, card_store, card_id, 1, draft, copy, sig)
             # ⛔ WHICH KIND OF OUTPUT, COUNTED — INCLUDING `suppress` AND INCLUDING `unrouted`.
             #
             # AT THE TWO SITES WHERE A CARD IS WRITTEN, not where a draft is composed. A draft can

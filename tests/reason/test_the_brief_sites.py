@@ -42,7 +42,9 @@ def test_the_closed_list_is_pinned_exactly_in_order():
     assertion, in the same change that registers it."""
     assert S.R_SITES == (
         S.SITE_INTERPRET, S.SITE_NARRATE, S.SITE_ALTERNATIVES, S.SITE_EFFECT, S.SITE_CONSULT,
-        S.SITE_SITUATION, S.SITE_EXPERT, S.SITE_BRIEF, S.SITE_BRIEF_ESCALATE, S.SITE_REASON)
+        S.SITE_SITUATION, S.SITE_EXPERT, S.SITE_BRIEF, S.SITE_BRIEF_ESCALATE, S.SITE_REASON,
+        # GeniOS-011 S34.U3 (23 Oct): the card writer (R-10), registered with its own day, tier and ceiling.
+        S.SITE_CARD_COPY)
 
 
 def test_an_unregistered_brief_id_is_refused():
