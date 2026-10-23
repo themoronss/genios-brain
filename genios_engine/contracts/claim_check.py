@@ -35,7 +35,10 @@ from typing import Any
 #: rule are card lines it holds — so a review v2 checked is checked again.
 #: ⛔ check.v4 since 16 Oct (`yc2_w27_s16` M46.C4.L-logic.V3.U06): never silently — a move over a correction it does not
 #: cite, or in the words of a card you called wrong, is held as one question; a review checked by v3 is checked again.
-CHECK_VERSION = "check.v4"
+#: ⛔ check.v5 since 23 Oct (G012 H-07): a count, a connective, a clock zone or a bare id is no name or number; a
+#: statement the dossier prints with no id is cited by its words or section; a move stands on its standing mail-facts —
+#: so a review v4 checked is checked again, with no model call.
+CHECK_VERSION = "check.v5"
 
 # ── what happened to a line ────────────────────────────────────────────────────────────────────
 # One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments,

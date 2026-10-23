@@ -166,3 +166,29 @@ def test_a_card_naming_the_founder_by_first_name_is_noted():
     assert checked.stands("done_when")
     assert not any(v.reason == C.SPEAKS_OF_YOU for v in _check(draft="Hi Marco, the deck is attached. Arjun").verdicts), \
         "the draft is the founder's own: signing it is no third person"
+
+
+@pytest.mark.parametrize("claim", [
+    "Two inbound signals from Marco arrived after our last reply",
+    "One of Marco's mails asks for the short deck",
+    "Three weeks on, Marco still asks for the short deck",
+    "Separately, Marco asked for the short deck",
+    "Earlier, Marco asked for the short deck",
+    "Someone at Altavia asked for the short deck",
+])
+def test_g012_a_count_or_a_connective_opening_a_fact_is_no_name(claim):
+    """G012 F4: each refused a design partner's move as a name its lines do not hold (23 Oct)."""
+    checked = _check(fact1={"claim": claim})
+    assert _verdict(checked, "fact:1").verdict == C.KEPT, _verdict(checked, "fact:1")
+
+
+def test_g012_the_clock_a_time_is_written_in_is_no_name():
+    checked = _check(fact1={"claim": "Marco, writing on UTC time, asked for the short deck"})
+    assert _verdict(checked, "fact:1").verdict == C.KEPT, _verdict(checked, "fact:1")
+
+
+def test_g012_a_count_inside_a_sentence_is_still_read_as_written():
+    """The earned rule is unchanged: only where it OPENS a sentence is the word ordinary — "copy Two on it" names
+    a company the lines do not hold."""
+    checked = _check(move={"what": "Send Marco the short deck and copy Two on it"})
+    assert _verdict(checked, "move").verdict == C.DROPPED, _verdict(checked, "move")

@@ -145,8 +145,14 @@ FUNCTION_WORDS: frozenset[str] = frozenset(
 #: is owed" (F38-F41, F49, F54), "Say whether you met" and "Memory holds" (F54), "Sign in" (F01). Read as
 #: the words they are, never as invented names; the card validator's list itself is unchanged, so a
 #: narrator's card is judged exactly as before.
+#: G012 F4 (23 Oct 2026), the design partner's 21 live file judgments: a sentence opened "Two inbound signals
+#: arrived…" (6), "One of them…" (2), "Three weeks on…" (2), "Separately, …", "Earlier, …", "Someone from…" — and
+#: each was refused as a name its lines do not hold, holding the move it supported. A count, a connective and an
+#: indefinite pronoun are ordinary words where they open a sentence; a number word is the whole class, one to ten.
 EARNED: frozenset[str] = frozenset({"accept", "ahead", "attaching", "beside", "block", "download", "file",
-                                    "finish", "memory", "nothing", "say", "sign"})
+                                    "finish", "memory", "nothing", "say", "sign",
+                                    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+                                    "earlier", "separately", "someone"})
 _EARNED = re.compile(r"\b(?:" + "|".join(sorted(EARNED)) + r")\b", re.I)
 #: What comes before a word that OPENS a sentence: nothing, or a stop, a question, an exclamation, a colon, a
 #: semicolon, a dash or a line break — and any opening quote. An earned word anywhere else is read as written:
@@ -154,6 +160,10 @@ _EARNED = re.compile(r"\b(?:" + "|".join(sorted(EARNED)) + r")\b", re.I)
 _OPENS = re.compile(r"(?:\A|[.!?;:\n—–])\s*[\"'“‘(\[]*\Z")
 _MONTH = re.compile(r"\b(?:January|February|March|April|May|June|July|August|September|October|November|"
                     r"December)\b")
+#: G012 F4 · the clock a time is written in — the dossier prints every time "… UTC", and a fact that repeats it
+#: wrote no name (4 of the design partner's 21 file judgments, 23 Oct, refused "UTC" as one). Anywhere, not only
+#: opening a sentence: a zone is never a person or a company.
+_ZONE = re.compile(r"\b(?:UTC|GMT)\b")
 #: An ask a meeting answers (`contracts/open_loop.ASK_KINDS`): a meeting asked for, or a demo.
 MEETING_ASKS: frozenset[str] = frozenset({"meeting_request", "demo_requested"})
 #: How the dossier prints an open ask, and a meeting — held, or booked ahead (`reason/expert/dossier`).
@@ -167,6 +177,9 @@ _SAMPLE = re.compile(r"\(n\s*=\s*\d[^)]*\)|\b\d+ times\b")
 _FACT_REF = re.compile(r"^fact:(\d+)$")
 #: An id as the dossier prints it — never a number, whatever digits it holds (`evt_marco_0811`).
 _PRINTED_ID = re.compile(r"\[[^\[\]\s]+\]")
+#: G012 F4 · the same id written BARE in a claim — "sit_24c2276debaf…" — is no number either: the design partner's
+#: judgment that named a situation by its id was refused "a number its lines do not hold: 2276" (23 Oct).
+_BARE_ID = re.compile(r"\b(?:sig|sit|node|loop|evt|con|cmt|card|req|promise)_[0-9A-Za-z_]+\b")
 _THE_FOUNDER = re.compile(r"\bthe founder\b", re.I)
 #: How the dossier prints a meeting — held (`· a meeting ·`) or booked ahead (`a meeting at`).
 _A_MEETING = re.compile(r"(?:· a meeting\b|\ba meeting at\b)")
@@ -282,7 +295,7 @@ def _value_figure(line: str, ref: str) -> tuple[str, str, str] | None:
 
 def numbers_in(text: str | None) -> frozenset[str]:
     """Every number a text writes — the ids it prints aside: an id's digits are no number."""
-    return number_tokens(_PRINTED_ID.sub(" ", str(text or "")))
+    return number_tokens(_BARE_ID.sub(" ", _PRINTED_ID.sub(" ", str(text or ""))))
 
 
 # ── figures: a number as what it is (M35.C2.L-logic.V1.U10) ─────────────────────────────────────────
@@ -372,6 +385,7 @@ def _masked(text: str | None) -> tuple[str, _Read]:
     so what is left is found where it is written — and what was blanked, read (a code as a value of its
     own: "Q2" is Q2, never 2)."""
     rest = _PRINTED_ID.sub(lambda m: " " * len(m.group(0)), str(text or ""))
+    rest = _BARE_ID.sub(lambda m: " " * len(m.group(0)), rest)
     dates: set[tuple[int, int, int | None]] = set()
     times: set[tuple[int, int]] = set()
     days: set[int] = set()
@@ -670,6 +684,7 @@ def _invented(text: str, corpus: str, people: FilePeople) -> str | None:
     shorts = {w for w in re.findall(r"[a-z]+", held) if len(w) >= 3}
     plain = _MONTH.sub(lambda m: m.group(0).lower() if any(m.group(0).lower().startswith(w) for w in shorts)
                        else m.group(0), plain)
+    plain = _ZONE.sub(lambda m: m.group(0).lower(), plain)
     ok, why = invention_ok(plain, held, digit_runs(plain))
     if not ok:
         return why or "name"
@@ -810,6 +825,13 @@ class _Run:
     #: Each fact's quote, by number, once it is MATCHED in a worded line its fact cites — the only quotes
     #: that ground anything (M35.C2.L-logic.V1.U09): an unmatched one grounds no line and reaches no card.
     quotes: dict[int, str] = field(default_factory=dict)
+    #: G012 F4 · what the review cites that is a statement the dossier prints with no id (`statements_cited`) —
+    #: no mail, though its words hold no kind: it is never asked for a mail's quote.
+    statements: frozenset[str] = frozenset()
+
+    def mail(self, evidence_id: str) -> bool:
+        """Is this cited id a mail or a meeting of the file (`decide.is_event`) — never a statement it prints?"""
+        return is_event(evidence_id) and evidence_id not in self.statements
 
     @property
     def names(self) -> str:
@@ -831,7 +853,7 @@ class _Run:
         said = set(_words(own))
         out = [own, _person(cp)]
         out += [_person(p) for p in others if any(w in said for w in _name_of(p))]
-        mails = [e for e in fact.evidence if is_event(e)
+        mails = [e for e in fact.evidence if self.mail(e)
                  and not any(_A_MEETING.search(dl.line) for dl in self.lines.get(e, ()))]
         if not mails and len(others) == 1:
             out.append(_person(others[0]))
@@ -965,7 +987,7 @@ def _unshown(run: "_Run", fact) -> str | None:
     none when the claim reports what was said there — or None. What such an event shows is its own line,
     when and with whom: a claim about the meeting itself stands on it."""
     for e in fact.evidence:
-        if not is_event(e):
+        if not run.mail(e):
             continue
         meeting = any(_A_MEETING.search(dl.line) for dl in run.lines[e])
         if not meeting or _reports_speech(fact.claim):
@@ -1003,7 +1025,7 @@ def _fact(run: _Run, n: int, decisive: bool) -> bool:
         return False
     # A quote grounds nothing until it is MATCHED (X01): in the words of a mail or meeting the fact cites,
     # as the dossier printed them — an ask, a calculator, a situation or an older touch prints none.
-    worded = {e: dls for e in fact.evidence if is_event(e)
+    worded = {e: dls for e in fact.evidence if run.mail(e)
               if (dls := [dl for dl in run.lines[e] if dl.words])}
     quoted = [dl for dls in worded.values() for dl in dls
               if fact.quote and quoted_in(fact.quote, [dl.words or ""])]
@@ -1126,6 +1148,54 @@ def printed_ids(payload, evidence_ids: Iterable[str]):
     return walk(payload) if alias else payload
 
 
+#: A section of the dossier as it prints one: `# C · THE HISTORY — …` or `## WHAT WAS CHECKED`.
+_SECTION = re.compile(r"^(#{1,2})\s+(?:(?P<letter>[A-Z])\s+·\s+)?(?P<title>[A-Z][A-Z' ]+?)(?:\s+—.*)?$")
+
+
+def _sections(dossier_text: str) -> list[tuple[str | None, str, list[str]]]:
+    """Each section — (its letter, its title, the lines it prints before the next heading). Pure."""
+    out: list[tuple[str | None, str, list[str]]] = []
+    for line in dossier_text.splitlines():
+        if (m := _SECTION.match(line.strip())) is not None:
+            out.append((m.group("letter"), m.group("title").strip(), []))
+        elif out and line.strip():
+            out[-1][2].append(line.strip())
+    return out
+
+
+def statements_cited(review: ExpertReview, dossier_text: str,
+                     lines: dict[str, tuple[DossierLine, ...]]) -> dict[str, tuple[DossierLine, ...]]:
+    """G012 F4 · what the review cites that is a STATEMENT THE DOSSIER PRINTS WITH NO ID — by its own words ("No
+    comparable past work of this kind is on record.") or by the section it stands in ("C", "THE HISTORY",
+    "WHAT WAS CHECKED") — each to those printed lines, so the claim is checked against them like any other line
+    (its names, its numbers). Only a section that prints NO id: a section of mail and asks is cited by their
+    ids, never by its name, so "D" grounds nothing it holds. On the design partner's 21 file judgments (23 Oct)
+    such a citation was the dropped fact that held 3 moves — a sentence the dossier says, refused as unshown."""
+    out: dict[str, tuple[DossierLine, ...]] = {}
+    sections = _sections(dossier_text)
+    plain = [(letter, title, body) for letter, title, body in sections
+             if body and not any(_PRINTED_ID.search(b) for b in body)]
+    sentences = [b for _l, _t, body in sections for b in body if not _PRINTED_ID.search(b)]
+    cited = {e for f in review.facts for e in f.evidence if e not in lines}
+    for e in cited:
+        said = " ".join(str(e).split()).rstrip(".").casefold()
+        if not said:
+            continue
+        hit = None
+        for letter, title, body in plain:              # a section, by its letter or its title — no id in it
+            names = {title.casefold(), *((letter.casefold(),) if letter else ())}
+            if said in names or any(n in said for n in names if len(n) > 3) and "section" in said:
+                hit = body
+                break
+        if hit is None and len(said.split()) >= 4:      # a sentence, by its own words — a line with no id
+            match = [b for b in sentences if said in b.rstrip(".").casefold()]
+            hit = match if len(match) == 1 else None
+        if hit:
+            text = "\n".join(hit)
+            out[e] = (DossierLine(line=text, item=text, words=None),)
+    return out
+
+
 def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
                  evidence_ids: Iterable[str] | None = None, judged: str | None = None) -> C.CheckedReview:
     """`review`, checked line by line against the dossier it was written from (see the module docstring).
@@ -1133,7 +1203,9 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     dossier cited; without it, every bracketed id of the text counts. `judged` — one of `C.JUDGMENT_HOLDS`, from
     the L2 judgment beside the review (`contracts/reasoning_result.judgment_hold`) — holds an act's move that
     would otherwise be shown (L3 audit, 21 Oct 2026); None for an expert review, which has no judgment."""
-    run = _Run(review=review, lines=lines_by_id(dossier_text, evidence_ids), people=people)
+    lines = lines_by_id(dossier_text, evidence_ids)
+    said = statements_cited(review, dossier_text, lines)
+    run = _Run(review=review, lines={**lines, **said}, people=people, statements=frozenset(said))
     rested = _rested_on(review)
     if strays := _strays(review):
         run.say("rests_on", C.DROPPED, C.UNKNOWN_EVIDENCE, ", ".join(strays))
@@ -1261,11 +1333,20 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     if move is not None and review.mode == "act" and headline:
         ground = [e for n in sorted(rested & standing) for e in review.facts[n - 1].evidence]
         told = [e for e in ground if e.startswith(ANSWER_PREFIX) or e in people.question_cards]
-        if told and not any(is_event(e) for e in ground):
+        if told and not any(run.mail(e) for e in ground):
             yours = told
     fate = C.SHOWN
     if review.mode in MOVING and move is not None:
         fell = sorted(rested - standing)
+        # G012 P-c · A MOVE STANDS ON THE FACTS OF IT THAT STAND. One fallen fact held the whole move — a count
+        # opening a sentence, a sample size, a gloss on a reading — while the mail the move answers stood: on
+        # the design partner's 21 file judgments (23 Oct) 10 of 12 held moves had such a fact fall beside
+        # standing ones, and each became a question card. The move is kept when a fact it rests on that cites
+        # MAIL still stands; its own words are still checked on the standing facts alone (`headline`, against
+        # `rested & standing` — the branch below holds a move whose words need a fallen fact), and the fallen
+        # facts are dropped from the card as before. A move whose every mail-fact fell is held as it was.
+        if fell and any(run.mail(e) for n in rested & standing for e in review.facts[n - 1].evidence):
+            fell = []
         if fell:
             held = C.HELD_BECAUSE.get(run.reason(f"fact:{fell[0]}"), C.HELD_BECAUSE[C.HELD_MOVE])
             question = _held_question(people, held)
@@ -1354,7 +1435,7 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         because=held if fate in (C.HELD, C.SUPPRESSED) else None)
 
 
-__all__ = ["printed_ids", "ANSWER_PREFIX", "CURRENCIES", "REPEATS_SHARE", "cited_anywhere", "confirms", "repeats", "the_connector", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
+__all__ = ["printed_ids", "statements_cited", "ANSWER_PREFIX", "CURRENCIES", "REPEATS_SHARE", "cited_anywhere", "confirms", "repeats", "the_connector", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
            "Correction", "RESTATES_WORDS", "Stray", "UNITS", "about_us", "answered_by", "check_review",
            "correction_of",
            "figures_in", "matches", "unheld",
