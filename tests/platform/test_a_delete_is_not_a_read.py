@@ -222,7 +222,10 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,405 → 3,406 GeniOS-011 S18.U1 (23 Oct): `reason/domain_shadow._SITUATION_EVENTS`, the events behind
     # every situation of the pass read once, before the situation loop, so the judged files can be decided first —
     # the engine gaining one statement.
-    assert r["statements"] == 3_406, (
+    # ⛔ MOVED 3,406 → 3,408 GeniOS-011 S06.U2 (23 Oct): `scripts/promote_archived._WHERE_FROM` (where each
+    # candidate's message is) and `._RESTORE_BODY` (its re-fetched whole body stored in place of the archived
+    # snippet, B27) — an operator script gaining two statements.
+    assert r["statements"] == 3_408, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
