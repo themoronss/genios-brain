@@ -78,3 +78,55 @@ def printed_ids(payload, evidence_ids):
         return v
     return walk(payload) if alias else payload
 ```
+
+---
+
+## Update, 23 Oct evening · the local run with production's models
+
+Run on a local copy of the design partner's org: same models as production, `eval_time` 24 Oct 00:30 UTC, nothing sent. Spend about $5.
+
+**Scorecard** (`ideal_card_gap.py`):
+
+| | Cards found | Fields filled |
+|---|---|---|
+| Start | 4 / 20 | 9 / 220 |
+| After round 2 | **9 / 20** | **37 / 220** |
+
+Three cards now carry 8 fields each.
+
+### Built on this branch
+
+| Commit | What changed | Proof |
+|---|---|---|
+| H-03 | `commitment_overdue` fires on our own promises only (general 1.6.0) | 6/6 mutations |
+| H-04 | `printed_ids` | 4/4 mutations |
+| H-05 | With `l2_cards`, a file is judged before a seed that no file holds. 70 of the 239 due subjects were such seeds | 2/2 mutations |
+| H-06 | R-9 output ceiling 8,000 → 12,000 tokens; per-call cap 15 → 25 cents. **Spend policy: needs the owner's yes** | Measured: 3 of 8 deep calls were cut at 8,000 |
+| H-07 | Claim check v5 (see below) | 10/10 mutations |
+| H-08 | A `nothing`/`wait` review with an all-null move reads as no move. 4 of 41 calls had been refused as malformed | 2/2 mutations |
+
+H-07 in detail:
+- EARNED gains the counts and connectives the check was reading as names ("Two" ×6, "One", "Three", "Separately", "Earlier", "Someone").
+- A time zone (`_ZONE`) is never a name.
+- A bare id (`_BARE_ID`) is never a number.
+- A statement the dossier prints with no id can be cited by its own words, or by its section when that section prints no id (`statements_cited`).
+- **P-c:** a move stands when one of its rested facts that cites mail still stands.
+- Replay of the 21 file judgments: 5 shown → 10 shown. Golden 63 → 63 on every commit.
+
+### Found, and owned by your units
+
+1. **Throughput is the first limit.** 239 subjects were due, at 10 per pass and $2 a day for R-9 (about 20 judgments a day).
+   - 12 of the 20 ideal cards were on files never judged.
+   - Production needs about 8 days to judge the backlog, longer than the 7-day trial.
+   - A one-time backlog budget is about $17: 169 files at about $0.10.
+2. **A reviewed file in `sales` stays shadow** (`expert_shadow`). Only `admin` and `founder_office` are live.
+   - One of the 3 files is a VC (IIMA Ventures) filed as a `sales/opportunity`.
+   - Switching `sales` on would also put 95 `channel_touch` situations live.
+   - Better: route a covered file by what its counterparty is, not by the situation's domain (`domain_shadow._decide_covered_files`).
+3. **The intro-platform file's dossier is 294k characters** (p90 is 32k). It was over every per-call cap until H-06. It needs a size bound (`reason/expert/dossier`).
+4. **Steps, how, goal and avoid stay 0/20.** Only the card writer (R-10, `card_copy`, off) writes them, and the dashboard (main) reads no `cards.copy` field at all. That is Step 7.1 / 7.4.
+5. **The org's company is "Homians"**, while the founder's mail says GeniOS, so "GeniOS" fails the check as a name. This is tenant data.
+6. Still held, because the model wrote something its lines do not hold:
+   - glosses on readings, such as "turn is with them (Antler/Theresa)";
+   - absence claims with no quote;
+   - "(n=19)", which the check strips from the lines but not from the claim.
