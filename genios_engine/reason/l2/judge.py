@@ -41,7 +41,7 @@ from genios_engine.reason.bundle.gate import MALFORMED, REPAIR_ANY, REPAIR_SYNTA
 from genios_engine.reason.bundle.sites import (OUTCOME_FAILED_GENERATION, OUTCOME_FAILED_VALIDATION,
                                                OUTCOME_NO_BUDGET, OUTCOME_RAN, OUTCOME_TRUNCATED, SITE_REASON)
 from genios_engine.reason.expert.review import NOBODY
-from genios_engine.reason.expert.verify import STRUCTURAL as REVIEW_STRUCTURAL, check_review
+from genios_engine.reason.expert.verify import STRUCTURAL as REVIEW_STRUCTURAL, check_review, printed_ids
 from genios_engine.reason.llm_sites import SiteReceipt, SiteRejection, run_site
 
 from .dossier import L2Dossier
@@ -84,6 +84,8 @@ def judge(*, org_id: str, request_ref: str, dossier: L2Dossier, plan: L2Plan, ga
     def _parse(payload: Mapping[str, Any]) -> Mapping[str, Any]:
         last.clear()
         last["raw"] = dict(payload)
+        # Ids as the dossier printed them (`verify.printed_ids`): a bare `sig_…` is the printed `[sig:sig_…]`.
+        payload = printed_ids(payload, dossier.catalogue.evidence_ids)
         try:
             review = ExpertReview.from_mapping(payload)
             judgment = L2Judgment.from_mapping(payload)

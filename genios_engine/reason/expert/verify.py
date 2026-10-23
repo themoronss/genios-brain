@@ -1093,6 +1093,39 @@ def repeats(move: str | None, headline: str | None) -> bool:
     return len(card) >= 2 and shared >= 2 and shared >= REPEATS_SHARE * len(card)
 
 
+def printed_ids(payload, evidence_ids: Iterable[str]):
+    """The model's answer with every id it cited written the way the dossier PRINTED it.
+
+    A dossier prints a reference with its kind: `[sig:sig_3cb1…]`, `[node:node_b40a…]`, `[sit:sit_23c1…]`,
+    `[loop:loop_73d7…]`. The id after the colon already says its kind, so a live model reads the prefix as a
+    stutter and cites `sig_3cb1…` — and every such fact dropped as `unknown_evidence` and held its card.
+    Measured on the design partner's 24 stored judgments (23 Oct): 112 of 182 `unknown_evidence` drops (62%)
+    were exactly this; the golden set never showed it, because its ideal reader copies ids byte for byte.
+
+    Only a string that IS a bare id is rewritten, and only when exactly ONE printed id ends with `:<it>` —
+    a claim, a quote or any other sentence never equals an id, so no words move. Pure; returns a new
+    mapping (lists and dicts copied), the payload untouched."""
+    by_tail: dict[str, list[str]] = {}
+    printed = set(evidence_ids)
+    for ref in printed:
+        if ":" in ref:
+            by_tail.setdefault(ref.split(":", 1)[1], []).append(ref)
+    alias = {tail: refs[0] for tail, refs in by_tail.items() if len(refs) == 1 and tail not in printed}
+
+    def walk(value):
+        if isinstance(value, str):
+            return alias.get(value, value)
+        if isinstance(value, list):
+            return [walk(v) for v in value]
+        if isinstance(value, tuple):
+            return tuple(walk(v) for v in value)
+        if isinstance(value, dict):
+            return {k: walk(v) for k, v in value.items()}
+        return value
+
+    return walk(payload) if alias else payload
+
+
 def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
                  evidence_ids: Iterable[str] | None = None, judged: str | None = None) -> C.CheckedReview:
     """`review`, checked line by line against the dossier it was written from (see the module docstring).
@@ -1321,7 +1354,7 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         because=held if fate in (C.HELD, C.SUPPRESSED) else None)
 
 
-__all__ = ["ANSWER_PREFIX", "CURRENCIES", "REPEATS_SHARE", "cited_anywhere", "confirms", "repeats", "the_connector", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
+__all__ = ["printed_ids", "ANSWER_PREFIX", "CURRENCIES", "REPEATS_SHARE", "cited_anywhere", "confirms", "repeats", "the_connector", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
            "Correction", "RESTATES_WORDS", "Stray", "UNITS", "about_us", "answered_by", "check_review",
            "correction_of",
            "figures_in", "matches", "unheld",

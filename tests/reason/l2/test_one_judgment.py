@@ -130,6 +130,18 @@ def test_an_answer_citing_nothing_the_dossier_printed_is_refused():
     assert judged.result is None
 
 
+def test_a_bare_id_the_model_cites_is_the_one_the_dossier_printed():
+    """The call site of `verify.printed_ids`: the dossier prints `[node:node_kunal]`, the model cites `node_kunal`.
+    It used to drop as `unknown_evidence` — on the design partner's stored judgments 112 of 182 such drops."""
+    raw = answer()
+    raw["facts"] = list(raw["facts"]) + [{"claim": "Kunal is the person on this file", "evidence": ["node_kunal"]}]
+    judged = _judge(_Client(_answer(raw)))
+    assert judged.ended == ENDED_RESULT, judged.reason
+    n = len(raw["facts"])
+    assert judged.result.review.facts[n - 1].evidence == ("node:node_kunal",)
+    assert not [v for v in judged.result.checked.verdicts if v.line == f"fact:{n}" and v.reason == "unknown_evidence"]
+
+
 def test_an_unprinted_case_is_dropped_and_the_result_stands():
     raw = answer(history_used=[{"case": "a fund", "applies": True, "why": "same", "based_on": ["case:nope"]}])
     judged = _judge(_Client(_answer(raw)))

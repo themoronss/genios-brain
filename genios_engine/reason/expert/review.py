@@ -59,7 +59,7 @@ from .card_lines import CardLines
 from .card_lines import card_lines
 from .dossier import Dossier, DossierParts, FilePeople, Person
 from .prompt import PROMPT_VERSION, build_prompt
-from .verify import STRUCTURAL, check_review
+from .verify import STRUCTURAL, check_review, printed_ids
 
 #: Whom a review is checked against when its caller names nobody: no draft goes anywhere.
 NOBODY = FilePeople(counterparty=Person(None, None), people=(), us=SelfIdentity())
@@ -147,6 +147,8 @@ def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inpu
     def _parse(payload: Mapping[str, Any]) -> Mapping[str, Any]:
         last.clear()
         last["raw"] = dict(payload)
+        # Ids as the dossier printed them (`verify.printed_ids`): a bare `sig_…` is the printed `[sig:sig_…]`.
+        payload = printed_ids(payload, dossier.catalogue.evidence_ids)
         try:
             review = ExpertReview.from_mapping(payload)
         except ValueError as exc:

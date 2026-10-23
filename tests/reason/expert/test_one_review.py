@@ -98,6 +98,22 @@ def _row(engine):
         return R.read_review(c, ORG, DOSSIER.file_id, FP)
 
 
+def test_a_bare_id_the_model_cites_is_stored_as_the_dossier_printed_it(engine):
+    """The expert review's call site of `verify.printed_ids`: a fact citing an id without the kind the dossier
+    printed it with (`sit_x` for `[sit:sit_x]`) stands on that line, and the row keeps the printed id."""
+    printed = sorted(i for i in DOSSIER.catalogue.evidence_ids
+                     if ":" in i and i.split(":", 1)[1] not in DOSSIER.catalogue.evidence_ids)
+    assert printed, "the fixture dossier prints no kinded id"
+    bare = printed[0].split(":", 1)[1]
+    answer = dict(GOOD)
+    answer["facts"] = list(GOOD["facts"]) + [{"claim": "the file holds this line", "evidence": [bare]}]
+    result = _review_with(engine, _Client(_answer(answer)))
+    assert result.status == R.VALID, result.reason
+    assert result.review.facts[-1].evidence == (printed[0],)
+    n = len(answer["facts"])
+    assert not [v for v in result.checked.verdicts if v.line == f"fact:{n}" and v.reason == "unknown_evidence"]
+
+
 def test_a_valid_answer_is_one_valid_row_that_keeps_everything(engine):
     client = _Client(_answer(GOOD))
     result = _review_with(engine, client)
