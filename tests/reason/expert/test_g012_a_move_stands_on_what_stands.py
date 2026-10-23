@@ -139,3 +139,11 @@ def test_a_sample_size_a_claim_repeats_from_its_calculator_is_no_number():
 def test_a_count_in_a_claim_is_still_checked():
     checked = _check(fact3={"claim": "Marco replied 9 times in a week", "evidence": ["num:their_reply_time:marco@altavia.test"]})
     assert _verdict(checked, "fact:3").verdict != C.KEPT, _verdict(checked, "fact:3")      # "9" is read and checked
+
+
+
+def test_h11_a_stored_review_with_bare_ids_is_checked_as_printed():
+    """A review kept before `printed_ids` cites `ask_deck` for the printed `[loop:ask_deck]`: the check reads it as
+    printed, so a recheck never drops it as `unknown_evidence`."""
+    checked = _check(fact2={"evidence": ["ask_deck"]})
+    assert _verdict(checked, "fact:2").verdict == C.KEPT, _verdict(checked, "fact:2")

@@ -177,4 +177,4 @@ def test_the_check_is_check_v4():
     ⛔ RESTATED by `yc2_w27_s16` M46.C4.L-logic.V3.U06: check.v4 — never silently (your corrections, the cards you
     called wrong).
     ⛔ RESTATED by G012 H-07: check.v5 — counts, zones, bare ids, id-less statements, a move on its standing mail."""
-    assert C.CHECK_VERSION == "check.v6"
+    assert C.CHECK_VERSION == "check.v7"

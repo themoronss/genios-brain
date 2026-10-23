@@ -1200,6 +1200,13 @@ def statements_cited(review: ExpertReview, dossier_text: str,
     return out
 
 
+def _as_printed(review: ExpertReview, evidence_ids: Iterable[str]) -> ExpertReview:
+    """`review` with every bare id it cites written as the dossier printed it (`printed_ids`); itself when none is."""
+    raw = review.as_mapping()
+    printed = printed_ids(raw, evidence_ids)
+    return review if printed == raw else ExpertReview.from_mapping(printed)
+
+
 def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
                  evidence_ids: Iterable[str] | None = None, judged: str | None = None) -> C.CheckedReview:
     """`review`, checked line by line against the dossier it was written from (see the module docstring).
@@ -1208,6 +1215,10 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     the L2 judgment beside the review (`contracts/reasoning_result.judgment_hold`) — holds an act's move that
     would otherwise be shown (L3 audit, 21 Oct 2026); None for an expert review, which has no judgment."""
     lines = lines_by_id(dossier_text, evidence_ids)
+    # G012 H-11 · THE REVIEW READ WITH THE IDS AS PRINTED, whoever hands it over. `printed_ids` ran only where a
+    # model's answer is parsed, so a review stored before it — every one production had kept by 23 Oct — was
+    # re-checked with its bare `sig_…`, and each such fact still dropped as `unknown_evidence` on every recheck.
+    review = _as_printed(review, evidence_ids if evidence_ids is not None else lines)
     said = statements_cited(review, dossier_text, lines)
     run = _Run(review=review, lines={**lines, **said}, people=people, statements=frozenset(said))
     rested = _rested_on(review)
