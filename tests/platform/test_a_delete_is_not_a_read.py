@@ -237,7 +237,11 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,412 → 3,414 GeniOS-011 S40.U2 (23 Oct): GET /feedback/precision reads the last shadow
     # calibration run (`api/routes._LAST_SHADOW_CALIBRATION_SQL`) and each subject's latest `learning_metrics`
     # row (`_PRECISION_BY_LAYER_SQL`) — two SELECTs, each a module constant.
-    assert r["statements"] == 3_414, (
+    # ⛔ MOVED 3,414 → 3,427 GeniOS-011 S05.U1 (23 Oct): `platform/daily_health` — the tenants to measure, the day's
+    # rows already written, the eight per-day reads (cards, card_refusals, expert_reviews, reasoning_results,
+    # l2_admissions, pipeline_counters, llm_costs, l4_r_site_calls), the database size, the row's insert and the
+    # retention purge — the engine gaining thirteen statements.
+    assert r["statements"] == 3_427, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
