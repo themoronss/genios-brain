@@ -753,3 +753,13 @@ Standing rules for every unit:
 - Paid passes always start with 1–2 probe calls. Thinking eats max_tokens on Claude 5.
 
 Production SQL is not run in any start-now unit. S01.U1 only writes the read-only runner, and Rohit's permission gates the run (F6).
+
+## Amendments (append-only)
+
+- **23 Oct · S26.U3 (`742859dd`) settled the goal door, and two units are restated.** GeniOS-009 D9–D12 apply, with Rohit's own words as the source: L2 proposes goals, one per piece of work, through the brief's proposal door, at most 3 a week from L2. Two consequences:
+  - **S28.U2** has no `POST /v1/goals/{id}/approve`. Approval stays on `POST /v1/company-brief/proposals/{line_id}/decide`, and the next sweep's `sync_from_brief` writes the goal row.
+  - **S29.U3**: ADMIT writes a *pending brief line* (`company_brief_store.propose`, with `goal_proposal` fields, G1.6), not a `company_goals` row. That line becomes a proposed goal on the next sync. It is built as GeniOS-009 **G4.5** (`context/goal_admission.decide_goal_proposal`).
+  - Founder case **F72** (synthetic: an accelerator partner's conditional Singapore cohort place) is the acceptance case for S29.
+- **Still open for Rohit:**
+  - whether internal-knowledge documents of kind `goal`/`okr` are a goal source (`l1-internal-knowledge-goal-door-unlinked`; `GOAL_SOURCES` has no `document` yet);
+  - whether the weekly cap is combined. Today it is L2 at 3 a week, plus up to 8 from the drafter.
