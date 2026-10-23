@@ -63,6 +63,7 @@
 | 11 | [11-SCENARIOS](11-SCENARIOS.md) | every scenario (founder's work, any customer, the pitch scenes): what it needs, its status, its test | Harsh, Rohit |
 | 12 | [12-PRODUCTION-READY](12-PRODUCTION-READY.md) | hand actions → onboarding; the release gate; quality and cost per customer; privacy; ops; the checklist | Harsh, Rohit |
 | 13 | [13-LOG](13-LOG.md) | append-only record of what was done and measured | everyone |
+| 14 | [14-FOR-HARSH](14-FOR-HARSH.md) | **Harsh starts here:** how we work from now (code on `speedrun008`, he merges), everything on GitHub branch by branch, his production list with exact commands, what never to do | Harsh |
 
 Status key used everywhere: ✅ built and merged on `origin/speedrun008` · ⏸ built and held · 🔨 being built · ⬜ open · 🔒 waiting on a named person.
 
