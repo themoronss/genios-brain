@@ -2026,7 +2026,10 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
         covered = {**covered, **l2["covered"]}
         people = {**people, **(l2.get("people") or {})}
     compiled: dict = {}
-    if live_compile or l3_domains or l1_seam_enabled(engine, org_id):
+    # ⛔ GeniOS-012 U12-03 · `covered` ENTERS THE PASS ON ITS OWN. Without it, a tenant with no global flag, no
+    # activated domain and no Layer 1 row had its files judged (and paid for) and never decided — no card, and no
+    # count saying why. With no live domain the pass decides them in shadow and counts `expert_shadow`.
+    if covered or live_compile or l3_domains or l1_seam_enabled(engine, org_id):
         try:
             from genios_engine.reason.domain_shadow import shadow_compile
             # ⛔ THE PASS'S RESULT WAS THROWN AWAY HERE: nothing the compiled lane counted reached
