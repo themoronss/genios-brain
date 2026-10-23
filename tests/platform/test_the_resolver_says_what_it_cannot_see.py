@@ -416,9 +416,13 @@ def test_the_resolver_change_moved_no_coverage_verdict():
 
     These are pinned at their measured values so a future resolver change cannot move them quietly.
     """
+    # ⛔ RE-PINNED 9 → 8 on 2026-10-23 by GeniOS-011 S01.U1: `human_events` left because an operator
+    # script now reads it (`scripts/g011_prod_readings.py`, sizing `l5-wrong-without-reason`) and
+    # an operator read is a read (trap 2). A new reader, not a resolver change; the entry moved to
+    # `RETRACTED_UNREAD_WRITES` with what still holds of the engine.
     assert sorted(TC.written_and_unread()) == [
         "agent_metering", "card_feedback_revisions", "contract_spend_attributions",
-        "delivery_rate_windows", "domain_requests", "human_events", "learning_metrics",
+        "delivery_rate_windows", "domain_requests", "learning_metrics",
         "situation_interpretations", "warm_lane_slots"], (
         "⛔ RE-PINNED 2026-10-04 by `3.1b`. The COUNT is still 9 and the MEMBERS turned over: "
         "`source_identity_map` left, because the loop hop made `context/merge.py`'s read visible; "
