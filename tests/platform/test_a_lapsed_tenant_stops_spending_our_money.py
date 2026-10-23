@@ -88,10 +88,21 @@ def _sweep_source() -> str:
     return textwrap.dedent(inspect.getsource(routes.run_sync_sweep))
 
 
+def _gate_source() -> str:
+    """GeniOS-011 S02.U5 moved the sweep's four gates into `routes._sweep_gate`, the one function
+    the sweep, Sync now, POST /sync/{id} and the backfill door all ask. The plan check is asserted
+    there, and the sweep is asserted to ask it."""
+    from genios_engine.api import routes
+    return textwrap.dedent(inspect.getsource(routes._sweep_gate))
+
+
 def test_the_sweep_skips_a_lapsed_tenants_connections():
     """L1 is the first spender: the relevance gate runs on every unknown sender."""
-    assert "_plan_expired(" in _sweep_source(), (
-        "run_sync_sweep no longer asks whether the tenant is paid up — the largest LLM spender "
+    assert '_sweep_gate(conn.org_id, door="sweep")' in _sweep_source(), (
+        "run_sync_sweep no longer asks the shared gate — the largest LLM spender in the system "
+        "is ungated again")
+    assert "_plan_expired(" in _gate_source(), (
+        "the shared gate no longer asks whether the tenant is paid up — the largest LLM spender "
         "in the system is ungated again")
 
 
@@ -119,7 +130,7 @@ def test_the_skip_is_counted_not_silent():
 def test_the_plan_gate_outranks_the_budget_gate():
     """"You stopped paying" and "you spent today's allowance" send the customer to two different
     buttons. The first outranks, so it must be asked first."""
-    src = _sweep_source()
+    src = _gate_source()
     assert src.index("_plan_expired(") < src.index("_llm_over_daily_cap("), (
         "the daily-budget check now runs before the plan check; a lapsed tenant would be reported "
         "as merely over budget, and support would tell them to wait until midnight")

@@ -279,7 +279,11 @@ def test_sweep_skips_a_paused_org():
     from genios_engine.api import routes
 
     src = inspect.getsource(routes.run_sync_sweep)
-    assert "_org_paused(conn.org_id)" in src, "sweep must consult the per-org kill switch"
+    # GeniOS-011 S02.U5: the four gates live in `_sweep_gate`, which every door asks; the sweep
+    # asks it once per org, and the kill switch is its first question.
+    assert '_sweep_gate(conn.org_id, door="sweep")' in src, "sweep must ask the shared gate"
+    assert "_org_paused(org_id)" in inspect.getsource(routes._sweep_gate), (
+        "sweep must consult the per-org kill switch")
     assert "l1_paused += 1" in src and "continue" in src, "a paused org must be skipped, not synced"
     assert "if not paused.get(c.org_id)" in src, "a paused org must not be reasoned either"
 

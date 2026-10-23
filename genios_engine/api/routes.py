@@ -4,6 +4,7 @@ import os
 import threading
 import time
 from typing import TYPE_CHECKING
+from typing import NamedTuple
 
 if TYPE_CHECKING:                 # the two chain doors' `eval_time` annotations only
     from datetime import datetime
@@ -553,14 +554,19 @@ def _take_signals_published(org_id: str) -> int | None:
         return _SIGNALS_PUBLISHED.pop(org_id, None)
 
 
-def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summary=None,
-                error: str | None = None) -> None:
+def _run_ledger(*, org_id: str, connection_id: str | None, source: str | None, mode: str,
+                summary=None, error: str | None = None, finalize: bool = True) -> None:
     """l1_sync_runs writer — the per-run ingestion ledger run_sync used to log-and-drop.
 
     `summary` is None and `error` is set when the caller is reporting a TOTAL sync failure (the
     connector never returned a batch, so no SyncSummary exists) — previously this case produced no
     row at all, so a fully-broken connection was invisible anywhere but the server log. Never raises:
-    a ledger hiccup must not break the caller, whether that's the sync loop or a failure handler."""
+    a ledger hiccup must not break the caller, whether that's the sync loop or a failure handler.
+
+    `finalize=False` is GeniOS-011 S02.U5's door-skip row (`_note_sweep_skip`): a door that refused
+    to sweep captured nothing, so L1's finalizer (conflicts → floor → lifecycle → publish) has
+    nothing to file and is not run for it. The row itself goes through the one INSERT below, so a
+    skip and a sweep cannot drift into two shapes of the same table."""
     # L1.6.10 · THE FOUR THINGS LAYER 1 DOES AFTER A DOOR HAS CAPTURED — in `capture/esqe/
     # finalize.py`, not here, because this hook is exactly one door wide.
     #
@@ -578,8 +584,9 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
     # carries `published` — the count the PUBLISHER wrote, the only honest `signals_detected` in the
     # product — and this call site dropped it on the floor: the `not_carried` shape, on the one value
     # the funnel's first stage needs. Relayed, never recomputed; see `_SIGNALS_PUBLISHED`.
-    _finalized = finalize_l1(summary, org_id=org_id, stores=_l1_stores())
-    _note_signals_published(org_id, getattr(_finalized, "published", 0) or 0)
+    if finalize:
+        _finalized = finalize_l1(summary, org_id=org_id, stores=_l1_stores())
+        _note_signals_published(org_id, getattr(_finalized, "published", 0) or 0)
     if _graph is None:
         return
     from sqlalchemy import text
@@ -1091,6 +1098,129 @@ def _sync_headroom(org_id: str) -> int:
         return 1 << 30
 
 
+# ── GeniOS-011 S02.U5 · ONE GATE, ASKED BY EVERY DOOR, AND EVERY REFUSAL IS A ROW ──────────────
+#
+# ⛔ WHAT THIS CLOSES (audit item `cross-billing-gates-silently-stop-the-org`, P0). The four
+# gates above stopped an org's sweep and left four counters in one INFO log line — no
+# `l1_sync_runs` row, nothing a founder or an operator could read. And the doors disagreed: the
+# scheduled sweep asked all four, the dashboard's Sync now (`_onboarding_sync_bg`) asked only the
+# daily cap, and POST /sync/{id} and POST /connections/{id}/backfill asked none. So on a lapsed
+# org cards appeared only after a manual Sync, and nobody could see why the sweep had stopped.
+#
+# Now every door asks `_sweep_gate`, each door is named in `DOOR_GATE_EXEMPTIONS` (the ONE place
+# a door is let past a gate), and a refusal is written by `_note_sweep_skip`. The four helpers
+# keep their own fail-OPEN reads: this unit changes who asks, never what the answer is, and no
+# pricing or plan rule (Harsh's 4f791884).
+
+#: The reasons a door may refuse to sweep an org, IN THE ORDER THEY ARE ASKED. Plan before
+#: budget: "you stopped paying" and "you spent today's allowance" send the customer to two
+#: different buttons, and the first outranks.
+SWEEP_SKIP_REASONS: tuple[str, ...] = ("paused", "plan_expired", "over_budget", "sync_quota")
+
+#: The one founder-readable line per reason. It rides in the skip row's `error` and in the Sync
+#: progress bar, so the admin console, the dashboard and the row say the same sentence.
+#: `over_budget` keeps the words Sync now already showed for it.
+SWEEP_SKIP_LINES: dict[str, str] = {
+    "paused": "Paused — GeniOS is switched off for this workspace. Resume it to sync again.",
+    "plan_expired": "Your plan has ended — renew it to sync new mail.",
+    "over_budget": "Paused for today — daily processing limit reached. Resumes tomorrow.",
+    "sync_quota": "This period's mail allowance is used up — upgrade to sync more.",
+}
+
+#: ⛔ THE ONE NAMED PLACE A DOOR IS LET PAST A GATE: `door -> {gate: why}`. A door missing from
+#: this table cannot ask the gate at all (`_sweep_gate` raises KeyError), so a new door cannot
+#: invent its own exemption by passing a name nobody wrote down.
+#:
+#: The single exemption is the owner's backfill (the 365-day resync): it is a deliberate request
+#: for history and is not trimmed to the meter. It used to bypass the meter in silence, and a large
+#: resync then filled the period and stopped the automatic sweep polling new mail until the period
+#: rolled. The bypass is kept — the owner asked for that history — but it is now a DECISION: logged
+#: at WARNING and written to `audit_log` (`sync_quota_bypassed`, with the headroom it spends past)
+#: every time it is used, so "why did the sweep stop polling" has an answer.
+DOOR_GATE_EXEMPTIONS: dict[str, dict[str, str]] = {
+    "sweep": {},
+    "sync_now": {},
+    "sync_one": {},
+    "backfill": {
+        "sync_quota": ("an owner-requested backfill/resync is a deliberate history import, not "
+                       "trimmed to the ingestion meter; it may fill the period and stop the "
+                       "sweep's polling until the period rolls"),
+    },
+}
+
+
+class SweepGate(NamedTuple):
+    """`_sweep_gate`'s answer. `reason` is None to proceed; `headroom` is the meter it read (the
+    sweep trims its page budget to it), or 0 when an earlier gate refused before it was read."""
+
+    reason: str | None
+    headroom: int
+
+
+def _sweep_gate(org_id: str, *, door: str) -> SweepGate:
+    """THE ONE GATE every door asks before it pulls an org's mail (GeniOS-011 S02.U5).
+
+    The four questions, in `SWEEP_SKIP_REASONS` order, each answered by its own fail-open helper.
+    A gate the door is exempt from is still ASKED, so the exemption is logged with what it let
+    past (`_note_gate_exemption`). Returns the first refusal, or `SweepGate(None, headroom)`."""
+    exempt = DOOR_GATE_EXEMPTIONS[door]                  # KeyError: an unnamed door cannot ask
+    headroom = 0
+    for reason in SWEEP_SKIP_REASONS:
+        if reason == "paused":
+            refused = _org_paused(org_id)
+        elif reason == "plan_expired":
+            refused = _plan_expired(org_id)
+        elif reason == "over_budget":
+            refused = _llm_over_daily_cap(org_id)
+        else:
+            headroom = _sync_headroom(org_id)
+            refused = headroom <= 0
+        if reason in exempt:
+            _note_gate_exemption(org_id, reason, door=door, refused=bool(refused),
+                                 headroom=headroom)
+            continue
+        if refused:
+            return SweepGate(reason, headroom)
+    return SweepGate(None, headroom)
+
+
+def _note_gate_exemption(org_id: str, reason: str, *, door: str, refused: bool,
+                         headroom: int) -> None:
+    """An exemption is a decision, logged every time it is used — to the log and `audit_log`.
+    Never raises: the record of a decision must not undo the decision."""
+    why = DOOR_GATE_EXEMPTIONS[door][reason]
+    _log.warning("%s bypassed: door=%s org=%s refused_otherwise=%s headroom=%s — %s",
+                 reason, door, org_id, refused, headroom, why)
+    try:
+        from genios_engine.platform import audit
+        audit.record(org_id, f"{reason}_bypassed", actor_type="system",
+                     metadata={"door": door, "gate": reason, "refused_otherwise": refused,
+                               "headroom": headroom, "why": why})
+    except Exception:                                    # noqa: BLE001 — never undo the decision
+        _log.exception("gate exemption audit failed org=%s door=%s", org_id, door)
+
+
+def _note_sweep_skip(org_id: str, reason: str, *, door: str, mode: str) -> None:
+    """Write a door's refusal as ONE `l1_sync_runs` row (GeniOS-011 S02.U5). Never raises.
+
+    The reason rides in `error` as `skipped:<reason> door=<door> — <founder line>`: the admin
+    console's sync list already shows that column, and `error like 'skipped:%'` separates a skip
+    from a connector failure.
+
+    ⛔ THE ROW NAMES NO CONNECTION AND NO SOURCE, ON PURPOSE. The gate is an org-level decision —
+    no connection was touched — and the coverage readers (`capture/coverage/window`,
+    `context/coverage_receipt`, `context/situations`) read `l1_sync_runs` per source and per
+    connection. A skip is not a sweep: written against a connection, its `error` would read that
+    mailbox's whole window as FAILED for weeks after the gate reopened, although the next real
+    sweep's cursor reads the gap. One row per org per door call, not per connection.
+
+    No migration: `error` and `mode` already carry everything the row needs."""
+    line = SWEEP_SKIP_LINES.get(reason, reason)
+    _log.info("sweep skipped: org=%s door=%s reason=%s", org_id, door, reason)
+    _run_ledger(org_id=org_id, connection_id=None, source=None, mode=mode,
+                error=f"skipped:{reason} door={door} — {line}", finalize=False)
+
+
 #: The clock the sweep's tail composes the morning briefs by — a seam a test sets; production reads the wall.
 def _brief_clock():
     from datetime import datetime, timezone
@@ -1172,18 +1302,19 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
         conns_to_poll = list(conns)
     rc = make_relevance_classifier()
     l1_ok = l1_err = l1_paused = l1_revoked = l1_lapsed = 0
+    # GeniOS-011 S02.U5 · THE FOUR GATES ARE ONE QUESTION, `_sweep_gate`, asked ONCE per org per
+    # sweep, not per connection: an org with gmail + gcal + drive would otherwise pay for three
+    # checks to reach the same answer. The same function answers Sync now, POST /sync/{id} and
+    # the backfill door, so no door can drift into its own idea of who may be swept. Its order:
+    # the pause switch; THE PLAN BOUNDARY (a lapsed tenant's background work spends OUR model
+    # budget, not theirs — see `_plan_expired`); the daily model budget; THE INGESTION METER, a
+    # different question from the budget: that one is "how much money today", this is "how much
+    # mail this period". A backfill can sit inside the dollar ceiling and still be a tenant on a
+    # 1,000-message free plan pulling a 40,000-message mailbox.
+    gates: dict[str, SweepGate] = {}
+    # Who was refused as paused or lapsed: the L2/L3/L5 pass below skips both.
     paused: dict[str, bool] = {}
-    # Per-org budget decisions are made ONCE per sweep, not per connection: an org with gmail +
-    # gcal + drive would otherwise pay for three checks to reach the same answer.
-    over_budget: dict[str, bool] = {}
-    # THE PLAN BOUNDARY, asked once per org per sweep like the two above. A lapsed tenant's
-    # background work spends OUR model budget, not theirs — see `_plan_expired`.
     lapsed: dict[str, bool] = {}
-    # THE INGESTION METER, asked once per org per sweep for the same reason as the two above.
-    # It is a different question from `over_budget`: that one is "how much money today", this is
-    # "how much mail this period". A backfill can sit inside the dollar ceiling and still be a
-    # tenant on a 1,000-message free plan pulling a 40,000-message mailbox.
-    sync_headroom: dict[str, int] = {}
     l1_skipped = 0
     l1_quota_full = 0
     new_events: dict[str, int] = {}               # org -> events landed this sweep
@@ -1203,27 +1334,28 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
         # This background sweep is the largest LLM spender in the system (the S2 gate runs on
         # every unknown sender) and it was the one path the daily cap did not gate — the breaker
         # guarded the onboarding sync only. A runaway here spends unattended, every tick.
-        if conn.org_id not in paused:
-            paused[conn.org_id] = _org_paused(conn.org_id)
-        if paused[conn.org_id]:
+        if conn.org_id not in gates:
+            gates[conn.org_id] = verdict = _sweep_gate(conn.org_id, door="sweep")
+            paused[conn.org_id] = verdict.reason == "paused"
+            lapsed[conn.org_id] = verdict.reason == "plan_expired"
+            if verdict.reason is not None:
+                # ⛔ THE ROW, once per org per sweep (GeniOS-011 S02.U5). The counters below stay
+                # per connection, as the scheduler's log line has always read them.
+                _note_sweep_skip(conn.org_id, verdict.reason, door="sweep", mode=mode)
+        verdict = gates[conn.org_id]
+        if verdict.reason == "paused":
             l1_paused += 1
             continue
-        if conn.org_id not in lapsed:
-            lapsed[conn.org_id] = _plan_expired(conn.org_id)
-        if lapsed[conn.org_id]:
+        if verdict.reason == "plan_expired":
             l1_lapsed += 1
             continue
-        if conn.org_id not in over_budget:
-            over_budget[conn.org_id] = _llm_over_daily_cap(conn.org_id)
-        if over_budget[conn.org_id]:
+        if verdict.reason == "over_budget":
             l1_skipped += 1
             continue
-        if conn.org_id not in sync_headroom:
-            sync_headroom[conn.org_id] = _sync_headroom(conn.org_id)
-        headroom = sync_headroom[conn.org_id]
-        if headroom <= 0:
+        if verdict.reason == "sync_quota":
             l1_quota_full += 1
             continue
+        headroom = verdict.headroom
         # TRIMMED, not refused. Half a mailbox read is worth more to the customer than none, and
         # the remainder is still there when they upgrade — so the page budget is cut to what the
         # plan still allows instead of the whole connection being skipped.
@@ -2032,6 +2164,14 @@ def sync_one(connection_id: str, background_tasks: BackgroundTasks,
     conn = _connections.get(connection_id)
     if conn is None or conn.org_id != org_id:
         raise HTTPException(404, "connection not found")
+    # GeniOS-011 S02.U5 · the sweep's gates, asked by the same function. This door asked none, so
+    # it pulled and reasoned for an org the sweep had refused. 200 with `scheduled: false`, not an
+    # error status: the request was understood, and the reason is the answer.
+    gate = _sweep_gate(conn.org_id, door="sync_one")
+    if gate.reason is not None:
+        _note_sweep_skip(conn.org_id, gate.reason, door="sync_one", mode=mode)
+        return {"scheduled": False, "connection_id": connection_id, "org_id": conn.org_id,
+                "skipped": gate.reason, "detail": SWEEP_SKIP_LINES[gate.reason]}
     background_tasks.add_task(_sync_connection, conn, mode, limit)
     return {"scheduled": True, "connection_id": connection_id, "org_id": conn.org_id,
             "note": "L1 sync + L2 running in the background; this returned immediately"}
@@ -2046,6 +2186,14 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
     conn = _connections.get(connection_id)
     if conn is None or conn.org_id != org_id:
         raise HTTPException(404, "connection not found")
+    # GeniOS-011 S02.U5 · the sweep's gates, asked by the same function. Exempt from the ingestion
+    # meter ONLY, and that exemption is written in `DOOR_GATE_EXEMPTIONS` and logged by the gate
+    # each time it is used — a resync that fills the period is now a decision on the record.
+    gate = _sweep_gate(conn.org_id, door="backfill")
+    if gate.reason is not None:
+        _note_sweep_skip(conn.org_id, gate.reason, door="backfill", mode="backfill")
+        return {"started": False, "connection_id": connection_id, "skipped": gate.reason,
+                "detail": SWEEP_SKIP_LINES[gate.reason]}
 
     def _run() -> None:
         from genios_engine.capture.acquire.sync_runner import backfill_drain
@@ -4005,17 +4153,24 @@ def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25, heartb
     cp.setdefault("v", 1)
     resumed = bool(done_by_source)
     save = save_checkpoint if callable(save_checkpoint) else (lambda _cp: None)
-    # Bill circuit-breaker (pre-flight only): refuse to START a new sync if this org has already made
-    # a runaway number of LLM calls today. Never interrupts a run already in progress — and a
-    # resumed job IS one: refusing it here would mark it complete with half a window, for good.
-    if not resumed and _llm_over_daily_cap(org_id):
-        _log.warning("sync skipped: org=%s hit the daily LLM cap (%s) — cost circuit breaker",
-                     org_id, _LLM_DAILY_CAP)
+    # Pre-flight only: refuse to START a new sync the sweep would refuse. Never interrupts a run
+    # already in progress — and a resumed job IS one: refusing it here would mark it complete with
+    # half a window, for good.
+    #
+    # GeniOS-011 S02.U5 · THE SWEEP'S GATES, ASKED BY THE SAME FUNCTION. This door asked only the
+    # daily cap (the bill circuit-breaker), so on a lapsed, paused or quota-full org the sweep
+    # stopped and Sync now kept pulling and reasoning — the one way cards still appeared, and the
+    # reason the sweep had stopped was visible nowhere. The refusal is now the sweep's row, and the
+    # progress bar says the same sentence.
+    gate = None if resumed else _sweep_gate(org_id, door="sync_now")
+    if gate is not None and gate.reason is not None:
+        _log.warning("sync skipped: org=%s reason=%s (daily LLM call cap %s)", org_id,
+                     gate.reason, _LLM_DAILY_CAP)
+        _note_sweep_skip(org_id, gate.reason, door="sync_now", mode="onboarding_backfill")
         if eng is not None:
             try:
                 P.start(eng, org_id, sources)
-                P.finish(eng, org_id, error=True,
-                         detail="Paused for today — daily processing limit reached. Resumes tomorrow.")
+                P.finish(eng, org_id, error=True, detail=SWEEP_SKIP_LINES[gate.reason])
             except Exception:      # noqa: BLE001
                 pass
         return
