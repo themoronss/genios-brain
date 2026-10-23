@@ -3628,7 +3628,10 @@ def _need_fetchers(org_id: str):
     it — one capture door, so the answer is gated, extracted, published and bundled like any mail."""
     from genios_engine.capture.acquire.need_fetchers import make_fetchers
     from genios_engine.contracts.connection import Connection
-    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type="gmail", config={})
+    # ⛔ GeniOS-012 U12-04 · the connection's SAVED window, not `{}`: with `{}` the window fetcher searched the module
+    # default (60 days) even after the window was widened, missing exactly the earlier mail L2 asked for.
+    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type="gmail",
+                      config=_saved_connection_config(org_id, "gmail"))
     return make_fetchers(
         connector_for=lambda: make_connector_for(conn),
         sync=lambda scoped: _sync_source(org_id, "gmail", 50,
