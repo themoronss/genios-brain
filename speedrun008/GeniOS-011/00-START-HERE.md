@@ -116,6 +116,7 @@ Production must decide which of these it is. S01's readings answer it.
 | # | File | What it holds |
 |---|---|---|
 | 00 | this file | the answers, the numbers, what is being built, what Rohit and Harsh must do |
+| 07 | [07-LOOPHOLES](07-LOOPHOLES.md) | **the shortest read:** 23 loopholes that stop the website making the cards of Rohit's local ideal dashboard, each with evidence, effect, fix and owner |
 | 05 | [05-EXPECTED-VS-ACTUAL](05-EXPECTED-VS-ACTUAL.md) | 170 open items by layer, P0 first: expected (with its source), actual (with evidence), what Rohit sees, fix, owner, step |
 | 01 | [01-WHAT-WENT-WRONG](01-WHAT-WENT-WRONG.md) | the patterns, 61 mistakes with evidence and the rule each one teaches, and the mistakes inside other items |
 | 02 | [02-PLAN](02-PLAN.md) | 43 steps / ~140 units in order, the critical path, files, done-when, owner, dependencies |
@@ -124,7 +125,14 @@ Production must decide which of these it is. S01's readings answer it.
 | 03 | [03-LOG](03-LOG.md) | append-only: what was built, by whom, verified how |
 | data | [data/audit-2026-10-23.json](data/audit-2026-10-23.json) | every verified item as data (addresses and the org id redacted) |
 
-## What is being built now (wave 1, 23 Oct)
+## Status, 23 Oct evening
+
+- **On `origin/speedrun008`:** 19 units are built, independently verified (tests re-run, one mutation per unit red, then restored) and merged. Every unit, what it changes and how to deploy it is in [04-FOR-HARSH](04-FOR-HARSH.md) §1.
+- **Held on purpose:** S02.U5 and S16.U3 (04 §3).
+- **Building:** S34.U3 (the card writer), S09.U1 (the history window) and S44.U1 (the ideal-card scorecard).
+- **Running record:** [03-LOG](03-LOG.md).
+
+## What was built first (wave 1, 23 Oct)
 
 Eleven units that need no production access, no money and no decision. Each is built in its own worktree off the production head. An independent verifier then re-runs its tests and its mutation proof, and there is one fix round. Results land in [03-LOG](03-LOG.md).
 
