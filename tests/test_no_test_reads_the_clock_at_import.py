@@ -251,6 +251,13 @@ def _stale_clock_imports(path: Path, root: Path, prefix: str = "tests.") -> list
     tree = ast.parse(path.read_text(encoding="utf-8"))
     names = _imports(tree)
     offenders = []
+    # ONE MODULE, EVERY STATEMENT (GeniOS-011, 23 Oct). The deps guard wants one imported name per line, so a
+    # sibling's autouse fixture usually arrives on a statement of its own; pytest picks it up whichever statement
+    # brought it. Asking per statement flagged a module that did bring the fixture along.
+    from_module: dict[str, set[str]] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            from_module.setdefault(node.module, set()).update(a.asname or a.name for a in node.names)
     for node in ast.walk(tree):   # an ImportFrom guarded by `if URL:` is not in tree.body itself
         if not (isinstance(node, ast.ImportFrom) and node.module and not node.level):
             continue
@@ -262,7 +269,7 @@ def _stale_clock_imports(path: Path, root: Path, prefix: str = "tests.") -> list
         if not now_globals:
             continue
         imported = {(a.asname or a.name): a.name for a in node.names}
-        if _autouse_setters(t_tree, now_globals) & set(imported):
+        if _autouse_setters(t_tree, now_globals) & from_module[node.module]:
             continue   # the sibling's own fixture rides along — pytest will pick it up
         funcs = {n.name: n for n in t_tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
         for local_name, orig_name in imported.items():
