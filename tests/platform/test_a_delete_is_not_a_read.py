@@ -241,7 +241,9 @@ def test_the_statement_count_did_NOT_move():
     # rows already written, the eight per-day reads (cards, card_refusals, expert_reviews, reasoning_results,
     # l2_admissions, pipeline_counters, llm_costs, l4_r_site_calls), the database size, the row's insert and the
     # retention purge — the engine gaining thirteen statements.
-    assert r["statements"] == 3_427, (
+    # ⛔ MOVED 3,427 → 3,428 GeniOS-011 S44.U1 (23 Oct): `scripts/ideal_card_gap.CARD_ROWS_SQL`, the org's open app
+    # cards read on a read-only connection for the ideal-card gap scorecard — an operator script gaining one SELECT.
+    assert r["statements"] == 3_428, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
