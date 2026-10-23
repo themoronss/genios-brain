@@ -174,6 +174,10 @@ _MET = re.compile(r"\[(?P<evt>[^\[\]\s:]+)\] (?:(?P<held>\d{4}-\d{2}-\d{2} \d{2}
                   r"|a meeting at (?P<booked>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC)")
 #: How a calculator prints its sample size, never its value (`contracts/measured.Measured.says`).
 _SAMPLE = re.compile(r"\(n\s*=\s*\d[^)]*\)|\b\d+ times\b")
+#: G012 · the same sample size REPEATED in a claim ("usually 0 days (n=19)") — the check strips it from the calculator's
+#: line (`figures`), so a claim that copied it could never be grounded, and held the design partner's move on 23 Oct.
+#: Only the "(n = …)" form: "asked 7 times" in a claim is a count, and is checked as one.
+_CLAIMED_SAMPLE = re.compile(r"\(n\s*=\s*\d[^)]*\)")
 _FACT_REF = re.compile(r"^fact:(\d+)$")
 #: An id as the dossier prints it — never a number, whatever digits it holds (`evt_marco_0811`).
 _PRINTED_ID = re.compile(r"\[[^\[\]\s]+\]")
@@ -1054,7 +1058,7 @@ def _fact(run: _Run, n: int, decisive: bool) -> bool:
         if not (decisive and quoted) else "\n".join(
             [run.figures(e for e in fact.evidence if e not in worded), *(dl.line for dl in quoted),
              run.quotes[n]])
-    missing = unheld(figures_in(fact.claim), figures_in(ground))          # its own lines, never the head
+    missing = unheld(figures_in(_CLAIMED_SAMPLE.sub(" ", fact.claim)), figures_in(ground))   # its own lines only
     if not missing:
         run.say(line, C.KEPT)
         return True

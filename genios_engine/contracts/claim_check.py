@@ -38,7 +38,8 @@ from typing import Any
 #: ⛔ check.v5 since 23 Oct (G012 H-07): a count, a connective, a clock zone or a bare id is no name or number; a
 #: statement the dossier prints with no id is cited by its words or section; a move stands on its standing mail-facts —
 #: so a review v4 checked is checked again, with no model call.
-CHECK_VERSION = "check.v5"
+#: ⛔ check.v6 since 23 Oct (G012 H-10): a sample size a claim repeats from its calculator is no number.
+CHECK_VERSION = "check.v6"
 
 # ── what happened to a line ────────────────────────────────────────────────────────────────────
 # One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments,

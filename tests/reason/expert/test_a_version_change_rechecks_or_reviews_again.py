@@ -57,7 +57,7 @@ def test_the_check_is_check_v3():
     alternative and stop rule changed it again; `OLD` (check.v1) is still an older version.
     ⛔ RESTATED by `yc2_w27_s16` M46.C4.L-logic.V3.U06: check.v4 — never silently; `OLD` is older still.
     ⛔ RESTATED by G012 H-07: check.v5; `OLD` is older still."""
-    assert CHECK_VERSION == "check.v5"
+    assert CHECK_VERSION == "check.v6"
 
 
 def test_a_review_keeps_the_dossier_it_was_written_against_and_when_it_was_checked(world):
