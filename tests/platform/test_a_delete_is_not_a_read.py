@@ -241,7 +241,10 @@ def test_the_statement_count_did_NOT_move():
     # rows already written, the eight per-day reads (cards, card_refusals, expert_reviews, reasoning_results,
     # l2_admissions, pipeline_counters, llm_costs, l4_r_site_calls), the database size, the row's insert and the
     # retention purge — the engine gaining thirteen statements.
-    assert r["statements"] == 3_427, (
+    # ⛔ MOVED 3,427 → 3,429 GeniOS-011 S09.U1 (23 Oct): `api/account_routes` writes the Sources modal's
+    # historical backfill through to `connections.capture_scope.backfill_days` (one UPDATE) and reads the
+    # stored pick for a connection made after it (`chosen_capture_scope`, one SELECT) — two statements.
+    assert r["statements"] == 3_429, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

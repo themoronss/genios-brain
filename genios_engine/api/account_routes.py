@@ -310,6 +310,15 @@ def set_integration_config(org_id: str, tool: str, body: dict, org: str = Depend
         raise HTTPException(422, "config must be finite JSON") from exc
     if sum(len(x.encode("utf-8")) for x in (s, p, d)) > 64_000:   # durable config, not a data dump
         raise HTTPException(413, "integration config is too large")
+    # GeniOS-011 S09.U1 · THE PICK IS PARSED BEFORE ANYTHING IS WRITTEN. A window this engine cannot
+    # honour is a 422 here, with nothing saved — never a stored choice that sync quietly reads as
+    # sixty days (`connectors/backfill.chosen_backfill_days`).
+    from genios_engine.capture.connectors.backfill import chosen_backfill_days
+    try:
+        days = chosen_backfill_days(sync_settings)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    updated = 0
     with _graph.engine.begin() as c:
         c.execute(text(
             "insert into integration_preferences (org_id, tool, sync_settings, preferences, domains) "
@@ -318,7 +327,47 @@ def set_integration_config(org_id: str, tool: str, body: dict, org: str = Depend
             "preferences=excluded.preferences, domains=excluded.domains, "
             "updated_at=clock_timestamp()"),
             {"o": org, "t": t, "s": s, "p": p, "d": d})
-    return {"saved": True, "tool": t}
+        if days is not None:
+            # GeniOS-011 S09.U1 · WRITTEN THROUGH, IN THE SAME TRANSACTION. Every connector reads
+            # `connections.capture_scope.backfill_days`; nothing read this table's copy, so "12
+            # months" in the modal was sixty days in capture (audit `l1-resync-and-history-window`).
+            # Every one of this tenant's connections of this tool — the workspace mailbox and a
+            # seat's — takes the pick; `||` merges the one key, so the rest of the scope (sealed
+            # secrets included) is untouched. The last writer wins: an operator's
+            # `PATCH /connections/{id}/backfill-window` and this save write the same key.
+            updated = c.execute(text(
+                "update connections set capture_scope = "
+                "coalesce(capture_scope, '{}'::jsonb) || jsonb_build_object('backfill_days', :n) "
+                "where org_id=:o and source_type=:t"),
+                {"o": org, "t": t, "n": days}).rowcount
+            _log.info("integration config org=%s tool=%s: historical backfill %s days written to "
+                      "%d connection(s)", org, t, days, updated)
+    return {"saved": True, "tool": t, "backfill_days": days, "connections_updated": updated}
+
+
+def chosen_capture_scope(org_id: str, tool: str) -> dict:
+    """GeniOS-011 S09.U1 · the `capture_scope` a NEW connection of this tool starts with: the
+    window the founder picked in the Sources modal, as `{"backfill_days": N}`, or `{}` when no pick
+    is stored (the connector's default then stands — the default itself does not move).
+
+    For the connection mirror (`routes._mirror_connection`): a founder may save the modal before the
+    connection row exists, and the row made afterwards must carry the pick. Fails OPEN to `{}`,
+    logged: a preference read must never block a connection from being recorded."""
+    from genios_engine.capture.connectors.backfill import BACKFILL_DAYS_KEY
+    from genios_engine.capture.connectors.backfill import chosen_backfill_days
+    try:
+        with _graph.engine.connect() as c:
+            settings = c.execute(text(
+                "select sync_settings from integration_preferences where org_id=:o and tool=:t"),
+                {"o": org_id, "t": _canonical_tool(tool)}).scalar()
+        if isinstance(settings, str):
+            settings = json.loads(settings)
+        days = chosen_backfill_days(settings)
+    except Exception:      # noqa: BLE001 — no table, no engine, an unreadable stored pick
+        _log.warning("chosen backfill window unreadable for org=%s tool=%s — the default stands",
+                     org_id, tool, exc_info=True)
+        return {}
+    return {BACKFILL_DAYS_KEY: days} if days is not None else {}
 
 
 # ── team members / invites ───────────────────────────────────────────────────

@@ -100,3 +100,90 @@ def with_backfill_days(connection: Connection, days: int) -> Connection:
     BackfillWindow(days=days)                       # validate before we write it anywhere
     return connection.model_copy(
         update={"config": {**(connection.config or {}), BACKFILL_DAYS_KEY: days}})
+
+
+# ── GeniOS-011 S09.U1 · the window the founder picks is the window captured ─────────────────────
+#
+# THE DEFECT. The dashboard's Sources modal offers a "Historical backfill" — 30 days, 90 days,
+# 6 months, 12 months — and PUTs it to `/api/org/{org}/integrations/{tool}/config`, which stored it
+# in `integration_preferences.sync_settings.historical_backfill`. Nothing in capture read it: every
+# connector reads `BACKFILL_DAYS_KEY` off the connection, sixty days unless an operator PATCHed it.
+# A founder could pick "12 months" and get sixty days (audit `l1-resync-and-history-window`, the
+# skeptic's correction). The parse lives here, beside the window it becomes, so the modal's
+# vocabulary and `BackfillWindow`'s range rule cannot drift apart; `api/account_routes` writes the
+# result through to the connections.
+
+#: Where the Sources modal puts its choice inside `sync_settings` (dashboard
+#: `sources-page.tsx` save), and the camelCase key the older Integrations page sends.
+HISTORICAL_BACKFILL_KEY = "historical_backfill"
+HISTORICAL_BACKFILL_LEGACY_KEY = "historicalBackfill"
+
+#: The older Integrations page's labels. A closed table, not arithmetic: "12 months" is a year of
+#: mail — 365 days, the window D16 recommends — never 12 × 30.
+_MONTH_LABELS = {"1 month": 30, "3 months": 90, "6 months": 180, "12 months": 365}
+
+
+def chosen_backfill_days(sync_settings) -> int | None:
+    """The window, in days, the founder picked in the Sources modal — or `None` when no pick is
+    present. `None` is not `DEFAULT_BACKFILL_DAYS`: a save that names no window must leave the
+    connection's window as it is, never reset it.
+
+    Accepted: the modal's ids (`"30d"`, `"90d"`, `"180d"`, `"365d"`, any `"<N>d"`), the older page's
+    labels (`_MONTH_LABELS`), and a whole number of days. Anything else raises `ValueError` — the
+    same loudness as `backfill_window_for`: a pick that cannot be honoured is refused at the save,
+    not turned into sixty days at the next sync. The range is `BackfillWindow`'s own.
+    """
+    settings = sync_settings if isinstance(sync_settings, dict) else {}
+    value = settings.get(HISTORICAL_BACKFILL_KEY)
+    if value is None:
+        value = settings.get(HISTORICAL_BACKFILL_LEGACY_KEY)
+    if value is None:
+        return None
+    days = None
+    if isinstance(value, int) and not isinstance(value, bool):
+        days = value
+    elif isinstance(value, str):
+        label = " ".join(value.strip().lower().split())
+        if label in _MONTH_LABELS:
+            days = _MONTH_LABELS[label]
+        elif label.endswith("d") and label[:-1].isdigit():
+            days = int(label[:-1])
+    if days is None:
+        raise ValueError(f"{HISTORICAL_BACKFILL_KEY}={value!r} is not a window this engine reads "
+                         "(30d, 90d, 180d, 365d, or a month label)")
+    return BackfillWindow(days=days).days           # the range rule, at the save
+
+
+# ── GeniOS-011 S09.U1 · the owner's history drain and the ingestion meter ──────────────────────
+#
+# `POST /connections/{id}/backfill` — the door STEP-08's resync lands the deleted mail through —
+# never read the ingestion meter (`platform/quota`). That was a bypass nobody had decided and
+# nobody could see. It is now decided, here, and the door logs it before the first page.
+#
+# WHY BYPASS, NOT RESERVE-AND-TRIM. The drain is owner-triggered and deliberate (its own docstring).
+# Trimming it to the headroom would leave the resync's freed keys with no message (`--finish` then
+# reports them "not listed"), and a TRUNCATED drain always restarts from the newest page, so a
+# trimmed drain would never reach the old mail it exists for. What the drain lands DOES count
+# toward the meter (`source_events.captured_at`), so a full meter afterwards stops the live sweep
+# (`l1_quota_full`) — the line says so, with the numbers, so that is never discovered later.
+DRAIN_QUOTA_DECISION = "bypass"
+
+
+def drain_quota_decision(connection: Connection, meter: dict | None) -> str:
+    """The one log line that records the drain's decision about the meter. PURE: the caller reads
+    the meter (`platform/quota.sync_status`); `None` means it could not be read, said as such —
+    never a fabricated zero."""
+    try:
+        window = f"{backfill_window_for(connection).days}d"
+    except ValueError:
+        window = "unreadable"
+    if meter is None:
+        numbers = "meter unread"
+    else:
+        numbers = (f"used={meter.get('used')} limit={meter.get('limit')} "
+                   f"remaining={meter.get('remaining')}"
+                   + (" exhausted" if meter.get("exhausted") else ""))
+    return (f"backfill drain org={connection.org_id} conn={connection.connection_id} "
+            f"window={window} quota={DRAIN_QUOTA_DECISION} ({numbers}): an owner-triggered history "
+            "drain is never trimmed to the ingestion meter; what it lands counts toward the meter, "
+            "so a full meter afterwards stops the live sweep until the period rolls or the plan grows")

@@ -1091,6 +1091,16 @@ def _sync_headroom(org_id: str) -> int:
         return 1 << 30
 
 
+def _drain_meter(org_id: str) -> dict | None:
+    """GeniOS-011 S09.U1 · the ingestion meter, for the history drain's logged decision — or `None`
+    when it cannot be read. Read for the record only: the drain bypasses the meter either way."""
+    try:
+        from genios_engine.platform.quota import sync_status
+        return sync_status(_graph.engine, org_id)
+    except Exception:                                    # noqa: BLE001 — a log line never blocks a drain
+        return None
+
+
 #: The clock the sweep's tail composes the morning briefs by — a seam a test sets; production reads the wall.
 def _brief_clock():
     from datetime import datetime, timezone
@@ -2049,7 +2059,14 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
 
     def _run() -> None:
         from genios_engine.capture.acquire.sync_runner import backfill_drain
+        from genios_engine.capture.connectors.backfill import drain_quota_decision
         try:
+            # GeniOS-011 S09.U1 · THE METER DECISION, EXPLICIT AND FIRST. This door — STEP-08's
+            # resync lands the deleted mail through it — never read the ingestion meter: a bypass
+            # nobody had decided or could see. It bypasses still, by decision
+            # (`backfill.DRAIN_QUOTA_DECISION`, which says why), and the log says so with the
+            # meter's numbers before the first page is read.
+            _log.info(drain_quota_decision(conn, _drain_meter(conn.org_id)))
             rel = make_relevance_classifier(conn.org_id, seat_id=getattr(conn, "seat_id", None))
             summary = backfill_drain(
                 make_connector_for(conn, relevance=rel), org_id=conn.org_id,
@@ -3296,9 +3313,21 @@ def _mirror_connection(org_id: str, source_type: str, *, status: str = "connecte
     # member's Gmail and the workspace Gmail are two rows the sweep syncs separately.
     cid = f"con_{org_id}_{seat_id}_{source_type}" if seat_id else f"con_{org_id}_{source_type}"
     try:
+        # GeniOS-011 S09.U1 · THE ROW'S SETTINGS SURVIVE THE MIRROR. The upsert writes
+        # `capture_scope` whole, and this built the row with an empty one — so every Sync click
+        # (`/integrations/{tool}/sync`, sync-all, which the Sources modal's post-connect save is
+        # followed by) erased `backfill_days` before the sync read it: the founder's pick and an
+        # operator's PATCH both became sixty days. An existing row keeps its scope; a new row
+        # starts with the window the founder picked, when one is stored.
+        existing = _connections.get(cid)
+        if existing is not None:
+            scope = dict(existing.config or {})
+        else:
+            from genios_engine.api import account_routes
+            scope = account_routes.chosen_capture_scope(org_id, source_type)
         _connections.add(Connection(connection_id=cid, org_id=org_id, source_type=source_type,
                                     composio_user_id=composio_user_id_for(org_id, seat_id),
-                                    status=status, seat_id=seat_id))
+                                    status=status, seat_id=seat_id, config=scope))
     except Exception:      # noqa: BLE001 — mirroring must never block the sync itself
         _log.exception("connection mirror failed org=%s source=%s", org_id, source_type)
 
