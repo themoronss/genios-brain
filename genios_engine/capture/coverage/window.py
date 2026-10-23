@@ -233,7 +233,10 @@ def coverage_for_connection(conn, *, org_id: str, connection_id: str,
     One mailbox is one `connections` row, and only this tenant's: another tenant's id reads as no
     connection, never as theirs. Its window is the row's own `backfill_days`
     (`connectors/backfill.backfill_window_for`, sixty days unless an admin set it), measured back
-    from `now`. The runs counted are this connection's that finished after the window opened and
+    from `now`. GeniOS-011 S09.U1: the founder's pick in the Sources modal is now written through
+    to that row (`api/account_routes.set_integration_config`), so "12 months" there is a 365-day
+    window here — the coverage of the window the founder chose, not of a default they never saw.
+    The runs counted are this connection's that finished after the window opened and
     no later than `now` — AS OF an instant, so a replay asked at its case's instant counts the sweep
     that finished at it and none that came after.
 

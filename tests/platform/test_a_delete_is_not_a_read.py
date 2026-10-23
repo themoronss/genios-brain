@@ -243,7 +243,10 @@ def test_the_statement_count_did_NOT_move():
     # retention purge — the engine gaining thirteen statements.
     # ⛔ MOVED 3,427 → 3,428 GeniOS-011 S44.U1 (23 Oct): `scripts/ideal_card_gap.CARD_ROWS_SQL`, the org's open app
     # cards read on a read-only connection for the ideal-card gap scorecard — an operator script gaining one SELECT.
-    assert r["statements"] == 3_428, (
+    # ⛔ MOVED 3,428 → 3,430 GeniOS-011 S09.U1 (23 Oct): `api/account_routes` writes the Sources modal's
+    # historical backfill through to `connections.capture_scope.backfill_days` (one UPDATE) and reads the
+    # stored pick for a connection made after it (`chosen_capture_scope`, one SELECT) — two statements.
+    assert r["statements"] == 3_430, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
