@@ -95,3 +95,34 @@ def test_a_move_may_rest_on_a_statement_the_dossier_prints_and_is_never_asked_it
                             "evidence": ["No mailbox is shown to have read this file's mail."]},
                      move={"rests_on": ["fact:1", "fact:3"]})
     assert _verdict(checked, "fact:3").verdict == C.KEPT, _verdict(checked, "fact:3")
+
+
+# ── H-08 · a move that names no one and nothing is no move ─────────────────────────────────────────────────────
+
+_EMPTY_MOVE = {"to": None, "who": None, "what": None, "answers": None, "by_when": None, "for_whom": None,
+               "rests_on": ["fact:1", "fact:2"]}
+
+
+@pytest.mark.parametrize("mode", ["nothing", "wait"])
+def test_a_review_that_does_not_move_reads_an_empty_move_as_none(mode):
+    """The shape the design partner's `nothing` / `wait` answers printed (23 Oct): every field null but rests_on."""
+    from genios_engine.contracts.expert_review import ExpertReview
+    raw = W.answer(mode=mode)
+    raw["next_move"] = dict(_EMPTY_MOVE)
+    assert ExpertReview.from_mapping(raw).next_move is None
+
+
+@pytest.mark.parametrize("mode", ["act", "find_out"])
+def test_a_review_that_moves_still_owes_its_move(mode):
+    """Unchanged for a moving review: malformed, so the one repair asks for the move."""
+    from genios_engine.contracts.expert_review import ExpertReview
+    raw = W.answer(mode=mode)
+    raw["next_move"] = dict(_EMPTY_MOVE)
+    with pytest.raises(ValueError, match="who makes the next move"):
+        ExpertReview.from_mapping(raw)
+
+
+def test_a_review_that_does_not_move_keeps_a_move_it_did_write():
+    from genios_engine.contracts.expert_review import ExpertReview
+    raw = W.answer(mode="wait")
+    assert ExpertReview.from_mapping(raw).next_move is not None, "a written move is read as written"

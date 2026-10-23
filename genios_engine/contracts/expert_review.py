@@ -291,6 +291,14 @@ class ExpertReview:
         if not facts:
             raise ValueError("an expert review states at least one fact")
         nm = raw.get("next_move")
+        # G012 H-08 · A MOVE THAT NAMES NO ONE AND NOTHING IS NO MOVE, when the review is not one that moves. A
+        # `nothing` or `wait` answer that printed the move's shape with every field null but `rests_on` was
+        # refused as malformed ("who makes the next move") and the whole judgment lost — 4 of the design
+        # partner's 41 R-9 calls (23 Oct), ~$0.15 each. An `act` or `find_out` with such a move is unchanged: it
+        # is still malformed, so the one repair asks for the move it owes.
+        if isinstance(nm, Mapping) and str(raw.get("mode") or "").strip() not in MOVING \
+                and not any(str(nm.get(k) or "").strip() for k in ("who", "what", "for_whom")):
+            nm = None
         next_move = None
         if nm:
             nm = _mapping(nm, "the next move")
