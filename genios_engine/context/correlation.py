@@ -339,10 +339,22 @@ def plan_correlation(*, thread_correlation_ids: list[str] | None,
 
 def thread_correlations(conn, *, org_id: str, thread_id: str | None,
                         exclude_event_id: str | None = None) -> list[str]:
-    """Correlations already holding OTHER events from this thread.
+    """Correlations already holding OTHER events from this thread — ENGINE-owned ones only.
 
     Excludes the event being processed so a re-run cannot inherit from itself and pin an
     event to a group it originally opened for a different reason.
+
+    ONLY AN ID A `context_correlations` ROW OWNS IS INHERITED (GeniOS-011 S14.U1, audit
+    `l3-thread-inherits-reading-correlations`). A reading writes membership under its own
+    synthetic id (`outreach:{node}`, `stated:{hash}` — `joined_via = 'reading'`,
+    `correlation_membership.declare_finding_events`), and no row here owns it: *"a reading only
+    claims its own correlation"*. Inheriting it made a reply whose thread's only earlier event a
+    reading had declared join that id ALONE — and a file is an anchor's engine-owned
+    correlations (`workstreams._MEMBERS`), so the reply was in no file and in no conversation
+    the founder could open. In a thread that also held a file, a reply naming no party joined
+    every reading's id beside it. The test is ownership, not `joined_via` or the shape of the
+    id, for the reason `declare_finding_events` gives: a shape is a convention, ownership is a
+    fact — and a member left behind by a correlation since deleted is no file either.
     """
     if not thread_id:
         return []
@@ -357,6 +369,8 @@ def thread_correlations(conn, *, org_id: str, thread_id: str | None,
         params["excl"] = exclude_event_id
     rows = conn.execute(text(
         "select distinct m.correlation_id from context_correlation_members m "
+        "join context_correlations k on k.org_id = m.org_id "
+        "     and k.correlation_id = m.correlation_id "
         "join source_events se on se.org_id = m.org_id and se.event_id = m.event_id "
         "where m.org_id = :o and se.parent_object_id = :thread " + exclusion),
         params).fetchall()

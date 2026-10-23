@@ -140,8 +140,16 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
             "select se.event_id, se.occurred_at, se.parent_object_id, se.domain_hints "
             "from source_events se "
             "where se.org_id = :o and se.outcome = 'emitted' "
+            # ALREADY GROUPED MEANS IN AN ENGINE-OWNED CORRELATION (GeniOS-011 S14.U1, audit
+            # `l3-thread-inherits-reading-correlations`). A reading's membership sits under a
+            # synthetic id no `context_correlations` row owns (`joined_via = 'reading'`), which is
+            # no file; skipping on ANY membership left every event only a reading had declared
+            # out of its file for good, since this is the pass that exists to file it.
             "  and se.event_id not in ("
-            "    select event_id from context_correlation_members where org_id = :o) "
+            "    select m.event_id from context_correlation_members m "
+            "    join context_correlations k on k.org_id = m.org_id "
+            "         and k.correlation_id = m.correlation_id "
+            "    where m.org_id = :o) "
             # WHAT THE DRAIN CALLED NOISE IS NO FILE HERE EITHER (`03` F101). The drain never
             # correlates a newsletter, spam or an auto-reply, and records its verdict as an
             # `email_noise:*` observation the event created; the replay recovers an event's nodes
@@ -382,8 +390,9 @@ def normalise_deal_status(store, org_id: str) -> dict:
 def _release_stale_correlations(store, org_id: str, event_ids: set[str]) -> int:
     """Un-correlate the events whose node set just changed, so the next pass re-anchors them.
 
-    `backfill_correlations` deliberately skips anything already in `context_correlation_members`,
-    which is what makes it safe to re-run. That same guard means a graph correction — a fact
+    `backfill_correlations` deliberately skips anything already in an engine-owned correlation
+    (a reading's membership is no file — GeniOS-011 S14.U1), which is what makes it safe to
+    re-run. That same guard means a graph correction — a fact
     moving to a node type that outranks the old anchor — would never take effect: the deal nodes
     would exist, the corpus would be waiting, and every situation would still say `opportunity`.
 
