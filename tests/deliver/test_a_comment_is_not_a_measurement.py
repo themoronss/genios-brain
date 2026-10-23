@@ -58,7 +58,9 @@ _PKG = Path(H.__file__).resolve().parent
 #: third adapter fails this test, and whoever lands it has to come here and read the comment in
 #: `units.py` that justifies `PUSH_REQUIRES_ADAPTER` -- which is the only moment that comment is
 #: ever going to be re-read.
-_ADAPTERS_THAT_EXIST = frozenset({"slack", "agent_push"})
+#: 2026-10-23 · GeniOS-011 S37.U2 added `email` (an adapter with no transport yet) and re-read the
+#: `units.py` comment, as this asks.
+_ADAPTERS_THAT_EXIST = frozenset({"slack", "email", "agent_push"})
 
 #: ⛔ A CLOSED SET OF VERBS, not a general language model. A comment asserting that a function IS
 #: called is the dangerous shape; a comment describing what it WOULD do is fine and common. These
@@ -143,17 +145,18 @@ def test_the_implemented_adapter_set_is_computed_and_not_described() -> None:
         "date the last time an adapter landed without anybody re-reading it")
 
 
-def test_four_of_the_six_push_channels_still_have_no_adapter() -> None:
+def test_three_of_the_six_push_channels_still_have_no_adapter() -> None:
     """⛔ Stated as a number so it is a measurement rather than an impression — the same discipline
     `executive/unreached.py` applies to its own count.
 
-    `api`, `email`, `teams` and `webhook` have no implementation at all. ⛔ **Not a code defect**:
+    `api`, `teams` and `webhook` have no implementation at all. (Four until 2026-10-23, when
+    GeniOS-011 S37.U2 built the `email` adapter — this count moved by that deliberate edit.) ⛔ **Not a code defect**:
     `capability_report` reports every one of them fail-closed and names `no_adapter` as OUR gap
     rather than the tenant's. It is a deployment and product fact, and it is pinned here so that
     building one is a deliberate edit rather than a surprise.
     """
     missing = PUSH_REQUIRES_ADAPTER - _implemented_channels()
-    assert missing == {"api", "email", "teams", "webhook"}, sorted(missing)
+    assert missing == {"api", "teams", "webhook"}, sorted(missing)
     assert len(PUSH_REQUIRES_ADAPTER) == 6
     # every channel with no adapter still needs a credential, so none of them can be reported
     # operational by the looser of the two gates either

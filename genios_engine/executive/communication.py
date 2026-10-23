@@ -38,8 +38,11 @@ DIGEST_CHANNEL = "digest"
 AGENT_CHANNEL = "agent"
 
 #: Concrete adapters that count as an interrupting chat channel.  Matches the adapter registry
-#: in ``deliver/channels/`` — v1 ships Slack; adding one is a registry entry plus a line here.
-CHAT_CHANNELS: tuple[str, ...] = ("slack",)
+#: in ``deliver/channels/`` — adding one is a registry entry plus a line here.  ``email`` joined
+#: with its adapter (GeniOS-011 S37.U2): a mail can buzz a phone as a Slack message can, so it is
+#: held by quiet hours and burst caps the same way (``deliver/gate.channel_class_for`` reads this).
+#: Slack stays first, so an org with both keeps getting chat where it already had it.
+CHAT_CHANNELS: tuple[str, ...] = ("slack", "email")
 
 DEFAULTS: Mapping[str, Any] = {
     # Band cuts on the 0..100 projected score, matching the pack's own `bands` block so a tenant

@@ -64,7 +64,8 @@ def test_a_broken_slack_secret_does_not_make_the_human_unit_operational():
 
 
 def test_a_channel_with_no_adapter_is_not_operational_however_configured():
-    """`get_channel` returns an adapter for `slack` and `agent_push` only. Teams has a row in the
+    """`get_channel` returns an adapter for `slack`, `email` (since 2026-10-23, GeniOS-011 S37.U2)
+    and `agent_push` only. Teams has a row in the
     unit table, a channel name and no implementation, so "configured + credentialed" was enough to
     report it operational.
 

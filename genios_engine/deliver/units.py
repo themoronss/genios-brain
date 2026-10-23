@@ -67,9 +67,11 @@ CHANNEL_NEEDS_CREDENTIAL: frozenset[str] = frozenset({
 #: fetches them; there is no adapter because there is nothing to send, and demanding one would
 #: report the one delivery path that actually works today as broken.
 #:
-#: For the push half, `channels/base.get_channel` returns an adapter for `slack` and for
-#: `agent_push`, and None for the rest — so `api`, `email`, `teams` and `webhook` have no
-#: implementation at all: TWO of the six named here, not one.
+#: For the push half, `channels/base.get_channel` returns an adapter for `slack`, `email` and
+#: `agent_push`, and None for the rest — so `api`, `teams` and `webhook` have no implementation
+#: at all: THREE of the six named here. `email` landed 2026-10-23 (GeniOS-011 S37.U2) as an
+#: adapter with NO transport — its provider is S37.U1 — so it counts as implemented here, while
+#: the `email` UNIT below stays `engine_ready=False` until a provider is wired.
 #:
 #: ⛔ THIS COMMENT SAID "returns Slack or None — one implementation" UNTIL 2026-10-01.
 #: `channels/agent.py` is the LARGEST adapter in that folder and landed two days after `base.py`;

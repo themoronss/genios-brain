@@ -21,11 +21,19 @@ class Channel(Protocol):
 
 
 def get_channel(name: str):
-    """Registry — v1 has exactly one human channel. Unknown name → None (the outbox
-    marks the row failed_terminal with a clear reason; never a crash)."""
+    """Registry — two human channels (slack, email) and one agent transport. Unknown name →
+    None (the outbox parks the row with a clear reason; never a crash).
+
+    `email` is registered with NO transport (GeniOS-011 S37.U2): the provider is S37.U1, Rohit's
+    decision, so `channels/email.TRANSPORTS` is empty and an email send is a failed result until
+    one is wired. Registering the adapter is what lets `deliverable_channels` contain `email` for
+    an org that has an active email row — no org has one until S37.U3."""
     if name == "slack":
         from genios_engine.deliver.channels.slack import SlackWebhookChannel
         return SlackWebhookChannel()
+    if name == "email":
+        from genios_engine.deliver.channels.email import EmailChannel
+        return EmailChannel()
     if name == "agent_push":
         from genios_engine.deliver.channels.agent import AgentWebhookChannel
         return AgentWebhookChannel()
