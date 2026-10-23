@@ -209,7 +209,8 @@ def _commitment(store, due_event: str = MAILS[0]) -> str:
         for i, (field, value) in enumerate((
                 ("commitment.due_at", (NOW - timedelta(days=1)).isoformat()),
                 ("commitment.action", "send Ada the pricing sheet"),
-                ("commitment.owner", "us"))):
+                ("commitment.text", "send Ada the pricing sheet"),   # every promise the pipeline writes has it
+                ("commitment.owner", f"{ORG}@x.test"))):     # the org's own address: our promise
             conn.execute(text(
                 "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
                 "field, value, value_type, status, occurred_at) values "

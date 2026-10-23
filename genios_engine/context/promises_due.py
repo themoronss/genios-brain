@@ -84,6 +84,25 @@ def _instant(value) -> datetime | None:
     return moment if moment is None or moment.tzinfo else moment.replace(tzinfo=timezone.utc)
 
 
+def _is_ours(r, us) -> bool:
+    """OURS, as the module docstring says: the owner's address, else the node that owns it, else the sender."""
+    if r.owner:
+        return us.is_us(r.owner)
+    if r.maker_key:
+        return us.is_us_node(r.maker_type, r.maker_key)
+    return us.is_us(r.sender)
+
+
+def ours_by_promise(conn, org_id: str, us=None) -> dict[str, bool]:
+    """Every dated promise → whether it is ours, by the one definition above (G012 H-03).
+
+    The pack rule `commitment_overdue` reads this as `commitment.ours` (`reason/runner`). Without it the rule fired
+    on every promise past due, and the card said "You committed to…" for a vendor's: on the design partner's org,
+    23 Oct, 7 of 7 such cards were someone else's promise, and 79 of the 81 dated promises in memory are."""
+    us = identity_for(conn, org_id) if us is None else us
+    return {r.promise_id: _is_ours(r, us) for r in conn.execute(_PROMISES, {"o": org_id})}
+
+
 def promises_due(conn, org_id: str, *, now: datetime,
                  within_days: int = DUE_WITHIN_DAYS) -> tuple[PromiseDue, ...]:
     """Every open promise of ours due by `now` + `within_days` — the overdue first, then soonest due."""
@@ -94,13 +113,7 @@ def promises_due(conn, org_id: str, *, now: datetime,
         due = _instant(r.due_at)
         if due is None or due > until or str(r.status or "").strip().lower() not in OPEN_STATUSES:
             continue
-        if r.owner:
-            ours = us.is_us(r.owner)
-        elif r.maker_key:
-            ours = us.is_us_node(r.maker_type, r.maker_key)
-        else:
-            ours = us.is_us(r.sender)
-        if not ours:
+        if not _is_ours(r, us):
             continue
         to = [str(x).lower() for x in (r.recipients or ()) if not us.is_us(x)] if us.is_us(r.sender) else []
         found.append((r, due, tuple(dict.fromkeys(to))))

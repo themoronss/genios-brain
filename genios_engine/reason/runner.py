@@ -12,6 +12,7 @@ from sqlalchemy import text
 
 from genios_engine.context.availability import load_org_windows, owner_availability_facts
 from genios_engine.context.graph_store import GraphStore
+from genios_engine.context.promises_due import ours_by_promise
 from genios_engine.contracts.reasoning import DecisionOutcome, ExecutionMode
 from genios_engine.packs.capabilities import BUILTIN_CAPABILITIES
 from genios_engine.packs.registry import PackRegistry
@@ -327,6 +328,19 @@ def _meeting_facts(node_id, nbr_adj, nbr_node_types, nbr_fact_idx, self_keys,
     return {k: {"value": v, "confidence": 1, "authority_rank": 2,
                 "independence_group": "graph:meeting_lifecycle", "src_count": 1}
             for k, v in reduced.items() if v is not None}
+
+
+def _commitment_facts(facts: dict, ours: bool) -> dict:
+    """`commitment.ours`, in the envelope every derived fact uses (G012 H-03).
+
+    It carries the version of the fact it was read from — the owner's address when one is written, else the
+    promise's own words, written by the same mail as the `owns` edge — so a file review that saw that mail still
+    explains the rule (`_events_behind`), as it did before the rule read this.
+    """
+    basis = facts.get("commitment.owner") or facts.get("commitment.text") or {}
+    return {"commitment.ours": {"value": bool(ours), "confidence": 1, "authority_rank": 2,
+                                "independence_group": "graph:promise_owner", "src_count": 1,
+                                "fact_version_id": basis.get("fact_version_id") if isinstance(basis, dict) else None}}
 
 
 def _bulk_load_situations(store, org_id: str) -> dict[str, dict]:
@@ -1135,6 +1149,10 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         # domain and the company whose domain is ours are us too, and every caller asks the same
         # `identity_for`, so no two layers can disagree about who the tenant is.
         us = identity_for(c, org_id)
+        # G012 H-03 · WHOSE PROMISE EACH ONE IS, by the morning brief's own definition
+        # (`context/promises_due`), read once and only when a rule is scoped to a promise.
+        ours_by_commitment = (ours_by_promise(c, org_id, us)
+                              if rules_for_scope(all_rules, "commitment") else {})
     # Pre-load the whole org's facts + observations in TWO org-wide queries instead of two per
     # node. The per-node reads were the runner's dominant cost (N×2 round-trips against a networked
     # pooler). Same data, same shape → identical NodeContext per node, so signals are unchanged.
@@ -1225,6 +1243,8 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                         "independence_group": "l2:situation", "src_count": 1})
         if nd.node_type == "deal":                         # F1: deal.status/value from deal.stage/amount
             ctx.facts.update(deal_facts(ctx.facts))
+        if nd.node_id in ours_by_commitment:
+            ctx.facts.update(_commitment_facts(ctx.facts, ours_by_commitment[nd.node_id]))
         if nd.node_type == "meeting":
             # `meeting.status` was answering five separate questions and every rule read it as
             # though it answered all of them. `confirmed` is an INVITATION state — Google sets it

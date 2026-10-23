@@ -8,7 +8,10 @@ register it here")."""
 
 GENERAL_V1 = {
     "id": "general",
-    "version": "1.5.1",              # 1.5.1: champion_quiet asks for `write_interval`, the name
+    "version": "1.6.0",              # 1.6.0: commitment_overdue fires on OUR promises only
+                                    #   (`commitment.ours`, G012 H-03) — on the design partner's
+                                    #   org it fired on a vendor's, 7 of 7 cards on 23 Oct.
+                                    # 1.5.1: champion_quiet asks for `write_interval`, the name
                                     #   `reason/baselines.py` now stores how often a person writes
                                     #   under (STEP-10, D41 — it was `reply_cadence`, the name of a
                                     #   reply time). Same number, same threshold, so no rule's
@@ -82,8 +85,15 @@ GENERAL_V1 = {
         #
         # The commitment node already carries due_at/text/status and an `owns` edge from its
         # actor, so this reads the same facts from where they do not collide.
+        #
+        # OUR PROMISES ONLY (1.6.0). The play is "you owe this": a counterparty's overdue promise
+        # under it read "You committed to…" about a vendor's delivery — 7 of 7 such cards on the
+        # design partner's org, 23 Oct 2026. `commitment.ours` is computed by the runner from the
+        # owner's address, else the `owns` edge, else the sender (`context/promises_due`, the same
+        # answer the morning brief gives); a promise with no answer is not fired on.
         {"id": "commitment_overdue", "level": "prescriptive", "scope": "commitment",
-         "when": [{"fn": "days_since", "path": "commitment.due_at", "op": ">", "value": 0}],
+         "when": [{"fn": "days_since", "path": "commitment.due_at", "op": ">", "value": 0},
+                  {"path": "commitment.ours", "op": "=", "value": True}],
          "urgency": {"type": "elapsed", "path": "commitment.due_at", "h": 1},
          "reason_code": "commitment_overdue", "play": "deliver_commitment", "cooldown_hours": 48,
          # `commitment.owner` ON THE CARD. Three of the pilot's nine cards rendered someone else's
@@ -92,13 +102,8 @@ GENERAL_V1 = {
          # been written (`context/pipeline.py`, "commitment actor"); it is now read, and putting it
          # in `evidence_fields` is what makes it visible rather than merely stored.
          #
-         # WHAT THIS DOES NOT DO, DELIBERATELY. It does not branch the VOICE. A rule here cannot:
-         # pack rules have no notion of who is reading, and inventing one would put a delivery
-         # concern into domain knowledge — the layer that legitimately knows the recipient is
-         # L5.2's audience resolver. So the card now SHOWS whose promise it is, and choosing
-         # between "you promised" and "Priya promised" stays an open unit against the layer that
-         # can actually answer it. Naming the owner is the half that removes the false accusation;
-         # the voice is the half that makes it read naturally.
+         # The VOICE is still not branched here: since 1.6.0 the rule fires only on the tenant's own
+         # promises, so "you" is the tenant; which seat of it is L5.2's audience resolver's to say.
          "linked_deal": True,
          "evidence_fields": ["commitment.due_at", "commitment.action", "commitment.owner"]},
 
