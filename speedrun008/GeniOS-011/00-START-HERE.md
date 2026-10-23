@@ -122,6 +122,7 @@ Production must decide which of these it is. S01's readings answer it.
 | 06 | [06-DECISIONS](06-DECISIONS.md) | 33 decisions for Rohit, each with today's truth and the recommended default |
 | 04 | [04-FOR-HARSH](04-FOR-HARSH.md) | production facts, actions, and the read-only SQL for every production question |
 | 03 | [03-LOG](03-LOG.md) | append-only: what was built, by whom, verified how |
+| 07 | [07-IDEAL-PREVIEW-LIVE](07-IDEAL-PREVIEW-LIVE.md) | for Harsh: what makes every goal and card of brain.thegenios.com/preview come from the brain — why it does not today, card by card, the order (phases A–F), and new units N1–N6 |
 | data | [data/audit-2026-10-23.json](data/audit-2026-10-23.json) | every verified item as data (addresses and the org id redacted) |
 
 ## What is being built now (wave 1, 23 Oct)
