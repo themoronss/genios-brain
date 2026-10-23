@@ -642,6 +642,17 @@ def _row_for(published: QualifiedEnterpriseSignal, inputs: SignalInputs, *,
         # as anything else would be a shape the reader has to guess at.
         coverage=(published.coverage.as_dict()
                   if hasattr(published.coverage, "as_dict") else published.coverage),
+        # THE CONVERSATION, STORED (G012 H-02). `build_signal` carries the five thread facts onto the published
+        # signal and the store's INSERT names their columns (migration 0181) — and this row never set them, so
+        # every stored signal read "no thread". Measured on the design partner's org, 23 Oct: `thread_key` NULL on
+        # 1,383 of 1,383 signals, 1,263 of whose events do belong to a thread. Layer 2 keys a seed by its thread
+        # (`reason/l2/inputs.seed_of`); with none it fell back to the claim-kind subject, so one thread became
+        # `thread:X:commitment` and `thread:X:date`, and block A of the dossier lost who wrote and whose turn it is.
+        thread_key=published.thread_key,
+        direction=published.direction,
+        turn_index=published.turn_index,
+        thread_depth=published.thread_depth,
+        ball_in_court=published.ball_in_court,
     )
 
 

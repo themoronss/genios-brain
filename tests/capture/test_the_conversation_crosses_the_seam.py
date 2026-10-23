@@ -135,6 +135,22 @@ def test_the_store_names_the_conversation_columns_in_its_insert():
         assert column in _COLUMNS, f"{column} is on the contract and no writer names it"
 
 
+def test_the_row_the_publisher_stores_carries_the_conversation():
+    """G012 H-02 · the insert naming a column is not a writer SETTING it. `_row_for` built the stored row without the
+    five thread facts, so they were NULL on every signal in production (1,383 of 1,383, 23 Oct) while the test above
+    passed. Drive the real builder, then the real row builder, and read the row."""
+    from genios_engine.capture.esqe.normalize import ThreadContext
+    from genios_engine.capture.esqe.publisher import SignalInputs, _row_for
+
+    built = _build(ThreadContext(thread_key="thread:th_9", direction="inbound", turn_index=2, thread_depth=3,
+                                 ball_in_court="us"))
+    row = _row_for(built, SignalInputs(importance_bp=5000))
+    assert (row.thread_key, row.direction, row.turn_index, row.thread_depth, row.ball_in_court) == (
+        "thread:th_9", "inbound", 2, 3, "us")
+    none = _row_for(_build(None), SignalInputs(importance_bp=5000))
+    assert (none.thread_key, none.direction, none.ball_in_court) == (None, None, "unknown")
+
+
 def test_migration_0181_adds_the_columns_nullably():
     """Every signal written before this carries no conversation, and the honest reading of that is
     *"we do not know"*. A NOT NULL with a default would have to invent a direction."""
