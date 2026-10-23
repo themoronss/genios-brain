@@ -188,6 +188,33 @@ def test_a_carried_subject_holds_the_watermark_and_is_reasoned_next_pass(store):
         assert c.execute(text("select count(*) from reasoning_results where org_id = :o"), {"o": ORG}).scalar() == 2
 
 
+class _SigAt(_Sig):
+    def __init__(self, signal_id, thread_key, occurred_at):
+        super().__init__()
+        self.signal_id, self.thread_key, self.occurred_at = signal_id, thread_key, occurred_at
+
+
+def test_what_arrived_today_is_judged_before_a_promise_missed_months_ago(store):
+    """The call site of `sweep._priority`: at one judgment a pass, the subject that just arrived is the one judged;
+    the one four months past due is carried. Nearest-due-first judged the stale one (signed hours sort it first)."""
+    signals = PostgresSignalStore(os.environ["GENIOS_TEST_DATABASE_URL"])
+    stale_at, fresh_at = NOW - timedelta(days=130), NOW - timedelta(hours=2)
+    for sid, thread, at, due in (("sig_g008_stale", "th_stale", stale_at, NOW - timedelta(days=120)),
+                                 ("sig_g008_fresh", "th_fresh", fresh_at, None)):
+        signals.put([QualifiedSignalRow(
+            signal_id=sid, org_id=ORG, subject_key=f"thread:{thread}", event_id=f"evt_{sid}", trace_id="tr_g008",
+            signal_type="contract_renewal", importance_bp=9000 if sid.endswith("stale") else 1000,
+            importance_version="v", confidence_bp=8000, extraction_ref=f"struct:evt_{sid}", state="active",
+            occurred_at=at, due_at=due, thread_key=thread, direction="inbound", ball_in_court="us",
+            evidence_refs=({"source_ref": f"evt_{sid}", "quote": QUOTE, "start_offset": 0, "end_offset": len(QUOTE)},))])
+        PostgresBundleStore(engine=store.engine).put(build_bundles(ORG, "tr_g008", [_SigAt(sid, thread, at)]))
+    receipt = l2_pass(store=store, org_id=ORG, now=NOW, llm=_Client(), max_per_pass=1)
+    assert receipt["carried"] == 1, receipt
+    with store.engine.connect() as c:
+        judged = [r[0] for r in c.execute(text("select subject_ref from reasoning_results where org_id = :o"), {"o": ORG})]
+    assert len(judged) == 1 and "th_fresh" in judged[0], judged
+
+
 def test_the_shadow_report_reads_what_the_pass_kept(store):
     """`scripts/l2_shadow_report.py` — every query it runs, against what the pass wrote (and a file subject,
     so the TODAY side's card and review reads run too)."""

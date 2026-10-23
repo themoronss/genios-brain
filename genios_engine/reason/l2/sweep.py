@@ -14,7 +14,8 @@ The run, exactly as `speedrun008/GeniOS-008/layer-2-reasoning/02-PLAN.md` §3 an
   R5  plan        the depth and why (`plan.compile_plan`);
   STEP-02 gate    the fingerprint — the subject's inputs with every clock removed — and a standing row for it
                   answers: no call. A row that failed lately waits; one carried for budget waits a day;
-  R6  judge       nearest due first, at most `MAX_PER_PASS` a pass, through R-9's gate (`judge.judge`);
+  R6  judge       what is live first (`_priority`: a deadline this week, then the newest evidence first), at
+                  most `MAX_PER_PASS` a pass, through R-9's gate (`judge.judge`);
   R8  needs       the decision-changing needs of each result, filed for L1;
   G1  write       every row, every need and the watermark, in ONE transaction at the end.
 
@@ -29,6 +30,7 @@ subject already answered reads as unchanged and costs nothing.
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Mapping
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -60,6 +62,31 @@ from .tools import measured_inputs, run_tools
 _log = get_logger("genios.reason.l2.sweep")
 
 MAX_PER_PASS = 10
+#: A deadline this close to now — either side — is live work: one due in the next week, or one missed this week.
+LIVE_DUE_HOURS = 7 * 24
+
+
+def _priority(measured: Mapping[str, Any], importance: int | None, order: int) -> tuple:
+    """Which subjects the day's judgments go to first — the ones a manager would want looked at now.
+
+    Ordered NEAREST DUE FIRST, the pass judged the most overdue subject first: hours to the nearest due are
+    signed, so a promise missed four months ago (-3000) beat one due tomorrow (+20), and every one of the design
+    partner's judged rows on 22 Oct was 2,087-4,227 hours past due — July calls nobody would chase now — while
+    the ten-a-pass cap and the day's budget carried what had just arrived. The spec's rule is the chief of staff's:
+    tap the founder when something genuinely changed (GeniOS Decoded §1, "notify only on material change").
+
+      1 · a deadline within a week of now, on either side — the closest first;
+      2 · the rest, the newest evidence first — what arrived today before what went quiet in July, and a
+          subject with no dated signal last.
+
+    Inside a band the more important subject first (L1's `importance_bp`), then the order read. Pure."""
+    due = measured.get("nearest_due")
+    hours = due.get("hours") if isinstance(due, dict) else None
+    age = measured.get("newest_signal_age")
+    age = float(age) if isinstance(age, (int, float)) else float("inf")
+    if hours is not None and abs(hours) <= LIVE_DUE_HOURS:
+        return (0, float(abs(hours)), -(importance or 0), order)
+    return (1, age, -(importance or 0), order)
 RETRY_FAILED_AFTER = timedelta(hours=6)
 #: Each clock the tools read is a RUNG in the fingerprint, never a value: "past due" moves it, every hour does not.
 _DUE_RUNGS = (-24, 0, 24, 48, 168)
@@ -235,7 +262,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     # never of the snapshot or the history. Those two were read for every subject first (~50 round trips each)
     # and then thrown away for every unchanged subject and for every subject past `max_per_pass`. Now a subject
     # is first read only as far as its fingerprint (one connection for all of them), the standing rows answer,
-    # the rest are ordered nearest-due first, and only the ones that WILL be judged read their snapshot and
+    # the rest are ordered by `_priority` (what is live first), and only the ones that WILL be judged read their snapshot and
     # history. What a judged subject is shown is unchanged.
     due: list[tuple] = []
     with engine.connect() as conn:
@@ -289,8 +316,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 if subject.oldest_bundle_at is not None:
                     held.append(subject.oldest_bundle_at)
                 continue
-            hours = (measured.get("nearest_due") or {}).get("hours") if isinstance(measured.get("nearest_due"), dict) else None
-            key = (hours if hours is not None else float("inf"), -(importance or 0), order)
+            key = _priority(measured, importance, order)
             due.append((key, subject, parts, file_dossier, people, tools, measured, importance, asked_deeper, fp))
 
     due.sort(key=lambda d: d[0])
