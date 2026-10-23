@@ -1,0 +1,80 @@
+# 15 · Harsh's debug of the live cards, 23 Oct: what is broken, where, and whose unit it is
+
+**Written for:** Rohit, and the agents building GeniOS-012.
+**Date:** 23 Oct 2026. **Status:** findings, each verified. One fix built on `harsh/g012-h01-l2-order` (H-01).
+**Purpose:** every defect below was measured on the design partner's production rows (read-only, 23 Oct
+08:34 UTC; 34 cards, 24 L2 results, 12 expert reviews), and traced to a code line. Each one says which unit of
+[09](09-STEPS.md) owns the file, so it is fixed once, by that unit's agent.
+
+No mail text and no person's name is in this file. Counts and code lines only.
+
+---
+
+## What a manager sees today
+
+34 cards. About 5 are worth a founder's minute. The rest:
+- **"What to do" is empty on 34 of 34.** `cards.recommended` is NULL on every row.
+- **"Why" is engine telemetry.** Across the 11 `dependency_stated` cards: 112 `situation.*` rows, 17 `thread.*`, 11 `derived.*`, and 0 quotes of what anyone said.
+- **10 "We held the one we found…" question cards**, from 11 of 12 expert reviews held.
+- **7 of 7 overdue-commitment cards are someone else's promise**, written as "You committed to…".
+- **Other noise:**
+  - 9 headlines start "Needs a decision —";
+  - 2 duplicate pairs;
+  - 11 cards name the founder in the third person;
+  - 8 of 11 `dependency_stated` cards hang on one intro-platform node.
+
+---
+
+## The defects, worst first
+
+| # | Defect (verified) | Code | Production number | Owner unit (09) | Smallest fix |
+|---|---|---|---|---|---|
+| **P0-1** | **Someone else's promise shown as the founder's overdue one** | `packs/general_v1.py:85` fires `commitment_overdue` on every commitment past due. The `owns` edge is correct (`context/pipeline.py:2219`), but `commitment.owner` is written only when the speaker's address resolves (`pipeline.py:2253-2262`). So the card has no owner, and the render model writes "You committed to…". | 7 of 7 `commitment_overdue` cards. All 7 came from inbound mail; owner edges point at the senders. `commitment.owner` is missing on 7 of 7. | `context/pipeline.py` → **N1b**; the voice → **S34.U3** / L5.2 | Always write `commitment.owner` (name or node when no address) plus whether the owner is us. Fire `deliver_commitment` only on our promises. Theirs is a "waiting on them" card, not "you owe". |
+| **P0-2** | **L1 never stores a signal's thread, direction or turn** | `capture/esqe/publisher.py:580-645` `_row_for` does not copy `thread_key`, `direction`, `turn_index`, `thread_depth`, `ball_in_court` (the in-memory signal has them, `publisher.py:385-396`). | `qualified_signals` for the org: `thread_key` NULL on **1,383 of 1,383**, `ball_in_court` NULL on 1,383; 1,263 of those events do have a thread. | `capture/esqe/*` → **S12.U2 → U12-07** | Copy the five fields in `_row_for`; backfill from `source_events.parent_object_id`. **This is why L2 subjects split into `thread:X:commitment` / `:date`** (`reason/l2/inputs.py:157-165`). Three stored moves were spent on "which thread does this signal belong to". |
+| **P0-3** | **The claim check holds what the model got right** | (a) The dossier prints `[sig:sig_x]`, `[node:node_x]`, `[sit:sit_x]`, `[loop:loop_x]`; a live model cites `sig_x`, and it drops as `unknown_evidence`. (b) One failed decisive fact holds the whole move (`reason/expert/verify.py:1268`). | Held: 11 of 12 expert reviews; offline replay of the 24 L2 results gives 23 of 24. **(a) is 112 of 182 drops (62%).** | `reason/expert/verify.py` → **S20.U2** (13b port) | (a) Attached below: `printed_ids`, measured offline on the 24 stored results (`unknown_evidence` 182 → 70, shown 1 → 3; 4 of 4 mutations killed). (b) Keep the move when at least one decisive fact stands: 22 of 24 would show. That is a design decision for Rohit. |
+| **P1-4** | **The model is never told who the founder is** | `reason/l2/sweep.py:338-341` reads `us` / `our_names` and never passes them to `build_l2_dossier`. Identity reaches a prompt only through the company brief, which has 0 accepted lines. | 24 of 24 dossiers say "No company brief is accepted". One judgment wrote the vendor's move to the founder. | `reason/l2/dossier.py` → **U12-08 / U12-15**; the brief → **S02.U4** | One "who you work for" line from `orgs.name` / `orgs.company` and `identity_for` in the dossier head. Keep it out of `compose` (`tests/platform/test_company_brief.py:63-69`). |
+| **P1-5** | **A held or find_out review becomes a question card** | `reason/domain_shadow.py:837-840`: INSUFFICIENT_CONTEXT → `asks.ask_the_founder`. The small-move rule covers only `act` (`reason/expert/small_move.py:33-40`). | 10 cards. 17 of 24 L2 results are `find_out`, 10 of them about whether a May–July meeting happened. | `reason/domain_shadow.py` → **U12-03 → S18.U4** | Low stakes plus low urgency plus nothing owed → a brief line, not a card. |
+| **P1-6** | **Compiled-lane cards: no move, telemetry why, the situation's phrase as headline** | `deliver/card_builder.py:1336` (only `expert.file_review` writes `recommended`); `card_builder._why` filters nothing (all snapshot evidence, `deliver/pipeline.py:63`); the authored hint "in the words the record used" (`dependency-stated.yaml:73`); the name chain skips `dependency.counterparty` (`card_builder.py:1082`). | 13 compiled cards; the counts above. | `deliver/*` → **S34.U3 / S34.U2 / S34.U1** | Drop `situation.*` / `derived.*` / `interpretation.*` from `why` and add the grounding quotes. Verb-led headline: a YAML change, which needs re-stamping. |
+| **P1-7** | **"Needs a decision —" on cards that are not decisions** | `deliver/render.py:210`; a card reaches `review` because a gate failed. | 9 cards | **U12-18** | The lane as a chip (already planned). |
+| **P2-8** | **One promise, two commitments** | `context/pipeline.py:2214-2216` keys on the subject, the verbatim quote and the due date. | 2 duplicate pairs (two due dates; two quotes) | **N1b** | Key on owner plus normalised action; due as a fact, latest wins. Merge the existing pairs once. |
+| **P2-9** | **One counterparty, many situations** | Each stated dependency is its own situation and signal (`context/stated_dependency.py:88-130`, cap 6 per node at `correlation_dependency.py:189`). | 8 of 11 `dependency_stated` cards on one node | `context/` → **S15.U1 / N4** | One finding per counterparty (or per thread), the statements carried as a list. |
+| **P2-10** | Support readings run for every tenant | `context/runner.py:882` runs `refresh_support_situations` with no activation check. Shadow by design: no card. | 192 `first_response_overdue` (domain `support`, not activated). They fire on newsletters and bots too. | none | Cost only. Optional: skip automated senders. |
+
+---
+
+## Built: H-01 · the L2 pass judges what is live first
+
+- **Branch:** `harsh/g012-h01-l2-order` (on `speedrun008` `f289ca55`), commit `7e17ddfa`.
+- **File:** `reason/l2/sweep.py`. No other unit owns it.
+- **The defect:** nearest-due-first with signed hours judged the *most overdue* subject first. All 24 judged rows were 2,087–4,227 hours past due.
+- **Now:** a deadline within a week either side, closest first; then the newest evidence first.
+- **Proof:** a pure test, plus a Postgres call-site test at one judgment a pass. 4 of 4 mutations killed. No flag, no migration, no prompt change.
+
+---
+
+## Appendix · `printed_ids` (for S20.U2)
+
+Called at the two parse sites before `ExpertReview.from_mapping`:
+- `reason/l2/judge.py _parse`
+- `reason/expert/review.py _parse`
+
+Then the review, its validation, the check and the stored row all carry the printed id. The function only rewrites a string that IS a bare id with exactly one printed match. The full patch with tests is with Harsh.
+
+```python
+def printed_ids(payload, evidence_ids):
+    by_tail = {}
+    printed = set(evidence_ids)
+    for ref in printed:
+        if ":" in ref:
+            by_tail.setdefault(ref.split(":", 1)[1], []).append(ref)
+    alias = {t: refs[0] for t, refs in by_tail.items() if len(refs) == 1 and t not in printed}
+    def walk(v):
+        if isinstance(v, str):
+            return alias.get(v, v)
+        if isinstance(v, (list, tuple)):
+            return type(v)(walk(x) for x in v)
+        if isinstance(v, dict):
+            return {k: walk(x) for k, x in v.items()}
+        return v
+    return walk(payload) if alias else payload
+```
