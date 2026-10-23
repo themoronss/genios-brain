@@ -222,7 +222,11 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,405 → 3,406 GeniOS-011 S18.U1 (23 Oct): `reason/domain_shadow._SITUATION_EVENTS`, the events behind
     # every situation of the pass read once, before the situation loop, so the judged files can be decided first —
     # the engine gaining one statement.
-    assert r["statements"] == 3_406, (
+    # ⛔ MOVED 3,406 → 3,417 GeniOS-011 S18.U3 (23 Oct): why a judged file has no card, read where people look —
+    # +5 `api/workstream_routes` (`_LAST_ATTEMPT`, `_L2_LAST`, `_L2_HOLD`, `_FILE_GATE`, `_FILE_CARD`: the file
+    # page's one line) and +6 `scripts/pipeline_health.check_the_l2_judgment_says_why` (R-9's spend, the
+    # judgments by status, L3's admissions by decision, the ones with no reason, the reasons, the holds' reasons).
+    assert r["statements"] == 3_417, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

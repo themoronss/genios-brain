@@ -1817,6 +1817,109 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                      "snapshot_id": snapshot_id}}
 
 
+#: ⛔ GeniOS-011 S18.U3 (audit `l2-skips-invisible`; `l2-l3-binding-no-situation-no-card`, `l2-daily-cap-formula-first`)
+#: · WHY A JUDGED FILE HAS NO CARD, COUNTED EVERY SWEEP. Every skip, refusal, budget cap and shadow decision of the
+#: judgment lanes was a key of a receipt `run_all` only returned, or one log line — "a refusal nobody can see is a
+#: silent stop". These eight travel on the sweep's `outcomes` beside `no_capability` (a reason, not a funnel stage:
+#: `platform/funnel.STAGES` is closed) and on the result's `why_no_card`, for the daily health row (S05) to keep.
+#:
+#: ONE SOURCE PER NUMBER: each is RELAYED off the receipt of the pass that measured it, never re-derived —
+#:   judged             a judgment that stands this pass: the expert's `reviewed[valid]` + the L2 pass's
+#:                      `ended[result]` (a checked result);
+#:   held               a judgment whose move waits on someone: the expert's `checked[held]` (its move held as one
+#:                      question — every review the pass checked, standing ones too) + L3's `admissions[hold]`;
+#:   refused            the model's answer refused on substance: `reviewed[refused]` + `ended[refused]`;
+#:   truncated          cut at the model's ceiling: `reviewed[truncated]` + `ended[truncated]`;
+#:   carried_budget     not judged for want of budget or the per-pass cap, tried again later: `reviewed[over_budget]`
+#:                      (the expert's `too_big` among them) + `carried`, in each pass;
+#:   fell_back          judged by nobody for a reason none of the above names, so the formula lanes decide the file
+#:                      as before: `reviewed[failed]`, `checked[refused]` (nothing of the review stood its check),
+#:                      `unchecked`; the L2 pass's `ended[failed]` and `not_reached` (its gate reached no model);
+#:   covered_not_carded a file a valid review covers that the compiled lane made no card of, for a reason that is not
+#:                      the review's choice — `len(covered_no_card)` (S18.U1: no situation, no pack, shadow, the cap);
+#:   budget_exhausted   the compiled lane's own count: what the day's signal cap stopped, judged files and formula
+#:                      situations alike (a judged file stopped by it is ALSO in covered_not_carded).
+WHY_NO_CARD: tuple[str, ...] = ("judged", "held", "refused", "truncated", "carried_budget", "fell_back",
+                                "covered_not_carded", "budget_exhausted")
+
+#: The counts that mean a judged file was LOST this sweep — any of them non-zero, the sweep says so at WARNING.
+_LOST: tuple[str, ...] = ("refused", "truncated", "carried_budget", "fell_back", "covered_not_carded",
+                          "budget_exhausted")
+
+
+def _measured(receipt) -> dict | None:
+    """A pass's receipt when it measured something — a SKIP measured nothing happen (zero), a failure measured
+    nothing at all (None, "nobody looked": `platform/funnel`'s rule)."""
+    if not isinstance(receipt, dict) or receipt.get("error"):
+        return None
+    return receipt
+
+
+def _n(receipt: dict, key: str, sub: str | None = None) -> int:
+    value = receipt.get(key)
+    if sub is not None:
+        value = value.get(sub) if isinstance(value, dict) else None
+    elif isinstance(value, dict):
+        value = sum(int(v or 0) for v in value.values())
+    return int(value or 0)
+
+
+def why_no_card(expert, l2, compiled) -> dict[str, int | None]:
+    """The eight `WHY_NO_CARD` counts of one sweep, from the three passes' own receipts (GeniOS-011 S18.U3).
+
+    A count is None when no pass that feeds it measured anything — the expert and L2 passes both failed, or the
+    compiled lane did not run (or failed) for `covered_not_carded` and `budget_exhausted`. A pass that SKIPPED
+    (switched off, no model) judged nothing, and that is a zero. Pure: it reads, it never writes."""
+    e, j = _measured(expert), _measured(l2)
+    c = compiled if isinstance(compiled, dict) and "covered_no_card" in compiled else None
+
+    def both(of_expert, of_l2) -> int | None:
+        if e is None and j is None:
+            return None
+        return (of_expert(e) if e is not None else 0) + (of_l2(j) if j is not None else 0)
+    return {
+        "judged": both(lambda r: _n(r, "reviewed", "valid"), lambda r: _n(r, "ended", "result")),
+        "held": both(lambda r: _n(r, "checked", "held"), lambda r: _n(r, "admissions", "hold")),
+        "refused": both(lambda r: _n(r, "reviewed", "refused"), lambda r: _n(r, "ended", "refused")),
+        "truncated": both(lambda r: _n(r, "reviewed", "truncated"), lambda r: _n(r, "ended", "truncated")),
+        "carried_budget": both(lambda r: _n(r, "reviewed", "over_budget") + _n(r, "carried"),
+                               lambda r: _n(r, "ended", "over_budget") + _n(r, "carried")),
+        "fell_back": both(lambda r: _n(r, "reviewed", "failed") + _n(r, "checked", "refused") + _n(r, "unchecked"),
+                          lambda r: _n(r, "ended", "failed") + _n(r, "not_reached")),
+        "covered_not_carded": len(c["covered_no_card"] or {}) if c is not None else None,
+        "budget_exhausted": int(c.get("budget_exhausted", 0) or 0) if c is not None else None,
+    }
+
+
+def _say_l2_skipped(org_id: str, l2, expert) -> None:
+    """The L2 pass's skip, SAID where it is called (GeniOS-011 S18.U3, audit `l2-skips-invisible`). `l2_pass` returns
+    `{"skipped": …}` without a line, and `run_all` only returned it: a tenant with `l2_reasoning` on and no R-9
+    model judged nothing, unseen. A pass that cannot run (no model, no engine) is a WARNING; so is a switched-off
+    pass the expert handed files to (`to_l2_files`) — those files are judged by nobody. A tenant simply without
+    `l2_reasoning`, nothing handed over, is the switch working: INFO, as the expert pass says its own
+    (`reason/expert/sweep._skipped`, S18.U2) — never a warning on every tenant's every sweep."""
+    why = l2.get("skipped") if isinstance(l2, dict) else None
+    if not why:
+        return
+    handed = (expert.get("to_l2_files") or ()) if isinstance(expert, dict) else ()
+    level = logging.WARNING if (why != "l2_reasoning_not_activated" or handed) else logging.INFO
+    logger.log(level, "the L2 pass skipped org=%s: %s%s", org_id, why,
+               f" — {len(handed)} file(s) the expert handed it are judged by nobody" if handed else "")
+
+
+def _say_why_no_card(org_id: str, counts: dict, files: dict, expert, l2) -> None:
+    """The sweep's eight counts in ONE line — at WARNING when a judged file was lost (`_LOST`), else INFO — with
+    each covered file's reason counted and both passes' skips, so one grep of the log reads the sweep."""
+    lost = any(counts.get(k) for k in _LOST)
+    reasons = Counter(files.values())
+    skipped = {name: r.get("skipped") for name, r in (("expert", expert), ("l2", l2))
+               if isinstance(r, dict) and r.get("skipped")}
+    logger.log(logging.WARNING if lost else logging.INFO, "why no card org=%s %s%s%s", org_id,
+               " ".join(f"{k}={counts[k]}" for k in WHY_NO_CARD),
+               "".join(f" {r}={n}" for r, n in sorted(reasons.items())),
+               "".join(f" skipped_{name}={why}" for name, why in skipped.items()))
+
+
 def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
            registry: PackRegistry | None = None) -> dict:
     """Evaluate EVERY pack applied to the org (sales + general by default), sequentially. Each
@@ -1914,7 +2017,8 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     except Exception:
         logger.exception("the L2 judgment pass failed org=%s", org_id)
         l2 = {"error": True}
-    covered = (expert.get("covered") or {}) if isinstance(expert, dict) else {}
+    _say_l2_skipped(org_id, l2, expert)
+    covered =(expert.get("covered") or {}) if isinstance(expert, dict) else {}
     # …and who is in each covered file, so a situation on one of its people is its file's (U15).
     people = (expert.get("people") or {}) if isinstance(expert, dict) else {}
     # L2 rebuild C1 · with `l2_cards`, the files an ADMITTED L2 judgment reviewed this pass are covered by it.
@@ -1986,6 +2090,15 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     combined["skipped_unchanged"] += compiled_skips
     combined["skipped_unchanged_compiled"] = compiled_skips
     combined["deferred"] += 0
+    # ── GeniOS-011 S18.U3 · WHY A JUDGED FILE HAS NO CARD, beside `no_capability` (`WHY_NO_CARD`). Relayed off the
+    # three judgment passes' own receipts, returned and said in one line. A count no pass measured is None on
+    # `why_no_card` and writes NO key here — `outcomes` holds counts, and an unmeasured stage is not a zero.
+    no_card = why_no_card(expert, l2, compiled)
+    no_card_files = dict((compiled.get("covered_no_card") or {}) if isinstance(compiled, dict) else {})
+    for key, n in no_card.items():
+        if n is not None:
+            combined[key] += n
+    _say_why_no_card(org_id, no_card, no_card_files, expert, l2)
     # ── Z4 / L4.5 · THE VOICE. Give the decisions this sweep just published their narrative.
     #
     # LAST, AND DELIBERATELY SO. Doc 05 §7 and doc 11 guard 5: a bundle is generated AFTER
@@ -2009,4 +2122,5 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
         narration = {"error": True}
 
     return {"nodes": nodes, "outcomes": dict(combined), "eval_time": eval_time.isoformat(),
-            "packs": pack_ids, "narration": narration, "expert": expert, "l2": l2}
+            "packs": pack_ids, "narration": narration, "expert": expert, "l2": l2,
+            "why_no_card": no_card, "why_no_card_files": no_card_files}

@@ -39,6 +39,15 @@ the file's standing corrections — its own and its kind of work's, newest first
 /v1/workstreams/{file_id}/corrections` keeps your words with their scope (`file`, `kind` or `company`) and,
 optionally, the card they are about; `POST …/corrections/{id}/withdraw` takes one back. Nothing is deleted.
 
+AND WHY IT HAS NO CARD (GeniOS-011 S18.U3, audit `l2-skips-invisible`: "Rohit can tell why a file has no card").
+`why_no_card` is one line and its reason — or null while a card of the file is open. Every way a file ends with no
+card was a log line or a key of a sweep's receipt: judgment off, never judged, its last judgment failed, carried for
+budget or too big for one call, refused, cut, unchecked, its check let nothing stand, its move held as a question,
+held by L3, no move or a small one, decided in shadow, stopped by the day's cap, its card closed, or judged with a
+move and no card made (`explain_no_card` says which, in that order). Read from the rows each lane keeps:
+`expert_reviews`, `reasoning_results`, `l2_admissions`, the compiled lane's change gate (`reasoning_fingerprints`)
+and `cards`. Nothing is written.
+
 WHO READS. Anyone the dashboard already lets read the tenant (`get_current_org`), as the company
 brief's own read is (`api/company_brief_routes`). A scoped key is refused there, as everywhere.
 
@@ -67,7 +76,17 @@ from genios_engine.packs.compiler.playbook_reader import playbook_for
 from genios_engine.deliver.seat_access import card_reaches_seat
 from genios_engine.platform.auth import ROLE_OWNER, AuthCtx, get_current_org, require_workspace_user
 from genios_engine.platform.wiring import make_graph_store
+from genios_engine.platform.card_lifecycle import OPEN_STATES
+from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW
+from genios_engine.platform.l4_activation import FEATURE_L2_REASONING
+from genios_engine.platform.l4_activation import activated_features
+from genios_engine.contracts.expert_review import MOVING
+from genios_engine.reason.bundle.budget import REASON_PER_CALL
 from genios_engine.reason.expert import store as reviews
+from genios_engine.reason.expert.decide import CAPABILITY_ID as EXPERT_CAPABILITY
+from genios_engine.reason.expert.decide import mode_of
+from genios_engine.reason.expert.small_move import is_small_move
+from genios_engine.reason.expert.sweep import RETRY_FAILED_AFTER
 
 router = APIRouter()
 _graph = make_graph_store()
@@ -98,6 +117,140 @@ def _review_as_dict(row: reviews.StoredReview | None) -> dict | None:
             "model": row.model, "prompt_version": row.prompt_version,
             "dossier_digest": row.dossier_digest, "cost_micro_usd": row.cost_micro_usd,
             "reviewed_at": row.reviewed_at.isoformat()}
+
+
+# ── GeniOS-011 S18.U3 · WHY THE FILE HAS NO CARD ────────────────────────────────────────────────────────────────
+
+#: The file's last expert attempt, whatever came of it — a failed or carried one is not its review, and is why.
+_LAST_ATTEMPT = text(
+    "select status, reason, reviewed_at as at from expert_reviews where org_id = :o and file_id = :f "
+    "order by reviewed_at desc, fingerprint desc limit 1")
+#: The L2 pass's last judgment of the file as a subject (`file:<id>`, `reason/l2/sweep`).
+_L2_LAST = text(
+    "select status, reason, reasoned_at as at, fingerprint from reasoning_results "
+    "where org_id = :o and subject_ref = :s order by reasoned_at desc, fingerprint desc limit 1")
+#: What L3 held of that judgment (`context/l2_admission`): any HOLD keeps the judgment from being the file's review.
+_L2_HOLD = text(
+    "select reason from l2_admissions where org_id = :o and subject_ref = :s and result_fingerprint = :fp "
+    "and decision = 'hold' order by situation_id limit 1")
+#: The compiled lane's change gate on the file's decision — the key `reason/domain_shadow._decide_covered_files`
+#: records, `<file_id>|expert.file_review`: `shadow` (decided in shadow only) and `indeterminate` (the day's cap).
+_FILE_GATE = text("select outcome from reasoning_fingerprints where org_id = :o and subject_key = :k")
+#: The file's card: an open one first, else the newest.
+_FILE_CARD = text(
+    "select state, state = any(:open) as open from cards where org_id = :o and file_id = :f "
+    "order by (state = any(:open)) desc, created_at desc limit 1")
+
+_STOOD = (reviews.VALID, reviews.REFUSED, reviews.TRUNCATED)
+
+
+def _said(reason: str | None) -> str:
+    return (reason or "no reason recorded").strip().rstrip(".")
+
+
+def _carried(reason: str | None) -> dict:
+    if REASON_PER_CALL in (reason or ""):
+        return {"reason": "too_big", "says": "Carried: this file is too big to judge in one call; it is tried "
+                                             "again tomorrow."}
+    return {"reason": "carried_budget", "says": "Carried: the day's judgment budget was spent before it; it is "
+                                                "judged again tomorrow."}
+
+
+def _not_standing(status: str, reason: str | None) -> dict | None:
+    """A judgment that did not stand — the expert's attempt or the L2 pass's — in one line, or None."""
+    if status == reviews.FAILED:
+        hours = int(RETRY_FAILED_AFTER.total_seconds() // 3600)
+        return {"reason": "failed", "says": f"Its last judgment failed ({_said(reason)}); it is tried again "
+                                            f"within {hours} hours."}
+    if status == reviews.OVER_BUDGET:
+        return _carried(reason)
+    if status == reviews.REFUSED:
+        return {"reason": "refused", "says": f"Its judgment was refused: {_said(reason)}."}
+    if status == reviews.TRUNCATED:
+        return {"reason": "truncated", "says": "Its judgment was cut off at the model's limit; it is judged again "
+                                               "when the file moves."}
+    return None
+
+
+def explain_no_card(*, open_card: bool, last_card_state: str | None, standing, attempt, l2_last, l2_hold: str | None,
+                    gate_outcome: str | None, judging: bool) -> dict | None:
+    """Why the file has no card — `{"reason", "says"}`, one line — or None while a card of it is open (GeniOS-011
+    S18.U3, audit `l2-skips-invisible`). Pure: the route reads the facts, this says which one is why.
+
+    In this order, each the first that holds: a card open (None); no judgment at all, and judgment off for the
+    account; the expert's LAST attempt, newer than the review that stands, failed or was carried; the L2 pass's
+    judgment, newer than that review, held by L3, not standing, or standing in shadow only; never judged; the
+    review that stands refused, cut, unchecked, refused by its check, held as a question, naming no move or a small
+    one; then what the compiled lane did with a moving review — shadow, the day's cap — its card closed, or no
+    card made (no situation or no pack: S18.U1 says which, in the sweep's log)."""
+    if open_card:
+        return None
+    if not judging and standing is None and attempt is None and l2_last is None:
+        return {"reason": "judgment_off",
+                "says": "No judgment reads this file: the expert review is not switched on for this account."}
+    stood_at = standing.reviewed_at if standing is not None else None
+    if attempt is not None and attempt.status not in _STOOD and (stood_at is None or attempt.at > stood_at):
+        said = _not_standing(attempt.status, attempt.reason)
+        if said is not None:
+            return said
+    if l2_last is not None and (stood_at is None or l2_last.at > stood_at):
+        if l2_hold:
+            return {"reason": "held", "says": f"L3 held its judgment: {_said(l2_hold)}."}
+        said = _not_standing(l2_last.status, l2_last.reason)
+        if said is not None:
+            return said
+        return {"reason": "l2_shadow", "says": "Judged by L2 in shadow only: no card is made from it until L2 cards "
+                                              "are switched on."}
+    if standing is None:
+        return {"reason": "not_judged",
+                "says": "Not judged yet: nothing on this file has moved since judgment was switched on."}
+    if standing.status != reviews.VALID:
+        return _not_standing(standing.status, standing.reason)
+    checked = standing.checked
+    if checked is None:
+        return {"reason": "unchecked",
+                "says": "Its judgment is not yet checked against the file's mail, so it decides nothing."}
+    if checked.fate == claim_check.REFUSED:
+        return {"reason": "check_refused",
+                "says": "Its judgment was checked against the file's mail and nothing it said stood."}
+    if checked.fate == claim_check.HELD:
+        return {"reason": "held_question",
+                "says": "Its move waits on one question to you, and that question is no longer open."}
+    mode = mode_of(standing.review, checked)
+    if mode not in MOVING:
+        return {"reason": "no_move", "says": f"Its judgment names no move for you now ({mode})."}
+    if is_small_move(standing):
+        return {"reason": "small_move", "says": "A small move: it is a line in your brief, never a card."}
+    if gate_outcome == "shadow":
+        return {"reason": "expert_shadow",
+                "says": "Decided in shadow only: its domain is dark or not switched on for this account."}
+    if gate_outcome == "indeterminate":
+        return {"reason": "budget_exhausted",
+                "says": "The day's card cap was spent before it; it is decided again on a later sweep."}
+    if last_card_state:
+        return {"reason": "card_closed", "says": f"Its card was made and is now {last_card_state}."}
+    return {"reason": "covered_not_carded",
+            "says": "Judged with a move, and no card was made: no situation is filed on it, or no pack holds its "
+                    "corpus (the sweep's log names which)."}
+
+
+def _why_no_card(conn, org_id: str, file_id: str, standing) -> dict | None:
+    """The facts `explain_no_card` needs, read from the rows each lane keeps — five reads and the switches."""
+    card = conn.execute(_FILE_CARD, {"o": org_id, "f": file_id, "open": list(OPEN_STATES)}).first()
+    if card is not None and card.open:
+        return None
+    subject = f"file:{file_id}"
+    l2_last = conn.execute(_L2_LAST, {"o": org_id, "s": subject}).first()
+    hold = None
+    if l2_last is not None:
+        hold = conn.execute(_L2_HOLD, {"o": org_id, "s": subject, "fp": l2_last.fingerprint}).scalar()
+    on = activated_features(_engine(), org_id)
+    return explain_no_card(
+        open_card=False, last_card_state=card.state if card is not None else None, standing=standing,
+        attempt=conn.execute(_LAST_ATTEMPT, {"o": org_id, "f": file_id}).first(), l2_last=l2_last,
+        l2_hold=hold,
+        gate_outcome=conn.execute(_FILE_GATE, {"o": org_id, "k": f"{file_id}|{EXPERT_CAPABILITY}"}).scalar(),
+        judging=FEATURE_EXPERT_REVIEW in on or FEATURE_L2_REASONING in on)
 
 
 class CorrectionIn(BaseModel):
@@ -159,12 +312,15 @@ def read_workstream(file_id: str, org_id: str = Depends(get_current_org)) -> dic
         if file is None:
             raise HTTPException(404, "no such file")
         timeline = timeline_for(conn, org_id, file_id, now=now)
+        standing = reviews.latest_standing(conn, org_id, file_id)
         return {"as_of": now.isoformat(), "file": file_as_dict(file),
                 "timeline": timeline_as_dict(timeline),
                 "numbers": numbers_as_dict(numbers_for(conn, org_id, file, timeline, now=now)),
                 "playbook": playbook_for(file.work_kind).as_dict(),
-                "review": {"latest": _review_as_dict(reviews.latest_standing(conn, org_id, file_id)),
+                "review": {"latest": _review_as_dict(standing),
                            "valid": _review_as_dict(reviews.latest_valid(conn, org_id, file_id))},
+                # GeniOS-011 S18.U3 · one line saying why the file has no card, or null while one is open.
+                "why_no_card": _why_no_card(conn, org_id, file_id, standing),
                 "corrections": _standing_as_dict(corrections.standing_for(
                     conn, org_id, file_id, people=file.people, kind=file.work_kind))}
 
