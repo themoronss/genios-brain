@@ -5492,14 +5492,157 @@ def feedback_calibrate(pack_id: str = "sales",
             "preview": precision_28d(_graph, org_id, pack_id=pack_id)}
 
 
+#: GeniOS-011 S40.U2 (audit `l6-calibration-shadow-unread`): the last SHADOW calibration run of
+#: this pack. `run_calibration` stores what it would mute, recover and nudge only in
+#: `calibration_runs.result`, and nothing read it but its own idempotency check and a count(*)
+#: receipt. Shadow only: an applied run's real mutes are a different question, and no tenant is
+#: armed (`calibration_apply` is never default-on, decision D13).
+_LAST_SHADOW_CALIBRATION_SQL = (
+    "select run_id, pack_version, authority_revision, period_start, evaluation_time, "
+    "completed_at, result from calibration_runs "
+    "where org_id=:o and pack_id=:p and status='completed' and result->>'mode'='shadow' "
+    "order by completed_at desc nulls last, period_start desc limit 1")
+
+#: GeniOS-011 S40.U2 (audit `l6-unread-ledgers`): the METRICS units whose rows give a precision,
+#: by the layer each one grades — `{unit: (layer, layer name, what the rate is)}`.
+#: ⛔ `actor_outcome_analysis` is NOT here and must not be: it is the one constrained proposal in
+#: the engine (`Visibility(PRIVATE, principals=(assignee,))`, `feedback/target_policy.py`),
+#: `learning_metrics` stores no visibility, and this route admits any seat of the org. It is also
+#: `outcome_analysis`'s rows grouped by person, so adding it would count L4 twice.
+_PRECISION_LAYERS: dict[str, tuple[str, str, str]] = {
+    "feedback_learning": (
+        "L2", "Signals Qualification",
+        "acted / (acted + wrong), per rule — a wrong that does not grade accuracy is not counted"),
+    "outcome_analysis": (
+        "L4", "Executive", "succeeded / (succeeded + failed), per capability and play"),
+    "performance_optimization": (
+        "L5", "Deliver", "engaged / delivered, per channel"),
+}
+
+#: Each subject's LATEST measurement. A learning object's id is its content hash, so every change
+#: in a subject's counts is a new row: summing every row would count one rule once per week.
+_PRECISION_BY_LAYER_SQL = (
+    "select distinct on (unit, subject) unit, subject, value from learning_metrics "
+    "where org_id=:o and unit in ('feedback_learning','outcome_analysis','performance_optimization') "
+    "order by unit, subject, observed_at desc, created_at desc, metric_id desc")
+
+
+def _jsonb(value) -> dict:
+    if isinstance(value, dict):
+        return value
+    import json as _json
+    try:
+        decoded = _json.loads(value or "{}")
+    except (TypeError, ValueError):
+        return {}
+    return decoded if isinstance(decoded, dict) else {}
+
+
+def _last_shadow_calibration(org_id: str, pack_id: str) -> dict | None:
+    """What the last shadow run would have done, each rule with its precision and n.
+
+    ⛔ `would_mute` stores bare rule ids and `would_nudge` a precision without its n, so the run's
+    own measurement is REPLAYED: `precision_28d` at the run's pack version, authority revision and
+    evaluation time. The judgments it counts are bounded by `:as_of`, so this is the window the run
+    scored. A rule the replay finds under more than one capability snapshot (the run HOLDS those)
+    gets `n: None` rather than a pooled number. Read only — GeniOS-011 S40.U2.
+    """
+    from genios_engine.feedback.calibrate import precision_28d
+    with _graph.engine.connect() as conn:
+        run = conn.execute(text(_LAST_SHADOW_CALIBRATION_SQL),
+                           {"o": org_id, "p": pack_id}).first()
+    if run is None:
+        return None
+    result = _jsonb(run.result)
+    stats = precision_28d(_graph, org_id, pack_id=pack_id, pack_version=str(run.pack_version),
+                          authority_revision=int(run.authority_revision),
+                          eval_time=run.evaluation_time)
+
+    def scored(rule_id) -> dict:
+        variants = [s for s in stats.values() if s["rule_id"] == rule_id]
+        if len(variants) != 1:
+            return {"precision": None, "n": None}
+        return {"precision": variants[0]["precision"], "n": variants[0]["judgments"]}
+
+    def nudged(nudge) -> dict:
+        # The run's own rounded precision is kept; the replay adds the n it was scored on.
+        replay = scored(nudge.get("rule_id"))
+        return {**nudge, "precision": nudge.get("precision", replay["precision"]),
+                "n": replay["n"]}
+
+    return {"run_id": run.run_id, "mode": "shadow", "applied": False,
+            "pack_version": str(run.pack_version),
+            "authority_revision": int(run.authority_revision),
+            "period_start": run.period_start.isoformat() if run.period_start else None,
+            "evaluated_at": run.evaluation_time.isoformat() if run.evaluation_time else None,
+            "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+            "window_days": result.get("window_days"),
+            "rules_scored": result.get("rules_scored"),
+            "would_mute": [{"rule_id": r, **scored(r)} for r in result.get("would_mute") or []],
+            "would_recover": [{"rule_id": r, **scored(r)}
+                              for r in result.get("would_recover") or []],
+            "would_nudge": [nudged(n) for n in result.get("would_nudge") or []
+                            if isinstance(n, dict)],
+            "ambiguous_lineages_held": result.get("ambiguous_lineages_held") or []}
+
+
+def _precision_by_layer(org_id: str) -> list[dict]:
+    """Precision by layer from `learning_metrics` — the ledger's first reader (GeniOS-011 S40.U2).
+
+    Each subject's latest measurement, summed per layer: wins over n. Every layer is always listed;
+    one with nothing measured says `n: 0, precision: None`, never a missing row.
+    """
+    totals = {unit: {"wins": 0.0, "n": 0, "subjects": 0} for unit in _PRECISION_LAYERS}
+    with _graph.engine.connect() as conn:
+        rows = conn.execute(text(_PRECISION_BY_LAYER_SQL), {"o": org_id}).fetchall()
+    for row in rows:
+        if row.unit not in totals:
+            continue
+        value = _jsonb(row.value)
+
+        def count(key) -> int:
+            try:
+                return max(0, int(value.get(key) or 0))
+            except (TypeError, ValueError):
+                return 0
+
+        if row.unit == "feedback_learning":
+            wins, n = count("acted"), count("acted") + count("wrong")
+        elif row.unit == "outcome_analysis":
+            wins, n = count("succeeded"), count("succeeded") + count("failed")
+        else:
+            # The unit stores the engagement RATE in basis points over `delivered`, not the count.
+            n = count("delivered")
+            wins = min(10_000, count("engagement_rate_bp")) * n / 10_000
+        total = totals[row.unit]
+        total["wins"] += wins
+        total["n"] += n
+        total["subjects"] += 1
+    out = []
+    for unit, (layer, name, measure) in _PRECISION_LAYERS.items():
+        total = totals[unit]
+        out.append({"layer": layer, "name": name, "unit": unit, "measure": measure,
+                    "subjects": total["subjects"], "n": total["n"],
+                    "precision": round(total["wins"] / total["n"], 4) if total["n"] else None})
+    return out
+
+
 @router.get("/feedback/precision")
 def feedback_precision(pack_id: str = "sales",
                        org_id: str = Depends(get_current_org)) -> dict:
-    """The per-rule 28-day precision counters L6 reads (transparency — the moat is a table)."""
+    """The per-rule 28-day precision counters L6 reads (transparency — the moat is a table).
+
+    GeniOS-011 S40.U2 adds what the last SHADOW calibration would mute, recover and nudge, with
+    each rule's precision and n, so the D13 decision to arm `calibration_apply` is made on what it
+    would do; and precision by layer from `learning_metrics`. ⛔ A read: no calibration runs here,
+    no switch is read, nothing is written.
+    """
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from genios_engine.feedback.calibrate import precision_28d
-    return {"pack_id": pack_id, "rules": precision_28d(_graph, org_id, pack_id=pack_id)}
+    return {"pack_id": pack_id, "rules": precision_28d(_graph, org_id, pack_id=pack_id),
+            "shadow_calibration": _last_shadow_calibration(org_id, pack_id),
+            "precision_by_layer": _precision_by_layer(org_id)}
 
 
 @router.post("/retention/purge")

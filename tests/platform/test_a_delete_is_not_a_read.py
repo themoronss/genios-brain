@@ -234,7 +234,10 @@ def test_the_statement_count_did_NOT_move():
     # projection, `outbox.PUSHABLE_CARDS_SQL`) each held their own `… from cards k join signals s …` piece; they now
     # read the one live-card fragment `deliver/store.LIVE_CARD_FROM` / `PUSH_CARD_FROM`, and recall's read moved to
     # `store._LIVE_CARDS_ABOUT`. Fewer SQL-shaped pieces, the same statements (`statement_plans.census` is 2,590 both).
-    assert r["statements"] == 3_412, (
+    # ⛔ MOVED 3,412 → 3,414 GeniOS-011 S40.U2 (23 Oct): GET /feedback/precision reads the last shadow
+    # calibration run (`api/routes._LAST_SHADOW_CALIBRATION_SQL`) and each subject's latest `learning_metrics`
+    # row (`_PRECISION_BY_LAYER_SQL`) — two SELECTs, each a module constant.
+    assert r["statements"] == 3_414, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -780,7 +783,11 @@ def test_the_write_only_count_held_while_its_MEMBERSHIP_turned_over():
     # ⛔ 9 → 8 on 2026-10-23 (GeniOS-011 S01.U1): `human_events` gained an operator reader,
     # `scripts/g011_prod_readings.py` — a new reader, not this step's resolver; the turnover below
     # is what this test pins, and it still holds.
-    assert len(now) == 8, sorted(now)
+    # ⛔ 8 → 7 on 2026-10-23 (GeniOS-011 S40.U2): `learning_metrics` gained its reader, GET
+    # /feedback/precision's precision by layer (`api/routes._precision_by_layer`) — again a new
+    # reader, not a resolver change.
+    assert len(now) == 7, sorted(now)
+    assert "learning_metrics" not in now
     assert "source_identity_map" not in now
     assert "warm_lane_slots" in now
 

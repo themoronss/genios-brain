@@ -420,9 +420,13 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # script now reads it (`scripts/g011_prod_readings.py`, sizing `l5-wrong-without-reason`) and
     # an operator read is a read (trap 2). A new reader, not a resolver change; the entry moved to
     # `RETRACTED_UNREAD_WRITES` with what still holds of the engine.
+    # ⛔ RE-PINNED 8 → 7 on 2026-10-23 by GeniOS-011 S40.U2: `learning_metrics` left because its
+    # declared mover came true — GET /feedback/precision reads it for precision by layer
+    # (`api/routes._precision_by_layer`). A new reader, not a resolver change; the entry moved to
+    # `RETRACTED_UNREAD_WRITES`.
     assert sorted(TC.written_and_unread()) == [
         "agent_metering", "card_feedback_revisions", "contract_spend_attributions",
-        "delivery_rate_windows", "domain_requests", "learning_metrics",
+        "delivery_rate_windows", "domain_requests",
         "situation_interpretations", "warm_lane_slots"], (
         "⛔ RE-PINNED 2026-10-04 by `3.1b`. The COUNT is still 9 and the MEMBERS turned over: "
         "`source_identity_map` left, because the loop hop made `context/merge.py`'s read visible; "
