@@ -4,9 +4,12 @@ import base64
 import binascii
 import os
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as _FutureTimeout
 from datetime import datetime, timezone
 from typing import Any, Mapping
+from typing import Callable
 
 # Run the cheap deterministic junk rules (Gmail labels + automated senders) BEFORE the S2 LLM prime,
 # so obvious junk never costs a model call. On by default; set false for a clean rollback to
@@ -43,10 +46,30 @@ from genios_engine.capture.gate.relevance import DROP_BELOW_RELEVANCE
 from genios_engine.capture.gate.rules import is_a_delivery_report
 
 from .backfill import DEFAULT_BACKFILL_DAYS, BackfillWindow
+from .composio_base import _EXEC_TIMEOUT_S
 from .composio_base import raise_if_refused
 from .thread_position import thread_place_from_references
 from .base import InferredInstant
 from .base import RawObject, SourceBatch
+from genios_engine.platform.logging import get_logger
+
+_log = get_logger("genios.capture.connectors.composio")
+
+# GeniOS-011 S06.U2 · THE GMAIL CONNECTOR'S HARD DEADLINE. Every other source runs through
+# `ComposioExec`, which bounds each call on a helper thread; this connector called the SDK
+# directly, so its only bound was the httpx timeout — per socket operation, not per call. The
+# same number as `ComposioExec`'s, so a stalled Gmail call and a stalled Calendar call give up
+# at the same moment.
+_GMAIL_EXEC_TIMEOUT_S = _EXEC_TIMEOUT_S
+#: GeniOS-011 S06.U2 · how many times a failed per-message full fetch is tried AGAIN: once. A
+#: blip (a 429, a reset socket) usually clears on the second ask; an expired login or a deleted
+#: message does not, and a longer ladder belongs to a park, not to the sweep's critical path.
+_FULL_FETCH_RETRIES = 1
+#: The pause before that one retry — long enough for a rate limiter's window to move, short
+#: enough that a fetch worker is not held. Network wait only; no DB slot is held here.
+_FULL_FETCH_RETRY_PAUSE_S = float(os.environ.get("GENIOS_L1_FULL_FETCH_RETRY_PAUSE_S", "1.0"))
+#: The value `raw["body_fetch"]` carries when the whole message was wanted and never arrived.
+BODY_FETCH_FAILED = "failed"
 
 # Composio sits BEHIND this interface — auth + Gmail data delivery only. Our contract,
 # gate, graph, and acquisition orchestration stay ours; swappable for native.
@@ -259,6 +282,40 @@ def _shape(value, depth: int = 0):
     return type(value).__name__
 
 
+class WholeMessageUnavailable(RuntimeError):
+    """GeniOS-011 S06.U2 · the whole message was asked for and did not arrive — refused, past the
+    deadline, errored or empty, after one retry. Raised, never answered with what was stored: the
+    re-read door counts it as a skip and its ladder advances (`unread._fetched_whole`)."""
+
+    def __init__(self, message_id: str) -> None:
+        self.message_id = message_id
+        super().__init__(f"gmail whole message unavailable for {message_id} after "
+                         f"{1 + _FULL_FETCH_RETRIES} attempts")
+
+
+def whole_message_reader(connector: "ComposioGmailConnector") -> Callable[[Any], RawObject | None]:
+    """GeniOS-011 S06.U2 · the `whole=` reader `capture/landing/unread.to_raw_object` takes.
+
+    `reader(row)` fetches `row`'s Gmail message again through `connector` — deadline, refusal
+    handling, one retry — and answers the email `RawObject` built from the WHOLE message. It
+    answers None for a row that is not a Gmail message (another source, an attachment: nothing
+    here can fetch those whole), and raises `WholeMessageUnavailable` when the fetch fails, so the
+    caller says it and waits; it never answers the stored payload. Also the reader
+    `scripts/promote_archived.py` re-fetches a promoted mail's body with (B27)."""
+
+    def read(row: Any) -> RawObject | None:
+        if getattr(row, "source", None) != connector.source:
+            return None
+        if getattr(row, "object_type", None) != "email_message":
+            return None
+        message_id = str(getattr(row, "source_object_id", "") or "")
+        if not message_id:
+            return None
+        return connector.whole_message(message_id)
+
+    return read
+
+
 class ComposioGmailConnector:
     source = "gmail"
 
@@ -308,18 +365,39 @@ class ComposioGmailConnector:
             from composio import Composio          # lazy: only needed on real runs
             # Explicit timeout — see composio_base.ComposioExec._c() for why omitting it leaves the
             # underlying httpx client with NO bound at all, which can wedge the single-threaded
-            # scheduler forever on one stalled Gmail call. This connector has no ThreadPoolExecutor
-            # deadline wrapper (unlike ComposioExec), so this is its ONLY defense against a hang.
+            # scheduler forever on one stalled Gmail call. Since GeniOS-011 S06.U2 `_execute` also
+            # has the hard per-call deadline `ComposioExec` has; this bound stays beneath it.
             self._client = Composio(api_key=self._api_key, timeout=60)
         return self._client
 
-    def _execute(self, slug: str, arguments: dict[str, Any]) -> Any:
+    def _raw_execute(self, slug: str, arguments: dict[str, Any]) -> Any:
         # Composio 0.18 requires an explicit toolkit version for manual execution.
         # Trial: skip (uses latest). TODO(prod): pin toolkit_versions={"gmail": "<ver>"}.
         return self._client_().tools.execute(
             slug, user_id=self._user_id, arguments=arguments,
             dangerously_skip_version_check=True,
         )
+
+    def _execute(self, slug: str, arguments: dict[str, Any]) -> Any:
+        """One Composio call, bounded by a hard wall-clock deadline (GeniOS-011 S06.U2).
+
+        The httpx timeout bounds each socket operation, not the call: a server that trickles bytes
+        keeps every read under it forever. `ComposioExec.execute` has always run its call on a
+        helper thread and given up after `_EXEC_TIMEOUT_S`; this connector did not, so a stalled
+        Gmail fetch could hold a sync worker — and the page behind it — with no end. Same shape and
+        same reason as there: NOT a `with ThreadPoolExecutor(...)` block, whose `__exit__` waits on
+        the very thread the deadline gave up on. The answer is returned as it came; a refusal is
+        the caller's to raise (`_fetch`, `fetch_content`), because `fetch_attachment` reads the
+        envelope itself to word its error for the refetch ladder."""
+        ex = ThreadPoolExecutor(max_workers=1)
+        try:
+            return ex.submit(self._raw_execute, slug, arguments).result(
+                timeout=_GMAIL_EXEC_TIMEOUT_S)
+        except _FutureTimeout as e:
+            raise TimeoutError(f"composio {slug} gave no answer within "
+                               f"{_GMAIL_EXEC_TIMEOUT_S:g}s") from e
+        finally:
+            ex.shutdown(wait=False)
 
     def _fetch(self, *, max_results: int, query: str | None = None,
                page_token: str | None = None) -> Any:
@@ -352,18 +430,61 @@ class ComposioGmailConnector:
         return self._to_batch(self._fetch(max_results=limit, query=query, page_token=cursor))
 
     def fetch_content(self, object_ref: str) -> dict[str, Any]:
-        return self._execute("GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID", {"message_id": object_ref})
+        # GeniOS-011 S06.U2 · A1's rule on the per-message call too. Composio's failure envelope
+        # has no `data`, so `_full_message` used to read the ENVELOPE itself as the message — a
+        # dict with no payload — and the list text became the body. A refusal raises here.
+        return raise_if_refused("GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID",
+                                self._execute("GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID",
+                                              {"message_id": object_ref}))
 
     # -- full-message + attachment retrieval ---------------------------------------
-    def _full_message(self, mid: str) -> dict:
-        """Fetch the FULL MIME message (payload.parts + full body). Defensive: any failure
-        (not connected, API error, unknown shape) → {} and we fall back to the list message."""
-        try:
-            r = self.fetch_content(mid)
-        except Exception:      # noqa: BLE001 — never let one message abort the batch
-            return {}
-        d = r.get("data", r) if isinstance(r, dict) else {}
-        return d if isinstance(d, dict) else {}
+    def _full_message(self, mid: str) -> dict | None:
+        """The FULL MIME message (payload.parts + full body), or None when it could not be had.
+
+        ⛔ GeniOS-011 S06.U2 · NONE IS NOT THE LIST MESSAGE. This returned `{}` on every failure
+        and `_to_objects` read `src = full or m`, so a refused, timed-out or failed fetch became
+        the list message and its text or snippet became `raw["body"]` with no marker: a body we
+        did not get, passed off as the body, extracted, and able to publish. Now a failure — a
+        refusal, the deadline, any error, an answer with no message in it — is tried ONCE more
+        (`_FULL_FETCH_RETRIES`), and failing again is said in the log and answered None, which
+        `_to_objects` marks (`raw["body_fetch"]`) and the gate parks. Never raises: one message
+        must not abort a 2,000-message batch."""
+        why = "no answer"
+        for attempt in range(1 + _FULL_FETCH_RETRIES):
+            if attempt:
+                time.sleep(_FULL_FETCH_RETRY_PAUSE_S)
+            try:
+                r = self.fetch_content(mid)
+            except Exception as e:      # noqa: BLE001 — said below, then parked; never the snippet
+                why = f"{type(e).__name__}: {str(e)[:200]}"
+                continue
+            d = r.get("data", r) if isinstance(r, dict) else None
+            if isinstance(d, dict) and d:
+                return d
+            why = "an answer with no message in it"
+        _log.warning("gmail full fetch failed after %d attempts message=%s: %s",
+                     1 + _FULL_FETCH_RETRIES, mid, why)
+        return None
+
+    def whole_message(self, message_id: str) -> RawObject:
+        """GeniOS-011 S06.U2 · ONE MESSAGE, READ WHOLE — or `WholeMessageUnavailable`.
+
+        For the doors that read a mail again after the sweep: a junk verdict's re-judgment
+        (`capture/landing/unread.to_raw_object(whole=…)`, S06.U1) and a promotion out of the
+        archive (`scripts/promote_archived.py`, B27). On the Gmail fast path a confident junk drop
+        kept only its list snippet, so both must fetch the message again — with this connector's
+        deadline, refusal handling and one retry — and neither may fall back to what was stored.
+        The email only: its attachments are not downloaded (`attachments=False`), because both
+        callers read the covering mail's words, and a refetch of a file is the refetch ladder's."""
+        full = self._full_message(message_id)
+        if full is None:
+            raise WholeMessageUnavailable(message_id)
+        if not (full.get("messageId") or full.get("id") or full.get("message_id")):
+            full = {**full, "messageId": message_id}
+        objs = self._to_objects(full, fetch_full=False, attachments=False)
+        if not objs or objs[0].object_type != "email_message":
+            raise WholeMessageUnavailable(message_id)
+        return objs[0]
 
     def fetch_attachment(self, message_id: str, attachment_id: str, *,
                          file_name: str | None = None) -> bytes:
@@ -667,14 +788,24 @@ class ComposioGmailConnector:
         objs = self._to_objects(m)
         return objs[0] if objs else None
 
-    def _to_objects(self, m: dict, fetch_full: bool | None = None) -> list[RawObject]:
+    def _to_objects(self, m: dict, fetch_full: bool | None = None, *,
+                    attachments: bool = True) -> list[RawObject]:
         """One Gmail message → [email_message] + one [email_attachment] per file. The email carries
         the FULL body (walked from MIME parts, snippet only as fallback); each attachment is text-
         extracted (native/OCR) exactly like a Drive file so its content reaches the graph too. A
         delivery report's status and the original it carries are not files (`_REPORT_PARTS`).
 
         fetch_full: None → decide by need_full (legacy); True → always full-fetch (keepers); False →
-        LIGHT (list snippet only, NO per-message call) — used to gate cheaply before deciding."""
+        LIGHT (list snippet only, NO per-message call) — used to gate cheaply before deciding.
+
+        attachments: False → the email only, no attachment downloaded (`whole_message`).
+
+        GeniOS-011 S06.U2 · a full fetch that was WANTED and failed (`_full_message` → None, after
+        its one retry) is never read from the list message: the email keeps the list's own fields
+        (sender, date, subject, labels, the provider's snippet — each named as what it is) and NO
+        body, carries `raw["body_fetch"] = "failed"`, and a `fetch_failed` document status that the
+        gate's integrity rule — which no whitelist bypasses — parks as DOC-05, a NEEDS_REFETCH code
+        (`capture/parked/drain`). `run_sync` counts it (`SyncSummary.body_fetch_failed`)."""
         mid = m.get("messageId") or m.get("id") or m.get("message_id")
         if not mid:
             return []
@@ -694,6 +825,8 @@ class ComposioGmailConnector:
         else:
             need_full = not (list_payload and list_payload.get("parts"))
         full = self._full_message(mid) if need_full else {}
+        body_fetch_failed = need_full and full is None   # wanted, and never arrived (S06.U2)
+        full = full or {}
         src = full or m                                  # prefer the full message for every field
         payload = (src.get("payload") if isinstance(src.get("payload"), dict) else list_payload)
 
@@ -744,6 +877,10 @@ class ComposioGmailConnector:
                 texts, atts = [], []
                 self._walk(payload, texts, atts)
         body, snippet = _body_and_snippet(texts, list_body, preview)
+        if body_fetch_failed:
+            # The list's text is not the body (S06.U2). The provider's preview stays the snippet,
+            # under its own name; the body is the one thing we do not have, so it is empty.
+            body, snippet = "", (preview if preview.strip() else "")
 
         objs = [RawObject(
             source="gmail", object_type="email_message", source_object_id=mid,
@@ -791,10 +928,20 @@ class ComposioGmailConnector:
                     for a in atts),
             },
         )]
+        if body_fetch_failed:
+            # GeniOS-011 S06.U2 · SAID, AND PARKED. `body_fetch` is the marker any reader can
+            # refuse on; `document.status = fetch_failed` is what the gate already parks without
+            # exception (`gate/rules.content_integrity_rule` → DOC-05, NEEDS_REFETCH) — a message
+            # whose content download failed is that rule's case exactly, and a whitelist that
+            # keeps the sender may not turn it into an extraction of nothing.
+            objs[0].raw["body_fetch"] = BODY_FETCH_FAILED
+            objs[0].raw["document"] = {"status": "fetch_failed", "native_parse_used": False,
+                                       "ocr_used": False, "ocr_engine": None, "ocr_pages": 0,
+                                       "confidence_bp": None}
 
         # each attachment → its own DOCUMENT event (mirrors the Drive connector): download bytes,
         # extract text natively/OCR, gate + L2 it. "PDF me file hai usse bhi banke aana chahiye."
-        for i, a in enumerate(atts):
+        for i, a in enumerate(atts if attachments else ()):
             mime = (a.get("mime") or "").lower()
             # skip non-extractable files BEFORE the expensive per-file download (this is the L1
             # speed fix): only PDFs/Office/txt, or images when OCR is on, are worth fetching.
