@@ -326,22 +326,22 @@ _CARD_COLUMNS = ("signal_id", "card_id", "urgency_band", "headline", "situation"
 
 
 def _session_cards(engine, org_id: str) -> list[dict]:
-    """The live authoritative queue (the same rows `agent_api.poll_signals` reads) for a caller
-    with no agent identity. The seat filter is applied by the caller."""
-    from genios_engine.reason.authority import (AUTHORITATIVE_SCORE_SQL,
-                                                AUTHORITATIVE_SIGNAL_JOINS,
-                                                AUTHORITATIVE_SIGNAL_PREDICATE)
+    """The live queue for a caller with no agent identity — a PERSON's session, so every door a card has
+    (`deliver/store.LIVE_CARD_FROM`, GeniOS-011 S36.U2): a decision, a situation card (team, verify, the
+    post-meeting follow-up) and a question card, as the Cards page shows them. It read the decision door alone
+    (the rows `agent_api.poll_signals` reads); an agent key still goes through the poll, whose door is the push
+    lanes' (`store.PUSH_CARD_DOORS`). The seat filter is applied by the caller."""
+    from genios_engine.deliver.store import LIVE_CARD_FROM
+    from genios_engine.deliver.store import LIVE_CARD_RANK_SQL
+    from genios_engine.deliver.store import LIVE_CARD_SCORE_SQL
+    from genios_engine.deliver.store import live_card_params
     with engine.connect() as c:
         return [dict(r) for r in c.execute(text(
             "select k.signal_id, k.card_id, k.urgency_band, k.headline, k.situation, "
-            + AUTHORITATIVE_SCORE_SQL + " as score, k.state, k.created_at from cards k "
-            "join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
-            + AUTHORITATIVE_SIGNAL_JOINS +
-            " where k.org_id=:o and k.state in ('queued','surfaced','snoozed') "
-            "and k.expires_at > :authority_time and s.status='open' and "
-            + AUTHORITATIVE_SIGNAL_PREDICATE +
-            " order by selected_rc.final_utility_bp desc, k.card_id"),
-            {"o": org_id, "authority_time": datetime.now(timezone.utc)}).mappings()]
+            + LIVE_CARD_SCORE_SQL + " as score, k.state, k.created_at" + LIVE_CARD_FROM +
+            "where k.org_id=:o and k.state in ('queued','surfaced','snoozed') "
+            "order by " + LIVE_CARD_RANK_SQL + " desc, k.card_id"),
+            {"o": org_id, **live_card_params(datetime.now(timezone.utc))}).mappings()]
 
 
 def tool_list_cards(caller: Caller, args: dict) -> dict:

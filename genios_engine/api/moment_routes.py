@@ -30,6 +30,7 @@ from genios_engine.api.device_routes import _bearer, _err
 from genios_engine.contracts.moments import (KINDS, DeviceMoment, EvaluateRequest,
                                              FeedbackRequest, FollowupResolveRequest,
                                              FollowupSnoozeRequest)
+from genios_engine.deliver.store import live_cards_about
 from genios_engine.platform import capture_policy as P
 from genios_engine.platform import company_brief as CB
 from genios_engine.platform import devices as D
@@ -107,6 +108,13 @@ def get_slice(request: Request, since: int | None = Query(default=None, ge=0)):
 
 
 # ── §2.2 evaluate ─────────────────────────────────────────────────────────────────────────────
+def _live_cards(conn, *, org_id: str, node_ids, at) -> list[dict]:
+    """Ask's recall grounds on the live cards through every door (`deliver/store.live_cards_about`; GeniOS-011
+    S36.U2), handed down because `reason/` may not import `deliver/`. A named CALL rather than the function passed
+    as a value: `deliver/delivery_health.undeclared` counts calls, and the reader IS called — from here."""
+    return live_cards_about(conn, org_id=org_id, node_ids=node_ids, at=at)
+
+
 def _stored(c, *, moment_id: str, org_id: str, seat_id: str) -> dict | None:
     r = c.execute(text(
         "select m.*, null as feedback from moments m where m.moment_id = :m "
@@ -176,7 +184,7 @@ def evaluate(body: EvaluateRequest, request: Request):
             if hit is not None and hit.get("displayed"):      # only a SHOWN twin is a duplicate
                 return {**M._public(hit), "display": False, "reason": G.DUPLICATE}
             content = R.compose(R.read(c, org_id=p.org_id, subject=subj, me=me, viewer=viewer,
-                                       us=us, now=now), now=now)
+                                       us=us, now=now, live_cards=_live_cards), now=now)
             if content is not None:
                 chosen = (subj, key, content)
                 break

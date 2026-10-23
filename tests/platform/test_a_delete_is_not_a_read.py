@@ -222,7 +222,12 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,405 → 3,406 GeniOS-011 S18.U1 (23 Oct): `reason/domain_shadow._SITUATION_EVENTS`, the events behind
     # every situation of the pass read once, before the situation loop, so the judged files can be decided first —
     # the engine gaining one statement.
-    assert r["statements"] == 3_406, (
+    # ⛔ MOVED 3,406 → 3,399 GeniOS-011 S36.U2 (23 Oct): no statement gained or lost — eight card readers (the morning
+    # brief, the Context panel, `/v1/insights` and its dismiss, MCP `_session_cards`, the agent poll, the push
+    # projection, `outbox.PUSHABLE_CARDS_SQL`) each held their own `… from cards k join signals s …` piece; they now
+    # read the one live-card fragment `deliver/store.LIVE_CARD_FROM` / `PUSH_CARD_FROM`, and recall's read moved to
+    # `store._LIVE_CARDS_ABOUT`. Fewer SQL-shaped pieces, the same statements (`statement_plans.census` is 2,590 both).
+    assert r["statements"] == 3_399, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
