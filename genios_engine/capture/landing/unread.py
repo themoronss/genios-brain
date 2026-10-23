@@ -16,13 +16,23 @@ caller captures that object again through the ordinary door.
 STORE, DON'T DELETE. The old row is not removed. `set_aside` marks it `superseded` and moves its
 dedup key out of the way so the new capture can land; `restore` puts back every row whose object
 did not land again, so a failed re-read loses nothing and is simply tried on the next pass.
+
+GeniOS-011 S06.U1 · ONE RUNG IS NOT A KEPT MAIL. The parked drain files an archive an OLDER junk filter
+judged as `LLM_JUNK_REJUDGE` (`capture/parked/drain`), and this ladder is the door that reads it — but
+it reads it as a re-JUDGMENT: its event waits `archived`, not `emitted`; it is rebuilt from the whole
+message fetched again (`to_raw_object(whole=…)`), never from the stored payload, which on the Gmail
+fast path is the very snippet the junk verdict was made on; a caller that cannot fetch whole messages
+never takes it (`find_parked_extractions(rejudge=…)`); and everything that puts a set-aside row back
+puts it back `archived`. A promotion overtakes it: the kept mail joins the ladder as one nothing read.
 """
 
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from typing import Callable
 
 from sqlalchemy import bindparam, text
 
@@ -36,15 +46,26 @@ logger = get_logger(__name__)
 SUPERSEDED = "superseded"
 _MARK = "#superseded:"
 
+# A re-judgment's row is set aside from `archived` (GeniOS-011 S06.U1) — only while its re-judgment
+# is pending, so an archive is never set aside for any other rung.
 _SET_ASIDE = text(
-    "update source_events set outcome = :sup, dedup_key = dedup_key || :mark || event_id "
-    " where org_id = :o and outcome = 'emitted' and event_id in :ids"
+    "update source_events se set outcome = :sup, dedup_key = se.dedup_key || :mark || se.event_id "
+    " where se.org_id = :o and se.event_id in :ids "
+    "   and (se.outcome = 'emitted' or (se.outcome = 'archived' and exists ("
+    "        select 1 from parked_events pe where pe.org_id = se.org_id "
+    "           and pe.event_id = se.event_id and pe.status = 'pending' "
+    "           and pe.reason_code = :rejudge)))"
 ).bindparams(bindparam("ids", expanding=True))
 
 # Only a row whose original key is still free goes back: a key that is taken belongs to the new
-# capture of the same object, and that row is now the live one.
+# capture of the same object, and that row is now the live one. It goes back to what it was: a row
+# whose re-judgment still waits is an ARCHIVE (GeniOS-011 S06.U1) — `emitted` would be the silent
+# re-admission that unit ends.
 _RESTORE = text(
-    "update source_events se set outcome = 'emitted', "
+    "update source_events se set outcome = case when exists ("
+    "           select 1 from parked_events pe where pe.org_id = se.org_id "
+    "              and pe.event_id = se.event_id and pe.status = 'pending' "
+    "              and pe.reason_code = :rejudge) then 'archived' else 'emitted' end, "
     "       dedup_key = split_part(se.dedup_key, :mark, 1) "
     " where se.org_id = :o and se.outcome = :sup and se.event_id in :ids "
     "   and not exists (select 1 from source_events n where n.org_id = se.org_id "
@@ -55,9 +76,13 @@ _RESTORE = text(
 # A pass that died between `set_aside` and `restore` (a deploy, a crash) leaves rows `superseded`
 # with their original key still free, and the queue only reads `emitted` — so without this they
 # would never be read again. The chain holds the org's run lease, so when a pass STARTS no other
-# re-read for the org is in flight and every such row is an orphan.
+# re-read for the org is in flight and every such row is an orphan. A re-judgment's row goes back
+# `archived`, as in `_RESTORE`.
 _RECOVER = text(
-    "update source_events se set outcome = 'emitted', "
+    "update source_events se set outcome = case when exists ("
+    "           select 1 from parked_events pe where pe.org_id = se.org_id "
+    "              and pe.event_id = se.event_id and pe.status = 'pending' "
+    "              and pe.reason_code = :rejudge) then 'archived' else 'emitted' end, "
     "       dedup_key = split_part(se.dedup_key, :mark, 1) "
     " where se.org_id = :o and se.outcome = :sup "
     "   and not exists (select 1 from source_events n where n.org_id = se.org_id "
@@ -68,12 +93,22 @@ def recover_orphans(engine, org_id: str) -> int:
     """Put back every row an interrupted pass set aside and never re-landed. Call only at the
     start of a pass, under the org's run lease. Returns how many."""
     with engine.begin() as c:
-        return c.execute(_RECOVER, {"o": org_id, "sup": SUPERSEDED, "mark": _MARK}).rowcount
+        return c.execute(_RECOVER, {"o": org_id, "sup": SUPERSEDED, "mark": _MARK,
+                                    "rejudge": LLM_JUNK_REJUDGE}).rowcount
 
 
-def to_raw_object(row: Any, crypto_key: str) -> RawObject | None:
+def to_raw_object(row: Any, crypto_key: str, *,
+                  whole: Callable[[Any], RawObject | None] | None = None) -> RawObject | None:
     """The `RawObject` this event was captured from: the stored payload plus the ledger columns.
-    None when the payload cannot be decrypted or parsed — that row is skipped, not guessed."""
+    None when the payload cannot be decrypted or parsed — that row is skipped, not guessed.
+
+    A RE-JUDGMENT (`LLM_JUNK_REJUDGE`, GeniOS-011 S06.U1) is never rebuilt from what was stored: on
+    the Gmail fast path a confident junk verdict kept only the list fields and the snippet, and
+    reading those again would re-judge — or extract — the snippet. `whole(row)` fetches the message
+    again through its connector; None, an error, or another message is a skip (the park waits and
+    its ladder advances), never the stored payload in its place."""
+    if getattr(row, "reason_code", None) == LLM_JUNK_REJUDGE:
+        return _fetched_whole(row, whole)
     try:
         payload = json.loads(decrypt(bytes(row.enc_content), crypto_key)) if row.enc_content else {}
     except Exception:      # noqa: BLE001 — an unreadable payload is a skip, never a crash
@@ -96,12 +131,30 @@ def to_raw_object(row: Any, crypto_key: str) -> RawObject | None:
         rereading=getattr(row, "reason_code", None) or "unread")
 
 
+def _fetched_whole(row: Any, whole) -> RawObject | None:
+    """The whole message for a re-judgment, marked as one — or None, said in the log."""
+    fetched = None
+    if whole is not None:
+        try:
+            fetched = whole(row)
+        except Exception:      # noqa: BLE001 — a refused fetch is a skip, never the snippet
+            logger.warning("unread: whole message unavailable for a re-judgment event=%s",
+                           row.event_id, exc_info=True)
+            return None
+    if (fetched is None or fetched.source != row.source
+            or fetched.source_object_id != row.source_object_id):
+        logger.info("unread: re-judgment waits for its whole message event=%s", row.event_id)
+        return None
+    return replace(fetched, rereading=LLM_JUNK_REJUDGE)
+
+
 def set_aside(engine, org_id: str, event_ids: list[str]) -> int:
     """Mark the old rows `superseded` and free their dedup keys for the new capture."""
     if not event_ids:
         return 0
     with engine.begin() as c:
         return c.execute(_SET_ASIDE, {"o": org_id, "sup": SUPERSEDED, "mark": _MARK,
+                                      "rejudge": LLM_JUNK_REJUDGE,
                                       "ids": list(event_ids)}).rowcount
 
 
@@ -111,6 +164,7 @@ def restore(engine, org_id: str, event_ids: list[str]) -> int:
         return 0
     with engine.begin() as c:
         return c.execute(_RESTORE, {"o": org_id, "sup": SUPERSEDED, "mark": _MARK,
+                                    "rejudge": LLM_JUNK_REJUDGE,
                                     "ids": list(event_ids)}).rowcount
 
 
@@ -135,6 +189,7 @@ def restore(engine, org_id: str, event_ids: list[str]) -> int:
 #: The extractor's park codes — the drain's `NEEDS_REEXTRACTION`, kept in one place.
 from genios_engine.capture.parked.drain import (EXTRACTION_NEVER_RAN,  # noqa: E402
                                                 NEEDS_REEXTRACTION)
+from genios_engine.capture.parked.drain import LLM_JUNK_REJUDGE  # noqa: E402
 
 #: How many times a message's extraction may park before it is given up.
 MAX_EXTRACTION_ATTEMPTS = 3
@@ -148,25 +203,32 @@ PARK_SUPERSEDED = "superseded"
 #: every older row that was due, and the ladder read nothing until the burst came due. The due test
 #: is here now, so the limit counts only due rows; `find_parked_extractions` still reads it again in
 #: Python, and `tests/capture/test_the_ladder_never_starves_pg.py` holds the two equal.
+#: ⛔ THE PARKS COUNTED ONCE PER MESSAGE (GeniOS-009 G0.1, 22 Oct 2026). `message_parks` was a correlated
+#: subquery the planner ran for every candidate PAIR in the join — 202 parked rows, 40,804 runs, 1-24 s locally
+#: and CI's 120 s statement timeout on a fuller database. It is now one grouped read of the org's parks, joined
+#: by message (source + source object); the count, and a null object id counting 0, are what they were.
 #: ⛔ TWO WHOLE LITERALS, SAME INNER SELECT. `_OVER_THE_LIMIT` reads the rows this one now leaves
 #: out; built from a shared fragment, the SQL resolver would read each `+` as a statement with a hole
 #: (`platform/table_coverage`), so the inner select is spelled twice and the ladder's test holds the
 #: two copies identical.
+#: GeniOS-011 S06.U1 · a re-judgment's event waits `archived`, every other rung's `emitted` — one CASE.
 _FIND_PARKED = text(
     "select * from ("
     "select se.event_id, se.connection_id, se.source, se.object_type, se.source_object_id, "
     "       se.parent_object_id, se.dedup_key, se.actor, se.recipients, se.internal_kind, "
     "       se.occurred_at, rp.enc_content, pe.reason_code, pe.created_at as parked_at, "
     "       pe.refetch_attempts as row_attempts, pe.refetch_next_attempt_at as next_attempt_at, "
-    "       (select count(*) from parked_events p2 "
-    "          join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
-    "         where p2.org_id = se.org_id and s2.source = se.source "
-    "           and s2.source_object_id = se.source_object_id "
-    "           and p2.reason_code in :codes) as message_parks "
+    "       coalesce(mp.parks, 0) as message_parks "
     "  from source_events se "
     "  join parked_events pe on pe.org_id = se.org_id and pe.event_id = se.event_id "
     "  join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
-    " where se.org_id = :o and se.outcome = 'emitted' "
+    "  left join (select s2.source, s2.source_object_id, count(*) as parks from parked_events p2 "
+    "               join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
+    "              where p2.org_id = :o and p2.reason_code in :codes "
+    "              group by s2.source, s2.source_object_id) mp "
+    "    on mp.source = se.source and mp.source_object_id = se.source_object_id "
+    " where se.org_id = :o "
+    "   and se.outcome = case when pe.reason_code = :rejudge then 'archived' else 'emitted' end "
     "   and pe.status = 'pending' and pe.reason_code in :codes "
     "   and (rp.expires_at is null or rp.expires_at > :now) "
     "   and not exists (select 1 from l1_extraction_results x "
@@ -185,15 +247,17 @@ _OVER_THE_LIMIT = text(
     "       se.parent_object_id, se.dedup_key, se.actor, se.recipients, se.internal_kind, "
     "       se.occurred_at, rp.enc_content, pe.reason_code, pe.created_at as parked_at, "
     "       pe.refetch_attempts as row_attempts, pe.refetch_next_attempt_at as next_attempt_at, "
-    "       (select count(*) from parked_events p2 "
-    "          join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
-    "         where p2.org_id = se.org_id and s2.source = se.source "
-    "           and s2.source_object_id = se.source_object_id "
-    "           and p2.reason_code in :codes) as message_parks "
+    "       coalesce(mp.parks, 0) as message_parks "
     "  from source_events se "
     "  join parked_events pe on pe.org_id = se.org_id and pe.event_id = se.event_id "
     "  join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
-    " where se.org_id = :o and se.outcome = 'emitted' "
+    "  left join (select s2.source, s2.source_object_id, count(*) as parks from parked_events p2 "
+    "               join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
+    "              where p2.org_id = :o and p2.reason_code in :codes "
+    "              group by s2.source, s2.source_object_id) mp "
+    "    on mp.source = se.source and mp.source_object_id = se.source_object_id "
+    " where se.org_id = :o "
+    "   and se.outcome = case when pe.reason_code = :rejudge then 'archived' else 'emitted' end "
     "   and pe.status = 'pending' and pe.reason_code in :codes "
     "   and (rp.expires_at is null or rp.expires_at > :now) "
     "   and not exists (select 1 from l1_extraction_results x "
@@ -225,18 +289,28 @@ def _retry_wait(attempts: int) -> timedelta:
     return EXTRACTION_RETRY_BASE * (2 ** max(0, attempts - 1))
 
 
+def _ladder_codes(rejudge: bool) -> list[str]:
+    """The rungs a caller may take: a re-judgment only for a caller that can fetch whole messages
+    (GeniOS-011 S06.U1) — every other caller would rebuild it from nothing, or spend its ladder."""
+    return sorted(NEEDS_REEXTRACTION if rejudge else NEEDS_REEXTRACTION - {LLM_JUNK_REJUDGE})
+
+
 def find_parked_extractions(engine, org_id: str, *, limit: int = 50,
-                            now: datetime | None = None) -> list[Any]:
+                            now: datetime | None = None, rejudge: bool = False) -> list[Any]:
     """Emitted events whose extraction parked, whose payload is kept, and that are due again.
 
     Due means: the message has parked fewer than `MAX_EXTRACTION_ATTEMPTS` times, this row's own
     re-land attempts are under it too, and the wait for the attempt it is on has passed. A message
     over the limit is not returned here — `give_up_parked_extractions` settles it, with its reason.
+
+    `rejudge` (GeniOS-011 S06.U1): also the archives filed for re-judgment — only for a caller that
+    hands `to_raw_object` a whole-message reader. Without it they wait, `pending`, counted.
     """
     now = now or datetime.now(timezone.utc)
     with engine.connect() as c:
         rows = c.execute(_FIND_PARKED, {"o": org_id, "lim": int(limit), "now": now,
-                                        "codes": sorted(NEEDS_REEXTRACTION),
+                                        "codes": _ladder_codes(rejudge),
+                                        "rejudge": LLM_JUNK_REJUDGE,
                                         "max_attempts": MAX_EXTRACTION_ATTEMPTS + 1,
                                         "base": EXTRACTION_RETRY_BASE}).fetchall()
     due = []
@@ -255,13 +329,18 @@ def find_parked_extractions(engine, org_id: str, *, limit: int = 50,
     return due
 
 
-def give_up_parked_extractions(engine, org_id: str, *, now: datetime | None = None) -> int:
+def give_up_parked_extractions(engine, org_id: str, *, now: datetime | None = None,
+                               rejudge: bool = False) -> int:
     """Dead-letter every pending extraction park whose message has reached the limit, saying why.
-    Returns how many. A message given up is visible as such — never left `pending` for ever."""
+    Returns how many. A message given up is visible as such — never left `pending` for ever.
+
+    `rejudge` as in `find_parked_extractions`: a caller that never reads re-judgments never spends
+    them. A re-judgment given up leaves its archive standing, and says so."""
     now = now or datetime.now(timezone.utc)
     with engine.connect() as c:
         rows = c.execute(_OVER_THE_LIMIT, {"o": org_id, "now": now,
-                                           "codes": sorted(NEEDS_REEXTRACTION),
+                                           "codes": _ladder_codes(rejudge),
+                                           "rejudge": LLM_JUNK_REJUDGE,
                                            "max_attempts": MAX_EXTRACTION_ATTEMPTS + 1}).fetchall()
     over = [r for r in rows
             if int(r.message_parks or 0) + int(r.row_attempts or 0) >= MAX_EXTRACTION_ATTEMPTS + 1]
@@ -269,10 +348,12 @@ def give_up_parked_extractions(engine, org_id: str, *, now: datetime | None = No
         return 0
     with engine.begin() as c:
         for r in over:
-            c.execute(_GIVE_UP, {"o": org_id, "e": r.event_id,
-                                 "why": (f"extraction parked {int(r.message_parks or 0)} time(s) and "
-                                         f"was re-read {int(r.row_attempts or 0)} time(s) "
-                                         "without landing; given up")})
+            why = (f"re-judgment of an older junk filter's archive was tried "
+                   f"{int(r.row_attempts or 0)} time(s) without its whole message; given up, "
+                   "the archive stands" if r.reason_code == LLM_JUNK_REJUDGE else
+                   f"extraction parked {int(r.message_parks or 0)} time(s) and "
+                   f"was re-read {int(r.row_attempts or 0)} time(s) without landing; given up")
+            c.execute(_GIVE_UP, {"o": org_id, "e": r.event_id, "why": why})
     return len(over)
 
 
@@ -325,6 +406,10 @@ def settle_parked_extractions(engine, org_id: str, event_ids: list[str], *,
 # row is Layer 2's hold, not this; a park another drain still owns (`pending`) or one given up
 # (`dead_letter`) is left to it. And a mail captured in the last `UNREAD_GRACE` may still be being
 # read by the capture that landed it.
+#
+# GeniOS-011 S06.U1 · A PROMOTION OVERTAKES A RE-JUDGMENT. A pending `LLM_JUNK_REJUDGE` park whose
+# event is now `emitted` was promoted out of the archive by someone's decision; re-judging it could
+# archive it again. It is re-opened as a mail nothing read, like a `recovered` park.
 
 #: How long after capture a mail with no extraction is taken as unread rather than being read.
 UNREAD_GRACE = timedelta(minutes=15)
@@ -340,7 +425,8 @@ _NEVER_READ = text(
     "   and (se.source || ':' || se.object_type) <> all(:structured) "
     "   and se.captured_at < :settled "
     "   and (rp.expires_at is null or rp.expires_at > :now) "
-    "   and (pe.event_id is null or pe.status = 'recovered') "
+    "   and (pe.event_id is null or pe.status = 'recovered' "
+    "        or (pe.status = 'pending' and pe.reason_code = :rejudge)) "
     "   and not exists (select 1 from l1_extraction_results x "
     "                    where x.org_id = se.org_id and x.event_id = se.event_id) "
     "   and not exists (select 1 from qualified_signals q "
@@ -358,7 +444,8 @@ _REOPEN_RECOVERED = text(
     "       refetch_next_attempt_at = :now, "
     "       trace = coalesce(trace, '[]'::jsonb) || jsonb_build_array(jsonb_build_object("
     "           'requeued_from', reason_code, 'at', cast(:now as text))) "
-    " where org_id = :o and event_id = :e and status = 'recovered'")
+    " where org_id = :o and event_id = :e "
+    "   and (status = 'recovered' or (status = 'pending' and reason_code = :rejudge))")
 
 
 def queue_unread(engine, org_id: str, *, now: datetime | None = None) -> int:
@@ -370,7 +457,7 @@ def queue_unread(engine, org_id: str, *, now: datetime | None = None) -> int:
     now = now or datetime.now(timezone.utc)
     with engine.connect() as c:
         rows = c.execute(_NEVER_READ, {"o": org_id, "now": now, "settled": now - UNREAD_GRACE,
-                                       "screen": SCREEN_SOURCE,
+                                       "screen": SCREEN_SOURCE, "rejudge": LLM_JUNK_REJUDGE,
                                        "structured": list(mapped_kinds())}).fetchall()
     rows = [r for r in rows
             if compute_dedup_key(r.source, r.object_type, r.source_object_id, None) == r.dedup_key]
@@ -381,11 +468,13 @@ def queue_unread(engine, org_id: str, *, now: datetime | None = None) -> int:
         for r in rows:
             statement = _FILE_NEVER_READ if r.park_code is None else _REOPEN_RECOVERED
             queued += c.execute(statement, {"e": r.event_id, "o": org_id, "src": r.source,
-                                            "code": EXTRACTION_NEVER_RAN, "now": now}).rowcount
+                                            "code": EXTRACTION_NEVER_RAN, "now": now,
+                                            "rejudge": LLM_JUNK_REJUDGE}).rowcount
     return queued
 
 
-__all__ = ["EXTRACTION_NEVER_RAN", "EXTRACTION_RETRY_BASE", "MAX_EXTRACTION_ATTEMPTS",
+__all__ = ["EXTRACTION_NEVER_RAN", "EXTRACTION_RETRY_BASE", "LLM_JUNK_REJUDGE",
+           "MAX_EXTRACTION_ATTEMPTS",
            "PARK_SUPERSEDED", "SUPERSEDED", "UNREAD_GRACE", "find_parked_extractions",
            "give_up_parked_extractions", "queue_unread", "recover_orphans",
            "restore", "set_aside", "settle_parked_extractions", "to_raw_object"]

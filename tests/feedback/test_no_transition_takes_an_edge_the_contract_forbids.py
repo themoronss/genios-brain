@@ -337,15 +337,18 @@ def test_the_remaining_unread_ledgers_are_still_unread(table: str) -> None:
     side.
 
     ⛔ `learning_metrics`' failure mode IS observable now, indirectly: `publish_metric` returns
-    `metric_identity_conflict`, which reaches `sink_reason` in the evaluation ledger. The VALUES
-    still have no reader."""
+    `metric_identity_conflict`, which reaches `sink_reason` in the evaluation ledger.
+
+    ⛔ UPDATED 2026-10-23 by GeniOS-011 S40.U2, forced exactly as above: GET /feedback/precision's
+    precision by layer reads the VALUES (`api/routes.py`). Its one reader is asserted here and in
+    `test_learning_metrics_is_the_last_unread_ledger`, so a second reader arrives deliberately too."""
     readers = []
     for tree in ("genios_engine", "scripts"):
         for path in (_ROOT / tree).rglob("*.py"):
             text = path.read_text(encoding="utf-8", errors="ignore")
             if re.search(rf"(?:from|join)\s+{table}\b", text, re.I):
                 readers.append(str(path.relative_to(_ROOT)))
-    assert readers == [], f"{table} now has a reader: {readers} — update the F11 tally"
+    assert readers == ["genios_engine/api/routes.py"], f"{table} readers are {readers} — update the F11 tally"
 
 
 @pytest.mark.parametrize("table,claim", [

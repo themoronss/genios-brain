@@ -542,7 +542,8 @@ _NO_MOVE = frozenset({DecisionOutcome.DEFER, DecisionOutcome.INSUFFICIENT_CONTEX
 #: Each covered file's home: its anchor's type, and the situation its decision is filed under — an
 #: active one first, then the latest. Its domain is the corpus, and so the tenant pack, it binds to.
 #: A file with no situation anchored on it is filed under one of those it stood down
-#: (`_STOOD_DOWN_HOME`, M33.C1.L-integration.V2.U13).
+#: (`_STOOD_DOWN_HOME`, M33.C1.L-integration.V2.U13) — since GeniOS-011 S18.U1, one of those its review
+#: EXPLAINS, read before the situation loop (`_explained_situations`).
 _FILES_HOME = (
     "select distinct on (s.anchor_node_id) s.anchor_node_id, s.situation_id, s.domain, n.node_type "
     "  from context_situations s join graph_nodes n on n.org_id = s.org_id "
@@ -569,6 +570,73 @@ _STOOD_DOWN_SIGNALS = (
     # the situation signals its decision replaces.
     "   and rule_id <> :r and rule_id <> 'founder_question' and situation_id = any(:sids) "
     "returning signal_id")
+
+#: GeniOS-011 S18.U1 · the events behind every situation of the pass, in ONE read: what a covered file's
+#: review must have judged for a situation to stand down for it (`reason/expert/cover`). The same rows
+#: `situation_bso.gather_evidence_and_signals` reads per situation inside the loop — read here, before it,
+#: because the files are decided before the loop now and a file's home and the signals its situations
+#: left are read off what its review explains.
+_SITUATION_EVENTS = (
+    "select correlation_id, event_id from context_correlation_members "
+    " where org_id = :o and correlation_id = any(cast(:c as text[])) order by correlation_id, event_id")
+
+
+def _explained_situations(conn, org_id: str, situations, covers: Covers) -> dict[str, Any]:
+    """Situation id → the covered file (`FileCover`) whose review explains it, for every situation of the
+    pass — read ONCE, before the situation loop (GeniOS-011 S18.U1).
+
+    The rule is `Covers.explaining`'s, asked with what the loop asked it with: the situation's anchor, the
+    anchor's type and the events behind the situation's correlation. A situation with no anchor never
+    reaches that question in the loop (`no_anchor`), and one with no event behind it is explained by
+    nothing (`FileCover.explains`) — the loop's synthetic `sig:` id is in no review's inputs. So the
+    situations that stand down in the loop, and the ones the files were decided against before it, are
+    one reading and cannot disagree. No covered file, no read: a pass the expert covered nothing in pays
+    exactly what it paid before.
+    """
+    if not covers:
+        return {}
+    correlations = sorted({str(row["correlation_id"]) for row in situations
+                           if row["anchor_node_id"] and row["correlation_id"]})
+    behind: dict[str, list[str]] = {}
+    if correlations:
+        for item in conn.execute(text(_SITUATION_EVENTS), {"o": org_id, "c": correlations}):
+            behind.setdefault(str(item.correlation_id), []).append(str(item.event_id))
+    out: dict[str, Any] = {}
+    for row in situations:
+        anchor = row["anchor_node_id"]
+        events = behind.get(str(row["correlation_id"])) if anchor and row["correlation_id"] else None
+        if not events:
+            continue                    # nothing behind it, nothing explained
+        explained = covers.explaining(str(anchor), row["anchor_type"], events)
+        if explained is not None:
+            out[str(row["situation_id"])] = explained
+    return out
+
+
+#: GeniOS-011 S18.U1 (`l2-l3-binding-no-situation-no-card`, `l2-skips-invisible`) · THE WAYS A JUDGED FILE MAKES
+#: NO CARD THAT ARE NOT ITS REVIEW'S CHOICE — each counted under its name (the names the pass always counted),
+#: the file named under it on the pass's result (`covered_no_card`), and said at WARNING with the file. They were
+#: one INFO line for the whole pass, which is a refusal nobody can see: a review that names no move, or only a
+#: small one, made no card BY CHOICE and is none of these; a decision that stands is carded already.
+COVERED_NO_CARD: dict[str, str] = {
+    "covered_without_situation": "no situation is anchored on the file or explained by its review, so there is "
+                                 "no corpus and no pack to bind its decision to",
+    "expert_no_tenant_pack": "the tenant holds no active pack for its home's corpus, so nothing can grant the "
+                             "decision authority",
+    "expert_shadow": "its home's domain is dark or not switched on for the tenant, so it was decided in "
+                     "shadow only",
+    "budget_exhausted": "the day's signal cap is spent",
+    "expert_error": "its decision failed",
+}
+
+
+def _not_carded(counts, no_card: dict[str, str], *, org_id: str, file_id: str, reason: str,
+                detail: str = "") -> None:
+    """One judged file that makes no card: counted, named under its reason, and said at WARNING."""
+    counts[reason] += 1
+    no_card[file_id] = reason
+    logger.warning("domain-compiler: the judged file %s makes no card org=%s reason=%s — %s%s",
+                   file_id, org_id, reason, COVERED_NO_CARD[reason], f" ({detail})" if detail else "")
 
 
 def _covered_reviews(conn, org_id: str, covered: Mapping[str, str] | None) -> dict[str, Any]:
@@ -712,12 +780,21 @@ def _retire_stood_down(store, org_id: str, situation_ids, rule_id: str) -> int:
 def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any],
                           stood_down: Mapping[str, list[str]], gate, counts, eval_time,
                           graph_version: int, live: bool, live_domains, registry, reasoning_store,
-                          packs: dict, remaining: list, decided: dict | None = None) -> None:
+                          packs: dict, remaining: list, decided: dict | None = None,
+                          no_card: dict | None = None) -> None:
     """Each covered file, decided once from its review; its decision persisted and emitted on the live
     lane, measured on the shadow one. Never raises past a file. ``decided`` collects the files decided
     on the LIVE lane — file → its review's fingerprint — whatever the decision said, or standing from an
-    earlier pass (M33.C1.L-integration.V2.U12): what a pack rule may stand down for (`reason/runner`)."""
+    earlier pass (M33.C1.L-integration.V2.U12): what a pack rule may stand down for (`reason/runner`).
+
+    ⛔ CALLED BEFORE THE SITUATION LOOP (GeniOS-011 S18.U1, `l2-daily-cap-formula-first`). It ran after it,
+    so the loop's formula situations spent the day's one cap first and a judged file's next move came last
+    — `budget_exhausted` on any day the formula filled. ``stood_down`` is therefore what each review
+    EXPLAINS, read before the loop (`_explained_situations`), not what the loop stood down. ``no_card``
+    collects each file that makes no card for a reason that is not its review's choice — file → its
+    `COVERED_NO_CARD` reason — each said at WARNING (`_not_carded`)."""
     decided = decided if decided is not None else {}
+    no_card = no_card if no_card is not None else {}
     from genios_engine.context.founder_questions import LEFT_COVERAGE
     from genios_engine.platform.canonical import semantic_hash
     from genios_engine.reason import fingerprint_store as fs
@@ -741,7 +818,8 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
         home = homes.get(file_id)
         if home is None:
             # No situation was ever formed on it, so no corpus — and no pack — to bind a decision to.
-            counts["covered_without_situation"] += 1
+            # Binding the decision to the file itself is S18.U4's; until then it is counted AND said.
+            _not_carded(counts, no_card, org_id=org_id, file_id=file_id, reason="covered_without_situation")
             continue
         try:
             domain = l3_domain_for(home.domain)
@@ -752,7 +830,8 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
                     packs[domain] = _tenant_pack(registry, store, org_id, domain)
                 pack = packs[domain]
                 if pack is None:
-                    counts["expert_no_tenant_pack"] += 1
+                    _not_carded(counts, no_card, org_id=org_id, file_id=file_id, reason="expert_no_tenant_pack",
+                                detail=f"corpus {domain}")
                     continue
             # THE CHANGE GATE, ON THE FILE: the review, the decision's own version, where it binds.
             # The same review in the same lane is the same decision — skipped while it stands, and decided again
@@ -794,12 +873,15 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             counts["expert_decided"] += 1
             run_id = execution.trace.run_id
             if not live_file:
-                counts["expert_shadow"] += 1
                 gate.record(key, fingerprint, "shadow", run_id)
+                _not_carded(counts, no_card, org_id=org_id, file_id=file_id, reason="expert_shadow",
+                            detail=f"home domain {home.domain}, corpus {domain or 'none (dark)'}")
                 continue
             small = is_small_move(review)       # STEP-15 s15-D3 (`06` D66): a line in the brief, never a card
-            # THE SAME DAILY CAP, the same pool (see the situation loop above) — on what it is for: a
-            # decision that would be SHOWN. ⛔ AFTER THE OUTCOME (STEP-13 M36.C2.L-integration.V2.U11, `03`
+            # THE SAME DAILY CAP, the same pool (see the situation loop in `shadow_compile`) — on what it is
+            # for: a decision that would be SHOWN. Spent FIRST since GeniOS-011 S18.U1: the files are decided
+            # before the loop, and the formula situations take what they leave.
+            # ⛔ AFTER THE OUTCOME (STEP-13 M36.C2.L-integration.V2.U11, `03`
             # X27): a review that names no move now emits nothing — it asks its question, or clears the
             # file's old decision — and a spent cap stopped both, leaving the old card in the question's
             # place. A question is no publication.
@@ -812,8 +894,9 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             renewal = _renews_its_decision(conn, org_id, file_id, rule_id, review, eval_time)
             if (remaining[0] <= 0 and execution.decision.outcome not in _NO_MOVE and not renewal
                     and not small):
-                counts["budget_exhausted"] += 1
                 gate.record(key, fingerprint, "indeterminate", run_id)
+                _not_carded(counts, no_card, org_id=org_id, file_id=file_id, reason="budget_exhausted",
+                            detail=f"allowance {counts.get('budget_allowance')}")
                 continue
             bundle: dict = {}
             if small:
@@ -864,8 +947,13 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
                 store, org_id, stood_down.get(file_id), rule_id)
         except Exception:      # noqa: BLE001 — one file's decision is never the pass
             counts["expert_error"] += 1
+            no_card[file_id] = "expert_error"
             logger.exception("domain-compiler: the covered file %s could not be decided org=%s",
                              file_id, org_id)
+            # GeniOS-011 S18.U1: decided before the situation loop now, so a read that failed here must not
+            # poison the one read connection every file after it, and every situation, reads on (the rule
+            # `shadow_compile`'s own `finally: conn.rollback()` states). On a healthy connection, a no-op.
+            conn.rollback()
     # STEP-13 (M36.C2.L-integration.V2.U11, `03` X26; `06` D60 — the file's one card): a file that asked
     # and is no longer covered is decided on its situations again, so its question retires and its card
     # with it — never left beside the cards its situations now make. Read off the gate's own load of the
@@ -1286,6 +1374,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     decider, no R-1 — and emitted as the file's own signal, its anchor the subject; every situation
     of the file the review explains stands down. See `_decide_covered_files`. None, or empty — every
     caller before M33, and every tenant whose expert pass did not run — is exactly the pass before.
+    ⛔ The files are decided BEFORE the situations (GeniOS-011 S18.U1): the day's one cap is spent on
+    the expert's judgment first and the formula takes what is left; each file that makes no card
+    anyway is named on the result's ``covered_no_card`` and said at WARNING.
     ``people`` — the same receipt's file → the file's people (M33.C1.L-integration.V2.U13): a situation
     anchored on one of them is its file's to explain (`reason/expert/cover`).
     """
@@ -1625,6 +1716,43 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         _remaining: list[int | None] = [None]
         from genios_engine.platform.l3_activation import declared_variants
         variants_by_domain = {d: declared_variants(store.engine, org_id, d) for d in live_domains}
+        # ── GeniOS-011 S18.U1 · THE JUDGED FILES GO FIRST (`l2-daily-cap-formula-first`). ────────────
+        #
+        # Each file a VALID expert/L2 review covers is decided HERE, before the situation loop, from the
+        # same `_remaining` the loop spends — one cap, no second allowance (the SHARED POOL rule at the
+        # loop's cap below). It was decided after the loop, so on a day the formula's situations filled,
+        # the expert's next move — the judgment the architecture makes primary (GeniOS-008
+        # `00-ARCHITECTURE.md`: "L2 is the primary layer") — was `budget_exhausted` behind them, and
+        # nobody saw it. Now the formula takes what the judged files leave.
+        #
+        # WHAT EACH REVIEW EXPLAINS, READ FIRST: a file's home, when no situation is anchored on it, and
+        # the signals its situations left are read off the situations its review explains, and the loop
+        # below — which used to work that out as it went — stands them down from this same reading.
+        # Read before admission now: a situation the review explains is the file's matter whether or not
+        # this pass admits it (the anchored home in `_FILES_HOME` never asked either).
+        #
+        # Never the pass: a failure here costs the files (counted, said), never the situations — none
+        # stands down for a file that was not decided, so each is decided on today's path — and the read
+        # connection is rolled back before the loop reads on it.
+        explaining: dict[str, Any] = {}
+        covered_no_card: dict[str, str] = {}
+        if expert_reviews:
+            try:
+                explaining = _explained_situations(conn, org_id, situations, covers)
+                for situation_id, cover in explaining.items():
+                    stood_down.setdefault(cover.file_id, []).append(situation_id)
+                _decide_covered_files(
+                    store=store, conn=conn, org_id=org_id, reviews=expert_reviews,
+                    stood_down=stood_down, gate=gate, counts=counts, eval_time=eval_time,
+                    graph_version=graph_version, live=live, live_domains=live_domains,
+                    registry=registry, reasoning_store=reasoning_store, packs=packs,
+                    remaining=_remaining, decided=decided, no_card=covered_no_card)
+            except Exception:      # noqa: BLE001 — the files are never the pass
+                counts["expert_error"] += 1
+                explaining = {}
+                logger.exception("domain-compiler: the covered files could not be decided org=%s",
+                                 org_id)
+            conn.rollback()
         for row in situations:
             counts["situations"] += 1
             # STEP-06: set once this candidate is admitted on the live lane; every end below is
@@ -1773,11 +1901,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     continue
                 # STEP-12 M33 · ITS FILE'S REVIEW DECIDES IT. A situation whose every event the
                 # review saw stands down here — before the compile, the decider and R-1 — and its
-                # file is decided once, after the loop (`_decide_covered_files`).
-                explained = covers.explaining(str(anchor), row["anchor_type"], signal_ids)
-                if explained is not None:
+                # file was decided once, BEFORE the loop (`_decide_covered_files`; GeniOS-011 S18.U1),
+                # from this same reading of what each review explains (`_explained_situations`).
+                if explaining.get(str(row["situation_id"])) is not None:
                     counts["covered_situations"] += 1
-                    stood_down.setdefault(explained.file_id, []).append(str(row["situation_id"]))
                     ends.note(admitted, str(row["situation_id"]), "decided", COVERED_BY_REVIEW)
                     continue
                 bso = publication.situation
@@ -1909,6 +2036,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     # situation compiled. Confidence-descending is a principled order, and it is
                     # named here rather than left to be inferred from a query two hundred lines
                     # away.
+                    #
+                    # ⛔ AFTER THE JUDGED FILES (GeniOS-011 S18.U1). The files a valid review covers
+                    # were decided before this loop, from this same `_remaining`: what they spent is
+                    # gone before the first situation here asks, and the formula takes what is left.
                     if live_row and pack is not None:
                         if _remaining[0] is None:
                             _remaining[0] = _daily_allowance(store, org_id, eval_time, pack)
@@ -2013,12 +2144,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # rollback() on a healthy connection is a no-op, so this is unconditional rather
                 # than guarded on a flag we would have to keep correct.
                 conn.rollback()
-        # STEP-12 M33 · each covered file, decided once from its review.
-        _decide_covered_files(
-            store=store, conn=conn, org_id=org_id, reviews=expert_reviews, stood_down=stood_down,
-            gate=gate, counts=counts, eval_time=eval_time, graph_version=graph_version,
-            live=live, live_domains=live_domains, registry=registry,
-            reasoning_store=reasoning_store, packs=packs, remaining=_remaining, decided=decided)
+        # STEP-12 M33 · each covered file was decided once from its review — BEFORE the loop above
+        # (GeniOS-011 S18.U1: "THE JUDGED FILES GO FIRST").
 
     # STEP-02 · the gate's memory, written once for the whole pass (see `_CompiledGate`).
     gate.flush(store=store, org_id=org_id, eval_time=eval_time, counts=counts)
@@ -2036,6 +2163,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     result = dict(counts)
     # STEP-12 M33 · the files decided on the live lane, file → its review's fingerprint (U12).
     result["decided"] = dict(sorted(decided.items()))
+    # GeniOS-011 S18.U1 · each judged file that made no card, file → its `COVERED_NO_CARD` reason. ALWAYS
+    # PRESENT, EVEN EMPTY (the rule `no_route_by_reason` below states): the sweep's why-no-card outcomes are
+    # read off it (S18.U3), and an absent key would read as "not measured" where an empty one says "none".
+    result["covered_no_card"] = dict(sorted(covered_no_card.items()))
     result["no_route_by_reason"] = dict(sorted(no_route_by_reason.items()))
     result["no_route_by_type"] = dict(sorted(no_route_by_type.items()))
     # ⛔ THE RECEIPT: two breakdowns of one total, COMPARED. Two numbers that are supposed to agree

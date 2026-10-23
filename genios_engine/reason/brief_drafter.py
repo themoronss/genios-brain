@@ -19,6 +19,15 @@ or a domain the patterns show; the file that counterparty names reads that kind'
 anything else, never repaired: a kind off the list, or a kind on a line of any other section. The kind is
 proposed with the line, and the founder accepts, corrects or clears it with the line.
 
+A GOAL PER PIECE OF WORK IN MOTION (GeniOS-011 S27.U1, audit `goals-antler-cannot-appear-today`, the
+founder's F2). An accelerator application the founder was pursuing never became a goal: the drafter
+never saw a file, a situation or an in-motion line, and an umbrella goal ("get into accelerator
+programs") read as already saying it. It is now shown the work in motion (`reason/brief_patterns`) and
+asked for a goal per piece of it; and a goal resting on work a pending, accepted or lately rejected goal
+already rests on (`brief_patterns.work_of`) is refused, however it is worded — so the weekly review
+proposes the same work once, never again in other words. Still only a proposal: nothing is a goal
+until the founder accepts it.
+
 One Sonnet-class call (`Settings.company_brief_model`, `06` D28), recorded as `company_brief_draft`.
 """
 from __future__ import annotations
@@ -33,7 +42,8 @@ from genios_engine.context.llm.client import TRUNCATED
 from genios_engine.contracts.company_brief import PROPOSABLE, WORK_KINDS, CompanyBriefLine
 
 #: v2 (STEP-11): the prompt asks for each in-motion line's kind of work and counterparty.
-PROMPT_VERSION = "company-brief-draft.v3"
+#: v4 (GeniOS-011 S27.U1): the prompt shows the work in motion and asks for a goal per piece of it.
+PROMPT_VERSION = "company-brief-draft.v4"
 COST_PURPOSE = "company_brief_draft"
 MAX_LINES = 30
 MAX_PER_SECTION = 8
@@ -55,7 +65,10 @@ missed, and the founder's preferences.
 
 You are shown PATTERNS from the founder's memory — who writes to whom and how often, which domains, \
 days of outbound waves, senders who introduce people, recurring meetings, which domains carry \
-deadlines, and the one-line objective memory holds for a thread. You are not shown any message.
+deadlines, and the one-line objective memory holds for a thread — and the work in motion: each file \
+(one counterparty's work, with its kind of work when the brief gives one, its last touch and whose \
+move it is), the open situations on a file, and the in-motion lines, in the brief or proposed for it. \
+You are not shown any message.
 
 Propose lines the founder will accept, edit or reject. Rules:
 - Each line goes in exactly one section: company, goals, in_motion, people, connectors, watchlist, \
@@ -66,6 +79,9 @@ must never be missed. Use only addresses and domains that appear in the patterns
 - An in_motion line names its kind of work: {kinds} — or null when none fits. It may give its \
 counterparty, the one on the other side of that work: the person's address, or the domain of the fund, \
 program, portal or company. No other section has a kind.
+- A goal names one piece of work in motion the founder is pursuing — an application, a raise, a \
+filing, a hire — and cites its file, situation or in-motion line. A goal worded in general terms does \
+not say a particular piece of work; a file or in-motion line marked with a goal has one already.
 - Every line cites the ids of the patterns it rests on.
 - Never invent a name, an amount, a date or a fact the patterns do not show. When unsure, leave it out.
 - At most {per_section} lines in a section and {total} in all; each line under {chars} characters.
@@ -197,6 +213,29 @@ def parse(parsed: Any, patterns: dict[str, Any]) -> tuple[list[Proposal], list[s
     return kept, refused
 
 
+def _one_goal_per_work(proposals: list[Proposal],
+                       patterns: dict[str, Any]) -> tuple[list[Proposal], list[str]]:
+    """GeniOS-011 S27.U1 · a goal resting on work a goal already rests on is refused — one pending,
+    accepted or lately rejected (`patterns["goal_work"]`), or one above it in this answer — however it
+    is worded. A goal resting on no work in motion, and a line of any other section, pass untouched."""
+    from genios_engine.reason.brief_patterns import work_of
+
+    by_id = {i["id"]: i for i in patterns.get("items", ())}
+    held = set(patterns.get("goal_work") or ())
+    kept: list[Proposal] = []
+    refused: list[str] = []
+    for p in proposals:
+        work = frozenset().union(*(work_of(by_id[e]) for e in p.evidence if e in by_id))
+        if p.section == "goals" and work & held:
+            refused.append(f"goal {p.text!r}: a goal already rests on "
+                           f"{', '.join(sorted(work & held))}")
+            continue
+        if p.section == "goals":
+            held |= work
+        kept.append(p)
+    return kept, refused
+
+
 def _evidence(proposal: Proposal, patterns: dict[str, Any]) -> list[dict[str, Any]]:
     """What a proposal rests on, kept with it: the pattern items themselves — counts, names,
     domains and dates — so the founder sees why it was proposed long after the ids are gone."""
@@ -241,6 +280,8 @@ def draft_company_brief(engine, org_id: str, llm: Any, *, now: datetime, cost_si
         return DraftOutcome(skipped=f"model:{error or 'no answer'}"[:200],
                             model=model, input_tokens=it, output_tokens=ot)
     proposals, refused = parse(res.parsed, patterns)
+    proposals, held = _one_goal_per_work(proposals, patterns)
+    refused += held
     written = 0
     if apply:
         with engine.begin() as c:

@@ -12,6 +12,10 @@
                                                                  # 06 D72's arm B, stopped at $7
     GENIOS_TEST_DATABASE_URL=… GENIOS_GOLDEN_LIVE_KEY=sk-… python scripts/golden_eval.py \\
         --live --site brief --spend-ok --max-usd 1 [F03 …]       # the brief's writer, both tiers
+    python scripts/golden_eval.py --dry-run --site reason_l2     # R-9's model and settings (GeniOS-011 S07.U1)
+    GENIOS_TEST_DATABASE_URL=… GENIOS_GOLDEN_LIVE_KEY=sk-… python scripts/golden_eval.py \\
+        --probe --site reason_l2 --l2-path --spend-ok --max-usd 0.5 [F13]   # R-9's first two calls, read first
+        --live --site reason_l2 --l2-path --spend-ok --max-usd N [F03 …]    # R-9 on its tier, down the L2 path
 
 `speedrun008/YC-II W27/` STEP-01 §3.9.
 
@@ -45,6 +49,24 @@
               beside its own `morning_template.template_brief`, which a `given_back` verdict on a
               line already is. `--record` is refused here too: there is no cassette shape for it.
 
+  --site reason_l2  GeniOS-011 S07.U1 (the audit's `process-golden-eval-r9-wrong-model`): R-9, the Layer 2
+              judgment, asked on ITS tier — `claude-sonnet-5`, thinking off, an 8,000-token ceiling, the site
+              table's own (`reason/bundle/sites`) — where before it was asked on the default Haiku with none
+              of R-9's settings. Today's path never asks R-9 (`l2_reasoning` is switched on only down the L2
+              path, `engine_runner.switch_on_the_expert`), so its live pass and its probe need `--l2-path`. No
+              cassette holds an R-9 answer — the L2 path is never recorded (`tests/replays/l2_score`) — so its
+              dry run names the model, the settings and one call's worst case, never a recorded total.
+
+  --l2-path   Runs the cases down the L2 path (`GENIOS_GOLDEN_L2=1`, `engine_runner.l2_path`) for the run alone,
+              and puts the switch back after; the scorecard says which path it measured. Without it a run
+              takes today's path, even from a shell that exported the switch. Never with `--record`: the
+              cassettes are today's path, and CI replays them down it.
+
+  --probe     A live pass's first two calls and no more (`PROBE_CALLS`), each one's `stop_reason` and
+              `output_tokens` printed as it returns, and no scorecard — the 1-2 calls read before any paid
+              pass (the Sonnet 5 pass of 12 Oct was 203 calls cut at the ceiling, found after the spend). It
+              needs every consent `--live` needs: the key, `--spend-ok` and `--max-usd`.
+
 The live model is handed to the chain through the same doors the recorded one is
 (`tests/replays/model_sites.DOORS`); the runner's transport refusal still applies to every other
 client, so a site that built its own would still fail the case rather than spend unseen.
@@ -56,6 +78,7 @@ import contextlib
 import json
 import os
 import sys
+import threading
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -68,8 +91,14 @@ LIVE_KEY_ENV = "GENIOS_GOLDEN_LIVE_KEY"
 #: The model a run is priced and asked on when none is named: Haiku 4.5, the model production runs
 #: every site on (`Settings.anthropic_model`) — except a site with a tier of its own (`SITE_TIERS`).
 DEFAULT_MODEL = "claude-haiku-4-5-20251001"
-#: A cassette site whose production model is its tier's, not the default: the expert's (R-7, T2).
-SITE_TIERS = {"expert": "R-7"}
+#: A cassette site whose production model is its tier's, not the default: the expert's (R-7, T2) and the Layer 2
+#: judgment's (R-9, T2). GeniOS-011 S07.U1: before R-9 was here, `--site reason_l2` asked Haiku, and the run's
+#: site settings (`site_settings`, which only a site here gets) never reached R-9's row.
+SITE_TIERS = {"expert": "R-7", "reason_l2": "R-9"}
+#: The site R-9 answers. Today's path never asks it, so its live pass and probe need `--l2-path`.
+L2_SITE = "reason_l2"
+#: GeniOS-011 S07.U1 · the most live calls a `--probe` makes: "test 1-2 calls first", before any paid pass.
+PROBE_CALLS = 2
 #: STEP-15 (s15-D1): the morning brief, OUTSIDE `identify_site`'s normal dispatch — see the module
 #: docstring's `--site brief` section. Not in `SITE_TIERS`: it asks BOTH R-8 and R-8E, never one tier.
 BRIEF_SITE = "brief"
@@ -92,6 +121,19 @@ def model_for(site: str | None, model: str | None) -> str:
         from genios_engine.reason.llm_sites import tier_model
         return tier_model(tier_for(SITE_TIERS[site]))
     return DEFAULT_MODEL
+
+
+def site_profile(site: str | None) -> dict | None:
+    """What a site with a tier of its own is asked with in production: its R-site, its tier's model, and the site
+    table's own thinking mode, output ceiling and per-call timeout (`reason/bundle/sites`) — what a live pass
+    sends unless `--thinking`/`--ceiling` name an arm. None for a site on the default model. GeniOS-011 S07.U1:
+    the dry run says it, so R-9's model and settings are checkable with no key, no database and no model."""
+    if site not in SITE_TIERS:
+        return None
+    from genios_engine.reason.bundle import sites as site_table
+    r_site = SITE_TIERS[site]
+    return {"r_site": r_site, "model": model_for(site, None), "thinking": site_table.thinking_mode(r_site),
+            "ceiling": site_table.max_output_tokens(r_site), "timeout_s": site_table.timeout_s(r_site)}
 
 
 #: ⛔ `yc2_w27_s18` M50.C4.L-interface.V1.U09 (the 13 Oct audit's s5t-F12, `06` D72). The Sonnet pass of
@@ -145,6 +187,78 @@ class CappedModel:
         return result
 
 
+class ProbeComplete(BaseException):
+    """The probe has made its calls, and the run stops here. A `BaseException` for the reason
+    `harness.CassetteMiss` is one: every model site sits inside `except Exception`, which would swallow the stop
+    and let the case ask again."""
+
+
+class ProbeModel:
+    """The live model for a probe (GeniOS-011 S07.U1): at most `limit` calls, each one's `stop_reason` and
+    `output_tokens` printed as it returns — with the ceiling and thinking mode it was asked at — so the first
+    calls are read before any paid pass. The count is taken under a lock: the L2 drain asks from a thread pool."""
+
+    def __init__(self, inner, limit: int = PROBE_CALLS) -> None:
+        self._inner, self.limit = inner, int(limit)
+        self.model = getattr(inner, "model", "")
+        self.made: list[dict] = []
+        self._taken = 0
+        self._lock = threading.Lock()
+
+    @property
+    def supports_thinking(self) -> bool:
+        return bool(getattr(self._inner, "supports_thinking", False))
+
+    @property
+    def full(self) -> bool:
+        return self._taken >= self.limit
+
+    def content_hash(self, material: str) -> str:
+        return self._inner.content_hash(material)
+
+    def call(self, prompt: str, *, max_tokens: int = 4096, **kw):
+        from tests.replays.harness import identify_site
+        with self._lock:
+            if self._taken >= self.limit:
+                raise ProbeComplete(f"the probe's {self.limit} calls are made")
+            self._taken += 1
+            number = self._taken
+        result = self._inner.call(prompt, max_tokens=max_tokens, **kw)
+        stop_reason = getattr(self._inner, "stop_reason", lambda: None)()
+        row = {"call": number, "site": identify_site(prompt), "model": self.model, "stop_reason": stop_reason,
+               "output_tokens": int(getattr(result, "output_tokens", 0) or 0), "max_tokens": int(max_tokens),
+               "thinking": kw.get("thinking"), "input_tokens": int(getattr(result, "input_tokens", 0) or 0),
+               "error": getattr(result, "error", None)}
+        with self._lock:
+            self.made.append(row)
+        error = f" · error={str(row['error'])[:160]}" if row["error"] else ""
+        print(f"probe {number}/{self.limit} · {row['site']} · {self.model} · stop_reason={stop_reason} · "
+              f"output_tokens={row['output_tokens']} of max_tokens={max_tokens} · thinking={row['thinking']} · "
+              f"input_tokens={row['input_tokens']}{error}", flush=True)
+        return result
+
+
+@contextlib.contextmanager
+def l2_path_for_the_run(l2: bool):
+    """GeniOS-011 S07.U1 · the path the run's cases take is `--l2-path`'s — `GENIOS_GOLDEN_L2=1`, which
+    `engine_runner.l2_path` reads — never an inherited shell's: unset, the switch is cleared for the run, so an
+    exported one cannot turn an expert pass into an L2 pass with nothing on the command line saying so. Put back
+    after, whatever the run does."""
+    from tests.replays.engine_runner import L2_PATH_ENV
+    before = os.environ.get(L2_PATH_ENV)
+    try:
+        if l2:
+            os.environ[L2_PATH_ENV] = "1"
+        else:
+            os.environ.pop(L2_PATH_ENV, None)
+        yield
+    finally:
+        if before is None:
+            os.environ.pop(L2_PATH_ENV, None)
+        else:
+            os.environ[L2_PATH_ENV] = before
+
+
 @contextlib.contextmanager
 def site_settings(r_site: str, *, thinking: str | None = None, ceiling: int | None = None,
                   per_call_usd: str | None = None):
@@ -175,9 +289,10 @@ def spend(ledger: list[dict], site: str | None) -> dict:
             "tokens_out": sum(int(row.get("output_tokens") or 0) for row in calls)}
 
 
-def scorecard_name(day: str, model: str, site: str | None, thinking: str | None) -> str:
-    """`<day>-<model>[-<site>][-<thinking>]` — an arm of `06` D72 never overwrites the other."""
-    return "-".join(part for part in (day, model, site, thinking) if part)
+def scorecard_name(day: str, model: str, site: str | None, thinking: str | None, *, l2: bool = False) -> str:
+    """`<day>-<model>[-<site>][-<thinking>][-l2]` — an arm of `06` D72 never overwrites the other, and a pass down
+    the L2 path never overwrites today's path's (GeniOS-011 S07.U1)."""
+    return "-".join(part for part in (day, model, site, thinking, "l2" if l2 else None) if part)
 
 
 def sites() -> tuple[str, ...]:
@@ -215,6 +330,17 @@ def dry_run(ids: list[str], model: str, site: str | None = None) -> int:
         print(f"{case.case_id:<5} {source:<16} {len(answers):>5} {tin:>10} {tout:>10}  "
               f"{case.title[:60]}")
     cost = total_in / 1e6 * price_in + total_out / 1e6 * price_out
+    profile = site_profile(site)
+    if profile is not None:
+        # GeniOS-011 S07.U1 · what production asks this site with — read with no key and no model.
+        timeout = f", timeout {profile['timeout_s']:g} s" if profile["timeout_s"] is not None else ""
+        print(f"\n{site}: production asks {profile['r_site']} on {profile['model']} · thinking "
+              f"{profile['thinking']} · ceiling {profile['ceiling']} output tokens{timeout} (reason/bundle/sites)")
+        if total_calls == 0 and site == L2_SITE:
+            print(f"No {site} call is recorded to price: the cassettes hold today's path, and the L2 path is never "
+                  f"recorded (tests/replays/l2_score). One call's output is capped at {profile['ceiling']} tokens — "
+                  f"≤ ${profile['ceiling'] / 1e6 * price_out:.2f} on {model} at list price; --probe makes the first "
+                  f"{PROBE_CALLS} real calls and prints their size.")
     which = f"{site} " if site is not None else ""
     print(f"\n{total_calls} {which}model calls · {total_in} tokens in · {total_out} tokens out · "
           f"≈ ${cost:.2f} for one live pass on {model} at list price (${price_in:g} / ${price_out:g} "
@@ -276,6 +402,10 @@ class LiveModel:
         # class that raises, and a client built lazily on the first call was built inside the run — the live
         # pass refused itself on its first expert prompt (`06` D50 never ran).
         self._client._c()
+        # GeniOS-011 S07.U1 · the API's own `stop_reason`, kept per thread for `--probe`: `LLMClient.call` reads
+        # it only to say `truncated`, and whether a call ended or was cut is the first thing a probe reads.
+        self._stops = threading.local()
+        self._client._client = _SeesStopReasons(self._client._client, self._stops)
         self.model = model
 
     @staticmethod
@@ -283,8 +413,31 @@ class LiveModel:
         from genios_engine.context.llm.client import LLMClient
         return LLMClient.content_hash(material)
 
+    def stop_reason(self) -> str | None:
+        """The last response's `stop_reason` on this thread — None before a call, or when the call failed."""
+        return getattr(self._stops, "last", None)
+
     def call(self, prompt: str, *, max_tokens: int = 4096, **kw):
+        self._stops.last = None
         return self._call(self._client, prompt, max_tokens=max_tokens, **kw)
+
+
+class _SeesStopReasons:
+    """The raw Anthropic client, seen through (GeniOS-011 S07.U1): each response's `stop_reason` kept for the
+    thread that asked — through `with_options` too, the second client a site with its own timeout (R-7's, R-9's)
+    is asked on. `messages.create` and `with_options` are the only two things `LLMClient.call` uses."""
+
+    def __init__(self, raw, stops) -> None:
+        self._raw, self._stops = raw, stops
+        self.messages = self                    # `client.messages.create(…)` lands on `create` below
+
+    def with_options(self, **opts):
+        return _SeesStopReasons(self._raw.with_options(**opts), self._stops)
+
+    def create(self, **kw):
+        response = self._raw.messages.create(**kw)
+        self._stops.last = str(getattr(response, "stop_reason", "") or "") or None
+        return response
 
 
 def _checked(engine, org: str) -> dict:
@@ -313,6 +466,7 @@ def _checked(engine, org: str) -> dict:
 def live(ids: list[str], model: str, keep: bool, site: str | None = None, *, max_usd: float,
          thinking: str | None = None, ceiling: int | None = None, per_call_usd: str | None = None) -> int:
     from tests.replays import cassettes
+    from tests.replays.engine_runner import l2_path
     from tests.replays.engine_runner import pin_scratch_database, run_case
     from tests.replays.harness import CassetteRecorder
     from tests.replays.ideal_reader import IdealReader
@@ -321,7 +475,9 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None, *, max
     pin_scratch_database()
     key = os.environ[LIVE_KEY_ENV]
     rows, tokens_in, tokens_out, calls, truncated = [], 0, 0, 0, 0
-    name = scorecard_name(date.today().isoformat(), model, site, thinking)
+    # GeniOS-011 S07.U1 · the path the cases take, read where `run_case` reads it — named on the card and in it.
+    on_l2_path = l2_path()
+    name = scorecard_name(date.today().isoformat(), model, site, thinking, l2=on_l2_path)
     beside = SCORES / name if site is not None else None
     cap, stopped = SpendCap(max_usd, model), None
     for case in _cases(ids):
@@ -347,7 +503,11 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None, *, max
             beside.mkdir(parents=True, exist_ok=True)
             (beside / f"{case.case_id}.json").write_text(
                 json.dumps(recorder.cassette, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-            recorded = judge(case, cassettes.replay(case))
+            # GeniOS-011 S07.U1 · down the L2 path there is no cassette to replay (that path is never recorded,
+            # `l2_score`), and today's missed at R-9's first prompt — after the live case was paid for. The authored
+            # answers there are the ideal reader's own on the SAME path, so a verdict that moved is the model's,
+            # never the path's.
+            recorded = judge(case, run_case(case, IdealReader(case)) if on_l2_path else cassettes.replay(case))
         elif keep:
             cassettes.save(case, recorder.cassette, source=f"{cassettes.LIVE_PREFIX}{model}")
         expected = sum(len(cards_about(run, e.about)) for e in case.cards if e.min >= 1)
@@ -366,7 +526,7 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None, *, max
     detect = [r for r in rows if r["kind"] == "must_detect" and r["verdict"] != "not_expressible"]
     cards = sum(r["cards"] for r in rows)
     price_in, price_out = price_per_mtok(model)
-    card = {"model": model, "site": site, "date": date.today().isoformat(), "cases": rows,
+    card = {"model": model, "site": site, "date": date.today().isoformat(), "l2_path": on_l2_path, "cases": rows,
             "recall": round(sum(r["verdict"] == PASS for r in detect) / len(detect), 3)
             if detect else None,
             "precision": round(sum(r["cards_about_the_subject"] for r in rows) / cards, 3)
@@ -390,6 +550,43 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None, *, max
     out.write_text(json.dumps(card, indent=1) + "\n", encoding="utf-8")
     print(f"\nrecall {card['recall']} · precision {card['precision']} · forbidden "
           f"{card['forbidden_outputs']} · ${card['cost_usd']} · {calls} calls, {truncated} cut → {out}")
+    return 0
+
+
+def probe(ids: list[str], model: str, site: str | None = None, *, max_usd: float) -> int:
+    """GeniOS-011 S07.U1 · `--probe`: the live pass's first `PROBE_CALLS` calls (of `site`, every other site answered
+    by the ideal reader as in `live`), each one's `stop_reason` and `output_tokens` printed as it returns, then the
+    run stops — before any paid pass, so a ceiling that cuts every answer (`stop_reason=max_tokens`, the Sonnet 5
+    pass of 12 Oct) is read on two calls rather than paid for on two hundred. Under the same `--max-usd` cap; no
+    scorecard, no cassette. The tenant is not kept: `run_case` removes it on every exit, the probe's stop included.
+    Exit 1 when no call was made — the site was never asked on these cases, which a probe says rather than
+    passing."""
+    from tests.replays.engine_runner import pin_scratch_database
+    from tests.replays.engine_runner import run_case
+    from tests.replays.ideal_reader import IdealReader
+
+    pin_scratch_database()
+    cap = SpendCap(max_usd, model)
+    asked = ProbeModel(LiveModel(os.environ[LIVE_KEY_ENV], model))
+    for case in _cases(ids):
+        capped = CappedModel(asked, cap)
+        try:
+            run_case(case, SiteModel(site, capped, IdealReader(case)) if site is not None else capped)
+        except ProbeComplete:
+            break
+        if cap.reached:
+            print(f"STOPPED at {case.case_id}: --max-usd {max_usd:g} reached (${cap.spent_usd:.4f} spent)")
+            break
+        if asked.full:
+            break
+    if not asked.made:
+        print(f"\nthe probe made no call: {site or 'no site'} was never asked on these cases "
+              f"(${cap.spent_usd:.4f} spent).", file=sys.stderr)
+        return 1
+    cut = sum(row["stop_reason"] == "max_tokens" for row in asked.made)
+    print(f"\nprobe: {len(asked.made)} of {asked.limit} calls on {model} · {cut} cut at the ceiling · "
+          f"${cap.spent_usd:.4f} spent · no scorecard written. A stop_reason of max_tokens means the ceiling cut "
+          "the answer: read these before any paid pass.")
     return 0
 
 
@@ -555,6 +752,11 @@ def main(argv: list[str] | None = None) -> int:
                     help="the site's output ceiling for this run (06 D72); default the site's own")
     ap.add_argument("--per-call-usd", type=_usd, default=None,
                     help="the site's per-call cap for this run, e.g. 0.15 (06 D72 arm B)")
+    ap.add_argument("--l2-path", action="store_true",
+                    help="run the cases down the L2 path (GENIOS_GOLDEN_L2=1) for this run; R-9 needs it")
+    ap.add_argument("--probe", action="store_true",
+                    help=f"a live pass's first {PROBE_CALLS} calls only, each one's stop_reason and output_tokens "
+                         "printed, no scorecard — read before any paid pass; needs what --live needs")
     ap.add_argument("cases", nargs="*", help="case ids (default: every case)")
     args = ap.parse_args(argv)
     run_settings = {"thinking": args.thinking, "ceiling": args.ceiling, "per_call_usd": args.per_call_usd}
@@ -563,6 +765,19 @@ def main(argv: list[str] | None = None) -> int:
                  f"--site with a tier of its own ({', '.join(SITE_TIERS)})")
     if args.ceiling is not None and args.ceiling <= 0:
         ap.error("--ceiling is a positive number of tokens")
+
+    # GeniOS-011 S07.U1 · the probe is a live pass's first calls inside the chain, and the L2 path a run's path.
+    if args.probe and (args.dry_run or args.record or args.site == BRIEF_SITE):
+        ap.error("--probe makes a live pass's first calls inside the chain: not with --dry-run or --record, nor "
+                 f"--site {BRIEF_SITE}, whose writer runs outside the chain")
+    if args.l2_path and args.record:
+        ap.error("--l2-path is never recorded over today's cassettes: CI replays them down today's path, and the "
+                 "L2 path is scored beside it (tests/replays/l2_score) — drop --record")
+    if args.l2_path and args.site == BRIEF_SITE:
+        ap.error(f"--site {BRIEF_SITE} composes its day from today's cassettes: --l2-path does not apply")
+    if (args.live or args.probe) and args.site == L2_SITE and not args.l2_path:
+        ap.error(f"--site {L2_SITE}: today's path never asks R-9 (l2_reasoning is switched on only down the L2 "
+                 "path), so the pass would spend nothing and measure nothing — add --l2-path")
 
     if args.dry_run and (args.live or args.record):
         ap.error("--dry-run runs nothing; it cannot be combined with --live or --record")
@@ -579,7 +794,7 @@ def main(argv: list[str] | None = None) -> int:
     model = model_for(args.site, args.model)
     if args.dry_run:
         return dry_run(args.cases, model, args.site)
-    if args.live:
+    if args.live or args.probe:
         if not os.environ.get(LIVE_KEY_ENV) or not args.spend_ok:
             print(f"--live spends model money: it needs a key in {LIVE_KEY_ENV} and --spend-ok "
                   "(06-DECISIONS D12c — the default is no spend). Run --dry-run for the "
@@ -592,14 +807,17 @@ def main(argv: list[str] | None = None) -> int:
         if args.site == BRIEF_SITE:
             return live_brief(args.cases, max_usd=args.max_usd, key=os.environ[LIVE_KEY_ENV])
         r_site = SITE_TIERS.get(args.site or "")
-        with site_settings(r_site, **run_settings) if r_site else contextlib.nullcontext():
+        with l2_path_for_the_run(args.l2_path), \
+                (site_settings(r_site, **run_settings) if r_site else contextlib.nullcontext()):
+            if args.probe:
+                return probe(args.cases, model, args.site, max_usd=args.max_usd)
             return live(args.cases, model, args.record, args.site, max_usd=args.max_usd, **run_settings)
     if args.record:
         from tests.replays.engine_runner import pin_scratch_database
         pin_scratch_database()
         record(args.cases)
         return 0
-    ap.error("say what to do: --dry-run, --record, or --live")
+    ap.error("say what to do: --dry-run, --record, --probe or --live")
     return 2
 
 

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
+from genios_engine.deliver.store import PUSH_CARD_FROM
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.authority import (
     AUTHORITATIVE_SCORE_SQL,
@@ -77,16 +78,17 @@ def _period(eval_time: datetime) -> str:
 
 
 def poll_signals(store, org_id: str, agent_id: str, *, since=None, eval_time=None) -> list[dict]:
-    """GET /v1/signals?status=delivered — un-resolved cards' signals + presentation, machine-readable."""
+    """GET /v1/signals?status=delivered — un-resolved cards' signals + presentation, machine-readable.
+
+    Through `deliver/store.PUSH_CARD_FROM` (GeniOS-011 S36.U2): the push lanes' declared door
+    (`store.PUSH_CARD_DOORS`, the decision alone), because push IS this poll — `push._card_projection` is its
+    projection — and an executor can claim a decision only (`claim`). One fragment, so the poll and the push can
+    never disagree about which cards an agent may hold; widening the door is `PUSH_CARD_DOORS`, not this query."""
     eval_time = eval_time or datetime.now(timezone.utc)
     q = ("select k.signal_id, k.card_id, k.urgency_band, k.headline, k.situation, "
          + AUTHORITATIVE_SCORE_SQL + " as score, "
-         "k.score_block, k.state, k.created_at from cards k "
-         "join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
-         + AUTHORITATIVE_SIGNAL_JOINS +
-         " where k.org_id=:o and k.state in ('queued','surfaced','snoozed') "
-         "and k.expires_at > :authority_time and s.status='open' and "
-         + AUTHORITATIVE_SIGNAL_PREDICATE)
+         "k.score_block, k.state, k.created_at" + PUSH_CARD_FROM +
+         "where k.org_id=:o and k.state in ('queued','surfaced','snoozed')")
     params = {"o": org_id, "authority_time": eval_time}
     if since is not None:
         q += " and k.created_at > :since"; params["since"] = since

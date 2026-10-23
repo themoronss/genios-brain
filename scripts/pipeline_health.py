@@ -44,6 +44,7 @@ from genios_engine.platform.self_identity import identity_for, names_us  # noqa:
 from genios_engine.reason.expert.decide import CAPABILITY_ID as EXPERT_CAPABILITY  # noqa: E402
 from genios_engine.reason.bundle.budget import OWN_BUDGETS, usd_to_micro  # noqa: E402
 from genios_engine.reason.bundle.sites import SITE_EXPERT                # noqa: E402
+from genios_engine.reason.bundle.sites import SITE_REASON                # noqa: E402
 from scripts._db import add_database_argument, resolve_database_url   # noqa: E402
 from scripts._gate import read_only_connection, sql                   # noqa: E402
 
@@ -985,6 +986,81 @@ def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
         detail=[f"{r.status} × {int(r.n)}: {r.reason}" for r in reasons])
 
 
+#: GeniOS-011 S18.U3 · the L2 judgment's own day — R-9's $2 a day per org — read from the budget itself, as R-7's is.
+L2_DAILY_CAP_MICRO_USD = usd_to_micro(OWN_BUDGETS[SITE_REASON][0])
+
+
+def check_the_l2_judgment_says_why(conn, org: str) -> Check:
+    """⛔ GeniOS-011 S18.U3 (audit `l2-skips-invisible`: "Add R-9/reasoning_results to pipeline_health"). The L2 pass
+    (`reason/l2/sweep`) keeps every judgment it ran as a row of `reasoning_results` — a result, or refused, failed,
+    cut or carried with its reason — and L3 keeps what it did with each (`l2_admissions`: admit, hold, reject). No
+    operator surface read either: a day of holds, refusals or cut answers was invisible beside the expert's own check
+    above. On the last day:
+
+      * the judgments, by status, and the ones that did not stand by what they said — the detail rows;
+      * what L3 admitted, held and rejected, and why it held — the detail rows;
+      * today's spend against R-9's own cap ($2), from the ledger its budget is read from (`l4_r_site_calls`).
+
+    It FAILS while a judgment that did not stand has no reason (every writer gives one — `reason/l2/judge`), while
+    today's spend is over the cap, or while MORE THAN HALF of the day's judgments were cut at the ceiling (R-9's
+    8,000-token ceiling is modelled, not measured: `04-FOR-HARSH` G-1, "if a row is truncated, tell me"). Nothing
+    judged and nothing admitted is NO DATA — unless the day is over its cap, which is read first, as the expert's is.
+    """
+    name = "the L2 judgment says why, and L3 says what it kept"
+    spent = _scalar(conn, "select coalesce(sum(cost_micro_usd), 0) from l4_r_site_calls "
+                          "where org_id = :o and site = 'R-9' "
+                          "and created_at >= date_trunc('day', now())", o=org)
+    over = spent > L2_DAILY_CAP_MICRO_USD
+    rows = conn.execute(sql(
+        "select status, count(*) as n from reasoning_results "
+        " where org_id = :o and reasoned_at > now() - interval '24 hours' "
+        " group by status order by status"), {"o": org}).fetchall()
+    admitted = conn.execute(sql(
+        "select decision, count(*) as n from l2_admissions "
+        " where org_id = :o and decided_at > now() - interval '24 hours' "
+        " group by decision order by decision"), {"o": org}).fetchall()
+    if not rows and not admitted and not over:
+        return Check(name=name, ok=True, no_data=True,
+                     measured="no L2 judgment and no L3 admission in the last 24 hours",
+                     expected="skipped — nothing to judge", fix="")
+    total = sum(int(r.n) for r in rows)
+    silent = _scalar(conn, "select count(*) from reasoning_results where org_id = :o "
+                           "and reasoned_at > now() - interval '24 hours' and status <> 'result' "
+                           "and coalesce(btrim(reason), '') = ''", o=org)
+    reasons = conn.execute(sql(
+        "select status, reason, count(*) as n from reasoning_results "
+        " where org_id = :o and reasoned_at > now() - interval '24 hours' and status <> 'result' "
+        " group by status, reason order by count(*) desc, status, reason limit 10"), {"o": org}).fetchall()
+    holds = conn.execute(sql(
+        "select reason, count(*) as n from l2_admissions "
+        " where org_id = :o and decided_at > now() - interval '24 hours' and decision = 'hold' "
+        " group by reason order by count(*) desc, reason limit 10"), {"o": org}).fetchall()
+    # `reason/l2/store.TRUNCATED`: a judgment cut at R-9's token ceiling.
+    cut = sum(int(r.n) for r in rows if r.status == "truncated")
+    by_decision = {r.decision: int(r.n) for r in admitted}
+    measured = ((f"{total} judgments in 24 h — " + ", ".join(f"{r.status} {int(r.n)}" for r in rows))
+                if rows else "no L2 judgment in the last 24 hours")
+    measured += (f"; L3 admitted {by_decision.get('admit', 0)}, held {by_decision.get('hold', 0)}, "
+                 f"rejected {by_decision.get('reject', 0)}"
+                 + f"; spent today ${spent / 1_000_000:.2f} of ${L2_DAILY_CAP_MICRO_USD / 1_000_000:.2f}"
+                 + (f"; {silent} not standing with no reason" if silent else "")
+                 + (f"; {cut} of {total} truncated" if cut else ""))
+    mostly_cut = cut * 2 > total   # total == 0 implies cut == 0: 0 > 0 is False
+    return Check(
+        name=name, ok=not silent and not over and not mostly_cut, measured=measured,
+        expected="every judgment that did not stand says why, the day's spend stays within R-9's own $2, and no "
+                 "more than half of the judgments are cut",
+        fix=("a judgment that did not stand has no reason: find the writer of reasoning_results that is not "
+             "reason/l2/store.write_sweep, or the end of reason/l2/judge.judge that dropped its reason" if silent else
+             "more than half of the day's judgments were cut at R-9's token ceiling: the answer — its thinking "
+             "included — does not fit. Read R-9's SITE_MAX_OUTPUT_TOKENS and SITE_THINKING in reason/bundle/sites.py"
+             if mostly_cut and not over else
+             "the day's R-9 spend is over its budget: a consult ran that RSiteGate's budget should have refused — "
+             "check reason/l2/sweep builds its gate with NarrativeBudget.for_site and the BundleStore ledger"),
+        detail=[f"{r.status} × {int(r.n)}: {r.reason}" for r in reasons]
+               + [f"hold × {int(r.n)}: {r.reason}" for r in holds])
+
+
 def check_every_new_signal_has_a_lane(conn, org: str) -> Check:
     """⛔ STEP-13 (`yc2_w27_s13` M36.C1.L-integration.V1.U06, `03` F10 and F186). Five writers of
     `signals` left `output_lane` NULL — the LLM decider's decision, the legacy rule lane (LIVE), the
@@ -1218,6 +1294,7 @@ CHECKS = (
     check_every_piece_of_work_has_one_file,
     check_every_normal_says_its_n,
     check_the_expert_says_why_and_stays_in_budget,
+    check_the_l2_judgment_says_why,
     check_every_new_signal_has_a_lane,
     check_one_file_one_card,
     check_no_file_card_is_replaced,

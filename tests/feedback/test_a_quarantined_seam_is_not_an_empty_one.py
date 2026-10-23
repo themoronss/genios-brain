@@ -273,7 +273,11 @@ def test_the_discovery_route_already_counts_its_own_refusals() -> None:
 
 def test_learning_metrics_is_the_last_unread_ledger() -> None:
     """⛔ `F11` measured four ledgers nothing reads. `S6` gave two readers, `S7` a third. ⛔ This
-    asserts the remaining one so the tally is updated **deliberately rather than discovered.**"""
+    asserts the remaining one so the tally is updated **deliberately rather than discovered.**
+
+    ⛔ UPDATED 2026-10-23 by GeniOS-011 S40.U2: the fourth now has its one reader — GET
+    /feedback/precision's precision by layer in `api/routes.py`. The tally is 4 of 4 read; a second
+    reader is asserted against, so it too arrives deliberately."""
     import pathlib
     root = pathlib.Path(ST.__file__).resolve().parents[2]
     readers = []
@@ -282,7 +286,8 @@ def test_learning_metrics_is_the_last_unread_ledger() -> None:
             text = path.read_text(encoding="utf-8", errors="ignore")
             if re.search(r"(?:from|join)\s+learning_metrics\b", text, re.I):
                 readers.append(str(path.relative_to(root)))
-    assert readers == [], f"learning_metrics now has a reader: {readers} — update the F11 tally"
+    assert readers == ["genios_engine/api/routes.py"], (
+        f"learning_metrics readers are {readers} — update the F11 tally")
 
 
 def test_feedback_now_has_five_correctness_receipts() -> None:

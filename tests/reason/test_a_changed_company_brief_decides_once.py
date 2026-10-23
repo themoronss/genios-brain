@@ -31,9 +31,12 @@ MF = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(MF)
 
 #: Recorded at `speedrun008` ba05508f, before `MaterialInputs.brief` existed.
+#: ⛔ MOVED, GeniOS-009 G0.1 (22 Oct 2026): an instant AT the evaluation time now reads "0 days ago", not "0 hours
+#: away" (`reason/fingerprint._relative`), and this fixture's facts sit exactly at it. Re-recorded from the same
+#: fixture; nothing about the brief moved — the old code reproduces the old two values byte for byte.
 BEFORE_STEP_07 = {
-    "base": "fp_33eb47e0dc39424058bdd046837c5050df96303dc021aa38185fa8b8825e58aa",
-    "every_input": "fp_25964fc8b1c8eb3205ee02146fbc9c56d0fa5fbd73fa9daeaaa1e4d16b9eec12",
+    "base": "fp_14beb4ff5dd4b85e52096a1acc5f92a98553d445553dc75f944a14a4453dc816",
+    "every_input": "fp_15b9a691d9de7e4c7cd8e980bf4a6f5b26a2dd68ce0f9d3d10de15bde5da7704",
 }
 EVERY_INPUT = dict(authority_revision=3, verdicts=("fb_1:1",),
                    decider="llm:claude-haiku-4-5-20251001+r1")

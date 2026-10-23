@@ -18,6 +18,8 @@ from genios_engine.capture.acquire.cadence import (
 from genios_engine.capture.acquire.cursor_store import CursorStore
 from genios_engine.capture.acquire.scheduler import ConnectionSchedule, PollDecision, plan_poll
 from genios_engine.capture.connectors.base import RawObject, SourceBatch, SourceConnector
+# GeniOS-011 S06.U2 · the marker a connector sets on a mail whose whole message never arrived.
+from genios_engine.capture.connectors.composio import BODY_FETCH_FAILED
 from genios_engine.capture.landing.page_writes import PageWrites
 from genios_engine.capture.landing.repository import SourceEventRepository
 from genios_engine.capture.parked.store import ParkedStore, parked_from_trace
@@ -360,6 +362,14 @@ class SyncSummary:
     #: moment we read them (`RawObject.occurred_at_inferred`). They are captured, never dropped,
     #: and never move the cursor. A non-zero count is a connector whose time field changed shape.
     time_inferred: int = 0
+    #: GeniOS-011 S06.U2 · objects whose WHOLE message was wanted and never arrived — the provider
+    #: refused, the deadline passed, or the call failed, twice (`connectors/composio._full_message`).
+    #: Each carries `raw["body_fetch"] = "failed"` and no body, and the gate parks it (DOC-05,
+    #: NEEDS_REFETCH) — so it is ALSO in `parked`; this says how many of those parks are a fetch we
+    #: did not get rather than a document we could not read. Before it, such a mail was read from
+    #: its list text and nothing anywhere counted it. A non-zero count on a run is a mailbox whose
+    #: per-message calls are failing.
+    body_fetch_failed: int = 0
 
     @property
     def intent_unknown_rate_bp(self) -> int:
@@ -835,6 +845,10 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 page.flush()
 
             for raw, res, err in captured:              # aggregate SINGLE-THREADED → no races on summary
+                # GeniOS-011 S06.U2 · counted off the object, before its outcome: a mail whose
+                # body never arrived is that whatever capture then made of it.
+                if (raw.raw or {}).get("body_fetch") == BODY_FETCH_FAILED:
+                    summary.body_fetch_failed += 1
                 if res is None:                          # poison → quarantine, batch continues
                     summary.quarantined += 1
                     if parked_store is not None:
@@ -1013,7 +1027,7 @@ def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: st
         for f in ("scanned", "emitted", "dropped", "parked", "archived", "duplicate", "quarantined",
                   "domain_tagged", "domain_fallback_only",
                   "intent_unread", "intent_read_attempts", "intent_disagreements",
-                  "time_inferred"):
+                  "time_inferred", "body_fetch_failed"):
             setattr(total, f, getattr(total, f) + getattr(summary, f))
         # The drain's completeness is the LAST round's, not a sum: each round is a slice of one
         # sweep, and only the final one can say whether the provider ran out. Carried rather than

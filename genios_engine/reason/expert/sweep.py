@@ -17,9 +17,11 @@ ONCE, so a switch flipped halfway cannot leave two files of one pass judged unde
      budget waits for the next day — the day's budget is spent;
   5. the rest NEAREST MEETING OR DEADLINE FIRST (a past-due promise first of all; a file with neither
      last), at most `MAX_PER_PASS` a pass, each reviewed once (`review.review_file`) through ONE gate
-     with the expert's own budget (`06` D7: $2 a day). The first refusal for want of budget stops the
-     pass: the files it did not reach are CARRIED, counted — "a busy day reviews the nearest deadlines
-     first and carries the rest, said";
+     with the expert's own budget (`06` D7: $2 a day). The first refusal for want of the DAY's budget
+     stops the pass: the files it did not reach are CARRIED, counted — "a busy day reviews the nearest
+     deadlines first and carries the rest, said". A refusal over the PER-CALL ceiling is that one file's:
+     it is carried alone (`too_big`, its row over_budget, so it waits for tomorrow) and the pass goes on
+     (GeniOS-011 S18.U2, the L2 pass's own fix ported);
   6. a valid review that proposes a kind of work — the proposal standing its check — writes the founder
      a proposal (`kind_proposal.propose_kind`).
 
@@ -55,11 +57,20 @@ lane can tell what belongs to a file (`reason/expert/cover`) without reading the
 
 The sweep runs this pass FIRST and hands `covered` to the compiled lane (M33.C1.L-integration.V2.U07),
 which decides each covered file from its review; the pass itself writes reviews and proposals, never a
-decision. A tenant without the feature, or with no model configured, costs no file read. Never raises
-past a file: one file that cannot be read is counted and the pass goes on.
+decision. A tenant without the feature, or with no model configured, costs no file read — and the pass
+SAYS it skipped, with its reason, in the log (GeniOS-011 S18.U2). Never raises past a file: one file that
+cannot be read is counted and the pass goes on.
+
+⛔ WHO JUDGES A FILE THAT MOVED (GeniOS-011 S18.U2, audit `l2-cards-precondition-not-enforced`). With `l2_cards`
+the L2 judgment writes the file's review, so this pass makes no R-7 call and hands each moved file to the L2 pass
+— but only when that pass CAN judge: `l2_reasoning` on and an R-9 client the R-sites' door builds, the two
+things `reason/l2/sweep.l2_pass` skips without. `PRECONDITIONS` are reported, never enforced
+(`platform/l4_activation`), so `l2_cards` alone used to hand every moved file to a pass that skipped, unlogged,
+and nobody judged it. Now R-7 reviews as before, and a WARNING says why L2 could not.
 """
 from __future__ import annotations
 
+import logging
 import math
 from collections import Counter
 from dataclasses import replace
@@ -67,10 +78,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW, FEATURE_L2_CARDS, activated_features
+from genios_engine.platform.l4_activation import FEATURE_L2_REASONING
 from genios_engine.platform.logging import get_logger
 from genios_engine.reason.bundle.budget import NarrativeBudget
+from genios_engine.reason.bundle.budget import REASON_PER_CALL
 from genios_engine.reason.bundle.gate import RSiteGate
 from genios_engine.reason.bundle.sites import SITE_EXPERT, tier_for
+from genios_engine.reason.bundle.sites import SITE_REASON
 from genios_engine.reason.bundle.store import BundleStore
 from genios_engine.reason import llm_sites
 
@@ -155,25 +169,52 @@ def _cover(receipt: dict[str, Any], file_id: str, fingerprint: str, people) -> N
     receipt["people"][file_id] = sorted(str(p) for p in people or ())
 
 
+def _skipped(org_id: str, why: str, *, level: int = logging.WARNING) -> dict[str, Any]:
+    """A pass that skips SAYS so, with its reason (GeniOS-011 S18.U2, audit `l2-skips-invisible`). The receipt was
+    only returned, and `run_all` only returned it: a tenant with the expert on and no model reviewed nothing, and
+    no line said so — a refusal nobody can see is a silent stop. A tenant without the feature is the switch
+    working (INFO); a pass that cannot run is a stop someone must see (WARNING)."""
+    _log.log(level, "the expert pass skipped org=%s: %s", org_id, why)
+    return {"skipped": why}
+
+
+def _why_l2_cannot_judge(activated) -> str | None:
+    """Why the L2 pass could NOT judge the files this pass would hand it under `l2_cards`, or None when it can
+    (GeniOS-011 S18.U2, audit `l2-cards-precondition-not-enforced`). The two things `reason/l2/sweep.l2_pass` skips
+    without — `l2_reasoning`, and an R-9 client from the R-sites' own door, read now as that pass reads it — in its
+    own words, so the warning here and its skip read alike."""
+    if FEATURE_L2_REASONING not in activated:
+        return "l2_reasoning_not_activated"
+    if llm_sites.make_site_client(tier_for(SITE_REASON)) is None:
+        return "no_model_configured"
+    return None
+
+
 def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                 budget: NarrativeBudget | None = None, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
     """Review every changed file of the tenant once. Returns the pass's receipt; never raises past a file."""
     now = now or datetime.now(timezone.utc)
     engine = getattr(store, "engine", None)
     if engine is None:
-        return {"skipped": "no_engine"}
+        return _skipped(org_id, "no_engine")
     activated = activated_features(engine, org_id)
     if FEATURE_EXPERT_REVIEW not in activated:
-        return {"skipped": "expert_review_not_activated"}
+        return _skipped(org_id, "expert_review_not_activated", level=logging.INFO)
     # L2 rebuild C1 · with `l2_cards` the Layer 2 judgment writes a file's review (`reason/l2/sweep`): this pass
     # still reads every file, answers from the standing reviews and covers what they decide — and makes NO R-7
     # call. A file that moved is the L2 pass's to judge (`to_l2`), so a file is judged once and paid once.
-    l2_judges = FEATURE_L2_CARDS in activated
+    # GeniOS-011 S18.U2 · …only when the L2 pass CAN judge it (`_why_l2_cannot_judge`). When it cannot, R-7 reviews
+    # as before and the warning says why: handed over, the file was judged by nobody.
+    l2_cannot = _why_l2_cannot_judge(activated) if FEATURE_L2_CARDS in activated else None
+    if l2_cannot is not None:
+        _log.warning("the expert pass reviews org=%s although l2_cards is on: the L2 pass cannot judge (%s), so R-7 "
+                     "reviews each file that moved as before", org_id, l2_cannot)
+    l2_judges = FEATURE_L2_CARDS in activated and l2_cannot is None
     # The R-sites' own door, read when the pass runs — what production's wiring sets and the golden
     # runner opens (`tests/replays/engine_runner.py`); a name bound at import would never see it.
     client = None if l2_judges else (llm if llm is not None else llm_sites.make_site_client(tier_for(SITE_EXPERT)))
     if client is None and not l2_judges:
-        return {"skipped": "no_model_configured"}
+        return _skipped(org_id, "no_model_configured")
     model = getattr(client, "model", None) or llm_sites.tier_model(tier_for(SITE_EXPERT))
 
     from genios_engine.context.kind_numbers import numbers_for_kind
@@ -181,7 +222,10 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     receipt: dict[str, Any] = {"files": 0, "ours": 0, "unchanged": 0, "untouched": 0, "unreadable": 0,
                                "waiting": Counter(), "reviewed": Counter(), "carried": 0,
                                "proposed_kinds": 0, "cost_micro_usd": 0, "covered": {}, "people": {},
-                               "unchecked": 0, "checked": Counter(), "rechecked": 0, "version_moved": 0}
+                               "unchecked": 0, "checked": Counter(), "rechecked": 0, "version_moved": 0,
+                               "too_big": 0}
+    if l2_cannot is not None:
+        receipt["l2_cannot_judge"] = l2_cannot
     due = []
     from sqlalchemy import text
 
@@ -304,6 +348,15 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             _cover(receipt, parts.file_id, fp, parts.file.people)
         if result.receipt is not None:
             receipt["cost_micro_usd"] += result.receipt.cost_micro_usd
+        if result.status == reviews.OVER_BUDGET and REASON_PER_CALL in (result.reason or ""):
+            # GeniOS-011 S18.U2 (audit `l2-r7-per-call-refusal-stops-pass`) · ONE prompt over R-7's per-call ceiling
+            # is that file's problem, not the day's — the L2 pass's own fix (`reason/l2/sweep`, b8a8a43c), ported.
+            # The file is carried (its row says over_budget, so `_waiting` holds it until tomorrow) and the pass goes
+            # on. It broke the pass, so one oversized file sorted first carried every file behind it, every sweep.
+            receipt["too_big"] += 1
+            _log.warning("the expert pass carried file=%s org=%s: its prompt is over R-7's per-call ceiling (%s)",
+                         parts.file_id, org_id, result.reason)
+            continue
         if result.status == reviews.OVER_BUDGET:
             receipt["carried"] += len(due) - i - 1
             break

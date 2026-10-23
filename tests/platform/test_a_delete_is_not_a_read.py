@@ -203,7 +203,45 @@ def test_the_statement_count_did_NOT_move():
     # once per pass so the judgment sees both sides — the engine gaining one statement.
     # ⛔ MOVED 3,301 → 3,303, L3 audit X6: `context/situations._ORG_FACTS` and `._ORG_MEMBER_FIELDS`, the refresh's two
     # fact reads org-visible on PostgreSQL (a seat's private overlay decided team situations) — two statements.
-    assert r["statements"] == 3_303, (
+    # ⛔ MOVED 3,303 → 3,310, GeniOS-010 B5/B6/B8 (22 Oct): `api/home_routes.home_summary`'s week of changes (facts
+    # added / corrected, people and companies new, `_ENTITIES_UPDATED_7D`, `_FACTS_7D_BY_SOURCE`) and its cards by band
+    # (`_CARDS_7D`) — six; `reason/moments/followups._SCREEN_LANE_WEEK`, the seat's screen-to-memory lane — one.
+    # ⛔ MOVED 3,310 → 3,315, GeniOS-010 B8 expanded (22 Oct): `reason/moments/followups` — `_CARDS_FED` (the cards
+    # each screen item fed), `_POPUPS` (its popup), `_VERDICTS` (why it is kept or temporary), `_SCREEN_ITEMS` (a
+    # card's screen items, the other way) and `_SCREEN_COUNTS` (the week's screens read / skipped) — five.
+    # ⛔ MOVED 3,315 → 3,316, GeniOS-011 S03.U1 (23 Oct): `api/routes._schema_head`, the latest `schema_migrations`
+    # filename `/health` now names beside the build SHA — one SELECT, a literal; the engine gaining one statement.
+    # ⛔ MOVED 3,316 → 3,401, GeniOS-011 S01.U1 (23 Oct): `scripts/g011_prod_readings.py`, one read-only runner
+    # holding every production read GeniOS-011 is blocked on — 85 statements, its 86 readings but the one
+    # `show`. New SQL text in an operator script, not a wider list.
+    # ⛔ MOVED 3,401 → 3,404, GeniOS-011 S27.U1 (23 Oct): `reason/brief_patterns` — `_SITUATIONS` (the open situations
+    # on the founder's files), `_IN_MOTION` (the brief's in-motion lines, accepted or proposed) and `_GOALS` (the work
+    # a goal already rests on) — three reads, so the drafter sees what is in motion.
+    # ⛔ MOVED 3,404 → 3,405 GeniOS-011 S06.U1 (23 Oct): `capture/parked/drain._FILE_REJUDGMENT`, the
+    # park an older junk filter's archive is filed under to be judged again — the engine gaining one statement.
+    # ⛔ MOVED 3,405 → 3,406 GeniOS-011 S18.U1 (23 Oct): `reason/domain_shadow._SITUATION_EVENTS`, the events behind
+    # every situation of the pass read once, before the situation loop, so the judged files can be decided first —
+    # the engine gaining one statement.
+    # ⛔ MOVED 3,406 → 3,408 GeniOS-011 S06.U2 (23 Oct): `scripts/promote_archived._WHERE_FROM` (where each
+    # candidate's message is) and `._RESTORE_BODY` (its re-fetched whole body stored in place of the archived
+    # snippet, B27) — an operator script gaining two statements.
+    # ⛔ MOVED 3,408 → 3,419 GeniOS-011 S18.U3 (23 Oct): why a judged file has no card, read where people look —
+    # +5 `api/workstream_routes` (`_LAST_ATTEMPT`, `_L2_LAST`, `_L2_HOLD`, `_FILE_GATE`, `_FILE_CARD`: the file
+    # page's one line) and +6 `scripts/pipeline_health.check_the_l2_judgment_says_why` (R-9's spend, the
+    # judgments by status, L3's admissions by decision, the ones with no reason, the reasons, the holds' reasons).
+    # ⛔ MOVED 3,419 → 3,412 GeniOS-011 S36.U2 (23 Oct): no statement gained or lost — eight card readers (the morning
+    # brief, the Context panel, `/v1/insights` and its dismiss, MCP `_session_cards`, the agent poll, the push
+    # projection, `outbox.PUSHABLE_CARDS_SQL`) each held their own `… from cards k join signals s …` piece; they now
+    # read the one live-card fragment `deliver/store.LIVE_CARD_FROM` / `PUSH_CARD_FROM`, and recall's read moved to
+    # `store._LIVE_CARDS_ABOUT`. Fewer SQL-shaped pieces, the same statements (`statement_plans.census` is 2,590 both).
+    # ⛔ MOVED 3,412 → 3,414 GeniOS-011 S40.U2 (23 Oct): GET /feedback/precision reads the last shadow
+    # calibration run (`api/routes._LAST_SHADOW_CALIBRATION_SQL`) and each subject's latest `learning_metrics`
+    # row (`_PRECISION_BY_LAYER_SQL`) — two SELECTs, each a module constant.
+    # ⛔ MOVED 3,414 → 3,427 GeniOS-011 S05.U1 (23 Oct): `platform/daily_health` — the tenants to measure, the day's
+    # rows already written, the eight per-day reads (cards, card_refusals, expert_reviews, reasoning_results,
+    # l2_admissions, pipeline_counters, llm_costs, l4_r_site_calls), the database size, the row's insert and the
+    # retention purge — the engine gaining thirteen statements.
+    assert r["statements"] == 3_427, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -746,7 +784,14 @@ def test_the_write_only_count_held_while_its_MEMBERSHIP_turned_over():
     """⛔⛔ THE FINDING A BARE COUNT WOULD HAVE HIDDEN. Nine before, nine after — and one left and
     one arrived. A step that reported only the count would have reported *no change*."""
     now = set(TC.written_and_unread())
-    assert len(now) == 9, sorted(now)
+    # ⛔ 9 → 8 on 2026-10-23 (GeniOS-011 S01.U1): `human_events` gained an operator reader,
+    # `scripts/g011_prod_readings.py` — a new reader, not this step's resolver; the turnover below
+    # is what this test pins, and it still holds.
+    # ⛔ 8 → 7 on 2026-10-23 (GeniOS-011 S40.U2): `learning_metrics` gained its reader, GET
+    # /feedback/precision's precision by layer (`api/routes._precision_by_layer`) — again a new
+    # reader, not a resolver change.
+    assert len(now) == 7, sorted(now)
+    assert "learning_metrics" not in now
     assert "source_identity_map" not in now
     assert "warm_lane_slots" in now
 

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import threading
+import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:                 # the two chain doors' `eval_time` annotations only
@@ -137,6 +139,56 @@ def _bind_gate_costs(gate, org_id: str, seat_id: str | None = None) -> None:
         gate.bind_costs(_graph.record_cost, org_id, seat_id, brief_source=_graph)
 
 
+def _build_sha() -> str:
+    """The commit this process was built from: `GENIOS_BUILD_SHA`, or `'dev'` when nothing bound it.
+
+    GeniOS-011 S03.U1 (`process-live-sha-not-observable`). Read per request, not frozen at import, so
+    the answer is this process's environment. A BLANK value is read as unset: an empty string on
+    `/health` would look like a SHA a deploy check failed to match, when it means nobody bound one.
+    The deploy host binds its commit hash to this variable (Harsh, the DO app spec); until it does,
+    production says `'dev'` here — which is itself the finding, visible from outside.
+    """
+    return (os.environ.get("GENIOS_BUILD_SHA") or "").strip() or "dev"
+
+
+# GeniOS-011 S03.U1 — the schema head `/health` reports, held for a short TTL. `/health` is what an
+# uptime monitor polls, so the ledger read must not be a query per probe; and during a database
+# outage each read waits out the engine's connect/pool timeouts (10–15 s, `platform/db.py`), so a
+# FAILED read is held for the TTL too — otherwise every probe would pay that wait, and consecutive
+# slow probes are what an orchestrator restarts a box for, turning a database outage into an API
+# outage (the trap the degraded boot below exists to avoid). The cost of holding it: right after a
+# hand-run migration the head can be up to one TTL old.
+_SCHEMA_HEAD_TTL_S = 60.0
+_SCHEMA_HEAD_CACHE: tuple[float, str | None] | None = None
+
+
+def _schema_head() -> str | None:
+    """The latest migration filename in `schema_migrations` — the schema this database stands at.
+
+    GeniOS-011 S03.U1. `max(filename)`, not the newest `applied_at`: `apply_migrations` applies in
+    filename order, so the highest filename applied is the head a deploy compares with the repo's
+    newest `migrations/*.sql`, even when an older file was applied by hand later. `None` when there
+    is no database (in-memory dev has no ledger) or when the read fails for ANY reason: this runs
+    inside the liveness check, and a liveness check that raises on a database fault is the outage
+    it exists to report — so the failure is logged and answered as null, never raised.
+    """
+    global _SCHEMA_HEAD_CACHE
+    now = time.monotonic()
+    hit = _SCHEMA_HEAD_CACHE
+    if hit is not None and now - hit[0] <= _SCHEMA_HEAD_TTL_S:
+        return hit[1]
+    head: str | None = None
+    if _graph is not None:
+        try:
+            with _graph.engine.connect() as conn:
+                head = conn.execute(text("select max(filename) from schema_migrations")).scalar()
+        except Exception as exc:      # noqa: BLE001 — liveness must answer; see the docstring
+            _log.warning("schema head unreadable for /health — reporting null: %s", exc)
+            head = None
+    _SCHEMA_HEAD_CACHE = (now, head)
+    return head
+
+
 @router.get("/health")
 def health(request: Request) -> dict:
     """Liveness — and, when the process is alive but the database will not take writes, that too.
@@ -145,12 +197,19 @@ def health(request: Request) -> dict:
     four-hour write outage passed every check that was watching. The process really was up; the
     product was not. A degraded boot is reported here because it is the only signal that reaches
     an uptime monitor, and a silent partial outage is the failure mode that costs the most.
+
+    GeniOS-011 S03.U1 — and WHICH build is up, against WHICH schema: `build_sha` and `schema_head`
+    (`_build_sha`, `_schema_head`). Without them nobody outside could tell which commit production
+    ran or which migration its database stood at (`process-live-sha-not-observable`; 08 §0.2 step 9
+    read both by hand). Both keys are in BOTH shapes: a degraded boot is precisely when a deploy
+    check needs to know what code is up and how far its schema got.
     """
+    build = {"build_sha": _build_sha(), "schema_head": _schema_head()}
     degraded = getattr(request.app.state, "degraded_read_only", None)
     if degraded:
         return {"status": "degraded", "layer": "L1 capture", "writes": "unavailable",
-                "reason": degraded}
-    return {"status": "ok", "layer": "L1 capture"}
+                "reason": degraded, **build}
+    return {"status": "ok", "layer": "L1 capture", **build}
 
 
 @router.get("/health/readiness")
@@ -4723,12 +4782,9 @@ def llm_usage_breakdown(days: int = 7, org_id: str = Depends(get_current_org)) -
     return {"window_days": days, "rows": out}
 
 
-@router.get("/v1/metrics/intervention_rate/summary")
-def intervention_rate_summary(on_date: str | None = None,
-                              org_id: str = Depends(get_current_org)) -> dict:
-    """Per-module intervention rate. Empty until decisions are emitted + corrections recorded
-    (an L6 rollup) — the dashboard shows a 'no rollups yet' state, not an error."""
-    return {}
+# GeniOS-010 B3 · `/v1/metrics/intervention_rate/summary` is GONE. It always answered `{}` — an empty stub wearing the
+# name the human-intervention rate (HIR) will carry — and nothing calls it: the dashboard's `getInterventionSummary`
+# has no caller. HIR comes as its own route, from `completed_by`, when it is measured (GeniOS-010 B2).
 
 
 @router.get("/v1/metrics/headline")
@@ -5436,14 +5492,157 @@ def feedback_calibrate(pack_id: str = "sales",
             "preview": precision_28d(_graph, org_id, pack_id=pack_id)}
 
 
+#: GeniOS-011 S40.U2 (audit `l6-calibration-shadow-unread`): the last SHADOW calibration run of
+#: this pack. `run_calibration` stores what it would mute, recover and nudge only in
+#: `calibration_runs.result`, and nothing read it but its own idempotency check and a count(*)
+#: receipt. Shadow only: an applied run's real mutes are a different question, and no tenant is
+#: armed (`calibration_apply` is never default-on, decision D13).
+_LAST_SHADOW_CALIBRATION_SQL = (
+    "select run_id, pack_version, authority_revision, period_start, evaluation_time, "
+    "completed_at, result from calibration_runs "
+    "where org_id=:o and pack_id=:p and status='completed' and result->>'mode'='shadow' "
+    "order by completed_at desc nulls last, period_start desc limit 1")
+
+#: GeniOS-011 S40.U2 (audit `l6-unread-ledgers`): the METRICS units whose rows give a precision,
+#: by the layer each one grades — `{unit: (layer, layer name, what the rate is)}`.
+#: ⛔ `actor_outcome_analysis` is NOT here and must not be: it is the one constrained proposal in
+#: the engine (`Visibility(PRIVATE, principals=(assignee,))`, `feedback/target_policy.py`),
+#: `learning_metrics` stores no visibility, and this route admits any seat of the org. It is also
+#: `outcome_analysis`'s rows grouped by person, so adding it would count L4 twice.
+_PRECISION_LAYERS: dict[str, tuple[str, str, str]] = {
+    "feedback_learning": (
+        "L2", "Signals Qualification",
+        "acted / (acted + wrong), per rule — a wrong that does not grade accuracy is not counted"),
+    "outcome_analysis": (
+        "L4", "Executive", "succeeded / (succeeded + failed), per capability and play"),
+    "performance_optimization": (
+        "L5", "Deliver", "engaged / delivered, per channel"),
+}
+
+#: Each subject's LATEST measurement. A learning object's id is its content hash, so every change
+#: in a subject's counts is a new row: summing every row would count one rule once per week.
+_PRECISION_BY_LAYER_SQL = (
+    "select distinct on (unit, subject) unit, subject, value from learning_metrics "
+    "where org_id=:o and unit in ('feedback_learning','outcome_analysis','performance_optimization') "
+    "order by unit, subject, observed_at desc, created_at desc, metric_id desc")
+
+
+def _jsonb(value) -> dict:
+    if isinstance(value, dict):
+        return value
+    import json as _json
+    try:
+        decoded = _json.loads(value or "{}")
+    except (TypeError, ValueError):
+        return {}
+    return decoded if isinstance(decoded, dict) else {}
+
+
+def _last_shadow_calibration(org_id: str, pack_id: str) -> dict | None:
+    """What the last shadow run would have done, each rule with its precision and n.
+
+    ⛔ `would_mute` stores bare rule ids and `would_nudge` a precision without its n, so the run's
+    own measurement is REPLAYED: `precision_28d` at the run's pack version, authority revision and
+    evaluation time. The judgments it counts are bounded by `:as_of`, so this is the window the run
+    scored. A rule the replay finds under more than one capability snapshot (the run HOLDS those)
+    gets `n: None` rather than a pooled number. Read only — GeniOS-011 S40.U2.
+    """
+    from genios_engine.feedback.calibrate import precision_28d
+    with _graph.engine.connect() as conn:
+        run = conn.execute(text(_LAST_SHADOW_CALIBRATION_SQL),
+                           {"o": org_id, "p": pack_id}).first()
+    if run is None:
+        return None
+    result = _jsonb(run.result)
+    stats = precision_28d(_graph, org_id, pack_id=pack_id, pack_version=str(run.pack_version),
+                          authority_revision=int(run.authority_revision),
+                          eval_time=run.evaluation_time)
+
+    def scored(rule_id) -> dict:
+        variants = [s for s in stats.values() if s["rule_id"] == rule_id]
+        if len(variants) != 1:
+            return {"precision": None, "n": None}
+        return {"precision": variants[0]["precision"], "n": variants[0]["judgments"]}
+
+    def nudged(nudge) -> dict:
+        # The run's own rounded precision is kept; the replay adds the n it was scored on.
+        replay = scored(nudge.get("rule_id"))
+        return {**nudge, "precision": nudge.get("precision", replay["precision"]),
+                "n": replay["n"]}
+
+    return {"run_id": run.run_id, "mode": "shadow", "applied": False,
+            "pack_version": str(run.pack_version),
+            "authority_revision": int(run.authority_revision),
+            "period_start": run.period_start.isoformat() if run.period_start else None,
+            "evaluated_at": run.evaluation_time.isoformat() if run.evaluation_time else None,
+            "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+            "window_days": result.get("window_days"),
+            "rules_scored": result.get("rules_scored"),
+            "would_mute": [{"rule_id": r, **scored(r)} for r in result.get("would_mute") or []],
+            "would_recover": [{"rule_id": r, **scored(r)}
+                              for r in result.get("would_recover") or []],
+            "would_nudge": [nudged(n) for n in result.get("would_nudge") or []
+                            if isinstance(n, dict)],
+            "ambiguous_lineages_held": result.get("ambiguous_lineages_held") or []}
+
+
+def _precision_by_layer(org_id: str) -> list[dict]:
+    """Precision by layer from `learning_metrics` — the ledger's first reader (GeniOS-011 S40.U2).
+
+    Each subject's latest measurement, summed per layer: wins over n. Every layer is always listed;
+    one with nothing measured says `n: 0, precision: None`, never a missing row.
+    """
+    totals = {unit: {"wins": 0.0, "n": 0, "subjects": 0} for unit in _PRECISION_LAYERS}
+    with _graph.engine.connect() as conn:
+        rows = conn.execute(text(_PRECISION_BY_LAYER_SQL), {"o": org_id}).fetchall()
+    for row in rows:
+        if row.unit not in totals:
+            continue
+        value = _jsonb(row.value)
+
+        def count(key) -> int:
+            try:
+                return max(0, int(value.get(key) or 0))
+            except (TypeError, ValueError):
+                return 0
+
+        if row.unit == "feedback_learning":
+            wins, n = count("acted"), count("acted") + count("wrong")
+        elif row.unit == "outcome_analysis":
+            wins, n = count("succeeded"), count("succeeded") + count("failed")
+        else:
+            # The unit stores the engagement RATE in basis points over `delivered`, not the count.
+            n = count("delivered")
+            wins = min(10_000, count("engagement_rate_bp")) * n / 10_000
+        total = totals[row.unit]
+        total["wins"] += wins
+        total["n"] += n
+        total["subjects"] += 1
+    out = []
+    for unit, (layer, name, measure) in _PRECISION_LAYERS.items():
+        total = totals[unit]
+        out.append({"layer": layer, "name": name, "unit": unit, "measure": measure,
+                    "subjects": total["subjects"], "n": total["n"],
+                    "precision": round(total["wins"] / total["n"], 4) if total["n"] else None})
+    return out
+
+
 @router.get("/feedback/precision")
 def feedback_precision(pack_id: str = "sales",
                        org_id: str = Depends(get_current_org)) -> dict:
-    """The per-rule 28-day precision counters L6 reads (transparency — the moat is a table)."""
+    """The per-rule 28-day precision counters L6 reads (transparency — the moat is a table).
+
+    GeniOS-011 S40.U2 adds what the last SHADOW calibration would mute, recover and nudge, with
+    each rule's precision and n, so the D13 decision to arm `calibration_apply` is made on what it
+    would do; and precision by layer from `learning_metrics`. ⛔ A read: no calibration runs here,
+    no switch is read, nothing is written.
+    """
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from genios_engine.feedback.calibrate import precision_28d
-    return {"pack_id": pack_id, "rules": precision_28d(_graph, org_id, pack_id=pack_id)}
+    return {"pack_id": pack_id, "rules": precision_28d(_graph, org_id, pack_id=pack_id),
+            "shadow_calibration": _last_shadow_calibration(org_id, pack_id),
+            "precision_by_layer": _precision_by_layer(org_id)}
 
 
 @router.post("/retention/purge")
@@ -5580,6 +5779,17 @@ def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) 
     # server-side effect on each CTA. All deterministic, no extra LLM.
     card["context"], card["actionability"], card["decision"] = _card_intelligence(ctx.org_id, card)
     card["actions"] = _annotate_effects(card.get("actions"))
+    # GeniOS-010 B8 · "Fed by": the viewer's own screen items behind this card (the join `card_ids` lists the
+    # other way). Never another seat's screen. An unreadable list is no list, never a 500.
+    card["screen_items"] = []
+    if _graph is not None:
+        from genios_engine.reason.moments import followups as _F
+        try:
+            with _graph.engine.connect() as c:
+                card["screen_items"] = _F.screen_items(c, org_id=ctx.org_id, card_id=card_id,
+                                                       seat_id=getattr(ctx, "seat_id", None))
+        except Exception:                                     # noqa: BLE001
+            _log.warning("card %s: screen items unreadable", card_id)
     return card
 
 

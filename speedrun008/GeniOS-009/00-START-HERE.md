@@ -13,7 +13,8 @@ for on top of it:
 
 GeniOS-008 stays the architecture. GeniOS-009 never contradicts it.
 
-**Status, 22 Oct 2026: PLAN + MEASUREMENTS. Nothing built.** Rohit opens each group.
+**Status, 23 Oct 2026: G0.1 done (CI green). G0.2–G0.4 open. G1–G9 are PLAN + MEASUREMENTS, nothing built.**
+Rohit opens each group. The step table below has the evidence.
 
 ## Harsh — start here
 
@@ -70,16 +71,29 @@ Use [`11-GLOSSARY.md`](11-GLOSSARY.md) for any term. To hand a step to a coding 
 | G8 | [`STEP-G8-a-human-decides-then-delegation.md`](STEP-G8-a-human-decides-then-delegation.md) |
 | G9 | [`STEP-G9-outcomes-move-goals.md`](STEP-G9-outcomes-move-goals.md) |
 
-**Migrations, in build order.** Each number is the next free one at build time; check `origin/harsh/mvp` first.
+**Migrations, in build order.** None has a number yet. Each takes the **next free number at build time (≥0251)**.
+- `0250` is taken: `migrations/0250_screen_followup_read_path.sql` (GeniOS-010 B8, `93ea3cbe`) is on `harsh/mvp` and `speedrun008`.
+- `0250` is also used on local-only branches: `0250_expert_review_attempts.sql` (STEP-13b, `054b6abf`) sits on `yc2w27-s13b` and four other local branches.
+- So check every branch, local ones too, just before you name the file:
 
-| Migration | Group |
-|---|---|
-| `0250_company_goals` | G1 |
-| `0251_goal_situation_links` | G4 |
-| `0252_card_goals` | G6 |
-| `0253_situation_checkin` | G7 |
-| `0254_decision_requests` | G8 |
-| `0255_goal_progress_events` | G9 |
+```sh
+git fetch origin
+git for-each-ref --format='%(refname:short)' refs/heads refs/remotes/origin \
+  | while read b; do git ls-tree --name-only "$b" migrations/; done \
+  | grep -oE '^migrations/[0-9]{4}' | sort -u | tail -1
+```
+
+It prints the highest number taken on any branch (`migrations/0250` on 23 Oct). Take the next one. That is the
+0191 → 0212 lesson.
+
+| Order | Migration | Group |
+|---|---|---|
+| 1 | `<next free ≥0251>_company_goals` | G1 |
+| 2 | `<next free>_goal_situation_links` | G4 |
+| 3 | `<next free>_card_goals` | G6 |
+| 4 | `<next free>_situation_checkin` | G7 |
+| 5 | `<next free>_decision_requests` | G8 |
+| 6 | `<next free>_goal_progress_events` | G9 |
 
 **Per-tenant switches**, none on by default:
 
@@ -107,7 +121,11 @@ The goal labels for the existing cases are proposed in `STEP-G3` §3.3, to be co
 
 | Group | What | Layer | Status | Owner |
 |---|---|---|---|---|
-| G0 | CI green · `l2_cards` on one tenant · admission gates one type · decisions | all | **open — CI red on `21b7ae10`** | Rohit decides who fixes; Claude/Harsh |
+| G0 | CI green · `l2_cards` on one tenant · admission gates one type · decisions | all | **open** — G0.1 done; G0.2–G0.4 open | — |
+| G0.1 | CI green | all | **done** — fixes `3d5a6a3d`, `8d1de446`, `269400dc` (22 Oct; `03-LOG` G0.1 row). CI run `39796159785` on `harsh/mvp` `0cc8d83c` is green on golden-pg, database and test | Harsh, with Claude |
+| G0.2 | `l2_cards` on for one tenant | L2 | **open** — `l2_cards` is off by default (`platform/l4_activation.py:118-122`); F15 is still `blocked_on` 03 F169 / 06 D57 (`tests/replays/specs/founder/F15.json`) | Rohit names the tenant (D6); Claude/Harsh |
+| G0.3 | admission decides that a situation exists, one type first | L3 | **open** — `context/l2_admission.py:25`: "SHADOW: nothing here touches `context_situations`" | Claude/Harsh |
+| G0.4 | decisions D1–D8 | — | **open** — every decision in `08-DECISIONS.md` still stands on its default | Rohit |
 | G1 | goal object (from accepted brief lines; inferred goals wait for approval) | L3 + L0 | planned | — |
 | G2 | goals in the L2 snapshot; a goal change re-reasons its linked subjects | L3 → L2 | planned | — |
 | G3 | `goal_impacts` in the L2 judgment, claim-checked | L2 | planned | — |
@@ -126,4 +144,10 @@ The goal labels for the existing cases are proposed in `STEP-G3` §3.3, to be co
 2. **The expert already thinks in goals, in words.** Today's F02 card ends *"…and mark the brief's
    StartupSetu recognition goal as met"*. The idea is in the prompt, but there is no goal object to
    mark. That is G1.
-3. **Nothing goes on a red head.** G0.1 first.
+3. **Nothing goes on a red head.** G0.1 made the head green on 22 Oct. Read the CI run of the head you build on.
+4. **Two goal-shaped tables already exist. Neither is the goal object, and neither links to a situation.**
+   - `team_milestones` (migration 0151, "a dated goal with an owner seat") is read only by the team readiness
+     pass and its API (`reason/team/readiness.py:77`, `GET/POST /v1/team/milestones`).
+   - `seat_objectives` (migration 0133) is one person's focus domain; it only reorders that person's card queue
+     (`deliver/store.py:988`).
+   - `STEP-G1` §1 has the details. G1 does not touch either table.

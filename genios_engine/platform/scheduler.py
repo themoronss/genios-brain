@@ -70,6 +70,43 @@ def _light_tick():
         return run_sync_sweep(chain_only_on_new_data=True)
 
 
+def _daily_health():
+    """Yesterday's health row per org, and its alerts (GeniOS-011 S05.U1, `platform/daily_health`).
+
+    After the heavy tick, never the light one: the row is once a day and its key is the claim, so a
+    tick that finds the day already written reads one select and stops — every heavy tick may ask.
+    Measured through the engine the heavy tick itself uses (`api/routes._graph`); with no database
+    there is nothing to measure and nothing to say.
+    """
+    from genios_engine.api import routes
+    from genios_engine.platform import daily_health
+
+    if routes._graph is None:
+        return {"skipped": "no_database"}
+    return daily_health.run_daily_health(routes._graph.engine)
+
+
+def _after_heavy_tick() -> None:
+    """The daily job under the same wall-clock bound as a sweep, and its own guard.
+
+    ⛔ FAIL-OPEN. Whatever the health read does — raise, hang — the loop sleeps and the next tick fires:
+    a measurement must never cost the sweep. A crash is logged AND alerted, because a health job that
+    stops quietly is the defect it exists to catch.
+    """
+    try:
+        res = _run_sweep_bounded(_daily_health)
+        _log.info("daily health: %s", res)
+    except _futures.TimeoutError:
+        _log.error("daily health exceeded %ss — abandoned, the next heavy tick asks again",
+                   _SWEEP_TIMEOUT_S)
+        from genios_engine.platform import ops_alert
+        ops_alert.notify("daily_health_timeout", timeout_s=_SWEEP_TIMEOUT_S)
+    except Exception as exc:              # noqa: BLE001 — a health read never fails the tick
+        _log.exception("daily health crashed")
+        from genios_engine.platform import ops_alert
+        ops_alert.notify("daily_health_crashed", error=type(exc).__name__, detail=str(exc)[:300])
+
+
 def _run_sweep_bounded(fn=None):
     # NOT a `with ThreadPoolExecutor(...)` block — its __exit__ calls shutdown(wait=True), which
     # re-blocks on the same hung worker the instant .result(timeout=...) gives up, making the
@@ -115,6 +152,10 @@ def _loop(interval_seconds: float, initial_delay: float, light_interval_seconds:
             from genios_engine.platform import ops_alert
             ops_alert.notify("scheduler_sweep_crashed", tick=label,
                              error=type(exc).__name__, detail=str(exc)[:300])
+        if heavy:
+            # Once a day per org, after the heavy tick whether it finished or not: a sweep that
+            # crashed is exactly the day the health row has to be written (GeniOS-011 S05.U1).
+            _after_heavy_tick()
         if _stop.wait(sleep_seconds):     # sleep until next tick (or until stop)
             return
 

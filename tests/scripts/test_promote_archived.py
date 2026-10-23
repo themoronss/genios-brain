@@ -107,7 +107,22 @@ def test_a_dry_run_lists_without_words_and_apply_promotes_only_what_it_named(ten
     assert "DRY RUN" in out and boardy in out and letters not in out and WORDS not in out
     assert _outcomes(eng, org) == {boardy: "archived", letters: "archived"}
 
+    # GeniOS-011 S06.U2 (B27) · `--apply` re-fetches each body through the connector before it
+    # promotes; a promotion that only flipped the row would read the stored ~snippet. The tenant
+    # here has no live connection, so the connector's reader is stood in for — the re-fetch
+    # itself is proven in `tests/capture/connectors/test_a_failed_full_fetch_is_not_the_body.py`.
+    from genios_engine.capture.connectors.base import RawObject
+    from genios_engine.platform.config import get_settings
+
+    def _whole(row):
+        return RawObject(source=row.source, object_type=row.object_type,
+                         source_object_id=row.source_object_id,
+                         occurred_at=datetime.now(timezone.utc),
+                         raw={"subject": "Intro", "body": WORDS})
+
     assert mod.main(["--org", org, "--rule", "N-02", "--sender-domain", "boardy.test",
-                     "--database-url", url, "--apply"]) == 0
+                     "--database-url", url, "--apply",
+                     "--crypto-key", get_settings().crypto_key],
+                    reader_for=lambda connection_id, source: _whole) == 0
     assert "PROMOTED 1" in capsys.readouterr().out
     assert _outcomes(eng, org) == {boardy: "emitted", letters: "archived"}

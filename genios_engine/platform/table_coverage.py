@@ -140,23 +140,6 @@ UNREAD_WRITES: dict[str, tuple[str, str, str]] = {
         "shadow path"),
 
     # ── other packages — the same measurement, engine-wide ──────────────────────────────
-    "learning_metrics": (
-        "feedback/publisher.py",
-        "⛔⛔ THIS IS `F11`'s LAST UNREAD LEDGER, REDISCOVERED FROM THE OTHER SIDE. L6 counted "
-        "four ledgers nothing read and `S5`/`S6` closed three of them; this audit found the "
-        "fourth without looking for it, which is the cross-check that makes both measurements "
-        "worth trusting. Every `METRICS` proposal the eleven analysis units produce lands here "
-        "and no reader exists",
-        "MOVES WHEN a precision-by-layer surface exists. ⛔ `feedback/calibrate` consumes the RAW "
-        "judgments directly, so the metric rows are for a reader rather than for the loop — the "
-        "same conclusion `feedback_health` reached about `attribution.ranked_precision`"),
-    "human_events": (
-        "capture/events_store.py + deliver/actions.py",
-        "⛔ Two packages write it and nothing reads it. A human action ledger spanning capture and "
-        "delivery is exactly the join an outcome question needs, and `execution_outcomes` answers "
-        "that question from a different table",
-        "MOVES WHEN outcome reconciliation (Atlas L7 #3) needs a human-action timeline, or the "
-        "second writer is removed"),
     "card_feedback_revisions": (
         "deliver/verdicts.py",
         "⛔ A revision history for card feedback, written by the verdict's one writer (STEP-16 "
@@ -204,6 +187,10 @@ UNREAD_WRITES: dict[str, tuple[str, str, str]] = {
 #: ⛔ They are recorded rather than deleted because the next reader of this module will be
 #: tempted to re-derive the list with a simpler scan and will get them back. *An invalid finding
 #: is not a finding* — and the measurement that produced them is in `resolution()`.
+#:
+#: ⛔ `human_events` is here for a different reason (GeniOS-011 S01.U1): its finding was not
+#: invalid; a reader arrived — an operator script — and the entry says what still holds.
+#: ⛔ `learning_metrics` likewise (GeniOS-011 S40.U2): its mover came true — the reader it waited for.
 RETRACTED_UNREAD_WRITES: dict[str, str] = {
     "source_identity_map": (
         "⛔ RETRACTED 2026-10-04 by `3.1b`'s loop hop — and the retracted entry had PREDICTED its "
@@ -221,6 +208,23 @@ RETRACTED_UNREAD_WRITES: dict[str, str] = {
         "⛔ RETRACTED — read by `context/lifecycle/resolution.py`. The first classification pass "
         "sampled line 103 of that module, which is prose; the READ is in a SQL constant further "
         "down. *A bare-name grep hands over a sentence without its subject*",
+    "human_events":
+        "⛔ MOVED 2026-10-23 by GeniOS-011 S01.U1 — the finding was true when made, and a reader "
+        "has since arrived: `scripts/g011_prod_readings.py` reads it to size `l5-wrong-without-"
+        "reason` (every card action by surface and reason since 1 Oct — a missing 'desktop' wrong "
+        "is every Mac 'Not useful' lost). An operator read is a read (trap 2). ⛔ What the old "
+        "entry said of the ENGINE still holds: written by `capture/events_store.py` and "
+        "`deliver/actions.py`, read by no package in `genios_engine/`, and an outcome question "
+        "still answers from `execution_outcomes` — it moves when outcome reconciliation (Atlas "
+        "L7 #3) needs a human-action timeline",
+    "learning_metrics":
+        "⛔ MOVED 2026-10-23 by GeniOS-011 S40.U2 — the finding was true when made (`F11`'s last "
+        "unread ledger), and its own mover came true: *'MOVES WHEN a precision-by-layer surface "
+        "exists'*. `api/routes._precision_by_layer` reads each subject's latest measurement for "
+        "GET /feedback/precision. ⛔ What still holds: `feedback/calibrate` consumes the raw "
+        "judgments, not these rows, so the loop does not read them — a person does. And the "
+        "reader selects an ALLOW-LIST of units: `actor_outcome_analysis` is private to its "
+        "assignee and this table stores no visibility, so its rows are never read",
 }
 
 

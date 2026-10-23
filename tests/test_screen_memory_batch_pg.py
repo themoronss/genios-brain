@@ -177,7 +177,7 @@ def test_tick_submits_after_the_wait_and_a_later_tick_writes_memory(monkeypatch)
     assert done.result["items"] == 2 and done.result["summary"] is True
     with _engine().connect() as c:
         fus = {r.kind: r for r in c.execute(text(
-            "select kind, who, quote, graph_written_at, subject_node_id, thread_key "
+            "select kind, who, quote, graph_written_at, subject_node_id, thread_key, read_by "
             "from screen_followups where org_id = :o"), {"o": org})}
         obs = c.execute(text(
             "select kind from graph_observations where org_id = :o and created_by_event_id = :e "
@@ -190,6 +190,7 @@ def test_tick_submits_after_the_wait_and_a_later_tick_writes_memory(monkeypatch)
     assert set(fus) == {"ask", "their_promise"}                   # the ungrounded risk dropped
     assert fus["ask"].quote == "Can you send the deck by Friday?"
     assert fus["ask"].subject_node_id == priya and fus["ask"].graph_written_at is not None
+    assert {f.read_by for f in fus.values()} == {"hourly_batch"}, "GeniOS-010 B8: the hourly batch read them"
     assert fus["their_promise"].who == "Priya Shah"               # the manager's own was dropped
     assert obs == ["screen.ask", "screen.their_promise"]
     assert summary == "Priya (Acme) wants the deck.\nPricing comes next week."

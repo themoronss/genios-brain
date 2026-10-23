@@ -58,6 +58,11 @@ def get_engine(database_url: str) -> Engine:
     # it is built for.
     transaction_pooler = ":6543/" in url
     pool_size, overflow = (24, 12) if transaction_pooler else (8, 4)
+    # ⛔ THE SESSION CLOCK IS UTC, WHATEVER THE SERVER'S DEFAULT (GeniOS-009 G0.1, 22 Oct 2026). "Today" in SQL —
+    # `date_trunc('day', …)` for the daily budgets and call counts, `::date` for the per-day card caps — is cut
+    # in the session's TimeZone. Supabase and CI run UTC; a laptop's Postgres runs the machine's zone, so the
+    # same sweep spent, counted and called differently there: six golden cassettes recorded on an IST database
+    # missed in CI. Pinned here, every connection cuts the day where production does.
     return create_engine(url, pool_pre_ping=True, pool_size=pool_size, max_overflow=overflow,
                          pool_recycle=1800, pool_timeout=15,
                          connect_args={
@@ -68,5 +73,5 @@ def get_engine(database_url: str) -> Engine:
                              "keepalives_interval": 10,
                              "keepalives_count": 5,
                              "tcp_user_timeout": 30000,
-                             "options": "-c statement_timeout=120000",
+                             "options": "-c statement_timeout=120000 -c TimeZone=UTC",
                          })

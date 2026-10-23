@@ -28,9 +28,11 @@ from genios_engine.platform.wiring import (make_graph_store, make_llm_client,
                                            make_pack_registry)
 from genios_engine.reason.intelligence import (current_graph_version, normalize_question,
                                                run_query)
+from genios_engine.deliver.store import LIVE_CARD_FROM_LOCKED
+from genios_engine.deliver.store import LIVE_CARD_RANK_SQL
+from genios_engine.deliver.store import LIVE_CARD_SCORE_SQL
+from genios_engine.deliver.store import live_card_params
 from genios_engine.reason.authority import (
-    AUTHORITATIVE_REASON_CODE_SQL,
-    AUTHORITATIVE_SCORE_SQL,
     AUTHORITATIVE_SIGNAL_JOINS,
     AUTHORITATIVE_SIGNAL_PREDICATE,
     authority_time,
@@ -626,14 +628,20 @@ def list_insights(limit: int = 50, state: str = "open",
                 "order by k.score desc nulls last, k.created_at desc, k.card_id limit :l"),
                 params).fetchall()
         else:
-            params["authority_time"] = datetime.now(timezone.utc)
+            params.update(live_card_params(datetime.now(timezone.utc)))
             c.execute(text(
                 "select graph_version from graph_versions where org_id=:o for share"),
                 {"o": org_id})
+            # ⛔ EVERY DOOR (GeniOS-011 S36.U2): `deliver/store.LIVE_CARD_FROM_LOCKED`, the Cards queue's three
+            # doors in one fragment, holding the decision's authority rows until the impression commits. This
+            # feed joined the decision's alone, so a question card or a situation card (team, verify, the
+            # post-meeting follow-up) never reached the extension — nor G6's goal board, planned on this route.
+            # A non-decision card's decision columns are null: no calibrated confidence, its own score, the
+            # reason its signal carries.
             rows = c.execute(text(
-                "select k.card_id, k.headline, k.situation, " + AUTHORITATIVE_SCORE_SQL +
+                "select k.card_id, k.headline, k.situation, " + LIVE_CARD_SCORE_SQL +
                 " as score, k.domain, k.urgency_band, k.context_tags, k.created_at, k.actions, "
-                "n.display_name as entity, ro.confidence_bp, "
+                "n.display_name as entity, live_decision.confidence_bp, "
                 # THE DECISION'S OWN CONTENT. Every one of these columns was already populated by
                 # `card_builder` and none of them reached this feed, so the richest surface the
                 # product has published a headline, a one-line situation and a number — and the
@@ -643,17 +651,14 @@ def list_insights(limit: int = 50, state: str = "open",
                 "k.abstained_because, k.outcome_window_days, k.success_signal, "
                 "k.capability_review_state, s.uncertainty, s.rejected_candidates, s.citations, "
                 "s.candidate_steps, "
-                "selected_rc.final_utility_bp, " + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code "
-                "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
-                AUTHORITATIVE_SIGNAL_JOINS +
+                "live_decision.utility_bp as final_utility_bp, "
+                "coalesce(live_decision.reason_code, s.reason_code) as reason_code" + LIVE_CARD_FROM_LOCKED +
                 "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
                 "and n.valid_to is null "
-                "where k.org_id=:o and k.state = any(:states) and s.status='open' " +
+                "where k.org_id=:o and k.state = any(:states) " +
                 seat_filter +
-                "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE + " "
-                "order by selected_rc.final_utility_bp desc, k.created_at desc, "
-                "k.card_id limit :l for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,"
-                "authority_cfg,authority_pack"),
+                "order by " + LIVE_CARD_RANK_SQL + " desc, k.created_at desc, "
+                "k.card_id limit :l for share of k,s"),
                 params).fetchall()
             # The impression and its current authority/state proof commit together. It is an
             # audited learning input, not a best-effort analytics ping.
@@ -750,7 +755,7 @@ def insight_stats(days: int = 7, org_id: str = Depends(get_current_org)) -> dict
 
     ⛔ CORRECTED 2026-10-02. This docstring said *"ROI / intervention rate stay null until the
     feedback→L6 loop of Phase 4 records outcomes"* and **both halves were stale**:
-    `intervention_rate` is computed from `acted / fired` whenever anything has fired, and
+    `card_action_rate` (was `intervention_rate`) is computed from `acted / fired` whenever anything has fired, and
     `outcomes_recorded` is a real `count(*)` over `execution_outcomes`. Only `value_recovered_inr`
     is still null, and the reason is in the comment above the `return` — a different one from the
     reason that was recorded there. **A docstring describing two fields that have since been
@@ -813,7 +818,10 @@ def insight_stats(days: int = 7, org_id: str = Depends(get_current_org)) -> dict
             # ⛔ A client OUTSIDE this checkout cannot be measured from here; one that string-matches
             # falls through to its default, which is strictly better than displaying a false cause.
             "value_state": "unavailable_macv_ledger_has_no_writer",
-            "intervention_rate": (round(acted / fired, 3) if fired else None),
+            # GeniOS-010 B3 · RENAMED from `intervention_rate`: acted ÷ fired is how often a card was acted on, not
+            # the human-intervention rate (HIR) the home will report, and two numbers must not share one name.
+            # Measured first: its one dashboard reader, `actions-card.tsx`, is mounted nowhere.
+            "card_action_rate": (round(acted / fired, 3) if fired else None),
             "headline": (f"{fired} insight(s) surfaced" if fired else "No insights yet")}
 
 
@@ -1134,16 +1142,14 @@ def dismiss_insight(insight_id: str,
     with _graph.engine.begin() as c:
         c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
                   {"o": org_id})
+        # Every door (GeniOS-011 S36.U2): the feed above lists question and situation cards, so its dismiss
+        # proves a card the way the feed read it — the decision's authority rows held, the card and signal locked.
         card = c.execute(text(
-            "select k.assignee from cards k join signals s "
-            "on s.signal_id=k.signal_id and s.org_id=k.org_id " +
-            AUTHORITATIVE_SIGNAL_JOINS +
-            "where k.card_id=:card and k.org_id=:o and s.status='open' "
+            "select k.assignee" + LIVE_CARD_FROM_LOCKED +
+            "where k.card_id=:card and k.org_id=:o "
             "and k.state in ('queued','surfaced','snoozed','delivered') "
-            "and k.expires_at>:authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE +
-            " for update of k,s for share of rr,ro,selected_rc,rcap,authority_ctx,"
-            "authority_cfg,authority_pack"),
-            {"card": insight_id, "o": org_id, "authority_time": as_of}).first()
+            "for update of k,s"),
+            {"card": insight_id, "o": org_id, **live_card_params(as_of)}).first()
         if card is None:
             raise HTTPException(409, "insight is no longer actionable")
         if not may_touch_card(c, ctx, insight_id, card.assignee):

@@ -77,10 +77,15 @@ class _NoCall:
 
 
 @pytest.fixture
-def world(pg_store):
+def world(pg_store, monkeypatch):
+    from genios_engine.reason import llm_sites
     from tests.context.workstream_world import process, reset, tenant
     from tests.reason.expert.test_the_dossier import NOW
     url = os.environ["GENIOS_TEST_DATABASE_URL"]
+    # An R-9 model is configured, as production's door builds one with a key: the expert pass hands a moved file to
+    # the L2 pass only when that pass CAN judge it — `l2_reasoning` AND an R-9 client (GeniOS-011 S18.U2). Without
+    # one it reviews the file itself (`tests/reason/expert/test_the_expert_pass_still_reviews_when_l2_cannot.py`).
+    monkeypatch.setattr(llm_sites, "make_site_client", lambda tier: _R9())
     tenant(pg_store, ORG)
     process(pg_store, ORG, event_id="evt_k_in", sender=KUNAL, thread="t_k", at=NOW - timedelta(days=3))
     with pg_store.engine.begin() as c:

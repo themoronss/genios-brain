@@ -30,6 +30,7 @@ from genios_engine.api.device_routes import _bearer, _err
 from genios_engine.contracts.moments import (KINDS, DeviceMoment, EvaluateRequest,
                                              FeedbackRequest, FollowupResolveRequest,
                                              FollowupSnoozeRequest)
+from genios_engine.deliver.store import live_cards_about
 from genios_engine.platform import capture_policy as P
 from genios_engine.platform import company_brief as CB
 from genios_engine.platform import devices as D
@@ -107,6 +108,13 @@ def get_slice(request: Request, since: int | None = Query(default=None, ge=0)):
 
 
 # ── §2.2 evaluate ─────────────────────────────────────────────────────────────────────────────
+def _live_cards(conn, *, org_id: str, node_ids, at) -> list[dict]:
+    """Ask's recall grounds on the live cards through every door (`deliver/store.live_cards_about`; GeniOS-011
+    S36.U2), handed down because `reason/` may not import `deliver/`. A named CALL rather than the function passed
+    as a value: `deliver/delivery_health.undeclared` counts calls, and the reader IS called — from here."""
+    return live_cards_about(conn, org_id=org_id, node_ids=node_ids, at=at)
+
+
 def _stored(c, *, moment_id: str, org_id: str, seat_id: str) -> dict | None:
     r = c.execute(text(
         "select m.*, null as feedback from moments m where m.moment_id = :m "
@@ -176,7 +184,7 @@ def evaluate(body: EvaluateRequest, request: Request):
             if hit is not None and hit.get("displayed"):      # only a SHOWN twin is a duplicate
                 return {**M._public(hit), "display": False, "reason": G.DUPLICATE}
             content = R.compose(R.read(c, org_id=p.org_id, subject=subj, me=me, viewer=viewer,
-                                       us=us, now=now), now=now)
+                                       us=us, now=now, live_cards=_live_cards), now=now)
             if content is not None:
                 chosen = (subj, key, content)
                 break
@@ -511,7 +519,8 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         saved = F.upsert(engine, org_id=p.org_id, seat_id=p.seat_id, kind=it["kind"],
                          note=it["text"], who=it["who"],
                          due_at=F.parse_due(it["due"], tz_name=tz, now=now), thread_key=thread,
-                         app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"])
+                         app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"],
+                         read_by="quick_read", due_phrase=it["due"])
         if not topics and saved is not None:           # the popup's first item is a follow-up
             first_followup = F.followup_id(p.org_id, p.seat_id, topic)
         topics.append(topic)
@@ -590,6 +599,8 @@ def _rule_items(items: list[dict], body: EvaluateRequest, p: Principal, engine, 
     from genios_engine.reason.moments import followups as F
     from genios_engine.reason.moments import screen_insight as SI
     from genios_engine.reason.moments import screen_rules as RU
+    # GeniOS-010 B8: one more screen read — by a rule, for free (the week's "screens read").
+    SI.note_skipped(engine, org_id=p.org_id, seat_id=p.seat_id, now=now, kind=SI.RULED_KIND)
     local_date = now.astimezone(F.zone(tz)).date()
     meetings = _meetings_soon(engine, p, now)
     with engine.connect() as c:
@@ -603,7 +614,8 @@ def _rule_items(items: list[dict], body: EvaluateRequest, p: Principal, engine, 
         saved = F.upsert(engine, org_id=p.org_id, seat_id=p.seat_id, kind=it["kind"],
                          note=it["text"], who=it["who"],
                          due_at=F.parse_due(it["due"], tz_name=tz, now=now), thread_key=thread,
-                         app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"])
+                         app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"],
+                         read_by="rule", due_phrase=it["due"])
         if not topics and saved is not None:
             first_followup = F.followup_id(p.org_id, p.seat_id, topic)
         topics.append(topic)

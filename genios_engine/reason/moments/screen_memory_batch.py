@@ -339,7 +339,8 @@ def apply_result(engine, job, message, *, crypto_key: str, now: datetime,
                         note=it["text"], who=it["who"],
                         due_at=F.parse_due(it["due"], tz_name=tz, now=seen_at),
                         thread_key=job.thread_key, app=job.app, topic=topic, tz_name=tz,
-                        now=now, quote=it["quote"]) is not None:
+                        now=now, quote=it["quote"], read_by="hourly_batch",
+                        due_phrase=it["due"]) is not None:
                 saved += 1
         written = write_items(engine, org_id=job.org_id, seat_id=job.seat_id, seat_email=email,
                               thread_key=job.thread_key, event_id=job.event_id, now=now)

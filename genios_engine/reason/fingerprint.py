@@ -131,7 +131,12 @@ def _instant(text: str) -> _datetime | None:
 def _relative(moment: _datetime, now: _datetime) -> dict:
     """A moment, as the decision reads it: hours until it on the urgency ladder, or days since."""
     hours = (moment - now).total_seconds() / 3600
-    if hours >= 0:
+    # STRICTLY ahead (GeniOS-009 G0.1, 22 Oct 2026). A moment AT the evaluation instant has happened: read as
+    # "0 days ago", the rung it still holds 15 minutes later. It was read as "0 hours away", so a fact written at
+    # one sweep's instant flipped rung on the next sweep with no new evidence and every subject holding one was
+    # decided again (F13, F29). The derived writers used to hide this by re-stamping their facts to "now" every
+    # sweep; since they keep the value's own first instant (L3 2b, ae5b5c7a) the flip showed.
+    if hours > 0:
         return {"$until_hours": _rung(hours, HOUR_LADDER)}
     return {"$days_ago": _rung(-hours / 24, DAY_LADDER)}
 

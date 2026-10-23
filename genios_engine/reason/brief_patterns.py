@@ -15,11 +15,30 @@ reads the ledger and the graph and hands the drafter only:
     one title a pattern carries; a single meeting never is;
   * deadlines — which sender domains carried a dated commitment, how many, and the first and last date;
   * what threads are about — the one-line objective memory already extracted for a thread, with no
-    thread name (a thread is named by its subject).
+    thread name (a thread is named by its subject);
+  * THE WORK IN MOTION (GeniOS-011 S27.U1) — the founder's files touched in the window
+    (`context/workstreams.files_for`: one counterparty's work, its role and kind of work when the brief
+    gives one, its last touch, whose move it is, its open asks counted), the open situations on those
+    files, and the brief's in-motion lines, accepted or proposed and waiting for the founder.
+
+WHY THE WORK IN MOTION (GeniOS-011 S27.U1, audit `goals-antler-cannot-appear-today`). The drafter is the
+only proposer of a goal, and it read the seven patterns above alone — never a file, a situation or an
+in-motion line. An accelerator application the founder was pursuing, whose file and whose expert-proposed
+in-motion line memory already held, could never become a goal: the drafter never saw it. Each piece of
+work is now a pattern with its own memory ids (`file_id`, `situation_id`, `line_id`), so a goal cites
+it and the founder sees what it rests on. A pending in-motion line is shown as `proposed`, never as the
+brief in force: it is evidence that the work is moving, and what the drafter makes of it is itself only
+a proposal. A rejected line, an ended situation and a file older than the window are not in motion.
+
+`goal_work` lists the work a goal already rests on — pending, accepted, or rejected within
+`company_brief_store.REJECTED_QUIET_DAYS` — and each file and in-motion item carries that goal's status
+(`goal`), so the drafter proposes one goal per piece of work, however it words it (`work_of`).
 
 Never a subject, never a body, and nothing private: mail captured privately (a seat's screen session, a
 personal upload — `source_events.visibility_scope = 'private'`) is left out, and only facts every seat
-may see (`graph_facts.visibility_scope = 'org'`) are read.
+may see (`graph_facts.visibility_scope = 'org'`) are read. A file is named by its counterparty — a
+person or a company, never a thread — and is an org-level read (`context/workstreams`); a situation is
+shown only on a listed file, and only when an event every seat may see is in it.
 
 Every item carries an id (`p1`, `p2`, …): a proposed line must cite the ids it rests on, and an address
 or domain it names must be one of these — the drafter cannot invent a sender. Deterministic: the same
@@ -27,7 +46,9 @@ memory gives the same patterns, in the same order.
 """
 from __future__ import annotations
 
+import json
 from collections import Counter, defaultdict
+from collections.abc import Mapping
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -42,6 +63,11 @@ MAX_INTRODUCERS = 15
 MAX_SERIES = 15
 MAX_DEADLINE_DOMAINS = 20
 MAX_THREADS = 40
+#: GeniOS-011 S27.U1 · the work in motion, capped like every other pattern: the most recently touched
+#: files, the most recently seen situations on them, and the brief's in-motion lines, accepted first.
+MAX_FILES = 25
+MAX_SITUATIONS = 25
+MAX_IN_MOTION = 25
 #: Outbound mail to at least this many domains on one day is a wave.
 WAVE_DOMAINS = 5
 #: An introduction copies one or two people; a message copying more is a broadcast, not an intro.
@@ -112,6 +138,35 @@ _THREADS = text(
     "   and f.valid_to is null and f.visibility_scope = 'org' and f.occurred_at >= :since "
     " group by 1 order by at desc")
 
+#: GeniOS-011 S27.U1 · the open situations on the listed files, seen in the window, each with at least one
+#: member event every seat may see — a situation memory holds only from a private capture is not shown.
+_SITUATIONS = text(
+    "select s.situation_id, s.anchor_node_id, s.situation_type, s.domain, s.status, "
+    "       s.first_seen_at, s.last_seen_at "
+    "  from context_situations s "
+    " where s.org_id = :o and s.status = any(:open) and s.anchor_node_id = any(:files) "
+    "   and s.last_seen_at >= :since "
+    "   and exists (select 1 from context_correlation_members m "
+    "                 join source_events se on se.org_id = m.org_id and se.event_id = m.event_id "
+    "                where m.org_id = s.org_id and m.correlation_id = s.correlation_id "
+    "                  and se.visibility_scope is distinct from 'private') "
+    " order by s.last_seen_at desc, s.situation_id limit :n")
+
+#: GeniOS-011 S27.U1 · the brief's in-motion lines in force or waiting for the founder — accepted first.
+_IN_MOTION = text(
+    "select line_id, text, status, kind, address, domain, proposed_by from company_brief_lines "
+    " where org_id = :o and section = 'in_motion' and status in ('accepted', 'proposed') "
+    " order by status, proposed_at, line_id limit :n")
+
+#: GeniOS-011 S27.U1 · the goals the brief holds, waits on, or was told no to — with what they rest on.
+_GOALS = text(
+    "select status, evidence, decided_at from company_brief_lines "
+    " where org_id = :o and section = 'goals' and status in ('proposed', 'accepted', 'rejected') "
+    " order by proposed_at, line_id")
+
+#: A goal's status, strongest first — which one an item is marked with when several rest on it.
+_GOAL_STRENGTH = ("accepted", "proposed", "rejected")
+
 
 def _domain(address: str | None) -> str:
     return address.rsplit("@", 1)[1] if address and "@" in address else ""
@@ -144,6 +199,104 @@ def _objective(value: Any) -> str | None:
         value = value.get("value") or value.get("text")
     line = " ".join(str(value or "").split())
     return line[:160] or None
+
+
+def work_of(item: Mapping[str, Any]) -> frozenset[str]:
+    """The pieces of work in motion a pattern item stands for — its file (`file:<node>`), and an
+    in-motion line by its id (`line:<id>`) — or none, for every other pattern. A goal's stored evidence
+    is the item itself under its pattern id (`brief_drafter._evidence`), so it stands for the same work:
+    that is how a goal reworded next week is still known to rest on work a goal already rests on."""
+    out: set[str] = set()
+    if item.get("file_id"):
+        out.add(f"file:{item['file_id']}")
+    if item.get("kind") == "in_motion" and item.get("line_id"):
+        out.add(f"line:{item['line_id']}")
+    return frozenset(out)
+
+
+def _goal_work(conn, org_id: str, *, now: datetime) -> dict[str, str]:
+    """Each piece of work a goal rests on → that goal's status, the strongest when several do. A goal
+    the founder rejected counts within `REJECTED_QUIET_DAYS`, as the store's own rule does
+    (`company_brief_store._same_line`), so the weekly review cannot nag."""
+    from genios_engine.platform.company_brief_store import REJECTED_QUIET_DAYS
+
+    quiet = now - timedelta(days=REJECTED_QUIET_DAYS)
+    out: dict[str, str] = {}
+    for r in conn.execute(_GOALS, {"o": org_id}).fetchall():
+        if r.status == "rejected" and (r.decided_at is None or r.decided_at < quiet):
+            continue
+        evidence = json.loads(r.evidence or "[]") if isinstance(r.evidence, str) else r.evidence
+        for e in evidence or ():
+            if not isinstance(e, Mapping):
+                continue
+            for work in work_of(e):
+                out[work] = _strongest(out.get(work), r.status)
+    return out
+
+
+def _strongest(*statuses: str | None) -> str | None:
+    """The strongest of some goals' statuses (`_GOAL_STRENGTH`), or None when there is none."""
+    return next((s for s in _GOAL_STRENGTH if s in statuses), None)
+
+
+def _counterparty(key: str | None, node_type: str | None) -> dict[str, str | None]:
+    """A file's counterparty as a pattern names it — a person by their address, a company by its
+    domain; anything else (a deal, a project) by neither, so it never widens what a proposal may name."""
+    key = str(key or "").strip().lower()
+    if "@" in key:
+        return {"address": key, "domain": None}
+    if node_type == "company" and "." in key and " " not in key:
+        return {"address": None, "domain": key}
+    return {"address": None, "domain": None}
+
+
+def _names_file(address: str | None, domain: str | None, file: Mapping[str, Any]) -> bool:
+    """Whether an in-motion line's counterparty is this file's, as `context/workstreams._work_kind`
+    reads it: the person by their address; a file at the line's domain or under it (`lakshya.test`
+    names `apply.lakshya.test`, never `notlakshya.test`); and a company's file by the domain of the
+    address of someone at it."""
+    if address and file.get("address") == address:
+        return True
+    at = file.get("domain") or _domain(file.get("address"))
+    named = (domain, _domain(address) if file.get("domain") else None)
+    return bool(at) and any(d and (at == d or at.endswith("." + d)) for d in named)
+
+
+def _work_in_motion(conn, org_id: str, *, now: datetime, since: datetime,
+                    add, held: dict[str, str]) -> None:
+    """GeniOS-011 S27.U1 · the files touched in the window, the open situations on them, and the
+    brief's in-motion lines — each added as a pattern with the memory ids it stands for."""
+    from genios_engine.context.workstreams import OPEN_STATUSES
+    from genios_engine.context.workstreams import files_for
+
+    files: dict[str, dict[str, Any]] = {}
+    for f in files_for(conn, org_id, now=now).files:
+        if len(files) >= MAX_FILES:
+            break
+        if f.last_touch is None or f.last_touch < since:
+            continue
+        files[f.file_id] = add(
+            "file", file_id=f.file_id, name=f.counterparty, type=f.counterparty_type,
+            **_counterparty(f.counterparty_key, f.counterparty_type),
+            role=f.kind, work_kind=f.work_kind, areas=list(f.domains), events=len(f.events),
+            first=_day(f.first_touch), last=_day(f.last_touch), whose_move=f.whose_move,
+            asks_ours=sum(1 for a in f.open_asks if a.owed_by == "us"),
+            asks_theirs=sum(1 for a in f.open_asks if a.owed_by == "them"),
+            goal=held.get(f"file:{f.file_id}"))
+    if files:
+        for r in conn.execute(_SITUATIONS, {"o": org_id, "open": sorted(OPEN_STATUSES),
+                                            "files": sorted(files), "since": since,
+                                            "n": MAX_SITUATIONS}).fetchall():
+            on = files[r.anchor_node_id]
+            add("situation", situation_id=r.situation_id, file=on["id"], file_id=r.anchor_node_id,
+                name=on["name"], type=r.situation_type, area=r.domain, status=r.status,
+                first=_day(r.first_seen_at), last=_day(r.last_seen_at))
+    for r in conn.execute(_IN_MOTION, {"o": org_id, "n": MAX_IN_MOTION}).fetchall():
+        on = next((f for f in files.values() if _names_file(r.address, r.domain, f)), None)
+        item = add("in_motion", line_id=r.line_id, file=on["id"] if on else None,
+                   file_id=on["file_id"] if on else None, text=_objective(r.text), status=r.status,
+                   work_kind=r.kind, proposed_by=r.proposed_by, address=r.address, domain=r.domain)
+        item["goal"] = _strongest(*(held.get(w) for w in work_of(item)))
 
 
 def patterns_for(conn, org_id: str, *, now: datetime, window_days: int = WINDOW_DAYS) -> dict[str, Any]:
@@ -235,8 +388,10 @@ def patterns_for(conn, org_id: str, *, now: datetime, window_days: int = WINDOW_
 
     items: list[dict[str, Any]] = []
 
-    def add(kind: str, **fields: Any) -> None:
-        items.append({"id": f"p{len(items) + 1}", "kind": kind, **fields})
+    def add(kind: str, **fields: Any) -> dict[str, Any]:
+        item = {"id": f"p{len(items) + 1}", "kind": kind, **fields}
+        items.append(item)
+        return item
 
     for p in ranked:
         add("correspondent", **p)
@@ -260,9 +415,11 @@ def patterns_for(conn, org_id: str, *, now: datetime, window_days: int = WINDOW_
         if about and kept < MAX_THREADS:
             add("thread", about=about, last=_day(t.at))
             kept += 1
+    held = _goal_work(conn, org_id, now=now)
+    _work_in_motion(conn, org_id, now=now, since=since, add=add, held=held)
     return {"company": getattr(org, "company", None), "founder": getattr(org, "name", None),
             "us": sorted(us.addresses) + sorted(us.domains), "window_days": window_days,
-            "items": items}
+            "items": items, "goal_work": sorted(held)}
 
 
 def addresses_in(patterns: dict[str, Any]) -> frozenset[str]:
@@ -279,6 +436,6 @@ def domains_in(patterns: dict[str, Any]) -> frozenset[str]:
     return frozenset(d for d in out if d)
 
 
-__all__ = ["MAX_CORRESPONDENTS", "MAX_DEADLINE_DOMAINS", "MAX_DOMAINS", "MAX_INTRODUCERS",
-           "MAX_SERIES", "MAX_THREADS", "WAVE_DOMAINS", "WINDOW_DAYS", "addresses_in", "domains_in",
-           "patterns_for"]
+__all__ = ["MAX_CORRESPONDENTS", "MAX_DEADLINE_DOMAINS", "MAX_DOMAINS", "MAX_FILES", "MAX_INTRODUCERS",
+           "MAX_IN_MOTION", "MAX_SERIES", "MAX_SITUATIONS", "MAX_THREADS", "WAVE_DOMAINS", "WINDOW_DAYS",
+           "addresses_in", "domains_in", "patterns_for", "work_of"]

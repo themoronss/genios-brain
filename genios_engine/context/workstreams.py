@@ -227,9 +227,15 @@ _CONNECTOR_RATE = text(
     " where e.org_id = :o and e.edge_type = 'introduced' and e.valid_to is null "
     "   and e.from_node_id = any(:ids) and se.visibility_scope is distinct from 'private'")
 
+#: FILED MEANS IN A FILE, and a file is an engine-owned correlation (`_MEMBERS`): GeniOS-011 S14.U1,
+#: audit `l3-thread-inherits-reading-correlations`. A reading's membership sits under a synthetic id
+#: no `context_correlations` row owns (`joined_via = 'reading'`), so counting ANY membership said
+#: "filed" of mail that is in no file, and the health check never named its counterparty unfiled.
 _NAMED_MAIL = text(
     "select lower(se.actor->>'email') as sender, "
     "       exists (select 1 from context_correlation_members m "
+    "                 join context_correlations k on k.org_id = m.org_id "
+    "                      and k.correlation_id = m.correlation_id "
     "                where m.org_id = se.org_id and m.event_id = se.event_id) as filed "
     "  from source_events se "
     " where se.org_id = :o and se.outcome = 'emitted' "

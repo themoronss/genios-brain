@@ -219,15 +219,23 @@ def test_the_reextraction_class_is_exactly_the_extractors_codes():
     RESTATED (STEP-05, `yc2_w27_s05 · M23.C4.L-logic.V2.U01`): the class is the extractor's codes
     and ONE more — `extraction_never_ran`, which the re-read queue files for a kept mail nothing read
     (`capture/landing/unread.queue_unread`), read by the same ladder. Still an exact equality, so a
-    code missing from either side, or a stranger, fails here as before."""
-    from genios_engine.capture.parked.drain import EXTRACTION_NEVER_RAN
+    code missing from either side, or a stranger, fails here as before.
 
-    assert NEEDS_REEXTRACTION == park_codes_from_the_extractor() | {EXTRACTION_NEVER_RAN}
+    RESTATED (GeniOS-011 S06.U1): and one more — `llm_junk_rejudge`, which the parked drain files
+    for an archive an older junk filter judged, read by the same ladder on the whole message."""
+    from genios_engine.capture.parked.drain import EXTRACTION_NEVER_RAN
+    from genios_engine.capture.parked.drain import LLM_JUNK_REJUDGE
+
+    assert NEEDS_REEXTRACTION == (park_codes_from_the_extractor()
+                                  | {EXTRACTION_NEVER_RAN, LLM_JUNK_REJUDGE})
 
 
 def test_the_reread_queues_code_is_claimed_by_exactly_one_drain():
     """The queue's code reaches `parked_events` from `capture/landing/`, a site neither enumeration
-    above reads — so it is asked by name, or it could be the fifth orphaned class."""
+    above reads — so it is asked by name, or it could be the fifth orphaned class. The drain's
+    re-judgment code (GeniOS-011 S06.U1) is filed from `capture/parked/`, also unread above."""
     from genios_engine.capture.parked.drain import EXTRACTION_NEVER_RAN
+    from genios_engine.capture.parked.drain import LLM_JUNK_REJUDGE
 
     _assert_exactly_one_owner(EXTRACTION_NEVER_RAN)
+    _assert_exactly_one_owner(LLM_JUNK_REJUDGE)
