@@ -162,10 +162,19 @@ def _plan_for(domains: tuple[str, ...], features: tuple[str, ...]) -> list[tuple
     is a refusal with nothing written.
     """
     from genios_engine.platform.l3_activation import require_domain
-    from genios_engine.platform.l4_activation import require_feature
+    from genios_engine.platform.l4_activation import (
+        PRECONDITIONS,
+        RETIRED_FEATURES,
+        require_feature,
+    )
 
     domains = tuple(require_domain(d) for d in domains)
     features = tuple(require_feature(f) for f in features)
+    # ⛔ GeniOS-012 U12-02. A retired feature passes `require_feature` and is refused by `activate`
+    # — which would happen half-way through the plan, after L1 and L2 were already on.
+    retired = [f for f in features if f in RETIRED_FEATURES]
+    if retired:
+        raise ValueError(f"retired Layer 4 feature(s) {retired}: {RETIRED_FEATURES[retired[0]]}")
     out: list[tuple[str, str, str]] = []
     for layer, kind, name in PLAN:
         if kind == "domain":
@@ -176,6 +185,17 @@ def _plan_for(domains: tuple[str, ...], features: tuple[str, ...]) -> list[tuple
                 out.append((layer, kind, name))
         else:
             out.append((layer, kind, name))
+    # ⛔ GeniOS-012 U12-02. A feature outside the wave list (`expert_review`, `l2_reasoning`,
+    # `l2_cards`, `card_copy`, …) was accepted above and then DROPPED here, so the script printed
+    # "nothing to do" and switched none of them on. They follow the wave features, each after the
+    # requested features its `PRECONDITIONS` name.
+    wave = {name for _l, kind, name in PLAN if kind == "feature"}
+    rest = [f for f in dict.fromkeys(features) if f not in wave]
+    while rest:
+        ready = next(f for f in rest
+                     if not any(p in rest for p in PRECONDITIONS.get(f, ()) if p != f))
+        out.append(("L4", "feature", ready))
+        rest.remove(ready)
     return out
 
 
@@ -211,7 +231,12 @@ def main() -> int:
 
     domains = tuple(d.strip() for d in args.domains.split(",") if d.strip())
     features = tuple(f.strip() for f in args.features.split(",") if f.strip())
-    todo = [(layer, kind, name) for layer, kind, name in _plan_for(domains, features)
+    try:
+        plan = _plan_for(domains, features)
+    except ValueError as exc:                    # a name it will not flip: refused, nothing written
+        print(f"\nREFUSED — {exc}", file=sys.stderr)
+        return 2
+    todo = [(layer, kind, name) for layer, kind, name in plan
             if not live.get((layer, name), False)]
 
     if not todo:
