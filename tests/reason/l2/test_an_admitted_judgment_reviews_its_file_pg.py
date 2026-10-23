@@ -227,3 +227,45 @@ def test_l3_records_what_the_admitted_judgment_concluded_once_per_fingerprint(wo
     assert rows[0].situation_id == "sit_c1" and rows[0].outcome == "unchanged"
     assert rows[0].proposal["frame"] == "a fund getting to know us"
     assert rows[0].proposal["decision"] == {"needed": False, "who": None, "what": None, "by_when": None}
+
+
+class _Orphan(_Sig):
+    def __init__(self):
+        super().__init__()
+        self.signal_id, self.thread_key = "sig_c1_orphan", "t_orphan"
+
+
+def _an_orphan_seed_newer_than_the_file(store, now):
+    """A signal an hour old on a thread no file holds: a seed with no file — newer than the file's own 3-day-old one."""
+    assert PostgresSignalStore(os.environ["GENIOS_TEST_DATABASE_URL"]).put([QualifiedSignalRow(
+        signal_id="sig_c1_orphan", org_id=ORG, subject_key=None, event_id="evt_k_orphan", trace_id="tr_c1",
+        signal_type="relationship_change", importance_bp=9000, importance_version="v", confidence_bp=8000,
+        extraction_ref="struct:evt_k_orphan", state="active", occurred_at=now - timedelta(hours=1),
+        thread_key="t_orphan", direction="inbound", ball_in_court="us",
+        evidence_refs=({"source_ref": "evt_k_orphan", "quote": "Kunal", "start_offset": 0, "end_offset": 5},))]) == 1
+    PostgresBundleStore(engine=store.engine).put(build_bundles(ORG, "tr_c1", [_Orphan()]))
+
+
+def _judged(store) -> list[str]:
+    with store.engine.connect() as c:
+        return [r[0] for r in c.execute(text("select subject_ref from reasoning_results where org_id = :o"), {"o": ORG})]
+
+
+def test_with_l2_cards_a_file_is_judged_before_a_newer_seed_no_file_holds(world):
+    """G012 F1, the call site of the order: at one judgment a pass the FILE is judged — only a file's judgment can make
+    a card — and the newer, more important seed with no file is carried, not dropped."""
+    store, now, file_id = world
+    _an_orphan_seed_newer_than_the_file(store, now)
+    receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9(), max_per_pass=1)
+    assert receipt["carried"] == 1, receipt
+    assert _judged(store) == [f"file:{file_id}"], _judged(store)
+
+
+def test_without_l2_cards_the_newer_seed_is_judged_first_as_before(world):
+    """The control: with no card at stake the order is H-01's alone — the newest evidence first."""
+    store, now, _file_id = world
+    with store.engine.begin() as c:
+        c.execute(text("delete from l4_activation where org_id = :o and feature = 'l2_cards'"), {"o": ORG})
+    _an_orphan_seed_newer_than_the_file(store, now)
+    l2_pass(store=store, org_id=ORG, now=now, llm=_R9(), max_per_pass=1)
+    assert [ref for ref in _judged(store) if "t_orphan" in ref], _judged(store)

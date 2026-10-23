@@ -201,6 +201,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     if engine is None:
         return {"skipped": "no_engine"}
     activated = activated_features(engine, org_id)
+    makes_cards = FEATURE_L2_CARDS in activated
     if FEATURE_L2_REASONING not in activated:
         return {"skipped": "l2_reasoning_not_activated"}
     client = llm if llm is not None else llm_sites.make_site_client(tier_for(SITE_REASON))
@@ -316,7 +317,10 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 if subject.oldest_bundle_at is not None:
                     held.append(subject.oldest_bundle_at)
                 continue
-            key = _priority(measured, importance, order)
+            # G012 F1 · UNDER `l2_cards` A JUDGMENT MAKES A CARD ONLY THROUGH A FILE (`_file_review` below needs the
+            # file's parts). A seed in no file is still judged — after every file, never in a file's place: on the
+            # design partner's org, 23 Oct, 70 of 239 subjects due were such seeds, 7 of the next 20 judgments.
+            key = (int(makes_cards and not subject.file_id), *_priority(measured, importance, order))
             due.append((key, subject, parts, file_dossier, people, tools, measured, importance, asked_deeper, fp))
 
     due.sort(key=lambda d: d[0])
@@ -355,7 +359,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     interpreted: list = []           # (admission, result) — L3 records what each admitted judgment concluded
     # L2 rebuild C1 · with `l2_cards`, an ADMITTED judgment of a file is written as that file's review, keyed the
     # way the expert pass keys one, so the review path decides it and the expert pass covers it from then on.
-    makes_cards = FEATURE_L2_CARDS in activated
+    # (`makes_cards` is read above, where the due subjects are ordered.)
     file_reviews: list[dict[str, Any]] = []
     for i, (subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp) in enumerate(ready):
         request = L2Request(org_id=org_id, subject_ref=subject.subject_ref,
