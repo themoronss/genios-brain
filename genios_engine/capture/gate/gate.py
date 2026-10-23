@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import hashlib
+from dataclasses import replace
+
+from genios_engine.capture.parked.drain import LLM_JUNK_REJUDGE
 from genios_engine.capture.structured.mapper import route_structured
 from genios_engine.contracts.trace import EventTrace
 
 from .context import GateContext, GateResult
+from .relevance import _GATE_BATCH_PROMPT
+from .relevance import _GATE_PROMPT
 from .relevance import DROP_BELOW_RELEVANCE, RESCUE_AT, RelevanceClassifier
 from .rules import (SOFT_NOISE, availability_marker, content_integrity_rule, is_a_delivery_report,
                     noise_rule, whitelist)
@@ -17,6 +23,26 @@ from .rules import (SOFT_NOISE, availability_marker, content_integrity_rule, is_
 #: is the one place that turns that verdict into what happens to the mail: kept, encrypted, and
 #: read by no model (`capture/attention.ARCHIVE`).
 ARCHIVE = "archive"
+
+
+def junk_gate_version(*, single: str = _GATE_PROMPT, batch: str = _GATE_BATCH_PROMPT,
+                      drop_below: float = DROP_BELOW_RELEVANCE) -> str:
+    """WHICH junk filter judged a mail — a digest of what judges, never a hand-typed literal.
+
+    GeniOS-011 S06.U1 (audit `l1-junk-verdict-readmitted-on-snippet`). A junk verdict STANDS until a
+    DIFFERENT filter judges the mail again, so S2 records this with every verdict it makes and the
+    parked drain (`capture/parked/drain.drain_parked`) files an archive for re-judgment only when the
+    version it was judged under is not today's. The filter is its two prompts (the per-mail one and
+    the page's batch) and the threshold that turns a "drop" into an archive rather than a park; a
+    literal is the version somebody forgets to bump (`semantic/profiles.py` U3: 260 cached
+    extractions survived a prompt fix). The tenant's company brief is not part of it: it is the
+    tenant's input to the filter, and the senders it names are promoted on their own (STEP-07)."""
+    digest = hashlib.sha256("\x00".join((single, batch, repr(float(drop_below)))).encode("utf-8"))
+    return "junk-" + digest.hexdigest()[:16]
+
+
+#: Today's junk filter (`junk_gate_version`), recorded on every S2 verdict the model makes.
+JUNK_GATE_VERSION = junk_gate_version()
 
 
 def _never_delete(action: str) -> str:
@@ -45,6 +71,17 @@ def run_gate(ctx: GateContext, trace: EventTrace,
     """Deterministic gate + optional S2 relevance classifier. Records each stage into
     the trace. Terminal: archive / park / short_circuit(structured) / route(needs_extraction),
     and drop for S0 alone — a scope exclusion, not a judgment about the mail."""
+
+    # A RE-JUDGMENT IS A FIRST READ (GeniOS-011 S06.U1). The parked drain files an archive an OLDER
+    # junk filter judged (`parked/drain.LLM_JUNK_REJUDGE`) and the re-read ladder brings it back on
+    # the whole message — but that mail was never KEPT, so the re-read's two waivers (W-06 below,
+    # and S2's skip) are not for it: it meets today's gate whole, the rules and S2 included, and the
+    # S2 record says it was a re-judgment. Every other re-read is a kept mail and keeps both waivers.
+    rejudging = ctx.rereading if ctx.rereading == LLM_JUNK_REJUDGE else None
+    if rejudging:
+        ctx = replace(ctx, rereading=None)
+    judged = {"gate_version": JUNK_GATE_VERSION,
+              **({"rejudging": rejudging} if rejudging else {})}
 
     # S0 — scope
     if not ctx.in_scope:
@@ -165,7 +202,9 @@ def run_gate(ctx: GateContext, trace: EventTrace,
     # legacy relevant→route rule.
     # NOT FOR A RE-READ (STEP-05). The classifier's question — keep this mail or not — was
     # answered when the mail was kept: a park re-admitted for `low_relevance` met the very
-    # classifier that parked it, and was parked again. A re-read is routed to be read.
+    # classifier that parked it, and was parked again. A re-read is routed to be read. A
+    # RE-JUDGMENT is not a re-read (GeniOS-011 S06.U1, top of this function): its mail was never
+    # kept, the question is exactly what is being asked again, and `ctx.rereading` is None for it.
     # NOR FOR A SENDER THE COMPANY BRIEF NAMES (STEP-07, W-07): the founder said this sender's mail
     # matters — the portal of a live application, the agent that introduces them — and the
     # classifier's question, "is a specific human writing?", is the one that got it wrong.
@@ -183,15 +222,18 @@ def run_gate(ctx: GateContext, trace: EventTrace,
             # A "drop" verdict is a proposal, not an authorisation, so the model's own
             # confidence has to clear a named threshold. Above it the mail is PARKED, which
             # keeps a payload and can be re-adjudicated when the gate improves. Below it the mail
-            # is ARCHIVED — kept and unread, never deleted — and the parked drain re-admits an
-            # archived `llm_junk` mail exactly as it re-admitted a dropped one (03 F55).
+            # is ARCHIVED — kept and unread, never deleted. The parked drain used to re-admit that
+            # archive on every heartbeat without this gate (03 F55); since GeniOS-011 S06.U1 the
+            # verdict stands until a filter of another `gate_version` judges the mail again.
+            # Each records WHICH filter judged it (`gate_version`): an archive stands until a
+            # filter of another version judges the mail again (GeniOS-011 S06.U1).
             if v.relevance is not None and v.relevance >= DROP_BELOW_RELEVANCE:
                 trace.record("S2", "park", reason_code="llm_junk_unconfident",
-                             relevance=v.relevance, reason=v.reason)
+                             relevance=v.relevance, reason=v.reason, **judged)
                 return GateResult(action="park", reason_code="llm_junk_unconfident",
                                   whitelist_code=wl)
             trace.record("S2", ARCHIVE, reason_code="llm_junk", relevance=v.relevance,
-                         reason=v.reason)
+                         reason=v.reason, **judged)
             return GateResult(action=ARCHIVE, reason_code="llm_junk", whitelist_code=wl)
         if disp == "park":
             # `v.reason` travels. It is the only thing that says WHY, and the park branch was the
@@ -207,9 +249,9 @@ def run_gate(ctx: GateContext, trace: EventTrace,
             # `reason_code` stays `low_relevance` on purpose: `parked/drain.py` retries on that
             # code, and renaming it would silently change what gets re-adjudicated.
             trace.record("S2", "park", reason_code="low_relevance", relevance=v.relevance,
-                         reason=v.reason)
+                         reason=v.reason, **judged)
             return GateResult(action="park", reason_code="low_relevance", whitelist_code=wl)
-        trace.record("S2", "pass", relevance=v.relevance, reason=v.reason)
+        trace.record("S2", "pass", relevance=v.relevance, reason=v.reason, **judged)
         return GateResult(action="route", route="needs_extraction", whitelist_code=wl)
 
     # S2 default — route unstructured candidate to L2's combined relevance+extraction call. A

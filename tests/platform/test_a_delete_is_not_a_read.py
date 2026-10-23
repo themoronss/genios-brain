@@ -209,7 +209,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,310 → 3,315, GeniOS-010 B8 expanded (22 Oct): `reason/moments/followups` — `_CARDS_FED` (the cards
     # each screen item fed), `_POPUPS` (its popup), `_VERDICTS` (why it is kept or temporary), `_SCREEN_ITEMS` (a
     # card's screen items, the other way) and `_SCREEN_COUNTS` (the week's screens read / skipped) — five.
-    assert r["statements"] == 3_315, (
+    # ⛔ MOVED 3,315 → 3,316, GeniOS-011 S06.U1 (23 Oct): `capture/parked/drain._FILE_REJUDGMENT`, the
+    # park an older junk filter's archive is filed under to be judged again — the engine gaining one statement.
+    assert r["statements"] == 3_316, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
