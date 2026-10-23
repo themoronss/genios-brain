@@ -499,5 +499,9 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # ⛔ RE-PINNED 199 → 200 and 201 → 202 on 2026-10-19 by migration `0249_l2_admissions` (L2 rebuild B3, L3's
     # admission of what the L2 judgment proposed): one new table, written by `context/l2_admission`. An engine
     # change, not a resolver change.
-    assert len(TC.table_usage()) == 200
-    assert len(TC._known_tables()) == 202
+    # ⛔ RE-PINNED 200 → 201 and 202 → 203 on 2026-10-23 by migration `0251_daily_health` (GeniOS-011 S05.U1, one
+    # health row per org per day): one new table, read, written and purged by `platform/daily_health` — measured:
+    # `table_usage()["daily_health"]` is `{"read", "insert", "delete"}`. An engine change, not a resolver change; read
+    # as well as written, so the write-only members above did not move.
+    assert len(TC.table_usage()) == 201
+    assert len(TC._known_tables()) == 203

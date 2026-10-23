@@ -234,7 +234,11 @@ def test_the_statement_count_did_NOT_move():
     # projection, `outbox.PUSHABLE_CARDS_SQL`) each held their own `… from cards k join signals s …` piece; they now
     # read the one live-card fragment `deliver/store.LIVE_CARD_FROM` / `PUSH_CARD_FROM`, and recall's read moved to
     # `store._LIVE_CARDS_ABOUT`. Fewer SQL-shaped pieces, the same statements (`statement_plans.census` is 2,590 both).
-    assert r["statements"] == 3_412, (
+    # ⛔ MOVED 3,412 → 3,425 GeniOS-011 S05.U1 (23 Oct): `platform/daily_health` — the tenants to measure, the day's
+    # rows already written, the eight per-day reads (cards, card_refusals, expert_reviews, reasoning_results,
+    # l2_admissions, pipeline_counters, llm_costs, l4_r_site_calls), the database size, the row's insert and the
+    # retention purge — the engine gaining thirteen statements.
+    assert r["statements"] == 3_425, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

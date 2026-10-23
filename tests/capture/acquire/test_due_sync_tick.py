@@ -193,18 +193,21 @@ def _drive_loop(monkeypatch, *, heavy_s: float, light_s: float, waits: int) -> l
     monkeypatch.setattr(S, "time", SimpleNamespace(monotonic=lambda: clock[0]))
     monkeypatch.setattr(S, "_run_sweep_bounded",
                         lambda fn=None: calls.append("heavy" if fn is S._tick else "light"))
+    # GeniOS-011 S05.U1: the daily health row runs after every heavy tick and never after a light one;
+    # recorded here so the loop's order says so, and stubbed so this loop never reaches a database.
+    monkeypatch.setattr(S, "_after_heavy_tick", lambda: calls.append("daily"))
     S._loop(heavy_s, 0.0, light_s)
     return calls
 
 
 def test_the_loop_runs_heavy_first_light_between_and_heavy_again_when_due(monkeypatch):
     calls = _drive_loop(monkeypatch, heavy_s=3600, light_s=900, waits=6)
-    assert calls == ["heavy", "light", "light", "light", "heavy", "light"]
+    assert calls == ["heavy", "daily", "light", "light", "light", "heavy", "daily", "light"]
 
 
 def test_with_the_light_tick_off_the_loop_is_exactly_the_old_heavy_loop(monkeypatch):
     calls = _drive_loop(monkeypatch, heavy_s=3600, light_s=0, waits=3)
-    assert calls == ["heavy", "heavy", "heavy"]
+    assert calls == ["heavy", "daily", "heavy", "daily", "heavy", "daily"]
 
 
 @pytest.mark.parametrize("minutes,expected", [("15", 900), ("0", 6 * 3600)])
