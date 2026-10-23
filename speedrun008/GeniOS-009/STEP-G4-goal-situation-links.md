@@ -2,7 +2,9 @@
 
 **Written for:** Rohit, Harsh and every coding agent.
 
-**Status:** planned. **Needs:** G3, G0.3.
+**Status:** planned. **Needs:** G3, G0.3. **Amended 23 Oct 2026** (GeniOS-011 S26.U3; D7, D9–D12 in
+[`08-DECISIONS.md`](08-DECISIONS.md)): unit **G4.5** admits the judgment's goal proposal (G3.5) as a pending
+brief goal line, by code, in the same savepoint. It never writes a live goal. **Needs for G4.5:** G1.6, G3.5.
 
 **Source (MD):**
 - *"L2 relationships aur possible impact reason karta hai; L3 unhe accepted, traceable relationships ke roop mein maintain karta hai"*;
@@ -113,6 +115,60 @@ Then `close_links_of_ended` is called once per sweep, after the pass.
 append-only history says which goals it touched at each judgment (Atlas v2 L3: *"append a new interpretation,
 never overwrite"*).
 
+### G4.5 · `genios_engine/context/goal_admission.py` (new) — L3 admits a goal proposal (amendment, 23 Oct 2026)
+
+**Why.** *L2 proposes, L3 admits* holds for goals too (`00-ARCHITECTURE` Goals). A model output alone must
+never become even a proposal the founder sees: code decides whether it is admissible, refuses a duplicate
+however it is worded, and bounds how many arrive (D12).
+
+**`decide_goal_proposal(*, admission, result, subject, held_work, live_goals, l2_proposals_this_week) -> GoalAdmission`** — pure:
+
+| In order | When | Decision | Reason |
+|---|---|---|---|
+| 1 | the judgment carries no `proposed_goal` (or G3.5 dropped it) | none | — |
+| 2 | the subject's admission is REJECT | **REJECT** | `subject_rejected` |
+| 3 | the lane is `suppress` or `monitor` | **REJECT** | `lane_not_actionable` |
+| 4 | the subject's admission is HOLD | **HOLD** | `situation_held` |
+| 5 | the subject is subject-level (`situation_id = '-'`) | **HOLD** | `no_situation` |
+| 6 | the work (`subject_ref`, `file:<id>`) is in `held_work`: a pending, accepted, or lately rejected goal line rests on it, whoever proposed it; or a live goal's `subject_ref` is it | **HOLD** | `duplicate` |
+| 7 | `l2_proposals_this_week >= 3` (D12) | **HOLD** | `weekly_cap` |
+| 8 | no cited evidence is the company's own act: an `outbound` member signal of the subject (`reason/l2/inputs.py` `Signal.direction`, written by L1 `capture/pipeline.py`) | **HOLD** | `no_own_act` |
+| 9 | otherwise | **ADMIT** | — |
+
+- A HOLD or REJECT writes nothing and is counted in the receipt with its reason. A held proposal is asked again only when the subject's fingerprint moves (the change gate), so it never nags.
+- **`held_work`** is read once per pass: the work keys of every `goals` line that is pending, accepted, or rejected within `REJECTED_QUIET_DAYS` (90). It uses the same keys as the drafter's dedupe (`reason/brief_patterns.work_of`: `file:<id>` from an evidence item's `file_id`, GeniOS-011 S27.U1), read by a pure function in `context/` (`platform/` and `context/` may not import `reason/`). A test pins that both readers give the same keys for the same lines.
+- **`l2_proposals_this_week`**: goal lines with `proposed_by = 'l2_judgment'` and `proposed_at` in the last 7 days, read once per pass and counted up as the pass admits.
+
+**`write_goal_proposal(conn, decision, *, at) -> str | None`** — on ADMIT only:
+
+```
+company_brief_store.propose(
+    conn, org_id=…, section="goals", words=proposal.statement, proposed_by="l2_judgment", at=at,
+    line_id=stable_id("cbl", {"org": org_id, "goal_for": subject_ref, "result": fingerprint}),  # platform/canonical
+    evidence=[{"pattern": f"l2:{fingerprint}", "file_id": file_id, "situation": situation_id,
+               "cites": list(proposal.evidence)}],                             # work_of reads file_id
+    goal_proposal={"subject_ref": subject_ref, "why": …, "evidence_refs": …, "proposed_by": "l2_judgment",
+                   "parent_goal_id": …, "deadline": …, "target": …, "metric": …})   # G1.6
+```
+
+- **The line id** names the judgment that proposed it, as `reason/expert/kind_proposal.line_id_for` does with the review's fingerprint: an id per piece of work alone would collide with the row of a proposal rejected more than 90 days ago (rows are never deleted). One proposal per piece of work is `held_work`'s job, not the id's.
+- **It calls `propose`, never `accept` or `add`.** The line is pending; the next `sync_from_brief` makes it a `proposed` goal (`source = 'inferred'`, `approved_by` null); only the founder's accept makes it live.
+- The evidence item carries `file_id`, so the weekly drafter sees the work as already resting on a goal and does not propose it again (the S27.U1 dedupe), and the reverse holds through `held_work`.
+- The store's own rules still apply: the same words already in the brief, or rejected within 90 days, write nothing (`_same_line`).
+
+**The call site** (`reason/l2/sweep.py`, the admission savepoint, after G4.3's `write_links`):
+
+```
+proposals = [goal_admission.decide_goal_proposal(...) for a in admissions]
+goal_admission.write_goal_proposals(conn, proposals, at=now)
+```
+
+A failure inside it is caught by the savepoint, as G4.3's writes are, and never costs the pass's results.
+
+**Not in G4.5:** creating a `company_goals` row directly. D11 keeps the brief as the door. (GeniOS-011
+`02-PLAN` S29.U3 says "ADMIT writes company_goals status proposed": with D11 that row is written by the next
+`sync_from_brief`, from the pending line.)
+
 ## 4 · LLM use
 
 **None.** Admission is code.
@@ -129,6 +185,25 @@ never overwrite"*).
 
 **Golden:** the G3 marking rule now reads the admitted links. F03's run must hold one open `advances` link to "Raise the seed round".
 
+**G4.5 tests** — `tests/context/test_goal_admission.py`:
+1. (pure) each row of G4.5's table, one case each, in order (an earlier row wins);
+2. (PG) an ADMIT writes one pending `goals` line with `proposed_by = 'l2_judgment'` and its `goal_proposal`; the goal after `sync_from_brief` is `proposed` with `approved_by` null;
+3. (PG) the second sweep on the same subject writes nothing (`duplicate`), and so does a reworded proposal for the same file;
+4. (PG) a drafter goal line resting on the same file (its evidence `file_id`) → `duplicate`; and the drafter's `_one_goal_per_work` refuses a goal on a file G4.5 already proposed;
+5. (PG) a fourth L2 proposal in 7 days → `weekly_cap`;
+6. (PG) a subject whose only evidence is inbound (a newsletter) → `no_own_act`, nothing written;
+7. (PG) a proposal the founder rejected → nothing proposed for that file for 90 days.
+
+**G4.5 golden:** F72 passes: one pending goal line for the accelerator's Singapore cohort, with its parent and
+deadline; `GET /v1/goals` lists it as `proposed`; the newsletter in the case proposes nothing; a second sweep
+proposes nothing. No case's board changes, because a pending line reaches no prompt (STEP-G2 §2.1).
+
+**G4.5 mutation proofs — never active without a human:**
+- write through `company_brief_store.accept` (or `add`) instead of `propose` → test 2 fails (the goal is active);
+- drop the `duplicate` row → test 3 fails (the second sweep proposes again);
+- drop the `no_own_act` row → test 6 fails (a newsletter proposes a goal);
+- drop the `weekly_cap` row → test 5 fails.
+
 **Mutation proofs:**
 - drop the live-goal check → test 6 fails;
 - drop the `is distinct from` → test 2 fails;
@@ -143,7 +218,8 @@ never overwrite"*).
 
 - the golden tenant's admitted situations carry the labelled links;
 - no link exists to a non-live goal;
-- an ended situation leaves no open link.
+- an ended situation leaves no open link;
+- (G4.5) F72 passes: its goal is proposed once, pending, never active without the founder's accept.
 
 ## Harsh's checklist — in order
 
@@ -159,7 +235,13 @@ never overwrite"*).
    - the live-goal check;
    - `is distinct from`;
    - `close_links_of_ended`.
-8. **Guards, push, CI, logs.**
+8. **G4.5** (after G1.6 and G3.5):
+   - `tests/context/test_goal_admission.py` first (§5, G4.5 tests);
+   - `context/goal_admission.py`: `decide_goal_proposal` (pure), the `held_work` reader, `write_goal_proposals`;
+   - the call site in the admission savepoint;
+   - F72 flipped from strict-xfail to pass;
+   - the four mutation proofs.
+9. **Guards, push, CI, logs.**
 
 ## Brief for a coding agent
 
@@ -186,4 +268,6 @@ Paste `10-AGENT-BRIEFS.md` §1 first, then this.
 - the §2 table fully covered;
 - idempotent writes (`xmin`);
 - three mutation proofs;
-- F03's link.
+- F03's link;
+- (G4.5) `context/goal_admission.py` and `tests/context/test_goal_admission.py` are also yours, with the
+  `goal_admission` lines in `reason/l2/sweep.py`; the G4.5 table fully covered; four mutation proofs; F72 passes.

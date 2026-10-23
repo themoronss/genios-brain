@@ -3,6 +3,9 @@
 **Source:** Design Atlas v2 (29 Sep 2026). **Written for:** Rohit, Harsh and every coding agent. Every
 layer folder in GeniOS-008 is judged against this page, never against what today's code happens to do.
 
+**Amended:** 23 Oct 2026, with Rohit's yes (Rule 1.4): the goal object, `GoalImpact` and `GoalProposal`
+([Goals](#goals--what-the-loop-works-toward), GeniOS-011 S26.U3).
+
 ## What GeniOS is
 
 The company intelligence layer: *Palantir for company managers*. It connects company data, workflows,
@@ -44,8 +47,8 @@ L2 concluded.
 |---|---|---|---|---|---|---|
 | **L0 Foundation** | `contracts/` `platform/` `api/` | What holds it up? | — | typed contracts, wiring, tenancy | never | business meaning |
 | **L1 Enterprise Signals** | `capture/` | What happened, how reliable, which incoming signals belong together? | raw events | **QualifiedEnterpriseSignalBundle** + coverage receipt | extraction, detection, link suggestion | concludes a situation, reads the graph |
-| **L2 Reasoning** | `reason/` + `packs/` | What does it mean, and what is the best next move? | bundle + ContextSnapshot + ExpertisePackage | **ReasoningResult**, EvidenceNeed, receipt | 0–3 bounded calls per situation | stores state, decides for a human |
-| **L3 Context Graph** | `context/` | What does the company now know, and how is it connected? | ReasoningResult mutations, evidence facts | admitted situation (BSO), ContextSnapshot, **DecisionObject** | none | reasons by itself |
+| **L2 Reasoning** | `reason/` + `packs/` | What does it mean, and what is the best next move? | bundle + ContextSnapshot (with the live goals) + ExpertisePackage | **ReasoningResult** (with goal impacts and at most one goal proposal), EvidenceNeed, receipt | 0–3 bounded calls per situation | stores state, decides for a human |
+| **L3 Context Graph** | `context/` | What does the company now know, and how is it connected? | ReasoningResult mutations and goal proposals, evidence facts | admitted situation (BSO), goal object and goal links, ContextSnapshot, **DecisionObject** | none | reasons by itself |
 | **L4 Executive** | `executive/` | Who decides, and how does a decision become owned work? | DecisionObject | **ExecutionObject** (owner, deadline, channel, ladder) | wording only | a model deciding |
 | **L5 Delivery** | `deliver/` | Who receives it, where, when, in what form? | ExecutionObject / ReasoningResult lane | card, brief, agent task, DeliveryResult | wording only, validated | adds a fact |
 | **L6 Learning** | `feedback/` | What did reality teach, and which layer should change? | outcomes, judgments | mutes, pack config, brain proposals (data) | parse corrections only | edits code or the expert brain |
@@ -96,6 +99,7 @@ asks for.
   - the decision need;
   - the **confidence vector**;
   - situation mutations;
+  - **goal impacts** (`GoalImpact`) and at most one **goal proposal** (`GoalProposal`), see [Goals](#goals--what-the-loop-works-toward);
   - EvidenceNeeds;
   - a provenance receipt.
 
@@ -105,6 +109,80 @@ asks for.
 - **Intelligence Graph:** situations → interpretations, and signals → decision → execution → outcome, as foreign keys only. It records what GeniOS concluded.
 - **Admission:** `situation_publisher` returns ADMIT, HOLD or REJECT; a HOLD raises an EvidenceNeed.
 - **Bounded query API:** seeds, hops, max nodes, unknowns and contradictions. It is bitemporal: when an event happened, when we learned it, and when it stopped being true.
+- **Goals:** the goal object, its links to situations, and the admission of a goal proposal. See [Goals](#goals--what-the-loop-works-toward).
+
+## Goals — what the loop works toward
+
+*Amended 23 Oct 2026 (GeniOS-011 S26.U3). Rohit, 23 Oct, in chat: "aise bar bar goals manually nhi dal sakte
+na" (we cannot keep adding goals by hand), and the Antler Singapore admission should have become a goal from
+the context already in the graph. Recorded as GeniOS-009 `08-DECISIONS` D7 and D9–D12.*
+
+GeniOS works *until the goal is reached*. So a goal is an object, every judgment says which goal it bears
+on, and GeniOS proposes the goals it sees in motion. **A human makes a goal real.** Nothing a model or code
+writes is ever an approved or active goal.
+
+### The goal object (L3 owns it)
+
+| Field | Meaning |
+|---|---|
+| `goal_id` | a stable id other layers point to (`goal:<id>` in a prompt) |
+| `statement` | the goal in the founder's words, at most 200 characters |
+| `status` | `proposed` → `approved` → `active` → `completed` · `superseded` · `cancelled` |
+| `source` | `founder` (added by the founder) · `brief` (a drafter line the founder accepted) · `inferred` (a proposal still waiting) |
+| `department` | a live domain of the tenant (D1) |
+| `owner_seat`, `metric`, `target`, `deadline`, `parent_goal_id` | set by a person, or proposed and shown before approval; never chosen by a model |
+| `subject_ref`, `evidence_refs` | for an inferred goal: the piece of work it rests on (`file:<id>`) and the lines it cites |
+| `approved_by`, `approved_at` | the human who approved it. `approved` and `active` require it (a check constraint, not a convention) |
+
+- **One goal per piece of work** (D10): an application, one raise, one hire, one partner. A broad goal
+  ("Get into accelerator and incubator programs") stays; a goal for one piece of work may name it as its parent.
+- **The door is the company brief** (D11). A goal is born when a brief `goals` line is accepted. A proposed
+  goal is a pending brief line, and L3 syncs `company_goals` from the brief every sweep. One door, one approval
+  path: `POST /v1/company-brief/proposals/{line_id}/decide`, owner only, one click.
+- **Revisions:** every change to a goal is a new revision row, never an overwrite.
+
+### `GoalImpact` (L2 writes it, L3 admits it as a link)
+
+| Field | Meaning |
+|---|---|
+| `goal_ref` | a goal the dossier printed (block G); an unprinted goal is refused |
+| `relation` | `advances` · `threatens` · `depends_on` · `unclear` — a word, never a score |
+| `why` | the model's reading, in the founder's words |
+| `evidence` | printed ids it rests on (`unclear` may stand on none) |
+| `size_basis` | a printed tool line, or "not measurable" |
+
+L3 writes a link (`goal_situation_links`) only when the situation is ADMITTED and the goal is live
+(approved or active).
+
+### `GoalProposal` (L2 proposes, L3 admits, a human approves)
+
+| Field | Meaning |
+|---|---|
+| `statement` | the goal in the founder's words, at most 200 characters |
+| `subject_ref` | the piece of work it is for (`file:<id>`): the judged subject itself, filled by code, never named by the model |
+| `why` | why this is a goal the company is pursuing |
+| `evidence` | printed ids; at least one is the company's own act (the founder applied, replied, met) |
+| `parent_goal_ref` | optional: a live goal block G printed |
+| `deadline`, `target`, `metric` | optional, and only as the dossier printed them |
+
+- **At most one per judgment**, and none when a printed goal already names this work.
+- **L3 admission** (`context/goal_admission`): ADMIT, HOLD or REJECT, by code. It holds a duplicate (the same
+  work already has a pending, accepted or lately rejected goal, whoever proposed it), a proposal over the weekly
+  cap (D12: 3 a week per tenant), and one with no evidence of the company's own act. An ADMIT writes a
+  **pending** brief `goals` line with the structured fields. It never writes an approved or active goal.
+- **The founder approves** on the card, on the home page or on the Goals page. Until then the goal is never
+  printed to the model as the company's goal.
+
+### Who may propose a goal
+
+| Proposer | Reads | Status |
+|---|---|---|
+| the founder | — | adds a goal directly; it is approved in the same act |
+| the brief drafter (`reason/brief_drafter`, weekly) | memory patterns, and since GeniOS-011 S27.U1 the files, open situations and in-motion lines; one goal per piece of work, refused when a goal already rests on that work | **built, the interim path** |
+| the L2 judgment (R-9) | the whole dossier for one subject | planned: GeniOS-009 G1.6, G3.5, G4.5, G6.8 |
+
+**Model rules for goals:** the model may propose a goal and word it. It never approves one, never chooses its
+owner, never states a target or deadline the dossier did not print, and never marks one complete.
 
 ## Cards — five lanes, a confidence vector
 
@@ -141,6 +219,7 @@ the graph without validation.**
 | Decision | none; **`DecisionObject` does not exist** | L3 mints it, L4 decides |
 | Missing evidence | wait for the next sweep; EvidenceNeed has no fetcher | EvidenceNeed → L1 fetches it |
 | Model on the decision path | expert pass bolted onto the old chain | one bounded pass inside the Orchestrator loop |
+| Goals | free-text lines in the brief (`company_brief_lines`, section `goals`); no id, no link, no goal field in any judgment; only the weekly drafter proposes | a goal object in L3; L2 writes `GoalImpact` and `GoalProposal`; L3 admits; a human approves |
 
 **Cutover rule (Atlas v2 L5):** the new path is built **beside** the old one; both run; the golden set
 compares them; the switch happens only when the new path is at least as good.

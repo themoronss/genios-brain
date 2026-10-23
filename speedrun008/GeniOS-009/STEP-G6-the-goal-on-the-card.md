@@ -2,7 +2,10 @@
 
 **Written for:** Rohit, Harsh and every coding agent.
 
-**Status:** planned. **Needs:** G4, G5, G0.2.
+**Status:** planned. **Needs:** G4, G5, G0.2. **Amended 23 Oct 2026** (GeniOS-011 S26.U3; D7, D11 in
+[`08-DECISIONS.md`](08-DECISIONS.md)): unit **G6.8**, the proposed-goal chip, lets the founder approve a
+proposed goal in one click on the card of the work it is for, and on the home page. **Needs for G6.8:** G1.6
+(and G4.5 for the L2 judgment's proposals; the drafter's show as soon as G1.6 is built).
 
 **Source (MD):**
 - *"Card mein… Kaunsa company/departmental goal affect ho raha hai"*;
@@ -74,6 +77,38 @@
 | G6.5 | `api/intelligence_routes.py` | `group=goal` on `GET /v1/insights`; the pure grouping lives in `deliver/board.py` (new: `board(cards, goals, progress) -> list[GoalGroup]`) |
 | G6.6 | `deliver/lane_display.py` | lane copy for the board headers (decision · conflict · investigation · monitor), in the reader's words |
 | G6.7 | `platform/l4_activation.py` | feature `goal_board`, per tenant, never on by default; needs `l2_cards` |
+| G6.8 | `deliver/goal_chip.py` (new), `api/intelligence_routes.py`, `platform/l4_activation.py` | the proposed-goal chip (below); feature `goal_chip`, per tenant, never on by default |
+
+### G6.8 · The proposed-goal chip (amendment, 23 Oct 2026)
+
+**Why.** `06-CARDS-TARGET.md` §4 lists a "Proposed goal" card kind, and no unit built it. A proposal sitting
+only in the brief's list is easy to miss; Rohit's ask is that goals come from what is in motion without typing.
+So the proposal is shown where the founder already looks: on the card of the work it is for. **A chip, not
+a new card**: a proposal makes no card of its own and sends no notification.
+
+**What it shows** (code-written, never model text):
+
+> **Make this a goal?** Get admitted to <the accelerator>'s Singapore cohort · under "Get into accelerator and
+> incubator programs" · by <deadline> — **Approve** · **Not now**
+
+| Part | Rule |
+|---|---|
+| which proposal | a **pending** `goals` line resting on the card's file: `goal_proposal.subject_ref` (G1.6) or an evidence `file_id` (the drafter's, GeniOS-011 S27.U1), equal to the card's `file:<id>`. G4.5's `held_work` keeps it to one per file; if two exist, the oldest |
+| words | the line's text; the parent's statement and the deadline from `goal_proposal`, when present; "proposed by GeniOS" and the `why` in the card's detail |
+| **Approve** | `POST /v1/company-brief/proposals/{line_id}/decide` with `{"decision": "accept"}`: one click, no text. The next sweep's `sync_from_brief` makes the goal active, `approved_by` = the founder |
+| **Not now** | the same route with `{"decision": "reject"}`; that work is not proposed again for 90 days (`REJECTED_QUIET_DAYS`) |
+| who sees it | the account owner only (the route's `require_account_owner`); other seats see no chip |
+| where it is computed | at read, in `GET /v1/insights`, from `company_brief_store.pending` — **no column**, so a decided proposal disappears without a write |
+
+**On the home page:** "N goals waiting for you" (GeniOS-011 S27.U3) lists the same pending goal lines with the
+same Approve and Not now. A proposal whose file has no open card (a quiet file) shows there and on the Goals
+page only.
+
+**Dashboard:** the rendering follows the UI rule (a clickable dummy, Rohit's approval, then real files). The
+brain part — `chip_for` and the route field — does not wait for it.
+
+**`deliver/goal_chip.py`:** `chip_for(card, pending_goal_lines) -> GoalChip | None`, pure. The route adds
+`goal_proposal: {line_id, statement, parent, deadline, why} | null` to each card it returns.
 
 ## 4 · LLM use
 
@@ -104,12 +139,28 @@
 - drop G6.4 → test 1 of `test_claim_validator_goal.py` fails;
 - remove the "Not linked" group → board test 2 fails.
 
+**G6.8 tests** — `tests/deliver/test_goal_chip.py` (pure):
+1. a pending goal line on the card's file → a chip with its words, parent and deadline;
+2. an accepted, rejected or removed line → no chip;
+3. a pending line on another file → no chip;
+4. a pending `in_motion` line on the same file → no chip (goals only).
+
+**`tests/api/test_goal_chip_route.py`** (PG): Approve through the chip's route → the line is accepted and,
+after `sync_from_brief`, the goal is `active` with `approved_by` = the owner who clicked; a non-owner seat
+→ 403 and the goal stays `proposed`.
+
+**G6.8 mutation proofs:** make `chip_for` ignore the line's status → test 2 fails; drop the section check →
+test 4 fails.
+
 ## 6 · Flags, rollout, rollback
 
 - **Flags:** `goal_board`, per tenant, after `l2_cards` has run a week clean (G0.2).
 - **Rollback:** the flag off returns the flat list. The columns stay.
 
 ## 7 · Done when
+
+- (G6.8) with `goal_chip` on, a card whose file has a pending goal proposal shows the chip; one click on
+  Approve makes the goal active after the next sweep, with the founder as approver; nothing else does.
 
 - On the golden tenant with `goal_board` on, the board matches `06-CARDS-TARGET.md` §3's shape:
   - every card is under a goal or counted under "Not linked";
@@ -137,7 +188,10 @@
    - F02, F03, F24 and F25 carry their goal line;
    - an unchanged sweep sends no notification.
 9. **Re-run the card dump** (handover §6.6) and compare with `01-AS-IS-CARDS.md`: role fill should rise from 25/57; monitor headlines become waits.
-10. **Mutation proofs, guards, push, CI, logs.** Switch `goal_board` on for D6's tenant only after a week of `l2_cards` running clean.
+10. **G6.8** (needs G1.6 only): `tests/deliver/test_goal_chip.py` and the route test first; `deliver/goal_chip.py`;
+    the `goal_proposal` field on `GET /v1/insights`; the `goal_chip` feature; the dashboard chip as a dummy
+    first; two mutation proofs.
+11. **Mutation proofs, guards, push, CI, logs.** Switch `goal_board` on for D6's tenant only after a week of `l2_cards` running clean.
 
 ## Brief for a coding agent
 
@@ -158,7 +212,8 @@ Paste `10-AGENT-BRIEFS.md` §1 first, then this.
 - `reason/expert/card_lines.py` (the goal fields);
 - `deliver/card_builder.py`, `deliver/claim_validator.py`, `deliver/board.py` (new), `deliver/lane_display.py`;
 - `api/intelligence_routes.py` (`group=goal` only);
-- `platform/l4_activation.py` (the feature constant);
+- `platform/l4_activation.py` (the feature constants: `goal_board`, `goal_chip`);
+- `deliver/goal_chip.py` (new, G6.8);
 - the new tests.
 
 **Do not touch:**
@@ -169,5 +224,6 @@ Paste `10-AGENT-BRIEFS.md` §1 first, then this.
 - §5's tests;
 - the golden goal lines;
 - "Not linked" counted;
-- two mutation proofs;
+- (G6.8) the chip from pending goal lines, one-click Approve through the brief route;
+- four mutation proofs (two for G6, two for G6.8);
 - a card-dump comparison in the report.
