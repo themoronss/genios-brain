@@ -151,7 +151,12 @@ SITE_MAX_OUTPUT_TOKENS = {
     # and the L2 result is the review plus its judgment half (six confidence lines, options, mutations,
     # needs) — about 1,500 more. 8,000 is R-7's 6,000 plus that, with R-7's headroom kept. Measured on the
     # first one or two live calls before any paid pass (memory: test 1-2 calls first).
-    SITE_REASON: 8000,
+    #
+    # ⛔ MEASURED NOW (G012 F2, 23 Oct 2026): the design partner's 41 R-9 calls on Sonnet 5, thinking off. A `deep`
+    # judgment that finished ran p50 6,773 / p90 7,493 output tokens, and 3 of 8 deep calls were cut at 8,000 —
+    # one file three times, ~$0.12 each, no result. 12,000 is 1.6x the deep p90 (R-7's rule kept), the arm
+    # `scripts/golden_eval.py --ceiling 12000` was built for. Output is billed as written, not at the ceiling.
+    SITE_REASON: 12000,
     # ⛔ `[MODELLED]`, R-8's sizing rule (2x the model, never the model itself). The copy is one JSON object of
     # ten short fields with their ids — subject <= 60 characters, two lines <= 240, at most four steps — about 600
     # output tokens written plainly; 1,600 is R-8's ceiling and ~2.7x that. Asked with thinking OFF (`06` D71);

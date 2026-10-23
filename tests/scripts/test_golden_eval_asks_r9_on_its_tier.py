@@ -10,7 +10,7 @@ switches `l2_reasoning` on only down the L2 path): a live R-9 pass would have sp
 Now:
 
   * `SITE_TIERS` names `reason_l2` → R-9, so its model is its tier's and its settings are the site table's own
-    (thinking off, an 8,000-token ceiling) — and a D72-style arm (`--thinking`, `--ceiling`) can move them;
+    (thinking off, a 12,000-token ceiling) — and a D72-style arm (`--thinking`, `--ceiling`) can move them;
   * `--l2-path` sets `GENIOS_GOLDEN_L2=1` for the run and puts it back; without it the run takes today's path
     even from a shell that exported the switch, and R-9 without the path is refused before anything is spent;
   * `--probe` makes at most two live calls and prints each one's `stop_reason` and `output_tokens` — the
@@ -68,10 +68,10 @@ def test_r9_is_asked_on_its_tiers_model_never_the_default():
 
 
 def test_r9s_settings_are_the_site_tables_own():
-    """Thinking off and an 8,000-token ceiling (`reason/bundle/sites`), with R-9's own 160 s timeout."""
+    """Thinking off and a 12,000-token ceiling (`reason/bundle/sites`), with R-9's own 160 s timeout."""
     module = _module()
     assert module.site_profile("reason_l2") == {
-        "r_site": "R-9", "model": "claude-sonnet-5", "thinking": "off", "ceiling": 8000, "timeout_s": 160.0}
+        "r_site": "R-9", "model": "claude-sonnet-5", "thinking": "off", "ceiling": 12000, "timeout_s": 160.0}
     assert module.site_profile("reason_l2")["ceiling"] == S.max_output_tokens(S.SITE_REASON)
     assert module.site_profile("reason_l2")["thinking"] == S.thinking_mode(S.SITE_REASON)
     assert module.site_profile("decider") is None and module.site_profile(None) is None
@@ -79,20 +79,20 @@ def test_r9s_settings_are_the_site_tables_own():
 
 def test_the_dry_run_names_r9s_model_and_settings_with_no_key(monkeypatch, capsys):
     """The DONE WHEN's dry run: no key, no database, no model — and it says R-9 is asked on Sonnet 5 with
-    thinking off at 8,000, and that no R-9 call is recorded to price (the L2 path is never recorded)."""
+    thinking off at 12,000, and that no R-9 call is recorded to price (the L2 path is never recorded)."""
     module = _module()
     monkeypatch.delenv(module.LIVE_KEY_ENV, raising=False)
     monkeypatch.delenv("GENIOS_TEST_DATABASE_URL", raising=False)
     monkeypatch.setattr(module, "LiveModel", lambda *a, **k: pytest.fail("a dry run built a live model"))
     assert module.main(["--dry-run", "--site", "reason_l2"]) == 0
     out = capsys.readouterr().out
-    assert "R-9 on claude-sonnet-5" in out and "thinking off" in out and "ceiling 8000" in out, out[-900:]
+    assert "R-9 on claude-sonnet-5" in out and "thinking off" in out and "ceiling 12000" in out, out[-900:]
     assert "on claude-sonnet-5 at list price" in out and "Nothing was run" in out
     assert "never recorded" in out and "--probe" in out, "a $0.00 estimate is not presented as the cost"
 
 
 def test_a_run_setting_reaches_r9_for_the_run_alone(monkeypatch):
-    """R-9 in `SITE_TIERS` is what lets `site_settings` hold its row: by default its own (off, 8,000), and an
+    """R-9 in `SITE_TIERS` is what lets `site_settings` hold its row: by default its own (off, 12,000), and an
     arm's `--ceiling` while the pass runs — put back after."""
     module = _module()
     monkeypatch.setenv(module.LIVE_KEY_ENV, "sk-not-a-real-key")
@@ -100,9 +100,9 @@ def test_a_run_setting_reaches_r9_for_the_run_alone(monkeypatch):
     monkeypatch.setattr(module, "live", lambda *a, **k: seen.append(
         (S.thinking_mode(S.SITE_REASON), S.max_output_tokens(S.SITE_REASON))) or 0)
     assert module.main(_live_args("--site", "reason_l2", "--l2-path")) == 0
-    assert module.main(_live_args("--site", "reason_l2", "--l2-path", "--ceiling", "12000")) == 0
-    assert seen == [("off", 8000), ("off", 12000)]
-    assert S.max_output_tokens(S.SITE_REASON) == 8000, "put back after the run"
+    assert module.main(_live_args("--site", "reason_l2", "--l2-path", "--ceiling", "16000")) == 0
+    assert seen == [("off", 12000), ("off", 16000)]
+    assert S.max_output_tokens(S.SITE_REASON) == 12000, "put back after the run"
 
 
 # =================================================================================================
@@ -292,7 +292,7 @@ def test_the_probe_runs_instead_of_the_pass_on_r9s_tier_and_path(monkeypatch):
     assert module.main(["--probe", "--site", "reason_l2", "--l2-path", "--spend-ok", "--max-usd", "0.5",
                         "F13"]) == 0
     assert seen["args"] == (["F13"], "claude-sonnet-5", "reason_l2") and seen["kw"] == {"max_usd": 0.5}
-    assert seen["path"] == "1" and seen["settings"] == ("off", 8000)
+    assert seen["path"] == "1" and seen["settings"] == ("off", 12000)
 
 
 @pytest.mark.parametrize("args", [["--probe", "--dry-run"], ["--probe", "--record"],
@@ -385,7 +385,7 @@ def test_the_r9_live_pass_takes_the_l2_path_end_to_end(monkeypatch, tmp_path, ow
     [row] = card["cases"]
     assert row["verdict"] == row["authored_verdict"] and card["moved"] == [], row
     assert _Live.asked and {site for site, _m, _t in _Live.asked} == {"reason_l2"}, "only R-9 went live"
-    assert {(m, t) for _s, m, t in _Live.asked} == {(8000, "off")}, "with R-9's own settings"
+    assert {(m, t) for _s, m, t in _Live.asked} == {(12000, "off")}, "with R-9's own settings"
     assert L2_ENV not in os.environ and not _tenant_left(own_tenant)
 
 

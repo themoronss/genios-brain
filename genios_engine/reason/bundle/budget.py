@@ -65,10 +65,11 @@ OWN_BUDGETS: dict[str, tuple[str, str]] = {
     SITE_EXPERT: ("2.00", "0.10"),
     SITE_BRIEF: ("0.25", "0.03"),
     SITE_BRIEF_ESCALATE: ("0.25", "0.03"),
-    # GeniOS-008 L2 · the judgment pass (R-9): $2 a day of its own (L2-Q5 default, as R-7's), and 15 cents a
-    # call — its worst case is a ~100,000-character dossier (25,000 tokens: 5 cents on T2) and the 8,000-token
-    # ceiling (8 cents), 13 cents; R-7's 10 would refuse every bounded run at its bound.
-    SITE_REASON: ("2.00", "0.15"),
+    # GeniOS-008 L2 · the judgment pass (R-9): $2 a day of its own (L2-Q5 default, as R-7's), and 25 cents a
+    # call — its worst case is a ~100,000-character dossier (25,000 tokens: 5 cents on T2) and the 12,000-token
+    # ceiling (12 cents, `sites.SITE_MAX_OUTPUT_TOKENS`, measured — G012 F2), 17 cents, with a 37,000-token deep
+    # dossier (measured, 23 Oct) at 19. Was 15 cents against the old 8,000 ceiling. The DAY is unchanged.
+    SITE_REASON: ("2.00", "0.25"),
     # GeniOS-011 S34.U3 · the card writer (R-10, T1): 50 cents a day of its own and 2 cents a call. Its worst case is
     # the fact table at its bound (40 facts of <= 400 characters, plus the prompt: ~19,000 characters, ~4,750 tokens —
     # half a cent on T1) and the 1,600-token ceiling (0.8 cents): 1.3 cents. Fifty cents is ~40 new card versions a
