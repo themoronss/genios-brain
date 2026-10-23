@@ -66,9 +66,16 @@ SITE_BRIEF_ESCALATE = "R-8E"
 #: expert pass until the golden set says it is at least as good: sharing R-7's day would let the shadow path
 #: starve the live one. Sonnet-class (L2-Q5 default), thinking off, its own $2 day.
 SITE_REASON = "R-9"
+#: ⛔ R-10 · THE CARD WRITER (GeniOS-011 S34.U3, C1 — `speedrun008/GeniOS-010/06-CARDS/01-INTEGRATION.md` §5 C1;
+#: `deliver/card_copy`). One call per NEW CARD VERSION, never per view: the card's own facts in, each with an id,
+#: and its words out — subject, two lines, how, steps, result, avoid, done when, if not, alternative and the goal it
+#: moves — every sentence naming the ids it rests on, held to them by code before it is kept. L5's work ("wording
+#: only, validated", `00-ARCHITECTURE.md` "The layers"); the call goes through this package's one gate. Haiku-class,
+#: R-8's pattern: the deterministic check is what makes a cheap model safe here. Thinking off, its own day.
+SITE_CARD_COPY = "R-10"
 
 R_SITES = (SITE_INTERPRET, SITE_NARRATE, SITE_ALTERNATIVES, SITE_EFFECT, SITE_CONSULT,
-           SITE_SITUATION, SITE_EXPERT, SITE_BRIEF, SITE_BRIEF_ESCALATE, SITE_REASON)
+           SITE_SITUATION, SITE_EXPERT, SITE_BRIEF, SITE_BRIEF_ESCALATE, SITE_REASON, SITE_CARD_COPY)
 
 #: Tier per site, exactly as doc 11 §1 prints it. T1 = Haiku-class, T2 = Sonnet-class, the same
 #: two names `capture.semantic.batch.DEFAULT_TIER_PRICES` prices — reused rather than re-declared,
@@ -86,6 +93,7 @@ SITE_TIERS = {
     SITE_BRIEF: TIER_T1,
     SITE_BRIEF_ESCALATE: TIER_T2,
     SITE_REASON: TIER_T2,
+    SITE_CARD_COPY: TIER_T1,
 }
 
 #: The output ceiling per site, in tokens. A cap rather than a hope: doc 11 sizes R-2 at ~450
@@ -144,6 +152,12 @@ SITE_MAX_OUTPUT_TOKENS = {
     # needs) — about 1,500 more. 8,000 is R-7's 6,000 plus that, with R-7's headroom kept. Measured on the
     # first one or two live calls before any paid pass (memory: test 1-2 calls first).
     SITE_REASON: 8000,
+    # ⛔ `[MODELLED]`, R-8's sizing rule (2x the model, never the model itself). The copy is one JSON object of
+    # ten short fields with their ids — subject <= 60 characters, two lines <= 240, at most four steps — about 600
+    # output tokens written plainly; 1,600 is R-8's ceiling and ~2.7x that. Asked with thinking OFF (`06` D71);
+    # a model that cannot turn thinking off gets its family's headroom on top (`context/llm/client.output_ceiling`).
+    # Measured on the first one or two live calls (`scripts/card_copy_probe.py`) before any tenant is armed.
+    SITE_CARD_COPY: 1600,
 }
 
 #: ⛔ WHETHER A SITE MAY THINK (`yc2_w27_s18` M50.C2.L-contract.V1.U02). Claude 5 models think unless
@@ -163,6 +177,7 @@ SITE_THINKING = {
     SITE_BRIEF: _THINKING_OFF,
     SITE_BRIEF_ESCALATE: _THINKING_OFF,
     SITE_REASON: _THINKING_OFF,
+    SITE_CARD_COPY: _THINKING_OFF,
 }
 
 #: How long one call of a site may take, in seconds, where the client's own 60 s is too short. None
@@ -251,7 +266,7 @@ __all__ = ["FALLBACK_OUTCOMES", "OUTCOMES", "OUTCOME_CACHED", "OUTCOME_FAILED_GE
            "OUTCOME_FAILED_VALIDATION", "OUTCOME_FORCE_FAILED", "OUTCOME_NOT_ACTIVATED",
            "OUTCOME_NO_BUDGET", "OUTCOME_NO_CLIENT", "OUTCOME_NO_PRECONDITION", "OUTCOME_RAN",
            "OUTCOME_TRUNCATED",
-           "R_SITES", "SITE_ALTERNATIVES", "SITE_BRIEF", "SITE_BRIEF_ESCALATE", "SITE_CONSULT",
+           "R_SITES", "SITE_ALTERNATIVES", "SITE_BRIEF", "SITE_BRIEF_ESCALATE", "SITE_CARD_COPY", "SITE_CONSULT",
            "SITE_EFFECT", "SITE_EXPERT", "SITE_INTERPRET", "SITE_REASON", "SITE_SITUATION",
            "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_THINKING", "SITE_TIERS", "SITE_TIMEOUT_S",
            "TIER_T1", "TIER_T2",

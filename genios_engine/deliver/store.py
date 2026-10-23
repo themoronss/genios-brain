@@ -185,8 +185,25 @@ _VERSION_WORDS = (
     "do_nothing_consequence=:odnc, confidence_vector=cast(:cvec as jsonb), surfaces=:surf, builder_version=:bver, "
     "output_lane=:lane, lane_reason=:lreason, "
     # STEP-14 (0221): the gold card's columns are a version's words too — its own, never the last version's.
-    "recommended=cast(:grec as jsonb), alternative=:galt, wait_or_stop=:gwait "
+    "recommended=cast(:grec as jsonb), alternative=:galt, wait_or_stop=:gwait, "
+    # GeniOS-011 S34.U3 (0252): the card writer's copy was written for the words before — cleared with them, in the
+    # same statement, so it never shows over words it was not made from; the pass words the new version.
+    "copy=null "
     " where org_id=:o and card_id=:id")
+
+#: ⛔ GeniOS-011 S34.U3 (C1, migration 0252) · THE CARD WRITER'S COPY, stored for ONE version. `deliver/card_copy` words
+#: a new card version once and lands here only on the version AND the headline it was written from — a card versioned
+#: or refreshed meanwhile has new words (and `copy` cleared with them), and the old copy writes nothing.
+SET_COPY_SQL = (
+    "update cards set copy=cast(:copy as jsonb) where org_id=:o and card_id=:id "
+    "and version = coalesce(cast(:v as integer), version) and headline = :head")
+
+#: What the queue serves of it: the subject and the two lines, beside today's headline — NULL when no copy was written,
+#: and the card reads as it does today. `get_authoritative_card` (`k.*`) returns all of it. SPELLED IN PLACE in each of
+#: the queue's three doors, not joined in as a name: a statement the census reads whole stays one statement
+#: (`tests/platform/test_a_delete_is_not_a_read.py`); `tests/deliver/test_the_card_writer.py` holds the three equal.
+QUEUE_COPY_SQL = ("case when k.copy is null then null else jsonb_build_object('subject', k.copy -> 'subject', "
+                  "'summary', k.copy -> 'summary') end as copy ")
 
 #: STEP-14 (M42.C3.L-interface.V3.U04): the open cards a door is asked about (`CardStore.doors`) — a file's card, or
 #: an expert or question card from before 0220 that names no file. A module constant, so the statement census
@@ -459,6 +476,15 @@ class CardStore:
              "decision": authority.get("reasoning_decision_hash"), "cfg": authority.get("config_snapshot_id"),
              "authority_time": as_of}).first() is not None
 
+    def set_copy(self, org_id: str, card_id: str, copy: dict, *, version: int | None, headline: str) -> bool:
+        """Store the card writer's copy (GeniOS-011 S34.U3) for the version and the headline it was written from
+        (`SET_COPY_SQL`); `version=None` (a refresh, whose version the upsert does not return) holds it to the
+        headline alone. True when it landed; False when the card has moved on — then it writes nothing."""
+        with self._engine.begin() as c:
+            done = c.execute(text(SET_COPY_SQL), {"o": org_id, "id": card_id, "v": version, "head": headline,
+                                                  "copy": json.dumps(copy, default=str, sort_keys=True)})
+        return done.rowcount == 1
+
     def log_event(self, card_id, org_id, kind, *, cause=None, actor="system", detail=None, conn=None):
         row = {"id": new_id("cev"), "cid": card_id, "o": org_id, "k": kind, "cause": cause,
                "a": actor, "d": json.dumps(detail or {}, default=str)}
@@ -611,6 +637,8 @@ class CardStore:
                 "output_lane=excluded.output_lane, lane_reason=excluded.lane_reason, "
                 "recommended=excluded.recommended, alternative=excluded.alternative, "
                 "wait_or_stop=excluded.wait_or_stop, "
+                # GeniOS-011 S34.U3 (0252): new words, so the copy written for the old ones goes with them.
+                "copy=null, "
                 # ⛔ A QUESTION CARD IS REVIVED (STEP-13 M36.C2.L-integration.V2.U11, `03` X04) — its builder's
                 # and only its: re-proven above on its question's authority, so its question is still open and
                 # asked — re-bound to the run asking it now — and a card that lapsed under it comes back, the
@@ -884,20 +912,27 @@ class CardStore:
                   "and 'app' = any(k.surfaces) and k.expires_at > :authority_time ")
         q = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
              "k.situation, " + AUTHORITATIVE_SCORE_SQL +
-             " as score, k.state, k.render_mode, k.created_at, k.expires_at "
+             " as score, k.state, k.render_mode, k.created_at, k.expires_at, "
+             # GeniOS-011 S34.U3 (0252): the card writer's subject and two lines (`QUEUE_COPY_SQL`, spelled in place).
+             "case when k.copy is null then null else jsonb_build_object('subject', k.copy -> 'subject', "
+             "'summary', k.copy -> 'summary') end as copy "
              "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
              + AUTHORITATIVE_SIGNAL_JOINS + common + "and " + AUTHORITATIVE_SIGNAL_PREDICATE)
         # THE SECOND DOOR, for P4 situation cards only (see SITUATION_CARD_SQL) — team, verify and the
         # meeting follow-up alike: it keys on emit_situation's builder stamp (GeniOS-011 S36.U1). Same
         # states, surface, expiry and seat-visibility clauses; the L4 query above is untouched.
         sq = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
-              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at "
+              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at, "
+              "case when k.copy is null then null else jsonb_build_object('subject', k.copy -> 'subject', "
+              "'summary', k.copy -> 'summary') end as copy "
               "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id"
               + common + "and " + SITUATION_CARD_SQL)
         # THE THIRD DOOR, for question cards only (QUESTION_CARD_SQL): the same states, surface, expiry
         # and seat-visibility clauses, the question's own authority in place of the decision's.
         qq = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
-              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at "
+              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at, "
+              "case when k.copy is null then null else jsonb_build_object('subject', k.copy -> 'subject', "
+              "'summary', k.copy -> 'summary') end as copy "
               "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
               + QUESTION_SIGNAL_JOINS + common + "and " + QUESTION_CARD_SQL)
         params = {"o": org_id, "states": list(states),

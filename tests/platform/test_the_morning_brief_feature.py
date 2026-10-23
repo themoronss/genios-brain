@@ -51,8 +51,9 @@ def test_the_switch_is_a_named_feature_with_its_wave_and_effect():
     assert ACT.FEATURE_MORNING_BRIEF == "morning_brief"
     assert ACT.require_feature("morning_brief") == "morning_brief"
     # GeniOS-008 appended `l2_reasoning` after it (the L2 judgment pass, in shadow), and the L2 rebuild `l2_cards`
-    # (its cutover): the brief is the last feature of the YC-II waves.
-    assert ACT.L4_FEATURES[-3:] == (ACT.FEATURE_MORNING_BRIEF, ACT.FEATURE_L2_REASONING, ACT.FEATURE_L2_CARDS)
+    # (its cutover), then GeniOS-011's card writer `card_copy` (S34.U3): the brief is the last feature of the YC-II waves.
+    assert ACT.L4_FEATURES[-4:] == (ACT.FEATURE_MORNING_BRIEF, ACT.FEATURE_L2_REASONING, ACT.FEATURE_L2_CARDS,
+                                    ACT.FEATURE_CARD_COPY)
     assert ACT.FEATURE_WAVES[ACT.FEATURE_MORNING_BRIEF] == "STEP-15"
     assert ACT.PRECONDITIONS[ACT.FEATURE_MORNING_BRIEF] == ()
     assert ACT.FEATURE_MORNING_BRIEF not in ACT.CROSS_LAYER_PRECONDITIONS

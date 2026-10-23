@@ -120,6 +120,11 @@ FEATURE_L2_REASONING = "l2_reasoning"
 #: expert review does — same decision, same audit, same card path — and the expert's own R-7 call is not made for
 #: the tenant: one judgment per file, one card, one spend. Off — the default — the expert reviews as before.
 FEATURE_L2_CARDS = "l2_cards"
+#: ⛔ GeniOS-011 S34.U3 · THE CARD WRITER (C1, R-10, `deliver/card_copy`). On, each NEW card version is written once
+#: by a model from that card's own facts — subject, two lines, steps, result, the goal it moves — every sentence held
+#: to the facts it names, and kept in `cards.copy` beside today's fields. Off — the default — nothing is read and
+#: nothing is spent, and the card shows today's fields. Armed per tenant after one or two live calls are read.
+FEATURE_CARD_COPY = "card_copy"
 
 #: The features doc 07 and later steps name, in WAVE order rather than alphabetical order — the
 #: order is the only safe order to switch them on in, and a list that read `bundle, brief, critique,
@@ -130,7 +135,7 @@ FEATURE_L2_CARDS = "l2_cards"
 L4_FEATURES = (FEATURE_ROSTER_V2, FEATURE_RANKING_V2, FEATURE_BUNDLE, FEATURE_CRITIQUE,
                FEATURE_BRIEF, FEATURE_SITUATION_REASONER, FEATURE_CARDS_FROM_SITUATIONS,
                FEATURE_CALIBRATION_APPLY, FEATURE_EXPERT_REVIEW, FEATURE_MORNING_BRIEF,
-               FEATURE_L2_REASONING, FEATURE_L2_CARDS)
+               FEATURE_L2_REASONING, FEATURE_L2_CARDS, FEATURE_CARD_COPY)
 
 #: Which wave builds each feature. Carried in code rather than in a doc because it is what makes
 #: `PRECONDITIONS` checkable by eye: a feature is safe to switch on when the features its wave
@@ -148,6 +153,7 @@ FEATURE_WAVES = {
     FEATURE_MORNING_BRIEF: "STEP-15",
     FEATURE_L2_REASONING: "GeniOS-008 L2",
     FEATURE_L2_CARDS: "L2 rebuild C1",
+    FEATURE_CARD_COPY: "GeniOS-011 S34",
 }
 
 #: ⛔ FEATURES THAT ARE RETIRED — named, kept in `L4_FEATURES` so a row written before reads as what
@@ -200,6 +206,9 @@ PRECONDITIONS = {
     # The L2 judgment replaces the expert's review of a file, so both must be on: the pass that judges, and
     # the review path its result decides through.
     FEATURE_L2_CARDS: (FEATURE_L2_REASONING, FEATURE_EXPERT_REVIEW),
+    # ⛔ NONE. The writer words a card the existing path already decided and built; it consults no Layer 4 formula,
+    # and a card it cannot word keeps today's fields.
+    FEATURE_CARD_COPY: (),
 }
 
 #: THE PRECONDITIONS THAT ARE NOT LAYER 4's. `PRECONDITIONS` above orders the five switches against
@@ -328,6 +337,12 @@ EFFECTS = {
         "card in the review's own checked words — and the expert's own model call is not made for this "
         "tenant, so a file is judged once and paid once. Off, the expert reviews files as before and the "
         "L2 pass stays in shadow"),
+    FEATURE_CARD_COPY: (
+        "the card writer (R-10, Haiku-class, its own 50 cents a day) words each NEW card version once from that "
+        "card's own facts — its subject, two lines, steps, result, what to avoid, done when, if not, the "
+        "alternative and the goal it moves — and keeps only the sentences that rest on facts the card holds, in "
+        "`cards.copy`; the queue serves its subject and two lines beside today's headline. No score, lane or "
+        "recipient changes. Off, nothing is read and nothing is spent"),
 }
 
 #: Every column the record carries, in one place, so the reads below cannot select different shapes
@@ -623,7 +638,7 @@ def deactivate(engine, org_id: str, *, feature: str, by: str = "unrecorded",
 
 
 __all__ = ["CROSS_LAYER_EFFECTS", "CROSS_LAYER_PRECONDITIONS", "EFFECTS", "FEATURE_BRIEF",
-           "FEATURE_BUNDLE", "FEATURE_CRITIQUE", "FEATURE_L2_REASONING", "FEATURE_RANKING_V2",
+           "FEATURE_BUNDLE", "FEATURE_CARD_COPY", "FEATURE_CRITIQUE", "FEATURE_L2_REASONING", "FEATURE_RANKING_V2",
            "FEATURE_ROSTER_V2",
            "FEATURE_WAVES", "L4Activation", "L4_ACTIVATION_TABLE", "L4_FEATURES", "PRECONDITIONS",
            "RETIRED_FEATURES",

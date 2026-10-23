@@ -241,7 +241,10 @@ def test_the_statement_count_did_NOT_move():
     # rows already written, the eight per-day reads (cards, card_refusals, expert_reviews, reasoning_results,
     # l2_admissions, pipeline_counters, llm_costs, l4_r_site_calls), the database size, the row's insert and the
     # retention purge — the engine gaining thirteen statements.
-    assert r["statements"] == 3_427, (
+    # ⛔ MOVED 3,427 → 3,428 GeniOS-011 S34.U3 (23 Oct): `deliver/store.SET_COPY_SQL`, the card writer's one write
+    # (`cards.copy` for the version and headline it was written from) — the engine gaining one statement. The queue's
+    # copy column is spelled inside each door's literal, so the three doors stay three statements.
+    assert r["statements"] == 3_428, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
