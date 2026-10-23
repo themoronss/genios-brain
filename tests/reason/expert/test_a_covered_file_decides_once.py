@@ -412,3 +412,23 @@ def test_the_same_review_through_the_same_check_stands_on_its_key_alone(world, m
     counts = _compile(store, org, registry, covered={anchor: fp}, at=NOW + timedelta(minutes=15))
     assert counts.get("expert_standing") == 1 and [s.signal_id for s in _open_signals(store, org, anchor)] == [
         first.signal_id], counts
+
+
+
+def test_g012_a_file_with_a_live_situation_is_homed_in_it_whatever_is_newer(world):
+    """G012 H-09: a newer situation in a corpus the tenant never activated (`sales`) homed the file by recency, and
+    its shown review was decided in shadow — no card. The live one (the fund's, Founder Office) homes it now."""
+    store, org, registry, _ = world
+    anchor, situations, events = _fund(store, org)
+    with store.engine.begin() as c:
+        c.execute(text("insert into context_correlations (correlation_id, org_id, anchor_node_id, domain) "
+                       "values ('corr_g012_sales', :o, :a, 'sales')"), {"o": org, "a": anchor})
+        c.execute(text("insert into context_situations (situation_id, org_id, correlation_id, anchor_node_id, "
+                       " situation_type, domain, status, last_seen_at) values ('sit_g012_sales', :o, "
+                       " 'corr_g012_sales', :a, 'opportunity', 'sales', 'active', :at)"),
+                  {"o": org, "a": anchor, "at": NOW + timedelta(days=1)})
+    _write(store, org, anchor, "ffp-fund-first-review-00000", events)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-first-review-00000"})
+    assert counts.get("expert_shadow", 0) == 0 and counts.get("expert_emitted") == 1, counts
+    [signal] = _open_signals(store, org, anchor)
+    assert signal.situation_id in situations, "filed under the live situation, never the sales one"

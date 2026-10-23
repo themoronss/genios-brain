@@ -539,8 +539,11 @@ _CLEAR_FILE_DECISIONS = (
 _NO_MOVE = frozenset({DecisionOutcome.DEFER, DecisionOutcome.INSUFFICIENT_CONTEXT,
                       DecisionOutcome.NO_ACTION})
 
-#: Each covered file's home: its anchor's type, and the situation its decision is filed under — an
-#: active one first, then the latest. Its domain is the corpus, and so the tenant pack, it binds to.
+#: Each covered file's home: its anchor's type, and the situation its decision is filed under — one in a LIVE
+#: corpus first (G012 H-09), then an active one, then the latest. Its domain is the corpus, and so the tenant pack,
+#: it binds to. A file with a live situation was homed by recency alone: the design partner's VC file (fundraising,
+#: admin, support and — newest — a `sales/opportunity` situation, 23 Oct) homed in `sales`, a corpus the tenant
+#: never activated, and its shown review was decided in shadow — no card. A file with NO live situation is unchanged.
 #: A file with no situation anchored on it is filed under one of those it stood down
 #: (`_STOOD_DOWN_HOME`, M33.C1.L-integration.V2.U13) — since GeniOS-011 S18.U1, one of those its review
 #: EXPLAINS, read before the situation loop (`_explained_situations`).
@@ -549,7 +552,7 @@ _FILES_HOME = (
     "  from context_situations s join graph_nodes n on n.org_id = s.org_id "
     "       and n.node_id = s.anchor_node_id and n.valid_to is null "
     " where s.org_id = :o and s.anchor_node_id = any(:files) "
-    " order by s.anchor_node_id, (s.status in ('active', 'partial')) desc, "
+    " order by s.anchor_node_id, (s.domain = any(:live)) desc, (s.status in ('active', 'partial')) desc, "
     "          s.last_seen_at desc nulls last, s.situation_id")
 
 #: …or, anchored on none, one of the situations it stood down — on its people or a node no one owns.
@@ -805,8 +808,11 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
 
     if not reviews:
         return
+    # The L2 domains whose corpus is live here — what `live_lane` below would decide on the live lane.
+    live_l2 = sorted(d for d, corpus in _L2_TO_L3_DOMAIN.items()
+                     if live_lane(forced=live, domain=corpus, activated=live_domains) and corpus)
     homes = {str(r.anchor_node_id): r for r in conn.execute(
-        text(_FILES_HOME), {"o": org_id, "files": list(reviews)})}
+        text(_FILES_HOME), {"o": org_id, "files": list(reviews), "live": live_l2})}
     for file_id in sorted(set(reviews) - set(homes)):
         if stood_down.get(file_id):
             home = conn.execute(text(_STOOD_DOWN_HOME), {
