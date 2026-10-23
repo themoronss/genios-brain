@@ -1,26 +1,128 @@
-# 04 · For Harsh — production facts, actions and the read-only SQL
+# 04 · For Harsh: what was built, how to deploy it, what to do in production
 
-**Written for:** Harsh (and Rohit, who must give the permission for production reads).
+**Written for:** Harsh (CTO; owns deploys, production, switches and migrations). Rohit reads §0 and §4.
 
-GeniOS-011 starts by measuring production, because nobody has since the big merge reached the prod branch. Three things only you can answer come first:
+**Where it is:** `origin/speedrun008` (see [03-LOG](03-LOG.md) for the head SHA).
+- It is a strict descendant of `origin/harsh/mvp` `0cc8d83c` (your 22 Oct head, CI green). So it merges into `harsh/mvp` as a **fast-forward**, with no conflict.
+- Two built-and-held units are on their own remote branches: `g011-S02U5` and `g011-S16U3` (§3).
 
-1. **What is deployed, and since when** (S01.U3).
-   - The SHA the deploy host runs, and the date it went live.
-   - Whether migrations 0191–0250 are applied: `select max(version) …` and the list since 0191.
-   - Which env switches are set (`GENIOS_NEED_FETCHERS`, the `l4_llm_*` flags).
-2. **Is Rohit's org still running at all** (S02.U1).
-   - Since `7075014c` (4 Oct), the scheduled sweep skips the whole L1 → L5 chain for an org whose plan expired. The warm lane refuses its events too.
-   - That commit measured Rohit's grace as closed on 21 Sep, and nothing in the repo extends it.
-   - If his org is expired, only a manual **Sync now** reasons for it. That alone would explain "fewer cards, sometimes".
-   - Fix: put his org (and the design partners) on a non-expiring internal plan.
-3. **Which switches are on for his org** (S02.U3).
-   - These tables decide which path makes his cards: `l4_activation` (`expert_review`, `l2_reasoning`, `l2_cards`, …), the L1/L2/L3 activation tables, and the Founder Office domain.
-   - All of them default off.
+**What GeniOS-011 is:** the 23 Oct audit (255 verified items, [05](05-EXPECTED-VS-ACTUAL.md)) and its plan ([02](02-PLAN.md)). [08-LOOPHOLES](08-LOOPHOLES.md) is the shortest read: 23 reasons the website does not make the cards Rohit's local ideal dashboard shows.
 
-After that, the readings in §2 give the baseline. Every item below names the step it unblocks.
+---
 
+## §0 · TL;DR: your list, in order
 
-## 1 · Production actions in the plan (yours, or yours with Rohit)
+| # | Do | Why (loophole) | How | Done when |
+|---|---|---|---|---|
+| 1 | **Tell us what is deployed** | F1, A3 | The SHA and the date the deploy host runs. Whether migrations 0191–0250 are applied: `select filename, applied_at from schema_migrations where filename >= '0191' order by 1;` | written into [03-LOG](03-LOG.md) |
+| 2 | **Is Rohit's org expired?** If yes, put it (and the design partners) on a non-expiring internal plan | **A1**: since `7075014c` the sweep skips the whole chain for an expired org | `select id, subscription_tier, plan_status, plan_expires_at, grace_until, is_internal from orgs where id = '<ORG>';` (reading `org_plan_state` in S01.U1), then your plan tool or the admin route. Pricing rules stay as you restored them in `4f791884`. | the sweep runs for his org (a `daily_health` row tomorrow, §2) |
+| 3 | **Deploy `origin/speedrun008`** | everything in §1 | Fast-forward `harsh/mvp` to it. Set `GENIOS_BUILD_SHA=<sha>` in the deploy env. Migration **0251** applies at boot (`main.py:89` `apply_migrations`). | `GET /health` → `build_sha` = the SHA, `schema_head` = `0251_daily_health.sql` |
+| 4 | **Run the read-only readings** (with Rohit's permission) | every "unknown" item | `python scripts/g011_prod_readings.py --org <ORG> --show-sql` (prints, opens nothing), then `--out readings.json`. One read-only transaction; it refuses anything but SELECT/WITH/SHOW. | `readings.json` sent to Rohit/Claude. **Never commit it** (real data). |
+| 5 | **Switches for Rohit's org** | **A2** | Read `l4_activation`, `l1/l2/l3` activation and the Founder Office domain for `<ORG>` (SQL in §5). Switch on `expert_review` and Founder Office. Leave `l2_reasoning`/`l2_cards` off until the real-model pass (§4 #3). | the readings show them on |
+| 6 | **365-day resync of his Gmail and Calendar** | **B1**: the default window is 60 days; the Theresa/Antler thread is 77 days old | PATCH `/connections/{id}/backfill-window` to 365 days (or after S09.U1 ships, the founder's pick). Then `python scripts/resync_deleted_mail.py --org <ORG> --days 365` (dry run first, then `--apply`). **Quota:** the resync can fill the ingestion meter (see #2). | `l1_sync_runs` shows the backfill; the funnel's events-in rises |
+| 7 | **Arm the evidence fetchers** | **B6** | `GENIOS_NEED_FETCHERS=on` in env (after #3). | `evidence_needs` rows move off `open` |
+| 8 | **Branch protection** (with Rohit, repo admin) | **F1**: the prod branch took red CI four times | Require the `ci` checks on `harsh/mvp`, and let the deploy host build green SHAs only. | a red PR cannot merge |
+| 9 | **D23 Boardy promotion** (dry run first, Rohit reads the list) | old archived intros | `python scripts/promote_archived.py --org <ORG>` (dry), then `--apply --crypto-key …` with `GENIOS_ALLOW_PROD_WRITE=1`. **Changed by S06.U2:** `--apply` now re-fetches each body through the connector before promoting, and a mail that can't be fetched stays archived ("NOT FETCHED"). | promoted mail has full bodies |
+| 10 | **Do NOT** add an `org_channels` email row yet | S37.U2 note | Email is registered but has **no transport**. An email row before a provider exists makes every card fail its one email delivery. | — |
+
+---
+
+## §1 · What is on `origin/speedrun008`: every unit, what it changes, how to see it, how to roll back
+
+Each unit is one commit with its own tests and a **mutation proof**: the change was reverted, its test went red, and it was restored. The integrator (Claude) re-ran every test and redid one mutation per unit. The hermetic suite across all folders is green (~19,200). Golden: board unchanged (63/4 on both paths, the same four failing). **Rollback of any unit** = `git revert <commit>`; units are independent except where noted.
+
+### L1 Signals (`capture/`)
+
+| Unit · commit | What changes in behaviour | Flags / env | What you should see after deploy | Risk |
+|---|---|---|---|---|
+| **S06.U1** `c90cdc3a` | The parked drain **never re-admits an archive** any more. An `llm_junk` archive whose gate version changed is filed as a pending `llm_junk_rejudge` park and re-judged only from the **whole message**. Every S2 verdict now records `gate_version`. | — | Fewer junk extractions. `capture_park` rows with code `llm_junk_rejudge` appear only after a gate prompt change. | Until the whole-message reader is wired into `api/routes._reread_unread` (open, next unit), a re-judgment waits `pending`. Nothing is filed until a gate change, because only new verdicts carry a version. |
+| **S06.U2** `5c93b2ae` | A failed or refused Gmail full fetch **retries once (1 s), then parks as DOC-05**. It is never stored as the snippet. Gmail `_execute` has a hard deadline. `SyncSummary.body_fetch_failed` counts it. `promote_archived --apply` re-fetches. `composio.whole_message_reader` exists. | `GENIOS_L1_FULL_FETCH_RETRY_PAUSE_S` (default 1) | DOC-05 parks on `email_message` when Gmail refuses; a `document_jobs` row with `fetch_failed`. | The DOC-05 email parks have **no re-fetch rung yet**; they wait `pending` (visible in `read_aging`). The count is in `SyncSummary`, not yet a column of `l1_sync_runs`; that needs `alter table l1_sync_runs add column if not exists body_fetch_failed integer not null default 0` plus the `_run_ledger` insert (next routes unit). |
+
+### L3 Context Graph (`context/`)
+
+| Unit · commit | What changes | What you should see | Risk |
+|---|---|---|---|
+| **S14.U1** `ee46dc5f` | A reply after a reading **joins the counterparty's file**. Thread inheritance, the backfill skip and the workstreams "filed" count read engine-owned correlations only (a join on `context_correlations`). | Fewer "unfiled" counterparties in context health. More events in files. | The backfill pass now files events only a reading had declared, so a one-time catch-up on the next backfill run is expected. |
+
+### L2 Qualification (`reason/`)
+
+| Unit · commit | What changes | What you should see | Risk |
+|---|---|---|---|
+| **S18.U1** `c4bfba7a` | Judged (expert/L2) files are **decided before the formula situation loop** spends the 7-a-day cap. Every no-card reason (`covered_without_situation`, `expert_no_tenant_pack`, `expert_shadow`, `budget_exhausted`, `expert_error`) is in `covered_no_card` and logged at **WARNING** with the file id. | Expert cards are no longer crowded out by template cards. WARNING lines name lost files. | The daily allowance is now taken from the first covered file's pack. An unadmitted situation the review explains can now be a file's home. |
+| **S18.U2** `4c96dfa5` | `l2_judges` requires `l2_cards` **and** `l2_reasoning` **and** a buildable R-9 client; otherwise R-7 reviews as before and logs a WARNING. A per-call over-budget refusal carries **only that file** (the daily cap still stops the pass). | With `l2_cards` on and `l2_reasoning` off, the expert still reviews (before, nothing did). | A tenant with `l2_cards` on and no model returns `skipped: no_model_configured` with two WARNINGs. |
+| **S18.U3** `7fdd410b` | `run_all` puts **8 why-no-card counts** on the sweep outcomes (judged, held, refused, truncated, carried_budget, fell_back, covered_not_carded, budget_exhausted) and logs one line per sweep. It logs `l2_pass`'s skip. `scripts/pipeline_health.py` gains `check_the_l2_judgment_says_why`. `GET /v1/workstreams/{file_id}` gains `why_no_card` (`reason`, `says`). | Run `python scripts/pipeline_health.py`: the new check reads `reasoning_results`, `l2_admissions` and R-9 spend. The file page says why it has no card. | The counts are not yet persisted per sweep: `_run_l2_chain` does not store `outcomes` (S05.U1's daily row reads the tables instead). |
+| **S27.U1** `bb0060b7` | **Goals, interim:** the weekly brief review now drafts for **every tenant**, not only one with an accepted line, and re-claims a failed week. The drafter (prompt v4) sees **files, open situations and in-motion lines** and proposes **one goal per piece of work** (deduped). | New goal **proposals** on the Goals page (accept/reject). | **Cost:** one Sonnet-class call per tenant per week, now for every tenant with memory (`no_patterns` makes no call). Skipping expired orgs is an open follow-up. |
+
+### L5 Delivery (`deliver/`) and surfaces
+
+| Unit · commit | What changes | What you should see | Risk |
+|---|---|---|---|
+| **S36.U1** `f3579b0d` | The situation-card door keys on its **builder** (`team.emit.v1`, no run, rule = capability), not a `team./verify.` prefix. | **Meeting follow-up cards** appear in `GET /cards` and open (before: 404). | — |
+| **S36.U2** `8c5cd041` | **One live-card fragment** (decision + situation + question doors) for every reader: morning brief / Home Today, Context panel, `/v1/insights` and dismiss, MCP session, agent poll, push, outbox, Ask recall. `PUSH_CARD_DOORS = ("decision",)`. An AST guard fails any card SQL naming its own door. | Question and follow-up cards on Home, MCP and Ask. | Recall now grounds on live cards, not open signals. Agent keys still see decisions only, and feedback on a question card from the extension returns 409 (both product calls for Rohit). |
+| **S37.U2** `6224ccaa` | `get_channel('email')` returns `EmailChannel`, **OFF**. `TRANSPORTS` is empty and a test pins it. `CHAT_CHANNELS` gains email, so quiet hours apply. | Nothing, until a provider exists (Rohit, S37.U1). | §0 #10: no email row before a transport. |
+
+### Process, measurement, goals docs
+
+| Unit · commit | What it is | How you use it |
+|---|---|---|
+| **S03.U1** `67404da2` | `GET /health` returns `build_sha` (env `GENIOS_BUILD_SHA`, `'dev'` if unset) and `schema_head` (latest `schema_migrations` filename, null on a read error, never raises). | Set `GENIOS_BUILD_SHA` at deploy; check it after. |
+| **S05.U1** `aa338284` | **Migration `0251_daily_health`** plus `platform/daily_health.py`. After each heavy tick (fail-open, 20-minute bound) it writes yesterday's row per org: cards by builder and lane, refusals by rule, expert, L2 and admission counts, the funnel's five numbers, LLM calls, failures and truncations, R-site outcomes and DB size. It runs once a day by key. **ops_alert** fires when cards fall below half the 14-day median, when a lane with a non-zero median is empty all day, or when the **DB passes 450 MB** (`GENIOS_DB_SIZE_CEILING_MB`). Rows older than 120 days are purged. `/reset` erases it (`7d3a5c7b`). | `select * from daily_health where org_id='<ORG>' order by day desc limit 7;` ⚠ Production was 446 MB on 19 Oct, so the size alert will likely fire; that is intended, and you can raise the env value. |
+| **S01.U1** `1c66931b` | `scripts/g011_prod_readings.py`: 86 read-only readings keyed by audit item (§0 #4). The builder fixed 3 SQL errors in the audit's own queries. | §0 #4 |
+| **S07.U1** `7c353eb5` | `scripts/golden_eval.py` asks R-9 on `claude-sonnet-5` with its site settings (thinking off, 8,000), `--l2-path`, and `--probe` (≤2 live calls, prints stop_reason/output_tokens). | Only with Rohit's spend yes (S07.U2). |
+| **S40.U2** `88473081` | `GET /feedback/precision` also returns the last **shadow** calibration (would mute, recover or nudge, with precision and n) and precision by layer. Read-only; `calibration_apply` untouched. | Look before ever arming calibration (D13 stays off). |
+| **S04.U1** `c6e10ee4`, **S04.U3** `5044b70b`, `a77fd748` | CI guards: the nine situation writers may only shrink; model sites stay in their layer (6 out-of-place sites pinned, shrink-only); no fixed calendar date beside a wall-clock read; the clock-at-import guard reads every import statement. | They fail CI when a new violation lands. |
+| **S26.U2** `f5ed8a19`, **S26.U3** `742859dd` | Docs: GeniOS-009 corrected. `00-ARCHITECTURE` defines the goal object, `GoalImpact` and `GoalProposal`. GeniOS-009 gains G1.6/G3.5/G4.5/G6.8 and F72; D7/D9–D12 recorded from Rohit's words ("goals manually nahi daal sakte"): L2 proposes, he approves in one click via the brief door. | Read before building G1. |
+
+---
+
+## §2 · After the deploy: what to check (15 minutes)
+
+1. `curl https://api.thegenios.com/health` returns `build_sha` = the deployed SHA and `schema_head` = `0251_daily_health.sql`.
+2. Logs of the next heavy tick:
+   - a `why no card` line per sweep (S18.U3);
+   - WARNINGs naming lost files (S18.U1/U2);
+   - `daily_health` written.
+3. `select * from daily_health order by day desc limit 5;` has a row for each active org.
+4. Rohit's Cards page:
+   - meeting follow-ups open;
+   - question cards show on Home Today.
+5. `python scripts/pipeline_health.py` shows `check_the_l2_judgment_says_why` as PASS or NO DATA, never FAIL without a reason.
+
+If anything breaks: revert the one unit (table in §1). Migration 0251 is additive (one new table) and safe to leave.
+
+---
+
+## §3 · Built, verified, and held on purpose (do not merge yet)
+
+| Branch | Unit | What it does | Why it is held | Merge when |
+|---|---|---|---|---|
+| `g011-S02U5` (`15a86e31`) | Every sweep skip is a row | Every gate refusal (paused, plan_expired, over_budget, sync_quota) writes an `l1_sync_runs` row with its reason. All four doors (sweep, Sync now, sync one, backfill) ask one `_sweep_gate`. The quota bypass is logged and audited. 82 tests; mutation red. | It makes **Sync now refuse an expired org**. If Rohit's org is expired (A1), Sync now is his only remaining source of cards. | §0 #2 is done, so his org is on an internal plan |
+| `g011-S16U3` (`bd260f0a`) | The L2 snapshot is as-of, with unknowns and contradictions | `read_snapshot(as_of=)` is required, and block B shows typed absences and open contradictions. 14 tests, 9 mutants red. | Golden replays judge at past instants, but `recorded_at` is wall-clock, so on the L2 path every replay snapshot loses its edges. That path is the measurement for switching `l2_cards` on. | the replay harness pins knowledge time (new unit) |
+
+---
+
+## §4 · What only Rohit decides (Harsh: nothing to do until he answers)
+
+1. **Production read permission**, or he runs §0 #4 himself.
+2. **STEP-13b go.** It merges the claim-check fixes that cut held cards from 79% to 18.5% (branches `yc2w27-int13b`/`yc2w27-s13b`). Loophole D5.
+3. **~$5 for one real-model pass** (S07.U2). Loophole D10.
+4. **Founder playbooks "label and use"** (D6) · **D57** quiet files (D7) · **L1 contract words** (B5) · **email provider** (S37.U1).
+All are in [06-DECISIONS](06-DECISIONS.md), each with a recommended default.
+
+---
+
+## §5 · Known issues you will meet
+
+- **Golden runs on a shared scratch DB collide.** `tests/replays/engine_runner.py` (~line 581) upserts `connections` on the global `connection_id`, so overlapping runs steal each other's mailbox and give false CassetteMiss. Run golden alone. A fix unit is open.
+- **F45 missed only in a whole-lane local run** (4 tests); the four files in full gave 272 passed. CI's `golden-pg` job decides; see 03-LOG.
+- **Pre-existing failures** (fail on `0cc8d83c` too): 6 in `tests/reason/adapters/test_l3_pilot_report.py` and `test_roster_reaches_the_audit.py`.
+- **The repo is public** and carries Rohit's address and the prod org id in older files. Making it private is Rohit's call (06). This folder redacts them.
+
+---
+
+# Appendix (generated from the audit)
+
+## A1 · Production actions in the plan (yours, or yours with Rohit)
 
 | Unit | What | Done when | Owner |
 |---|---|---|---|
@@ -46,7 +148,7 @@ After that, the readings in §2 give the baseline. Every item below names the st
 | [S38.U3](02-PLAN.md#s38) | Signed release and one download | Harsh tags desktop-v0.3.x, the release workflow builds the installers (Developer ID signing), and the Download link points at the release; DMGs only via scripts/mac-dev-dmg.sh. | harsh |
 | [S41.U2](02-PLAN.md#s41) | Layer 3 folder | Rohit opens L3; then 00–04 written from the L3 audit, recording L3-1…L3-7 status and Harsh's nine commits; Harsh commits docs/plans/L1_REBUILD_PLAN.md. | rohit+harsh |
 
-## 2 · Every production question, with its read-only SQL
+## A2 · Every production question, with its read-only SQL
 
 Run each inside `begin transaction read only; … rollback;`. Replace `<ORG>` with Rohit's org id. Send the output back (paste into `speedrun008/GeniOS-011/readings/` or to Rohit) — S01 turns it into the measured baseline every later step is judged against.
 
