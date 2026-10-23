@@ -116,13 +116,14 @@ Production must decide which of these it is. S01's readings answer it.
 | # | File | What it holds |
 |---|---|---|
 | 00 | this file | the answers, the numbers, what is being built, what Rohit and Harsh must do |
-| 07 | [07-LOOPHOLES](07-LOOPHOLES.md) | **the shortest read:** 23 loopholes that stop the website making the cards of Rohit's local ideal dashboard, each with evidence, effect, fix and owner |
+| 08 | [08-LOOPHOLES](08-LOOPHOLES.md) | **the shortest read:** 23 loopholes that stop the website making the cards of Rohit's local ideal dashboard, each with evidence, effect, fix and owner |
 | 05 | [05-EXPECTED-VS-ACTUAL](05-EXPECTED-VS-ACTUAL.md) | 170 open items by layer, P0 first: expected (with its source), actual (with evidence), what Rohit sees, fix, owner, step |
 | 01 | [01-WHAT-WENT-WRONG](01-WHAT-WENT-WRONG.md) | the patterns, 61 mistakes with evidence and the rule each one teaches, and the mistakes inside other items |
 | 02 | [02-PLAN](02-PLAN.md) | 43 steps / ~140 units in order, the critical path, files, done-when, owner, dependencies |
 | 06 | [06-DECISIONS](06-DECISIONS.md) | 33 decisions for Rohit, each with today's truth and the recommended default |
 | 04 | [04-FOR-HARSH](04-FOR-HARSH.md) | production facts, actions, and the read-only SQL for every production question |
 | 03 | [03-LOG](03-LOG.md) | append-only: what was built, by whom, verified how |
+| 07 | [07-IDEAL-PREVIEW-LIVE](07-IDEAL-PREVIEW-LIVE.md) | for Harsh: what makes every goal and card of brain.thegenios.com/preview come from the brain — why it does not today, card by card, the order (phases A–F), and new units N1–N6 |
 | data | [data/audit-2026-10-23.json](data/audit-2026-10-23.json) | every verified item as data (addresses and the org id redacted) |
 
 ## Status, 23 Oct evening

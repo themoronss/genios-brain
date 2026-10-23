@@ -6,7 +6,7 @@
 - It is a strict descendant of `origin/harsh/mvp` `0cc8d83c` (your 22 Oct head, CI green). So it merges into `harsh/mvp` as a **fast-forward**, with no conflict.
 - Two built-and-held units are on their own remote branches: `g011-S02U5` and `g011-S16U3` (§3).
 
-**What GeniOS-011 is:** the 23 Oct audit (255 verified items, [05](05-EXPECTED-VS-ACTUAL.md)) and its plan ([02](02-PLAN.md)). [07-LOOPHOLES](07-LOOPHOLES.md) is the shortest read: 23 reasons the website does not make the cards Rohit's local ideal dashboard shows.
+**What GeniOS-011 is:** the 23 Oct audit (255 verified items, [05](05-EXPECTED-VS-ACTUAL.md)) and its plan ([02](02-PLAN.md)). [08-LOOPHOLES](08-LOOPHOLES.md) is the shortest read: 23 reasons the website does not make the cards Rohit's local ideal dashboard shows.
 
 ---
 

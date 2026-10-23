@@ -25,6 +25,8 @@ The running example is the ideal dashboard's **Theresa / Antler card (`i1`)**. I
 
 > ⚠ No text from that dashboard is copied into this repository. It holds Rohit's real mail. The field names are what we measure against. S44.U1 (`scripts/ideal_card_gap.py`) scores product cards against it field by field, on his machine only.
 
+**See also [07-IDEAL-PREVIEW-LIVE](07-IDEAL-PREVIEW-LIVE.md)**, written by another session on 23 Oct. It covers the same target card by card, at `brain.thegenios.com/preview` (owner-only), and adds units N1–N6. This file is the layer-by-layer view. S44.U1 (`ideal_card_gap.py`, field by field) is the field-level complement to 07's N5 (`preview_parity.py`, whether each card is present).
+
 Status key:
 - ✅ fixed in GeniOS-011 (on `origin/speedrun008`, not yet deployed);
 - ⏸ built and held;
