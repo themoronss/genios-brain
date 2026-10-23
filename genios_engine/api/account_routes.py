@@ -641,6 +641,10 @@ RETAINED_AFTER_ERASURE: frozenset[str] = frozenset({
 })
 
 _ORG_SCOPED_TABLES = [
+    # GeniOS-011 S05.U1 (0251): one health row per org per day — counts of the tenant's cards, refusals, reviews
+    # and judgments. Derived from the tables below, never content; a reset tenant starts its baseline afresh,
+    # and an old median would alert against a tenant that no longer exists.
+    "daily_health",
     # STEP-14 (0222): what the card contract refused — the tenant's card words, as refused.
     "card_refusals",
     # migrations 0147-0149 (P3 hot lane): moments name the tenant's counterparties; feedback
