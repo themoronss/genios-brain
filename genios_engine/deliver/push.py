@@ -7,13 +7,10 @@ from datetime import datetime, timezone
 
 from sqlalchemy import text
 
+from genios_engine.deliver.store import PUSH_CARD_FROM
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
-from genios_engine.reason.authority import (
-    AUTHORITATIVE_SCORE_SQL,
-    AUTHORITATIVE_SIGNAL_JOINS,
-    AUTHORITATIVE_SIGNAL_PREDICATE,
-)
+from genios_engine.reason.authority import AUTHORITATIVE_SCORE_SQL
 
 # Outbound delivery to agents (GeniOS -> executor). Two flavours, one transport.
 #
@@ -54,15 +51,13 @@ def _active_agent_webhooks(conn, org_id: str) -> list[dict]:
 
 
 def _card_projection(conn, org_id: str, card_id: str) -> dict | None:
-    """Exactly the poll_signals shape (deliver/agent_api.py) — push == poll."""
+    """Exactly the poll_signals shape (deliver/agent_api.py) — push == poll, through the one fragment both read
+    (`deliver/store.PUSH_CARD_FROM`: the push lanes' declared door, `store.PUSH_CARD_DOORS`; GeniOS-011 S36.U2)."""
     r = conn.execute(text(
         "select k.signal_id, k.card_id, k.urgency_band, k.headline, k.situation, "
-        + AUTHORITATIVE_SCORE_SQL + " as score, k.score_block, k.state, k.created_at "
-        "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
-        + AUTHORITATIVE_SIGNAL_JOINS +
-        " where k.org_id=:o and k.card_id=:c and s.status='open' "
-        "and k.state in ('queued','surfaced','snoozed','delivered') "
-        "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE),
+        + AUTHORITATIVE_SCORE_SQL + " as score, k.score_block, k.state, k.created_at" + PUSH_CARD_FROM +
+        "where k.org_id=:o and k.card_id=:c "
+        "and k.state in ('queued','surfaced','snoozed','delivered')"),
         {"o": org_id, "c": card_id,
          "authority_time": datetime.now(timezone.utc)}).mappings().first()
     return dict(r) if r else None

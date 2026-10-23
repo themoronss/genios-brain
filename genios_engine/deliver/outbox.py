@@ -55,6 +55,7 @@ from genios_engine.deliver.gate import (
     defer_until,
     describe_decision,
 )
+from genios_engine.deliver.store import PUSH_CARD_FROM
 from genios_engine.executive.communication import may_interrupt
 from genios_engine.executive.execution import execution_config
 from genios_engine.platform.ids import new_id
@@ -509,12 +510,15 @@ def commitment_backlog_counts(conn, org_id: str) -> tuple[int, int]:
 #: superseded, or which expired — and the only visible symptom would be that the agent got MORE
 #: than the dashboard. One string means the two lanes cannot disagree about what "pushable"
 #: means, even by accident.
+#:
+#: ⛔ ITS DOOR IS DECLARED, NOT INHERITED (GeniOS-011 S36.U2). The FROM is `deliver/store.PUSH_CARD_FROM` — the one
+#: live-card fragment every card reader reads, at the push lanes' door `store.PUSH_CARD_DOORS`: the decision alone.
+#: A push lane never sends a question card or a situation card; the reasons sit beside the constant. The liveness
+#: (signal open, card unexpired, the decision's authority) is the fragment's, so it is said once (``s.status='open'``
+#: is inside it); the lanes' own clauses follow it.
 PUSHABLE_CARDS_SQL = (
-    "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
-    AUTHORITATIVE_SIGNAL_JOINS +
+    PUSH_CARD_FROM +
     "where k.org_id=:o and k.state in ('queued','surfaced') "
-    "and s.status='open' and k.expires_at>:authority_time and " +
-    AUTHORITATIVE_SIGNAL_PREDICATE + " "
     "and k.urgency_band in ('high','critical') "
 )
 #

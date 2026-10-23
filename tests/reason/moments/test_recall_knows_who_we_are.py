@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 import pytest
 from sqlalchemy import text
 
+from genios_engine.deliver.store import live_cards_about
 from genios_engine.platform.self_identity import identity_for
 from genios_engine.reason.moments import recall as R
 
@@ -55,7 +56,7 @@ def _internal(store, key: str) -> bool:
                                          display_name=key, event_id="evt_u25")
     with store.engine.connect() as c:
         out = R.read(c, org_id=ORG, subject=R.Subject(node_id=node, node_type="person", name=key),
-                     me=None, viewer=None, us=identity_for(c, ORG), now=NOW)
+                     me=None, viewer=None, us=identity_for(c, ORG), now=NOW, live_cards=live_cards_about)
     return out.internal
 
 

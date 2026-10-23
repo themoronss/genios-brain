@@ -26,9 +26,10 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from genios_engine.platform.auth import AuthCtx, get_current_org, require_workspace_user
-from genios_engine.reason.authority import (AUTHORITATIVE_SCORE_SQL,
-                                            AUTHORITATIVE_SIGNAL_JOINS,
-                                            AUTHORITATIVE_SIGNAL_PREDICATE)
+from genios_engine.deliver.store import LIVE_CARD_FROM
+from genios_engine.deliver.store import LIVE_CARD_RANK_SQL
+from genios_engine.deliver.store import LIVE_CARD_SCORE_SQL
+from genios_engine.deliver.store import live_card_params
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.crypto import decrypt, encrypt
 from genios_engine.platform.ids import new_id
@@ -258,9 +259,14 @@ def build_morning_brief(org: str, *, seat_id: str | None = None) -> dict:
 
     AUTHORITY IS RE-CHECKED HERE, not assumed from the card row. A card is a rendering of a Layer
     4 decision, and a decision stops being authoritative when the graph moves, the pack changes or
-    the signal closes — so this joins the same `AUTHORITATIVE_SIGNAL_PREDICATE` the extension feed
-    and the delivery gate use. A brief is the one surface a person acts on without opening
-    anything else; it may not be the surface that shows a superseded conclusion.
+    the signal closes. A brief is the one surface a person acts on without opening anything else;
+    it may not be the surface that shows a superseded conclusion.
+
+    ⛔ THROUGH EVERY DOOR (GeniOS-011 S36.U2). This joined the decision's authority alone, so the
+    Home "Today" card the dashboard draws from this route never showed a question card or a
+    situation card (team, verify, the post-meeting follow-up) — cards the Cards page did show. It
+    reads `deliver/store.LIVE_CARD_FROM` now, the queue's three doors in one fragment, each card
+    re-proved by its own door's authority.
 
     NAGS stay what they were — the user's own overdue tasks, real and non-intelligence — and are
     kept separate from `priorities` for that reason: one is a to-do list the user wrote, the other
@@ -282,16 +288,13 @@ def build_morning_brief(org: str, *, seat_id: str | None = None) -> dict:
         rows = c.execute(text(
             "select k.card_id, k.headline, k.situation, k.why_now, k.level, k.urgency_band, "
             "k.business_subject, k.unresolved_item, k.do_nothing_consequence, "
-            "k.abstained_because, k.outcome_window_days, " + AUTHORITATIVE_SCORE_SQL + " as score, "
-            "n.display_name as entity "
-            "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
-            AUTHORITATIVE_SIGNAL_JOINS +
+            "k.abstained_because, k.outcome_window_days, " + LIVE_CARD_SCORE_SQL + " as score, "
+            "n.display_name as entity" + LIVE_CARD_FROM +
             "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
             "and n.valid_to is null "
-            "where k.org_id=:o and k.state in ('queued','surfaced') and s.status='open' "
-            "and k.expires_at > :now and " + AUTHORITATIVE_SIGNAL_PREDICATE + seat_clause + " "
-            "order by selected_rc.final_utility_bp desc, k.created_at desc, k.card_id"),
-            {"o": org, "authority_time": now, "now": now, **seat_params}).fetchall()
+            "where k.org_id=:o and k.state in ('queued','surfaced')" + seat_clause + " "
+            "order by " + LIVE_CARD_RANK_SQL + " desc, k.created_at desc, k.card_id"),
+            {"o": org, **live_card_params(now), **seat_params}).fetchall()
 
     nags = [{"id": r.id, "nag": f"{r.text} — still open"} for r in overdue]
     priorities = [{
@@ -418,31 +421,29 @@ def context_bundle(org_id: str, req: ContextLookup, org: str = Depends(_org)) ->
         # conclusion about the same person sat in `cards`, unread by this endpoint. That is the
         # literal shape of the complaint that a fact is being handed back as intelligence.
         #
-        # Same authority join as the brief and the extension feed: a superseded decision must not
-        # appear on a panel somebody acts from. Cards stay a SEPARATE block rather than being
-        # folded into `facts` — the Context page's job is what is known, and a decision is not a
-        # fact about the counterparty, it is a judgment about what to do.
+        # Same live-card fragment as the brief and the extension feed (`deliver/store.LIVE_CARD_FROM`,
+        # every door — GeniOS-011 S36.U2): a superseded decision must not appear on a panel somebody
+        # acts from, and a question or follow-up about this person must. Cards stay a SEPARATE block
+        # rather than being folded into `facts` — the Context page's job is what is known, and a
+        # decision is not a fact about the counterparty, it is a judgment about what to do.
         cards = c.execute(text(
             "select k.card_id, k.headline, k.situation, k.why_now, k.level, k.urgency_band, "
             "k.unresolved_item, k.do_nothing_consequence, k.abstained_because, "
-            "k.outcome_window_days, " + AUTHORITATIVE_SCORE_SQL + " as score "
-            "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
-            AUTHORITATIVE_SIGNAL_JOINS +
+            "k.outcome_window_days, " + LIVE_CARD_SCORE_SQL + " as score" + LIVE_CARD_FROM +
             # THE ANCHOR COUNTS AS THE PERSON. A compiled card's signal is anchored on the
             # synthetic `outreach` / `commitment` node the state readings mint, which `concerns`
             # the counterparty one edge away — so a panel matching only on `subject_node_id`
             # showed no decisions for the very person the decision is about. Matching the
             # `concerns` edge is the same hop `build_context_slice` and the neighbourhood walk
             # already take; it invents no relationship.
-            "where k.org_id=:o and s.status='open' and (s.subject_node_id=:n or exists ("
+            "where k.org_id=:o and (s.subject_node_id=:n or exists ("
             "  select 1 from graph_edges ge where ge.org_id=k.org_id "
             "  and ge.edge_type='concerns' and ge.from_node_id=s.subject_node_id "
             "  and ge.to_node_id=:n and ge.valid_to is null)) "
             "and k.state in ('queued','surfaced','snoozed','claimed') "
-            "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE + " "
-            "order by selected_rc.final_utility_bp desc, k.card_id limit 10"),
+            "order by " + LIVE_CARD_RANK_SQL + " desc, k.card_id limit 10"),
             {"o": org, "n": node.node_id,
-             "authority_time": datetime.now(timezone.utc)}).fetchall()
+             **live_card_params(datetime.now(timezone.utc))}).fetchall()
 
     fact_rows = [f for f in facts if f.field != "commitment.due_at"]
     commit_rows = [f for f in facts if f.field == "commitment.due_at"]

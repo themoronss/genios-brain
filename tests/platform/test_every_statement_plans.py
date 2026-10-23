@@ -65,7 +65,9 @@ NOT_SQL: dict[tuple[str, str], str] = {
 #: that branch carried — `scripts/screen_cost_report.py` (75d08481) picks its `device_id` column at
 #: run time because migration 0212 may not be applied yet, and `scripts/purge_reasoning_now.py`
 #: (b9a21d91). Read-only reports and a manual purge, not engine paths.
-ASSEMBLED_AT_RUN_TIME = 274
+#: ⛔ MOVED 274 → 273 by GeniOS-011 S36.U2 (23 Oct): Ask's recall read (`reason/moments/recall.read`, its fragments
+#: imported inside the function) is now `deliver/store._LIVE_CARDS_ABOUT`, a module constant the census resolves.
+ASSEMBLED_AT_RUN_TIME = 273
 
 #: ⛔ A FLOOR UNDER WHAT IS PLANNED, so a census that stopped reading — an import that broke, a
 #: resolver that regressed — fails rather than passing over less. Measured 2,053 at the build.

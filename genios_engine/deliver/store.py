@@ -10,6 +10,7 @@ from genios_engine.platform.db import get_engine
 from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.authority import (
+    AUTHORITATIVE_REASON_CODE_SQL,
     AUTHORITATIVE_SCORE_SQL,
     AUTHORITATIVE_SIGNAL_JOINS,
     AUTHORITATIVE_SIGNAL_PREDICATE,
@@ -58,6 +59,110 @@ QUESTION_CARD_SQL = (
     "k.builder_version = :question_builder and " + QUESTION_SIGNAL_LIVE +
     "and (question_asked.state='open' "
     "     or (question_asked.state='answered' and k.output_lane='" + ANSWERED_LANE + "')) ")
+
+# ── GeniOS-011 S36.U2 · ONE LIVE-CARD FRAGMENT FOR EVERY READER ──────────────────────────────────────────────────────
+#
+# ⛔ `surfaces-question-and-team-cards-reach-only-the-cards-page`. The queue below reads three doors — the decision's
+# authority, the P4 situation door, the question door — and every OTHER reader of open cards joined the decision's
+# alone: the morning brief (Home "Today"), the Context panel, `/v1/insights`, the MCP `list_cards` tool, Ask's recall.
+# STEP-13's question card and every situation card (team, verify, the P-16 meeting follow-up) were on the Cards page
+# and nowhere else — a door added in one place reached one reader. The doors now live in ONE fragment, and
+# `tests/deliver/test_every_card_reader_uses_the_live_fragment.py` fails any statement that reads `cards` through a
+# door it names itself unless it is declared there with why.
+#
+# The fragment is a FROM: the card, its signal, and the liveness every reader needs — the signal open, the card
+# unexpired, one door passed. The reader appends its own joins and its own `where` (its org, states, seat rules):
+#
+#     "select k.card_id, " + LIVE_CARD_SCORE_SQL + " as score" + LIVE_CARD_FROM + " where k.org_id=:o and …"
+#
+# with `live_card_params(at)` bound. The decision's own columns ride on the `live_decision` lateral — null for a
+# situation or question card: `.score`, `.utility_bp`, `.confidence_bp`, `.capability_id`, `.reason_code`.
+
+#: The doors every surface a PERSON reads passes a card through.
+LIVE_CARD_DOORS: tuple[str, ...] = ("decision", "situation", "question")
+#: ⛔ THE PUSH LANES SEND A DECISION ONLY — never a question, never a situation card (GeniOS-011 S36.U2, an explicit
+#: choice, not a drift). Every push lane is bound to the decision: `outbox.enqueue_pending` stamps the decision's run,
+#: hash and pack revision on the row and the drain re-proves exactly those before the send, so a card with no run
+#: would be cancelled at the drain; an agent can claim a decision only (`agent_api.claim`); and a question is answered
+#: by the founder in the app, never by a Slack line or an executor. The agent poll (`agent_api.poll_signals`) reads
+#: the same door because push IS poll (`push._card_projection` is its projection). Widening this is a product call.
+PUSH_CARD_DOORS: tuple[str, ...] = ("decision",)
+
+_LIVE_CARD_HEAD = " from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+_LIVE_CARD_COMMON = "s.status='open' and k.expires_at > :authority_time"
+#: The rows the push lanes and their re-proofs lock (`for share of …`) — the decision's whole authority chain.
+_DECISION_LOCKS = "rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack"
+
+
+def _live_card_from(doors: tuple[str, ...], *, lock: bool) -> str:
+    """The FROM that admits a card through `doors` and nothing else (module constants below; built once).
+
+    The decision door alone keeps the decision's joins inline — its columns under their own aliases, lockable by
+    the reader as before (`for share of k,s,rr,…`). Several doors read the decision through a LEFT LATERAL instead,
+    so a card no decision proves still reaches the door that does; `lock` takes the decision's share locks inside
+    it, for a reader whose read and write must see one authority (`/v1/insights`' impression, a dismiss)."""
+    if not doors or set(doors) - set(LIVE_CARD_DOORS):
+        raise ValueError(f"unknown doors {doors!r}; a door is one of {LIVE_CARD_DOORS}")
+    if tuple(doors) == ("decision",):
+        return (_LIVE_CARD_HEAD + AUTHORITATIVE_SIGNAL_JOINS +
+                "join lateral (select 1 as live where " + _LIVE_CARD_COMMON + " and " +
+                AUTHORITATIVE_SIGNAL_PREDICATE + ") live_card on true ")
+    passes = []
+    head = _LIVE_CARD_HEAD
+    if "decision" in doors:
+        head += (
+            "left join lateral (select " + AUTHORITATIVE_SCORE_SQL + " as score, "
+            "selected_rc.final_utility_bp as utility_bp, ro.confidence_bp, rr.capability_id, " +
+            AUTHORITATIVE_REASON_CODE_SQL + " as reason_code from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
+            "where s.org_id=k.org_id and s.signal_id=k.signal_id and " + AUTHORITATIVE_SIGNAL_PREDICATE +
+            " limit 1" + (" for share of s," + _DECISION_LOCKS if lock else "") + ") live_decision on true ")
+        passes.append("live_decision.utility_bp is not null")
+    if "situation" in doors:
+        passes.append("(" + SITUATION_CARD_SQL + ")")
+    if "question" in doors:
+        passes.append(
+            "(k.builder_version = :question_builder and exists (select 1 from signals s" + QUESTION_SIGNAL_JOINS +
+            "where s.org_id=k.org_id and s.signal_id=k.signal_id and " + QUESTION_CARD_SQL + "))")
+    return (head + "join lateral (select 1 as live where " + _LIVE_CARD_COMMON + " and (" +
+            " or ".join(passes) + ")) live_card on true ")
+
+
+#: Every door, as every reader a person reads joins it (`live_card_params` bound).
+LIVE_CARD_FROM = _live_card_from(LIVE_CARD_DOORS, lock=False)
+#: The same, holding the decision's authority rows (`for share`) until the reader's transaction ends.
+LIVE_CARD_FROM_LOCKED = _live_card_from(LIVE_CARD_DOORS, lock=True)
+#: The push lanes' door (`PUSH_CARD_DOORS`) — the decision's joins inline, binding `:authority_time` only.
+PUSH_CARD_FROM = _live_card_from(PUSH_CARD_DOORS, lock=False)
+#: A live card's score: its decision's projected utility, else the score its own builder wrote.
+LIVE_CARD_SCORE_SQL = "coalesce(live_decision.score, k.score)"
+#: A live card's rank, highest first: the decision's utility in basis points, else its builder's score on that scale.
+LIVE_CARD_RANK_SQL = "coalesce(live_decision.utility_bp, k.score * 100)"
+
+
+def live_card_params(at=None) -> dict:
+    """What `LIVE_CARD_FROM` binds: the authority instant and the two builder stamps its doors key on."""
+    return {"authority_time": authority_time(at), "situation_builder": SITUATION_CARD_BUILDER,
+            "question_builder": QUESTION_CARD_BUILDER}
+
+
+#: Ask's recall: the live cards about a subject's one-hop neighbourhood — what each is about (its capability, its
+#: reason), best first. The decision's capability and reason are its run's; a situation or question card's are its
+#: signal's own (the rule id a P4 writer stamps IS its capability).
+_LIVE_CARDS_ABOUT = (
+    "select coalesce(live_decision.capability_id, s.capability_id) as rule_id, "
+    "coalesce(live_decision.reason_code, s.reason_code) as reason_code, s.subject_node_id" + LIVE_CARD_FROM +
+    "where k.org_id = :o and k.state = any(:open) and s.subject_node_id = any(:ids) "
+    "order by " + LIVE_CARD_RANK_SQL + " desc, 1, s.signal_id limit 15")
+
+
+def live_cards_about(conn, *, org_id: str, node_ids, at=None) -> list[dict]:
+    """The live cards about `node_ids`, as Ask's moment recall grounds on them (`reason/moments/recall.read`).
+
+    `reason/` may not import `deliver/` (`tests/test_layer_topology.py`), so `api/moment_routes` hands this reader
+    to the recall — injection, as the layer map asks. Recall read the DECISION door alone before GeniOS-011 S36.U2;
+    a question or a follow-up about the person on screen was a card the founder had and Ask did not."""
+    params = {"o": org_id, "open": list(card_lifecycle.OPEN_STATES), "ids": sorted(node_ids), **live_card_params(at)}
+    return [dict(r._mapping) for r in conn.execute(text(_LIVE_CARDS_ABOUT), params)]
 
 # ── STEP-14 · A FILE'S CARD IS VERSIONED (`yc2_w27_s14` M42.C3.L-data.V1.U02; `migrations/0220`) ─────────────────────
 #

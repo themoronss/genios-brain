@@ -2,8 +2,8 @@
 
 DETERMINISTIC, ONE HOP, NO LLM (P3 §2.2). Reuses the query assistant's one-hop read
 (`reason/intelligence._neighborhood`, ≤ 40 edge neighbours) and its seat-visible fact rule
-(`common.VISIBLE_FACT_SQL` — the same predicate `_retrieve` applies), plus the authoritative open
-signals `_retrieve` grounds on.
+(`common.VISIBLE_FACT_SQL` — the same predicate `_retrieve` applies), plus the live cards about the
+neighbourhood, through every door (`deliver/store.live_cards_about`, injected; GeniOS-011 S36.U2).
 
 Resolution order (G-15): email → LinkedIn profile url → a node id the device matched from its
 slice → an exact observed name. Only person / company nodes are subjects, and never one of our
@@ -14,6 +14,7 @@ touches are filtered by the viewer, and nothing readable means nothing to say.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -122,11 +123,14 @@ def subject_version(conn, *, org_id: str, node_ids) -> str:
 
 
 def read(conn, *, org_id: str, subject: Subject, me: str | None, viewer: str | None,
-         us: SelfIdentity, now: datetime) -> SubjectRead:
-    """The one-hop read for one subject (≈ 6 statements)."""
-    from genios_engine.reason.authority import (AUTHORITATIVE_REASON_CODE_SQL,
-                                                AUTHORITATIVE_SIGNAL_JOINS,
-                                                AUTHORITATIVE_SIGNAL_PREDICATE, authority_time)
+         us: SelfIdentity, now: datetime, live_cards: Callable[..., list[dict]]) -> SubjectRead:
+    """The one-hop read for one subject (≈ 6 statements).
+
+    `live_cards` calls `deliver/store.live_cards_about`, handed in by the route (`api/moment_routes._live_cards`):
+    the live cards about the neighbourhood, through every door a card has (GeniOS-011 S36.U2). This read joined
+    the DECISION's authority on its own, so a question card or a meeting follow-up about the person on screen
+    grounded nothing.
+    `reason/` may not import `deliver/`, and a default would be a door chosen by nobody — so it is required."""
     from genios_engine.reason.intelligence import _neighborhood
 
     out = SubjectRead(subject=subject)
@@ -183,13 +187,7 @@ def read(conn, *, org_id: str, subject: Subject, me: str | None, viewer: str | N
          "win": TOUCH_WINDOW_DAYS, "viewer": viewer}).first()
     out.open_loops = int(r.loops or 0)
     out.last_touch_at = aware(r.last_touch)
-    out.signals = [dict(s._mapping) for s in conn.execute(text(
-        "select rr.capability_id as rule_id, " + AUTHORITATIVE_REASON_CODE_SQL +
-        " as reason_code, s.subject_node_id from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
-        "where s.org_id = :o and s.status = 'open' and " + AUTHORITATIVE_SIGNAL_PREDICATE +
-        " and s.subject_node_id = any(:ids) "
-        "order by selected_rc.final_utility_bp desc, rr.capability_id, s.signal_id limit 15"),
-        {"o": org_id, "ids": sorted(hood), "authority_time": authority_time(now)})]
+    out.signals = live_cards(conn, org_id=org_id, node_ids=sorted(hood), at=now)
     return out
 
 

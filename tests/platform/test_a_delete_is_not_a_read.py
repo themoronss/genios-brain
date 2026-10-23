@@ -229,7 +229,12 @@ def test_the_statement_count_did_NOT_move():
     # +5 `api/workstream_routes` (`_LAST_ATTEMPT`, `_L2_LAST`, `_L2_HOLD`, `_FILE_GATE`, `_FILE_CARD`: the file
     # page's one line) and +6 `scripts/pipeline_health.check_the_l2_judgment_says_why` (R-9's spend, the
     # judgments by status, L3's admissions by decision, the ones with no reason, the reasons, the holds' reasons).
-    assert r["statements"] == 3_419, (
+    # ⛔ MOVED 3,419 → 3,412 GeniOS-011 S36.U2 (23 Oct): no statement gained or lost — eight card readers (the morning
+    # brief, the Context panel, `/v1/insights` and its dismiss, MCP `_session_cards`, the agent poll, the push
+    # projection, `outbox.PUSHABLE_CARDS_SQL`) each held their own `… from cards k join signals s …` piece; they now
+    # read the one live-card fragment `deliver/store.LIVE_CARD_FROM` / `PUSH_CARD_FROM`, and recall's read moved to
+    # `store._LIVE_CARDS_ABOUT`. Fewer SQL-shaped pieces, the same statements (`statement_plans.census` is 2,590 both).
+    assert r["statements"] == 3_412, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
