@@ -9,11 +9,20 @@ silent"* and nothing ever retried it.
 It also covers JUDGED STOPS. A mail the model took out on judgment is exactly as re-adjudicable
 as a park — the difference was never in the evidence, only in how confident the gate happened to
 be — and 657 dropped events with no retained payload made "did we lose anything real?"
-permanently unanswerable. Since STEP-03 the gate ARCHIVES that mail rather than dropping it, and
-the drain reads the archive exactly as it read the drop (03 F55: on every heartbeat, without
-re-running the gate); a judged drop written before the deploy is still read until it ages out.
+permanently unanswerable. Since STEP-03 the gate ARCHIVES that mail rather than dropping it.
 A RULE's stop (a provider SPAM label, an unsubscribe header) stays out: those are facts, not
 opinions — archived, kept, and not re-admitted here.
+
+⛔ A JUNK VERDICT IS RE-JUDGED, NEVER RE-ADMITTED (GeniOS-011 S06.U1, audit
+`l1-junk-verdict-readmitted-on-snippet`). Until this unit the drain flipped every archived `llm_junk`
+mail back to `emitted` on every heartbeat, without the gate (03 F55); the re-read ladder then read it
+as a KEPT mail, which skips S2; and on the Gmail fast path a confident junk verdict keeps only the
+list snippet, so marketing snippets became extraction claims — the junk filter delayed mail instead
+of filtering it. Now the verdict STANDS. The gate records which filter made it (`gate/gate.
+JUNK_GATE_VERSION`), and the drain flips no archive and no drop: an archive judged under ANOTHER
+version is filed as an `LLM_JUNK_REJUDGE` park, which the re-read ladder reads on the whole message,
+fetched again, through today's gate with S2 (`capture/landing/unread`). An archive with no recorded
+version — every verdict written before this unit — and a legacy drop stay as they are.
 
 Two classes of park, and the honest thing is to treat them differently:
 
@@ -41,9 +50,12 @@ from genios_engine.platform.logging import get_logger
 _log = get_logger("genios.capture.parked.drain")
 
 #: Parks whose verdict can change from the retained payload alone.
+#: A PARK under one of these is re-admitted (flipped to `emitted`) on the next heartbeat. An
+#: ARCHIVE never is (GeniOS-011 S06.U1): `llm_junk` names the verdict, which is re-judged under
+#: `LLM_JUNK_REJUDGE` only when an older filter made it — see `_FILE_REJUDGMENT`.
 RE_ADJUDICABLE: frozenset[str] = frozenset({
-    "llm_junk_unconfident",   # the gate was not confident; a better gate may keep it
-    "llm_junk",               # a confident model verdict is still a model verdict
+    "llm_junk_unconfident",   # the gate was not confident; its whole mail is read (RULE 04)
+    "llm_junk",               # a confident verdict: stands until another filter version judges
     "low_relevance",          # threshold or classifier moved
     "mapping_missing",        # a structured mapping may have been registered since
 })
@@ -94,6 +106,15 @@ NEEDS_REFETCH: frozenset[str] = frozenset({
 #: (`capture/landing/unread.queue_unread`), not the extractor, and read by the same ladder.
 EXTRACTION_NEVER_RAN = "extraction_never_ran"
 
+#: GeniOS-011 S06.U1 · an ARCHIVE an older junk filter judged, filed to be JUDGED AGAIN by today's.
+#: Filed by this drain (`_FILE_REJUDGMENT`), read by the re-read ladder — the one door that reads —
+#: under its bounded attempts, and with three differences from every other rung: its event stays
+#: `archived` while it waits (it was never kept); it is rebuilt only from the WHOLE message fetched
+#: again, never from the stored payload (`unread.to_raw_object`), so a ladder that cannot fetch it
+#: never takes it (`find_parked_extractions(rejudge=…)`); and the gate does not wave it through as a
+#: re-read (`gate/gate.run_gate`) — it meets today's rules and today's junk filter.
+LLM_JUNK_REJUDGE = "llm_junk_rejudge"
+
 NEEDS_REEXTRACTION: frozenset[str] = frozenset({
     "extraction_call_failed",      # the model call itself failed
     "extraction_parse_failed",     # the answer was not parseable, even after one repair
@@ -101,10 +122,38 @@ NEEDS_REEXTRACTION: frozenset[str] = frozenset({
     "extraction_total_loss",       # every claim in the answer was dropped as unusable
     "extraction_oversized",        # G3: longer than one call fits; waits for paging, never lost
     EXTRACTION_NEVER_RAN,          # STEP-05: kept and never read — see above
+    LLM_JUNK_REJUDGE,              # GeniOS-011 S06.U1: an older filter's archive — see above
 })
 
 #: How old a pending park has to be before it is worth an operator's attention.
 STALE_AFTER = timedelta(days=3)
+
+#: GeniOS-011 S06.U1 · file every archive an OLDER junk filter judged for re-judgment — and flip
+#: nothing. The verdict is S2's own trace record (`archive`, `llm_junk`), which carries the version of
+#: the filter that made it; a record with no version (every verdict before this unit) is not filed,
+#: and neither is a drop. A mail with a park row of any status is not filed again: a pending
+#: re-judgment is waiting, a settled or given-up one has been answered, and today's verdict on the
+#: re-landed copy carries today's version. Only while its payload is kept (the ladder reads nothing
+#: else), oldest first, `limit` per heartbeat. The event stays `archived`: read by no model until the
+#: re-judgment lands a new copy.
+_FILE_REJUDGMENT = text(
+    "insert into parked_events (event_id, org_id, source, reason_code, stage, trace, status, "
+    " created_at, refetch_next_attempt_at) "
+    "select se.event_id, se.org_id, se.source, :code, 'rejudge', "
+    "       jsonb_build_array(jsonb_build_object('judged_by', et.detail->>'gate_version', "
+    "                         'judging_with', cast(:version as text), 'at', cast(:now as text))), "
+    "       'pending', :now, :now "
+    "  from source_events se "
+    "  join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
+    "  join event_trace et on et.org_id = se.org_id and et.event_id = se.event_id "
+    "       and et.stage = 'S2' and et.action = 'archive' and et.reason_code = 'llm_junk' "
+    " where (cast(:o as text) is null or se.org_id = :o) and se.outcome = 'archived' "
+    "   and et.detail->>'gate_version' is not null "
+    "   and et.detail->>'gate_version' <> cast(:version as text) "
+    "   and (rp.expires_at is null or rp.expires_at > :now) "
+    "   and not exists (select 1 from parked_events pe where pe.event_id = se.event_id) "
+    " order by se.captured_at asc limit :lim "
+    "on conflict (event_id) do nothing")
 
 
 def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
@@ -114,12 +163,15 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
     Re-injection mirrors ``recover_parked``: flip ``source_events.outcome`` back to ``emitted``
     so the next L2 pass picks the event up using the payload we retained, and mark the park
     ``recovered``. It is deliberately the same mechanism a human promotion uses — one recovery
-    path, not two that can drift apart.
+    path, not two that can drift apart. It is for PARKS only (GeniOS-011 S06.U1): an archive an
+    older junk filter judged is filed for re-judgment (``rejudge``), and no archive is flipped.
     """
+    # Inside the function: `gate/gate.py` imports `LLM_JUNK_REJUDGE` from here.
+    from genios_engine.capture.gate.gate import JUNK_GATE_VERSION
     from genios_engine.capture.parked.recapture import NEEDS_RECAPTURE   # see `parked_aging`
 
     now = now or datetime.now(timezone.utc)
-    out = {"examined": 0, "reinjected": 0, "blocked_no_payload": 0,
+    out = {"examined": 0, "reinjected": 0, "rejudge": 0, "blocked_no_payload": 0,
            "needs_refetch": 0, "needs_recapture": 0, "needs_reextraction": 0, "stale": 0,
            "by_reason": {}}
 
@@ -129,11 +181,6 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
         params["o"] = org_id
 
     with engine.begin() as c:
-        # Parked events AND judged stops. A mail the model took out on judgment is exactly as
-        # re-adjudicable as a park — the difference was never in the evidence, only in how
-        # confident the gate happened to be — and treating drops as out of scope is what made a
-        # "we improved the filter" claim unverifiable against the mail it had already deleted.
-        # ARCHIVED since STEP-03 (`archive` in the trace); DROPPED before it (`drop`) — both read.
         # ⛔ STEP-06 (`yc2_w27_s06 · M24.C5.L-data.V1.U01`). The limit used to cover every pending
         # park, and the rows another drain owns (refetch, recapture, re-extraction) were counted
         # and skipped where they stood: 200 of them older than a re-admittable row starved it every
@@ -157,21 +204,17 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
             elif r.reason_code in NEEDS_REEXTRACTION:
                 out["needs_reextraction"] += r.n
 
+        # PARKS ONLY (GeniOS-011 S06.U1). This read also took every judged STOP — an archive (and
+        # before STEP-03 a drop) whose trace said `llm_junk` — and the flip below re-admitted it on
+        # every heartbeat without the gate (03 F55). A judged stop is re-judged instead:
+        # `_FILE_REJUDGMENT`, after this loop, and only when another filter made the verdict.
         rows = c.execute(text(
             "select pe.event_id, pe.org_id, pe.reason_code, pe.created_at, "
             "       (rp.event_id is not null) as has_payload "
             "from parked_events pe "
             "left join raw_payloads rp on rp.event_id = pe.event_id and rp.org_id = pe.org_id "
             f"where pe.status='pending'{where_org} and pe.reason_code = any(:judged) "
-            "union all "
-            "select se.event_id, se.org_id, et.reason_code, se.captured_at, true "
-            "from source_events se "
-            "join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
-            "join event_trace et on et.event_id = se.event_id "
-            "     and et.action in ('drop', 'archive') "
-            f"where se.outcome in ('dropped', 'archived') and et.reason_code = any(:judged)"
-            + (" and se.org_id=:o" if org_id else "") +
-            " order by 4 asc limit :lim"),
+            "order by 4 asc limit :lim"),
             {**params, "judged": sorted(RE_ADJUDICABLE)}).fetchall()
 
         for r in rows:
@@ -231,33 +274,32 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
             # "low-signal / digest / backfill", which is what a row that has been sitting in a
             # park queue actually is. Understating is the safe direction — the event is still
             # extracted, it simply does not jump ahead of live mail.
-            # ATTENTION FOLLOWS THE READ (STEP-03). A re-admitted stop is about to be read, so
-            # its tier becomes `deep` and its reason says why — `readmitted:<code>` — rather than
-            # leaving an emitted row that still says nobody reads it. A parked row is already
-            # `deep`, waiting; it keeps its park code. (Postgres evaluates the CASEs on the old
-            # row, so `outcome` there is the stop being undone.)
+            # ATTENTION FOLLOWS THE READ (STEP-03). A parked row is already `deep`, waiting; it
+            # keeps its park code. ONLY A PARKED ROW IS FLIPPED (GeniOS-011 S06.U1): the CASEs that
+            # gave a re-admitted archive or drop `deep` and `readmitted:<code>` went with the
+            # re-admission of judged stops itself.
             flipped = c.execute(text(
                 "update source_events set outcome='emitted', "
                 "route = coalesce(route, 'needs_extraction'), "
-                "triage_lane = coalesce(triage_lane, 'P3'), "
-                "attention = case when outcome in ('archived', 'dropped') then 'deep' "
-                "                 else attention end, "
-                "attention_reason = case when outcome in ('archived', 'dropped') "
-                "                        then 'readmitted:' || :code else attention_reason end "
-                "where org_id=:o and event_id=:e and outcome in ('parked', 'dropped', 'archived')"),
-                {"o": r.org_id, "e": r.event_id, "code": r.reason_code}).rowcount
+                "triage_lane = coalesce(triage_lane, 'P3') "
+                "where org_id=:o and event_id=:e and outcome = 'parked'"),
+                {"o": r.org_id, "e": r.event_id}).rowcount
             if flipped:
-                # Only a real parked row has a status to update; a re-admitted drop or archive has
-                # none, and inventing one would put a row in the park queue that was never parked.
                 c.execute(text("update parked_events set status='recovered' where event_id=:e"),
                           {"e": r.event_id})
                 out["reinjected"] += 1
                 bucket["reinjected"] += 1
 
-    if out["examined"]:
-        _log.info("parked drain: examined=%d reinjected=%d needs_refetch=%d "
+        # GeniOS-011 S06.U1 · an archive an OLDER junk filter judged is filed to be judged again —
+        # counted as `rejudge`, never as a re-admission: nothing is flipped, nothing is read here.
+        out["rejudge"] = int(c.execute(_FILE_REJUDGMENT, {
+            "o": org_id, "code": LLM_JUNK_REJUDGE, "version": JUNK_GATE_VERSION,
+            "now": now, "lim": limit}).rowcount or 0)
+
+    if out["examined"] or out["rejudge"]:
+        _log.info("parked drain: examined=%d reinjected=%d rejudge=%d needs_refetch=%d "
                   "needs_recapture=%d needs_reextraction=%d stale=%d",
-                  out["examined"], out["reinjected"], out["needs_refetch"],
+                  out["examined"], out["reinjected"], out["rejudge"], out["needs_refetch"],
                   out["needs_recapture"], out["needs_reextraction"], out["stale"])
     return out
 

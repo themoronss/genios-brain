@@ -12,6 +12,15 @@ and is still not touched. A judged drop written before the deploy is still re-ad
 
 Rows are made by the real pipeline on Postgres where it can still make them; the legacy drop is
 written by hand, because nothing writes one any more.
+
+RESTATED (GeniOS-011 S06.U1, audit `l1-junk-verdict-readmitted-on-snippet`). The flip this file
+pinned WAS the defect: an archived `llm_junk` mail went back to `emitted` on every heartbeat, the
+re-read ladder read it without the gate, and on the Gmail fast path what it read was the snippet the
+junk verdict was made on. A junk verdict now STANDS until a junk filter of a different version judges
+the mail again; the drain flips no archive and no drop. So the three re-admission tests below now say
+the opposite of what they said, for the same rows: today's filter's archive stays archived (it records
+its version), and a legacy drop — no version recorded — stays dropped. The re-judgment of an OLDER
+filter's archive is held in `tests/capture/test_a_junk_archive_is_rejudged_not_readmitted.py`.
 """
 from __future__ import annotations
 
@@ -86,21 +95,22 @@ def test_the_judged_codes_are_still_the_models():
     assert not {c for c in RE_ADJUDICABLE if c.startswith("N-")}, "a rule's code is not a judgment"
 
 
-def test_an_archived_llm_junk_mail_is_re_admitted_as_a_dropped_one_was(engine, live_db_url):
+def test_an_archived_llm_junk_mail_is_no_longer_re_admitted(engine, live_db_url):
+    """RESTATED (GeniOS-011 S06.U1): was `…_is_re_admitted_as_a_dropped_one_was`, which asserted
+    the flip to `emitted`, `readmitted:llm_junk`. Today's filter judged it, so its verdict stands."""
     res = _capture(live_db_url, "j1", {"subject": "Boardy here", "body": "More investor intros?"},
                    relevance=_Junk())
     assert res.outcome == "archived"
 
     out = drain_parked(engine, org_id=ORG, now=AT)
 
-    assert out["reinjected"] == 1 and out["by_reason"]["llm_junk"] == {"seen": 1, "reinjected": 1}
+    assert (out["reinjected"], out["rejudge"], out["examined"]) == (0, 0, 0)
     row = _row(engine, res.event.event_id)
-    assert (row.outcome, row.route, row.triage_lane) == ("emitted", "needs_extraction", "P3")
-    # It is about to be read, so it no longer says nobody reads it — and it says why.
-    assert (row.attention, row.attention_reason) == ("deep", "readmitted:llm_junk")
+    assert (row.outcome, row.route, row.attention, row.attention_reason) == (
+        "archived", None, "archive", "llm_junk")
     with engine.connect() as c:
         assert c.execute(text("select count(*) from parked_events where org_id = :o"),
-                         {"o": ORG}).scalar() == 0, "a re-admitted archive is not a park"
+                         {"o": ORG}).scalar() == 0, "a standing verdict is not a park"
 
 
 def test_a_rule_archived_mail_is_not_touched(engine, live_db_url):
@@ -114,7 +124,9 @@ def test_a_rule_archived_mail_is_not_touched(engine, live_db_url):
     assert _row(engine, res.event.event_id).outcome == "archived"
 
 
-def test_a_judged_drop_written_before_step_03_is_still_re_admitted(engine):
+def test_a_judged_drop_written_before_step_03_stays_dropped(engine):
+    """RESTATED (GeniOS-011 S06.U1): was `…_is_still_re_admitted`. A drop records no filter
+    version, so no newer filter can be said to have judged it differently: the verdict stands."""
     with engine.begin() as c:
         c.execute(text(
             "insert into source_events (event_id, org_id, connection_id, source, object_type, "
@@ -132,16 +144,17 @@ def test_a_judged_drop_written_before_step_03_is_still_re_admitted(engine):
 
     out = drain_parked(engine, org_id=ORG, now=AT)
 
-    assert out["reinjected"] == 1
+    assert (out["reinjected"], out["rejudge"], out["examined"]) == (0, 0, 0)
     row = _row(engine, "evt_legacy")
-    assert (row.outcome, row.attention, row.attention_reason) == (
-        "emitted", "deep", "readmitted:llm_junk")
+    assert (row.outcome, row.attention_reason) == ("dropped", None)
 
 
-def test_a_re_admitted_archive_is_not_re_admitted_twice(engine, live_db_url):
+def test_an_archive_is_re_admitted_on_no_heartbeat(engine, live_db_url):
+    """RESTATED (GeniOS-011 S06.U1): was `test_a_re_admitted_archive_is_not_re_admitted_twice`,
+    which allowed the first heartbeat's flip. Now neither heartbeat flips it."""
     res = _capture(live_db_url, "j2", {"subject": "Boardy here", "body": "More investor intros?"},
                    relevance=_Junk())
     first = drain_parked(engine, org_id=ORG, now=AT)
     second = drain_parked(engine, org_id=ORG, now=AT)
-    assert (first["reinjected"], second["reinjected"], second["examined"]) == (1, 0, 0)
-    assert _row(engine, res.event.event_id).outcome == "emitted"
+    assert (first["reinjected"], second["reinjected"], second["examined"]) == (0, 0, 0)
+    assert _row(engine, res.event.event_id).outcome == "archived"

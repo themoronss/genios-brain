@@ -217,7 +217,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,401 → 3,404, GeniOS-011 S27.U1 (23 Oct): `reason/brief_patterns` — `_SITUATIONS` (the open situations
     # on the founder's files), `_IN_MOTION` (the brief's in-motion lines, accepted or proposed) and `_GOALS` (the work
     # a goal already rests on) — three reads, so the drafter sees what is in motion.
-    assert r["statements"] == 3_404, (
+    # ⛔ MOVED 3,404 → 3,405 GeniOS-011 S06.U1 (23 Oct): `capture/parked/drain._FILE_REJUDGMENT`, the
+    # park an older junk filter's archive is filed under to be judged again — the engine gaining one statement.
+    assert r["statements"] == 3_405, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
