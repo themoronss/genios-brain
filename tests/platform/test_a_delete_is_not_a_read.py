@@ -234,7 +234,10 @@ def test_the_statement_count_did_NOT_move():
     # projection, `outbox.PUSHABLE_CARDS_SQL`) each held their own `… from cards k join signals s …` piece; they now
     # read the one live-card fragment `deliver/store.LIVE_CARD_FROM` / `PUSH_CARD_FROM`, and recall's read moved to
     # `store._LIVE_CARDS_ABOUT`. Fewer SQL-shaped pieces, the same statements (`statement_plans.census` is 2,590 both).
-    assert r["statements"] == 3_412, (
+    # ⛔ MOVED 3,412 → 3,415 GeniOS-011 S16.U3 (23 Oct): `reason/l2/snapshot` — `_ABSENCES` (the typed absences on the
+    # view's nodes), `_DISCREPANCIES` (L3's unsettled disagreements on them) and `_SIGNAL_CONFLICTS` (L1's unresolved
+    # conflicts on the events behind them) — three reads, so the snapshot L2 reads has its unknowns and contradictions.
+    assert r["statements"] == 3_415, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

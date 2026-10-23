@@ -95,7 +95,40 @@ def _signals(subject: Subject, cite: _Cite) -> str:
     return "\n".join(lines) or "Nothing arrived."
 
 
-def _context(snapshot: Snapshot, cite: _Cite) -> str:
+#: GeniOS-011 S16.U3 · what each typed absence licenses the model to say, in its own words (`contracts/quality`).
+_UNKNOWN_SAYS = {
+    "unknowable": "NOT KNOWN — no connected source could carry it; never say it is absent",
+    "genuinely_absent": "ABSENT — a source that could carry it was read and it was not there",
+    "stale": "known once, now TOO OLD to rely on",
+}
+_UNVERIFIED = "found absent before the sources changed — UNVERIFIED; never say it is absent"
+
+
+def _unknown_lines(snapshot: Snapshot, cite: _Cite) -> list[str]:
+    lines = []
+    for u in snapshot.unknowns:
+        says = _UNVERIFIED if u.absence_type == "genuinely_absent" and not u.licenses_negative_inference \
+            else _UNKNOWN_SAYS.get(u.absence_type, f"not held ({u.absence_type})")
+        lines.append(f"- {cite('node:' + u.node_id)} {u.expected_fact}: {says}.")
+    return lines
+
+
+def _contradiction_lines(snapshot: Snapshot, subject: Subject | None, cite: _Cite) -> list[str]:
+    # An L1 conflict the subject already rests on is printed in block F; it is not printed twice.
+    on_subject = {c.conflict_id for c in (subject.conflicts if subject is not None else ())}
+    lines = []
+    for x in snapshot.contradictions:
+        sides = " vs ".join(f"“{q}”" for q in x.sides) or "both sides kept, no words to show"
+        if x.kind == "discrepancy":
+            lines.append(f"- {cite('node:' + x.node_id) if x.node_id else 'a node'} sources disagree on {x.field} "
+                         f"and nobody has settled it {cite(x.ref)}: held {sides}")
+        elif x.ref not in on_subject:
+            lines.append(f"- L1 found sources that disagree on {x.field} and did not settle it {cite(x.ref)}: "
+                         f"{sides} — in {', '.join(cite(e) for e in x.event_ids) or 'no event named'}")
+    return lines
+
+
+def _context(snapshot: Snapshot, cite: _Cite, subject: Subject | None = None) -> str:
     if not snapshot.nodes:
         return "No node of the company's memory was found around this subject."
     seeds = set(snapshot.seeds)
@@ -105,6 +138,18 @@ def _context(snapshot: Snapshot, cite: _Cite) -> str:
                      + (" · the subject" if n.node_id in seeds else ""))
     for edge_type, a, b in snapshot.edges:
         lines.append(f"- {cite('node:' + a)} —{edge_type}→ {cite('node:' + b)}")
+    # GeniOS-011 S16.U3 · what the company knows it does NOT know around the subject, and what is contested — printed
+    # only when there is some, so a snapshot with neither prints exactly as it did.
+    unknown = _unknown_lines(snapshot, cite)
+    if unknown:
+        lines.append("What memory does not hold about these nodes:")
+        lines.extend(unknown)
+    contested = _contradiction_lines(snapshot, subject, cite)
+    if contested:
+        lines.append("Where sources disagree around it (no side has won):")
+        lines.extend(contested)
+    for name in snapshot.capped:
+        lines.append(f"⛔ Only the first {name} are shown: there may be more.")
     if snapshot.truncated:
         lines.append(f"⛔ The read was CAPPED ({snapshot.truncated_by}): there may be more. Never say something is "
                      "absent because it is not here.")
@@ -163,7 +208,7 @@ def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot
     """The six blocks, in order. `file_dossier` is the STEP-12 `Dossier` for a file subject (its text and
     catalogue are kept whole); a seed subject passes `brief_block` instead."""
     cite = _Cite()
-    blocks = {"A": _signals(subject, cite), "B": _context(snapshot, cite), "C": _history(history, cite)}
+    blocks = {"A": _signals(subject, cite), "B": _context(snapshot, cite, subject), "C": _history(history, cite)}
     if file_dossier is not None:
         blocks["D"] = file_dossier.text
     else:

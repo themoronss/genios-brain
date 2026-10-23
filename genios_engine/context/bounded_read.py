@@ -55,9 +55,11 @@ class ReadRequest:
     edge_types: tuple[str, ...] | None = None
     max_hops: int = DEFAULT_MAX_HOPS
     max_nodes: int = DEFAULT_MAX_NODES
-    #: The asking seat's visibility. Carried on the request rather than applied afterwards: a
-    #: filter after the walk has already read the rows it is meant to withhold.
-    visibility: tuple[str, ...] | None = None
+    #: ⛔ GeniOS-011 S16.U3 · NO `visibility` FIELD. One was declared here ("the asking seat's visibility") and
+    #: nothing ever read it — not `expand`, not `sql_neighbours` — and `graph_edges` has no visibility column to
+    #: apply it to (0004). A field a caller can set and the walk ignores reads as a rule that holds; it was deleted.
+    #: What a read may show is decided where there is a column for it: `graph_facts.visibility_scope`, which the L2
+    #: snapshot's fact-backed reads keep (`reason/l2/snapshot`).
     #: L3 rebuild 4a · the instant to read the graph AT — "what did we know on Tuesday" (Atlas v2, the read API
     #: L2 uses; P2·13). `None` reads the graph as it stands now, as every caller did before. With an instant, an
     #: edge counts only if we had learned it by then and it had not closed — `graph_store._WINDOW_AT`, the one

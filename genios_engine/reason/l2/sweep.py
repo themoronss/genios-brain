@@ -302,8 +302,9 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     with engine.connect() as conn:
         for (_key, subject, parts, file_dossier, people, tools, measured, importance, asked_deeper, fp) in due:
             try:
+                # GeniOS-011 S16.U3 · the context read AT the instant this pass judges at, never the live graph.
                 snapshot = read_snapshot(conn, org_id, seeds_for(conn, org_id, file_id=subject.file_id,
-                                                                 events=subject.events))
+                                                                 events=subject.events), as_of=now)
                 history = history_for(conn, org_id, files=files,
                                       work_kind=getattr(getattr(parts, "file", None), "work_kind", None),
                                       exclude=subject.file_id)
