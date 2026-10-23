@@ -2,7 +2,9 @@
 
 **Written for:** Rohit, Harsh and every coding agent.
 
-**Status:** planned. **Needs:** G2.
+**Status:** planned. **Needs:** G2. **Amended 23 Oct 2026** (GeniOS-011 S26.U3; D7, D9, D10 in
+[`08-DECISIONS.md`](08-DECISIONS.md)): unit **G3.5** lets the same judgment propose a goal for the piece of work
+it reads (`L2Judgment.proposed_goal`). G4.5 admits it; the founder approves it.
 
 **Source (MD):**
 - *"Which goal could this situation affect? Through what relationship or dependency? Is the impact supported by evidence, or is it a hypothesis?"*;
@@ -112,6 +114,78 @@ The schema text gains `goal_impacts`. The instruction, written once (bump `PROMP
 
 `reason/l2/store` keeps the judgment whole, so the impacts travel inside `reasoning_results`. No schema change.
 
+### G3.5 · `L2Judgment.proposed_goal` — the judgment proposes a goal (amendment, 23 Oct 2026)
+
+**Why.** §3.1 lets the judgment name only goals block G printed. So a piece of work the company is
+pursuing, with no goal of its own, can only be linked to a broad goal: an accelerator admission is an
+`advances` line under "Get into accelerator and incubator programs" (§3.3), never its own goal. That is
+Rohit's Antler Singapore case (23 Oct): the context was in the graph, and no goal was proposed. D9 says the
+judgment may propose one; D10 says one goal per piece of work.
+
+**The contract** (added to `contracts/reasoning_result.py`; `00-ARCHITECTURE` Goals, `GoalProposal`):
+
+```python
+@dataclass(frozen=True)
+class GoalProposal:
+    statement: str                   # the goal in the founder's words, <= 200 chars (the brief's line rule)
+    why: str                         # why the company is pursuing it, <= 300 chars
+    evidence: tuple[str, ...]        # ids the dossier printed; at least one
+    parent_goal_ref: str | None = None   # "goal:<id>" block G printed, or None
+    deadline: str | None = None      # a date exactly as the dossier printed it, or None
+    target: str | None = None        # a number exactly as a tool line printed it, or None
+    metric: str | None = None        # a key of contracts/goal.METRICS (G5), only with a target
+```
+
+- `L2Judgment.proposed_goal: GoalProposal | None = None`. It is for the request's own subject, so it names no subject; G4.5 takes `subject_ref` from the request.
+- `from_mapping` reads `raw.get("proposed_goal")`; `as_mapping` **omits the key when None**, so every stored result written before G3.5 hashes as it did (the A7 rule, as `goal_impacts`).
+- `texts()` adds `statement` and `why`, so the number check covers them.
+
+New refusal codes in `validate_judgment` (the names GeniOS-011 S29.U3 uses):
+
+| Code | When |
+|---|---|
+| `GOAL_PROPOSAL_NO_EVIDENCE` | an empty `evidence` |
+| `UNPRINTED_REF` | an evidence id the dossier never printed (the existing code) |
+| `PARENT_NOT_PRINTED` | a `parent_goal_ref` not in block G |
+| `DEADLINE_NOT_PRINTED` | a `deadline` the dossier did not print |
+| `TARGET_NOT_PRINTED` | a `target` no tool line printed, or a `target` without a `metric` |
+
+- **`drop_unprinted`** sets a failing `proposed_goal` to None and keeps the rest of the judgment. A dropped proposal never fails the run; it is counted in the receipt.
+- **The model never sets an owner, a status or an approver.** The contract has no field for them.
+
+**The prompt** (`reason/l2/prompt.py`, the same `PROMPT_VERSION` bump as G3.2 when built together):
+
+> If this subject is a piece of work the company itself is pursuing — an application, a raise from one
+> fund, a hire, a partner — with an outcome it wants, and no goal in block G names that work, you may
+> propose ONE goal for it in `proposed_goal`: in the founder's words, citing the lines it rests on, at
+> least one of them something the company itself did (applied, replied, met). If a broad goal in block G
+> covers it, name that goal as its parent. Give a deadline or a target only if the dossier printed it.
+> Propose nothing when a goal in block G already names this work, or when the subject is not the company's
+> own work. A proposal is only a proposal: the founder decides.
+
+The impact line stays. A subject with its own proposed goal still writes its `advances` line to the broad
+goal (§3.3), so the card keeps its goal line until the founder approves the new one.
+
+Duplicates are refused by code at admission (G4.5), not by the prompt: block G prints only live goals
+(STEP-G2 §2.1), so the model cannot see every pending proposal. If block G later prints pending proposals
+apart (GeniOS-011 S29.U1), the instruction adds "or a proposal block G lists".
+
+**The ideal reader** (`tests/replays/ideal_reader.py`): `l2_judgment_for` answers `proposed_goal` from a new
+optional case field, `expected.proposed_goal: {statement, parent, deadline}`, translating `parent` (a goal
+statement) to its printed `goal:` id. A case without the field answers none.
+
+**Golden case F72 (new, synthetic, GeniOS-011 S28.U3):** *"An accelerator's partner replies with a conditional
+admission, and it becomes a proposed goal"*. Founder cases cannot name Antler or Theresa
+(`tests/replays/founder_case.REAL_NAMES`), so the names are invented: the founder applied to a Singapore
+cohort of an accelerator that no brief line names (no goal, no in-motion line); its partner replies that a
+place is offered, subject to a final partner call by a stated date. Labels:
+- `expected.proposed_goal`: a statement naming the accelerator and its Singapore cohort; `parent` = "Get into
+  accelerator and incubator programs"; `deadline` = the date the partner's mail states;
+- `expected.goals`: `advances` on "Get into accelerator and incubator programs";
+- a newsletter from the same accelerator, in the same case, proposes nothing (G4.5's own-act rule).
+
+F72 is recorded strict-xfail and passes when G4.5 lands (GeniOS-011 S29.U4).
+
 ## 4 · LLM use and cost
 
 - **Calls:** no new call. The same R-9 pass writes one more field.
@@ -135,6 +209,19 @@ The schema text gains `goal_impacts`. The instruction, written once (bump `PROMP
 
 **Mutation proofs:** remove the `GOAL_NOT_PRINTED` check → test 3 fails; make `as_mapping` always emit the key → test 1.3 fails.
 
+**G3.5 tests** — `tests/contracts/test_goal_proposal.py` (pure):
+1. each G3.5 refusal code is raised by its own case;
+2. `drop_unprinted` drops only the proposal and keeps the judgment;
+3. a None `proposed_goal` keeps the stored hash of a pre-G3.5 result (a byte-equal fixture);
+4. the contract has no owner, status or approver field (the dataclass fields are pinned).
+
+**G3.5 golden:** a case with `expected.proposed_goal` passes only if the run proposes it (until G4.5: the
+result's `proposed_goal`; after: a pending brief `goals` line). A case without the field is not marked on
+proposals, and the board prints how many proposals the run made.
+
+**G3.5 mutation proofs:** remove `PARENT_NOT_PRINTED` → test 1 fails; make `as_mapping` always emit
+`proposed_goal` → test 3 fails.
+
 ## 6 · Flags, rollback
 
 - **Flags:** rides `l2_reasoning`.
@@ -144,6 +231,7 @@ The schema text gains `goal_impacts`. The instruction, written once (bump `PROMP
 
 - the labelled golden cases produce their expected impacts on the L2 path;
 - the claim check refuses every invented goal;
+- (G3.5) F72's judgment proposes its goal on the ideal reader, and every proposal citing an unprinted parent, deadline or target is dropped and counted;
 - an unchanged sweep makes 0 calls.
 
 ## Harsh's checklist — in order
@@ -166,7 +254,13 @@ The schema text gains `goal_impacts`. The instruction, written once (bump `PROMP
 8. **Mutation proofs:**
    - `GOAL_NOT_PRINTED` removed;
    - `as_mapping` always emitting the key.
-9. **Guards, push, CI, logs.**
+9. **G3.5** (with steps 2–8 when built together, one prompt version):
+   - `tests/contracts/test_goal_proposal.py` first (§5, G3.5 tests);
+   - `GoalProposal`, `L2Judgment.proposed_goal`, the five codes, the drop;
+   - the prompt paragraph (§3 G3.5, word for word);
+   - the ideal reader's `expected.proposed_goal`; F72 labels (GeniOS-011 S28.U3 writes the case);
+   - mutation proofs: `PARENT_NOT_PRINTED`, and `as_mapping` always emitting the key.
+10. **Guards, push, CI, logs.**
 
 ## Brief for a coding agent
 
@@ -198,5 +292,6 @@ Paste `10-AGENT-BRIEFS.md` §1 first, then this.
 - §5's tests;
 - labelled cases produce their impacts;
 - invented goals dropped;
-- two mutation proofs;
+- (G3.5) `proposed_goal` with its five codes; F72's proposal on the ideal reader;
+- four mutation proofs (two for G3, two for G3.5);
 - the board not lower.
