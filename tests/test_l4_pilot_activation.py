@@ -144,11 +144,15 @@ def test_the_five_features_are_the_plans_five_in_wave_order():
     ⛔ THE TWELFTH ARRIVED ON PURPOSE, 2026-10-19: `l2_cards` (L2 rebuild C1), the CUTOVER switch — an admitted
     Layer 2 judgment of a file is that file's review and makes its card, and the expert's own call is not made.
     It needs `l2_reasoning` and `expert_review` on, and an L3 domain live; never default-on.
+
+    ⛔ THE THIRTEENTH ARRIVED ON PURPOSE, 2026-10-23: `card_copy` (GeniOS-011 S34.U3), the switch for the card writer
+    (R-10) — each new card version worded once from its own facts, every sentence held to them. It landed with its
+    site, its wave, its effect and no precondition, and it is never default-on — it spends a call per card version.
     """
     assert ACT.L4_FEATURES[:5] == ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
     assert ACT.L4_FEATURES[5:] == ("situation_reasoner", "cards_from_situations",
                                    "calibration_apply", "expert_review", "morning_brief", "l2_reasoning",
-                                   "l2_cards")
+                                   "l2_cards", "card_copy")
     assert set(ACT.EFFECTS) == set(ACT.L4_FEATURES) == set(ACT.FEATURE_WAVES)
     assert set(ACT.PRECONDITIONS) == set(ACT.L4_FEATURES)
     assert ACT.FEATURE_WAVES["bundle"] == "Z4"

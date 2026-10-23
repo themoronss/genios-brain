@@ -49,6 +49,8 @@ def test_the_own_budgets_set_is_pinned_exactly():
         S.SITE_BRIEF: ("0.25", "0.03"),
         S.SITE_BRIEF_ESCALATE: ("0.25", "0.03"),
         S.SITE_REASON: ("2.00", "0.15"),
+        # GeniOS-011 S34.U3 (23 Oct): the card writer (R-10), 50 cents a day and 2 cents a call of its own.
+        S.SITE_CARD_COPY: ("0.50", "0.02"),
     }
 
 

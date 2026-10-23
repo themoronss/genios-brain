@@ -52,6 +52,7 @@ from genios_engine.platform.l4_activation import (FEATURE_CALIBRATION_APPLY,
                                                   FEATURE_L2_CARDS, FEATURE_L2_REASONING,
                                                   FEATURE_MORNING_BRIEF,
                                                   FEATURE_SITUATION_REASONER, L4_FEATURES)
+from genios_engine.platform.l4_activation import FEATURE_CARD_COPY
 from genios_engine.platform.logging import get_logger
 
 logger = get_logger(__name__)
@@ -200,6 +201,10 @@ NOT_DEFAULT_ON = {
         "speaks its card. Switched on at provisioning, no tenant would ever run the old and the new path "
         "side by side, and the golden set's comparison (L2 rebuild D1) would never be made; it is armed "
         "per tenant after that comparison says the new path is at least as good.",
+    FEATURE_CARD_COPY:
+        "it spends a MODEL CALL per new card version — the card writer (R-10, GeniOS-011 S34.U3). A default-on "
+        "switch that costs money per card is a bill a tenant never agreed to; it is armed per tenant, Rohit's org "
+        "first, after one or two live calls are read. Off, a card shows today's fields.",
 }
 
 #: Layer 4's default features in wave order — `L4_FEATURES` minus the declared exclusions above.

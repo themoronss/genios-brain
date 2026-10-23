@@ -29,6 +29,7 @@ from genios_engine.platform.logging import get_logger
 
 from .sites import (R_SITES, SITE_BRIEF, SITE_BRIEF_ESCALATE, SITE_EXPERT, SITE_REASON, TIER_T1, TIER_T2,
                     require_site, tier_for)
+from .sites import SITE_CARD_COPY
 
 _log = get_logger("genios.reason.bundle.budget")
 
@@ -68,6 +69,11 @@ OWN_BUDGETS: dict[str, tuple[str, str]] = {
     # call — its worst case is a ~100,000-character dossier (25,000 tokens: 5 cents on T2) and the 8,000-token
     # ceiling (8 cents), 13 cents; R-7's 10 would refuse every bounded run at its bound.
     SITE_REASON: ("2.00", "0.15"),
+    # GeniOS-011 S34.U3 · the card writer (R-10, T1): 50 cents a day of its own and 2 cents a call. Its worst case is
+    # the fact table at its bound (40 facts of <= 400 characters, plus the prompt: ~19,000 characters, ~4,750 tokens —
+    # half a cent on T1) and the 1,600-token ceiling (0.8 cents): 1.3 cents. Fifty cents is ~40 new card versions a
+    # day at that bound; a busier day of copy must not spend the narrative's prose, nor the narrative its copy.
+    SITE_CARD_COPY: ("0.50", "0.02"),
 }
 
 
