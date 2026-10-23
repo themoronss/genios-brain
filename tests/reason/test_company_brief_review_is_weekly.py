@@ -3,10 +3,16 @@
     GENIOS_TEST_DATABASE_URL=postgresql+psycopg://… pytest tests/reason/test_company_brief_review_is_weekly.py -q
 
 Tree `yc2_w27_s07 · M25.C3.L-integration.V4.U04`. A brief written once goes stale. Once per ISO week,
-for every tenant whose founder accepted at least one line, the drafter is asked again — with the brief
-in force in its prompt — and what it returns is written as proposals by `weekly`. The week is claimed in
-`company_brief_reviews`, so every replica may call it on every heavy tick and the week is reviewed once;
-with no model it does nothing at all; one tenant's failure is recorded and the rest go on.
+for every tenant, the drafter is asked again — with the brief in force in its prompt — and what it
+returns is written as proposals by `weekly`. The week is claimed in `company_brief_reviews`, so every
+replica may call it on every heavy tick and the week is reviewed once; with no model it does nothing at
+all; one tenant's failure is recorded and the rest go on.
+
+⛔ GeniOS-011 S27.U1: a tenant whose founder accepted NO line was never reviewed, so its brief was never
+drafted and every goal was typed by hand (audit `goals-antler-cannot-appear-today`). It now gets its first
+draft here — `test_a_tenant_without_an_accepted_line_gets_its_first_draft` replaces the test that said it
+never would. Every run names its own tenants (`orgs=ORGS`): the review drafts for every tenant of the
+database, and a shared test database holds other tests' tenants (`tenants` is checked on its own).
 """
 from __future__ import annotations
 
@@ -19,7 +25,9 @@ from sqlalchemy import text
 
 from genios_engine.context.llm.client import LLMResult
 from genios_engine.platform import company_brief_store as store
-from genios_engine.reason.brief_review import run_company_brief_reviews, week_key
+from genios_engine.reason.brief_review import run_company_brief_reviews
+from genios_engine.reason.brief_review import tenants
+from genios_engine.reason.brief_review import week_key
 
 pytestmark = pytest.mark.pg
 
@@ -86,20 +94,21 @@ def test_the_week_key_is_the_iso_week():
 
 def test_each_tenant_with_a_brief_is_reviewed_once_a_week(engine):
     model, costs = _Model(), []
-    first = run_company_brief_reviews(engine, now=NOW, llm=model,
+    first = run_company_brief_reviews(engine, now=NOW, llm=model, orgs=ORGS,
                                       cost_sink=lambda **row: costs.append(row))
     assert first["week"] == "2026-W41" and first["failed"] == 0
     assert [(r.org_id, r.outcome, r.proposed) for r in _reviews(engine)] == [
-        ("org_s07_review_a", "proposed", 1), ("org_s07_review_b", "proposed", 1)]
+        ("org_s07_review_a", "proposed", 1), ("org_s07_review_b", "proposed", 1),
+        ("org_s07_review_none", "proposed", 1)]
     calls = len(model.prompts)
-    again = run_company_brief_reviews(engine, now=NOW + timedelta(hours=6), llm=model)
-    assert len(model.prompts) == calls and again["already_this_week"] >= 2
+    again = run_company_brief_reviews(engine, now=NOW + timedelta(hours=6), llm=model, orgs=ORGS)
+    assert len(model.prompts) == calls and again["already_this_week"] == 3
     assert {c["purpose"] for c in costs} == {"company_brief_draft"}
 
 
 def test_the_review_asks_with_the_brief_in_force_and_proposes_as_weekly(engine):
     model = _Model()
-    run_company_brief_reviews(engine, now=NOW, llm=model)
+    run_company_brief_reviews(engine, now=NOW, llm=model, orgs=ORGS)
     prompt = next(p for p in model.prompts if "raise the pre-seed round" in p)
     assert "Propose only what is missing" in prompt and "COMPANY BRIEF cb-" in prompt
     with engine.connect() as c:
@@ -108,9 +117,19 @@ def test_the_review_asks_with_the_brief_in_force_and_proposes_as_weekly(engine):
         ("watchlist", "hub71.com", "weekly")]
 
 
-def test_a_tenant_without_an_accepted_line_is_never_reviewed(engine):
-    run_company_brief_reviews(engine, now=NOW, llm=_Model())
-    assert "org_s07_review_none" not in {r.org_id for r in _reviews(engine)}
+def test_a_tenant_without_an_accepted_line_gets_its_first_draft(engine):
+    """GeniOS-011 S27.U1 — it was never reviewed. Now it is among the tenants, and its first draft is
+    asked with no brief in force and proposed by `weekly`."""
+    with engine.connect() as c:
+        assert "org_s07_review_none" in tenants(c)
+    model = _Model()
+    run_company_brief_reviews(engine, now=NOW, llm=model, orgs=["org_s07_review_none"])
+    assert [(r.org_id, r.outcome) for r in _reviews(engine)] == [("org_s07_review_none", "proposed")]
+    assert len(model.prompts) == 1 and "Propose only what is missing" not in model.prompts[0]
+    with engine.connect() as c:
+        pending = store.pending(c, "org_s07_review_none")
+    assert [(p["section"], p["domain"], p["proposed_by"]) for p in pending] == [
+        ("watchlist", "hub71.com", "weekly")]
 
 
 def test_no_model_claims_nothing(engine):
@@ -119,10 +138,11 @@ def test_no_model_claims_nothing(engine):
 
 
 def test_one_tenants_failure_is_recorded_and_the_rest_go_on(engine):
-    out = run_company_brief_reviews(engine, now=NOW, llm=_Model(fail_for="Alpha Labs"))
-    assert out["failed"] >= 1
+    out = run_company_brief_reviews(engine, now=NOW, llm=_Model(fail_for="Alpha Labs"), orgs=ORGS)
+    assert out["failed"] == 1
     outcomes = {r.org_id: r.outcome for r in _reviews(engine)}
-    assert outcomes == {"org_s07_review_a": "error:RuntimeError", "org_s07_review_b": "proposed"}
+    assert outcomes == {"org_s07_review_a": "error:RuntimeError", "org_s07_review_b": "proposed",
+                        "org_s07_review_none": "proposed"}
     assert all(r.finished_at is not None for r in _reviews(engine))
 
 

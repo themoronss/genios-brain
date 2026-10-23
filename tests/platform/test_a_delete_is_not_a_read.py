@@ -214,7 +214,10 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,316 → 3,401, GeniOS-011 S01.U1 (23 Oct): `scripts/g011_prod_readings.py`, one read-only runner
     # holding every production read GeniOS-011 is blocked on — 85 statements, its 86 readings but the one
     # `show`. New SQL text in an operator script, not a wider list.
-    assert r["statements"] == 3_401, (
+    # ⛔ MOVED 3,401 → 3,404, GeniOS-011 S27.U1 (23 Oct): `reason/brief_patterns` — `_SITUATIONS` (the open situations
+    # on the founder's files), `_IN_MOTION` (the brief's in-motion lines, accepted or proposed) and `_GOALS` (the work
+    # a goal already rests on) — three reads, so the drafter sees what is in motion.
+    assert r["statements"] == 3_404, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
