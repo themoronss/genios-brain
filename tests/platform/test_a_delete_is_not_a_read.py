@@ -219,7 +219,10 @@ def test_the_statement_count_did_NOT_move():
     # a goal already rests on) — three reads, so the drafter sees what is in motion.
     # ⛔ MOVED 3,404 → 3,405 GeniOS-011 S06.U1 (23 Oct): `capture/parked/drain._FILE_REJUDGMENT`, the
     # park an older junk filter's archive is filed under to be judged again — the engine gaining one statement.
-    assert r["statements"] == 3_405, (
+    # ⛔ MOVED 3,405 → 3,406 GeniOS-011 S18.U1 (23 Oct): `reason/domain_shadow._SITUATION_EVENTS`, the events behind
+    # every situation of the pass read once, before the situation loop, so the judged files can be decided first —
+    # the engine gaining one statement.
+    assert r["statements"] == 3_406, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
