@@ -29,6 +29,13 @@ and the alerts the row raised, kept on the row and sent through `ops_alert`:
     lane_no_data              a lane whose 14-day median is above zero — it ran on most days — read
                               nothing for the whole day: NO DATA for 24 h
     database_over_ceiling     pg_database_size past the ceiling (once per run, not once per org)
+    plan_expired              the tenant's plan was EXPIRED at the end of the day, so every scheduled sweep
+                              skipped it (`api/routes._plan_expired`, since 7075014c) — GeniOS-012 U12-01
+
+⛔ AN EXPIRED PLAN IS NEVER SILENT AGAIN (GeniOS-012 U12-01). The sweep skips a lapsed tenant entirely, which is
+right for spend and was invisible: the founder's own org stopped on 21 Sep and nobody saw it for a month. The row
+carries `plan_state` (`active` | `grace` | `expired`, `platform/billing.expiry_state`, read at the end of the
+row's day) and an expired tenant raises `plan_expired` — once a day, by the row's own key.
 
 ⛔ THE BASELINE IS READ FROM THE SOURCE TABLES, NOT FROM EARLIER ROWS. The row's day and the 14 before it are
 one grouped read per table, so the drop alert works on the first day the job runs, and a day the job missed
@@ -105,6 +112,7 @@ NO_LANE = "unrouted"
 ALERT_CARDS = "cards_below_half_median"
 ALERT_LANE = "lane_no_data"
 ALERT_DB = "database_over_ceiling"
+ALERT_PLAN = "plan_expired"
 
 
 # ── the reads ───────────────────────────────────────────────────────────────────────────────────
@@ -155,14 +163,16 @@ _R_SITE = text(
 
 _DB_SIZE = text("select pg_database_size(current_database())")
 
+_PLAN = text("select plan_status, plan_expires_at, grace_until from orgs where id = :org")
+
 _INSERT = text(
     "insert into daily_health (org_id, day, cards, cards_total, card_refusals, expert_reviews, "
     "reasoning_results, l2_admissions, funnel, llm_calls, llm_failures, llm_truncations, r_site_calls, "
-    "database_bytes, cards_median_14d, alerts, measured_at) values (:org, :day, cast(:cards as jsonb), "
+    "database_bytes, cards_median_14d, alerts, measured_at, plan_state) values (:org, :day, cast(:cards as jsonb), "
     ":cards_total, cast(:card_refusals as jsonb), cast(:expert_reviews as jsonb), "
     "cast(:reasoning_results as jsonb), cast(:l2_admissions as jsonb), cast(:funnel as jsonb), :llm_calls, "
     ":llm_failures, :llm_truncations, cast(:r_site_calls as jsonb), :database_bytes, :cards_median_14d, "
-    "cast(:alerts as jsonb), :measured_at) on conflict (org_id, day) do nothing returning org_id")
+    "cast(:alerts as jsonb), :measured_at, :plan_state) on conflict (org_id, day) do nothing returning org_id")
 
 _PURGE = text("delete from daily_health where day < :cutoff")
 
@@ -206,6 +216,29 @@ def lanes_no_data(today: Mapping[str, int], baseline: Sequence[Mapping[str, int]
 
 
 # ── the measurement ─────────────────────────────────────────────────────────────────────────────
+
+def plan_state(conn, org_id: str, at: datetime) -> dict:
+    """The tenant's plan at `at`: {"state": active|grace|expired|None, "plan_expires_at", "grace_until"}.
+
+    `state` is None when the org row cannot be read — unknown, never guessed as active or expired."""
+    from genios_engine.platform.billing import expiry_state
+    row = conn.execute(_PLAN, {"org": org_id}).first()
+    if row is None:
+        return {"state": None, "plan_expires_at": None, "grace_until": None}
+    return {"state": expiry_state(row.plan_status, row.plan_expires_at, row.grace_until, now=at),
+            "plan_expires_at": row.plan_expires_at, "grace_until": row.grace_until}
+
+
+def plan_alert(plan: Mapping[str, Any]) -> dict | None:
+    """`plan_expired` when the plan was expired, else None. Pure."""
+    if plan.get("state") != "expired":
+        return None
+    def iso(value):
+        return value.isoformat() if hasattr(value, "isoformat") else value
+    return {"kind": ALERT_PLAN, "plan_expires_at": iso(plan.get("plan_expires_at")),
+            "grace_until": iso(plan.get("grace_until")),
+            "says": "every scheduled sweep skipped this tenant: no capture, no reasoning, no cards"}
+
 
 def _days(day: date) -> list[date]:
     """The baseline days, oldest first, then the row's day last."""
@@ -269,6 +302,8 @@ def measure_day(conn, org_id: str, day: date) -> dict:
                    for stage in funnel.STAGES},
         "llm_calls": calls, "llm_failures": failed, "llm_truncations": truncated,
         "r_site_calls": r_site.get(day, {}),
+        # GeniOS-012 U12-01 · the plan at the END of the row's day — what the day's last sweep saw.
+        "plan": plan_state(conn, org_id, end),
     }
     return {"row": row,
             "cards_by_day": [sum(sum(v.values()) for v in cards.get(d, {}).values()) for d in days],
@@ -294,6 +329,9 @@ def _alerts(measured: Mapping[str, Any], database_bytes: int | None, ceiling: in
         out.append({"kind": ALERT_LANE, "lanes": dark})
     if database_bytes is not None and database_bytes > ceiling:
         out.append({"kind": ALERT_DB, "bytes": database_bytes, "ceiling_bytes": ceiling})
+    lapsed = plan_alert(measured["row"].get("plan") or {})
+    if lapsed:
+        out.append(lapsed)
     return out
 
 
@@ -304,7 +342,8 @@ def _write(engine, org_id: str, day: date, measured: Mapping[str, Any], *, datab
               "cards_median_14d": _median(measured["cards_by_day"][:-1]),
               "alerts": json.dumps(alerts), "cards_total": row["cards_total"],
               "llm_calls": row["llm_calls"], "llm_failures": row["llm_failures"],
-              "llm_truncations": row["llm_truncations"]}
+              "llm_truncations": row["llm_truncations"],
+              "plan_state": (row.get("plan") or {}).get("state")}
     for column in ("cards", "card_refusals", "expert_reviews", "reasoning_results", "l2_admissions",
                    "funnel", "r_site_calls"):
         params[column] = json.dumps(row[column])

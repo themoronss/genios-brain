@@ -432,3 +432,22 @@ def test_the_scheduler_job_measures_through_the_routes_engine(monkeypatch):
         engine = object()
     monkeypatch.setattr(routes, "_graph", _G())
     assert S._daily_health() == {"written": 0} and seen == [_G.engine]
+
+
+# ── GeniOS-012 U12-01 · an expired plan is said on the row ─────────────────────────────────────
+
+@pytest.mark.pg
+def test_an_expired_tenant_row_says_so_and_alerts_once(engine, alerts):
+    """The sweep skips an expired tenant; its row now says `plan_state = 'expired'` and raises `plan_expired`."""
+    with engine.begin() as c:
+        c.execute(text("update orgs set plan_status = 'expired', plan_expires_at = :at, grace_until = null "
+                       "where id = :o"), {"o": ORG_DARK, "at": NOW - timedelta(days=32)})
+        c.execute(text("update orgs set plan_status = 'active', plan_expires_at = :at, grace_until = null "
+                       "where id = :o"), {"o": ORG_EDGE, "at": NOW + timedelta(days=30)})
+    DH.run_daily_health(engine, now=NOW, orgs=[ORG_DARK, ORG_EDGE], ceiling=NO_CEILING)
+    dark, edge = _row(engine, ORG_DARK), _row(engine, ORG_EDGE)
+    assert dark["plan_state"] == "expired" and "plan_expired" in _kinds(dark)
+    assert edge["plan_state"] == "active" and "plan_expired" not in _kinds(edge)
+    assert [e for e, f in alerts if e == "daily_health_plan_expired" and f["org_id"] == ORG_DARK]
+    DH.run_daily_health(engine, now=NOW + timedelta(hours=6), orgs=[ORG_DARK], ceiling=NO_CEILING)
+    assert len([e for e, _f in alerts if e == "daily_health_plan_expired"]) == 1, "once a day means once"
