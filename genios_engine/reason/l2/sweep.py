@@ -372,6 +372,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     # (`makes_cards` is read above, where the due subjects are ordered.)
     file_reviews: list[dict[str, Any]] = []
     goal_proposals: list[Any] = []   # S29.U3 · (the proposal, its subject filled by code) — L3 rules on each below
+    goal_links: list[tuple] = []     # S30.U1 · (impacts, the situations L3 admitted, the result's fingerprint)
     for i, (subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp) in enumerate(ready):
         request = L2Request(org_id=org_id, subject_ref=subject.subject_ref,
                             trigger=subject.trigger if subject.trigger else TRIGGER_BUNDLE, eval_time=now,
@@ -415,6 +416,12 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 org_id=org_id, subject_ref=subject.subject_ref, fingerprint=fp, result=result,
                 situations=getattr(getattr(parts, "lifecycle", None), "situations", ()) or ())
             admissions.extend(decided)
+            # S30.U1 · the move's goal impacts, linked to each situation L3 ADMITTED for this judgment (written below).
+            admitted = [a.situation_id for a in decided
+                        if a.decision == admission.ADMIT and a.situation_id != admission.NO_SITUATION]
+            impacts = getattr(result.judgment, "goal_impacts", ()) or ()
+            if impacts and admitted:
+                goal_links.append((impacts, admitted, fp))
             # S29.U3 · a goal proposed for a piece of work — its subject is the judged file, filled here, never by the
             # model. A seed in no file is no piece of work: its proposal is not admitted.
             proposal = getattr(result.judgment, "goal_proposal", None)
@@ -477,6 +484,17 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 except Exception:      # noqa: BLE001
                     _log.exception("the L2 admission write failed org=%s", org_id)
                     receipt["admissions_failed"] = True
+            if goal_links:
+                from genios_engine.context.goals import link_impacts
+                linked = 0
+                for impacts, situation_ids, result_fp in goal_links:
+                    try:
+                        with conn.begin_nested():   # one judgment's links that fail cost those links, never the pass
+                            linked += link_impacts(conn, org_id, impacts=impacts, situation_ids=situation_ids,
+                                                   fingerprint=result_fp, at=now)
+                    except Exception:      # noqa: BLE001
+                        _log.exception("the goal links failed org=%s", org_id)
+                receipt["goal_links"] = linked
             if goal_proposals:
                 from genios_engine.context.goal_admission import admit_proposal
                 ruled: Counter = Counter()

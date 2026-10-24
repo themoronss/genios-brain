@@ -424,9 +424,11 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # declared mover came true — GET /feedback/precision reads it for precision by layer
     # (`api/routes._precision_by_layer`). A new reader, not a resolver change; the entry moved to
     # `RETRACTED_UNREAD_WRITES`.
+    # ⛔ RE-PINNED 7 → 8 on 2026-10-24 by GeniOS-012 S30.U1: `goal_situation_links` arrived — written by the L2 pass,
+    # its readers (S30.U2, S31.U1) next; declared in `UNREAD_WRITES`. A new table, not a resolver change.
     assert sorted(TC.written_and_unread()) == [
         "agent_metering", "card_feedback_revisions", "contract_spend_attributions",
-        "delivery_rate_windows", "domain_requests",
+        "delivery_rate_windows", "domain_requests", "goal_situation_links",
         "situation_interpretations", "warm_lane_slots"], (
         "⛔ RE-PINNED 2026-10-04 by `3.1b`. The COUNT is still 9 and the MEMBERS turned over: "
         "`source_identity_map` left, because the loop hop made `context/merge.py`'s read visible; "
@@ -510,5 +512,6 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # ⛔ RE-PINNED 201 → 202 and 203 → 205 on 2026-10-24 by migration `0254_company_goals` (GeniOS-012 S28.U1, the goal
     # object): two new tables; `company_goals` read and written by `context/goals` (synced from the brief every sweep),
     # `goal_situation_links` not yet written (S30.U1). An engine change, not a resolver change.
-    assert len(TC.table_usage()) == 202
+    # ⛔ RE-PINNED 202 → 203 on 2026-10-24 by GeniOS-012 S30.U1: `goal_situation_links` is now written (`context/goals`).
+    assert len(TC.table_usage()) == 203
     assert len(TC._known_tables()) == 205

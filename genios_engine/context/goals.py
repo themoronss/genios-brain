@@ -119,4 +119,23 @@ def sync_from_brief(conn, org_id: str, *, at: datetime) -> dict[str, int]:
     return written
 
 
-__all__ = ["goal_id_for", "goals", "live_goals", "sync_from_brief"]
+_LINK = text(
+    "insert into goal_situation_links (org_id, goal_id, situation_id, relation, why, evidence, result_fingerprint, "
+    "  linked_at) values (:o, :g, :s, :rel, :why, cast(:ev as jsonb), :fp, :at) "
+    "on conflict (org_id, goal_id, situation_id) do update set relation = excluded.relation, why = excluded.why, "
+    "  evidence = excluded.evidence, result_fingerprint = excluded.result_fingerprint, linked_at = excluded.linked_at")
+
+
+def link_impacts(conn, org_id: str, *, impacts, situation_ids, fingerprint: str | None, at: datetime) -> int:
+    """GeniOS-012 S30.U1 · each `GoalImpact` of a judgment linked to each situation L3 ADMITTED for it — only to a goal
+    still live (a human made it real; block G printed no other). Latest wins per goal and situation. Returns the rows."""
+    live = {g.ref: g.goal_id for g in live_goals(conn, org_id)}
+    rows = [{"o": org_id, "g": live[i.goal_ref], "s": sid, "rel": i.relation, "why": i.why,
+             "ev": json.dumps(list(i.evidence)), "fp": fingerprint, "at": at}
+            for i in impacts if i.goal_ref in live for sid in situation_ids]
+    if rows:
+        conn.execute(_LINK, rows)
+    return len(rows)
+
+
+__all__ = ["goal_id_for", "goals", "link_impacts", "live_goals", "sync_from_brief"]

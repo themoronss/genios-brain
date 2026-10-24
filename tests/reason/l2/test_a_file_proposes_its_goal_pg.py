@@ -57,7 +57,7 @@ def ours(world):
             at=now - timedelta(days=2))
     yield store, now, file_id
     with store.engine.begin() as c:
-        for t in ("company_goals", "company_brief_lines"):
+        for t in ("company_goals", "company_brief_lines", "goal_situation_links"):
             c.execute(text(f"delete from {t} where org_id = :o"), {"o": ORG})
 
 
@@ -133,3 +133,26 @@ def test_a_move_citing_a_goal_block_g_never_printed_loses_that_impact(ours):
         result = c.execute(text("select result from reasoning_results where org_id = :o and status = 'result'"),
                            {"o": ORG}).scalar()
     assert result["judgment"]["goal_impacts"] == []
+
+
+def test_s30_a_moves_impact_on_a_live_goal_links_the_admitted_situation(ours):
+    """S30.U1: the move cites the live goal; L3 admitted the file's situation — one link, goal → situation."""
+    store, now, _file_id = ours
+    with store.engine.begin() as c:
+        line = brief.propose(c, org_id=ORG, section="goals", words="Raise the seed round", proposed_by="founder",
+                             at=now)
+        brief.accept(c, org_id=ORG, line_id=line, decided_by="seat_owner", at=now)
+        GS.sync_from_brief(c, ORG, at=now)
+        [goal] = GS.live_goals(c, ORG)
+    receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9Goals())
+    assert receipt.get("goal_links") == 1, str(receipt)
+    with store.engine.connect() as c:
+        rows = c.execute(text("select goal_id, situation_id, relation from goal_situation_links where org_id = :o"),
+                         {"o": ORG}).all()
+    assert [tuple(r) for r in rows] == [(goal.goal_id, "sit_c1", "advances")]
+
+
+def test_s30_no_live_goal_no_link(ours):
+    store, now, _file_id = ours
+    receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9Goals())
+    assert not receipt.get("goal_links"), str(receipt)

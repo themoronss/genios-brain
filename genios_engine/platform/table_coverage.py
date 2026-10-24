@@ -122,6 +122,13 @@ UNREAD_WRITES: dict[str, tuple[str, str, str]] = {
         "would be stale before the caller acted on it, which is precisely why the claim is a "
         "conditional write"),
     # ── context/ ────────────────────────────────────────────────────────────────────────
+    "goal_situation_links": (
+        "context/goals.py",
+        "GeniOS-012 S30.U1 (24 Oct) · a move's `GoalImpact` on a LIVE goal, linked to each situation L3 admitted "
+        "for that judgment — written by the L2 pass. Nothing reads it yet: the goal's progress (S30.U2) and the "
+        "card's goal line (S31.U1) are its readers, built next",
+        "MOVES WHEN S30.U2 counts a goal's progress from its links, or S31.U1 gives a card its goal_refs "
+        "(`speedrun008/GeniOS-012/07-GOALS.md`)"),
     "contract_spend_attributions": (
         "context/correlation_resource.py",
         "⛔ Written when resource correlation attributes spend to a contract. Every other mention "
