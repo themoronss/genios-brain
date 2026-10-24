@@ -209,6 +209,33 @@ def accept(conn, *, org_id: str, line_id: str, decided_by: str, at: datetime,
     return line
 
 
+#: G012 H-19 · the key a goals line's evidence names a piece of work by when L3 found that work SERVES the goal — a
+#: file whose own judgment proposed the same goal in other words, or said its move bears on it. Never the work the
+#: line was proposed for (its `file:` ref, or the drafter's `file_id`), so "this work already has a goal" still means
+#: a goal born from it.
+SERVES = "serves"
+
+
+def add_work(conn, *, org_id: str, line_id: str, work_ref: str, at: datetime, why: str | None = None) -> bool:
+    """G012 H-19 · a piece of work (`file:<id>`) that serves a pending or accepted goals line, kept on the line's
+    evidence — once. A goal is many files' work: "Raise the pre-seed round" was proposed from four investors' files on
+    the design partner's org (24 Oct) and rested on the first alone, so the other three investors' cards never carried
+    it. The founder's words, status and decision are untouched. Returns whether the line changed."""
+    row = conn.execute(text(
+        "select evidence, status from company_brief_lines where org_id = :o and line_id = :l and section = 'goals' "
+        "for update"), {"o": org_id, "l": line_id}).first()
+    if row is None or row.status not in (PROPOSED, ACCEPTED):
+        return False
+    evidence = row.evidence if isinstance(row.evidence, list) else json.loads(row.evidence or "[]")
+    if any(isinstance(e, Mapping) and e.get(SERVES) == work_ref for e in evidence):
+        return False
+    evidence.append({SERVES: work_ref, "at": at.isoformat(), **({"why": why[:200]} if why else {})})
+    conn.execute(text("update company_brief_lines set evidence = cast(:ev as jsonb) where org_id = :o and line_id = :l"),
+                 {"o": org_id, "l": line_id, "ev": json.dumps(evidence, sort_keys=True, default=str)})
+    _invalidate(org_id)
+    return True
+
+
 def reject(conn, *, org_id: str, line_id: str, decided_by: str, at: datetime) -> None:
     """Reject a proposal. It stays, rejected — so the drafter does not propose it again soon."""
     row = _row(conn, org_id, line_id)
@@ -322,5 +349,5 @@ def pending(conn, org_id: str) -> list[dict[str, Any]]:
 
 
 __all__ = ["ACCEPTED", "AS_PROPOSED", "BY_FOUNDER", "PROPOSED", "REJECTED", "REJECTED_QUIET_DAYS",
-           "REMOVED", "STATUSES", "CompanyBriefError", "accept", "accepted", "add", "pending",
+           "REMOVED", "SERVES", "STATUSES", "CompanyBriefError", "accept", "accepted", "add", "add_work", "pending",
            "propose", "reject", "remove"]

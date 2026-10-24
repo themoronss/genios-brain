@@ -426,7 +426,7 @@ def validate_judgment(review: ExpertReview, judgment: L2Judgment, catalogue: Dos
         for ref in judgment.open_conflict.between:
             if not _printed(ref, catalogue, facts):
                 problems.append((UNPRINTED_REF, f"the conflict cites {ref}"))
-    # GeniOS-012 S29.U2 · a goal is cited only as block G printed it; a pending proposal is never printed with an id.
+    # GeniOS-012 S29.U2 · a goal is cited only as block G printed it — a live one, or (G012 H-19) a waiting one.
     for n, g in enumerate(judgment.goal_impacts, start=1):
         for ref in (g.goal_ref, *g.evidence):
             if not _printed(ref, catalogue, facts):

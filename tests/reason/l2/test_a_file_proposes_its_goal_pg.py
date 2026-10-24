@@ -192,3 +192,62 @@ def test_h16_the_same_goal_in_other_words_from_another_file_is_held(ours):
             statement="Close the pre-seed round for the company", why="we pitched them", evidence=("evt_k_out",)),
             subject_ref="file:node_another_fund", us=us, at=now)
     assert first.decision == ADMIT and other.decision == HOLD and "other words" in other.reason
+
+
+def test_h19_the_same_goal_from_another_file_makes_that_file_serve_it(ours):
+    """G012 H-19: four investors' files proposed the round and it rested on the first alone. The others now SERVE it —
+    and a goal the founder makes real reaches every one of their cards; the goal's own subject does not move, and a
+    file that serves a goal may still have one of its own."""
+    store, now, file_id = ours
+    with store.engine.begin() as c:
+        us = identity_for(c, ORG)
+        first = admit_proposal(c, org_id=ORG, proposal=G.GoalProposal(
+            statement="Raise the pre-seed round", why="we pitched funds", evidence=("evt_k_out",)),
+            subject_ref=f"file:{file_id}", us=us, at=now)
+        other = admit_proposal(c, org_id=ORG, proposal=G.GoalProposal(
+            statement="Close the pre-seed round for the company", why="the second fund asked for the deck",
+            evidence=("evt_k_out",)), subject_ref="file:node_another_fund", us=us, at=now)
+        assert other.decision == HOLD and "now serves it" in other.reason and other.line_id == first.line_id
+        assert not brief.add_work(c, org_id=ORG, line_id=first.line_id, work_ref="file:node_another_fund", at=now), \
+            "served once"
+        own = admit_proposal(c, org_id=ORG, proposal=G.GoalProposal(
+            statement="Get the fund's partner programme to reconsider us", why="we applied",
+            evidence=("evt_k_out",)), subject_ref="file:node_another_fund", us=us, at=now)
+        assert own.decision == ADMIT, "serving a goal is not having one: the file's own end is still admitted"
+        brief.accept(c, org_id=ORG, line_id=first.line_id, decided_by="seat_owner", at=now)
+        GS.sync_from_brief(c, ORG, at=now)
+        [goal] = [g for g in GS.live_goals(c, ORG)]
+    assert goal.subject_ref == f"file:{file_id}"
+    assert "file:node_another_fund" in goal.evidence_refs
+
+
+class _R9ImpactOnly(_R9Goals):
+    """The move's impact on the goal block G printed first, and no proposal of its own."""
+
+    def call(self, prompt, *, max_tokens=400, **kw):
+        out = super().call(prompt, max_tokens=max_tokens, **kw)
+        out.parsed["goal_proposal"] = None
+        return out
+
+
+def test_h19_a_waiting_goal_is_printed_with_its_id_and_the_move_that_serves_it_is_kept(ours):
+    """G012 H-19: a waiting goal printed with no id took 262 judgments' impacts to 0. Printed with its id, the move says
+    it serves it; the work is kept on the line, never a link and never the company's goal until a human accepts."""
+    store, now, file_id = ours
+    with store.engine.begin() as c:
+        line = brief.propose(c, org_id=ORG, section="goals", words="Raise the seed round", proposed_by="l2", at=now,
+                             evidence=["file:node_first_fund", "evt_k_out"])
+        GS.sync_from_brief(c, ORG, at=now)
+        [waiting] = GS.goals(c, ORG)
+    r9 = _R9ImpactOnly()
+    receipt = l2_pass(store=store, org_id=ORG, now=now, llm=r9)
+    assert f"[{waiting.ref}] Raise the seed round" in r9.prompts[0] and "Waiting for the founder" in r9.prompts[0]
+    assert receipt.get("goal_work") == 1 and not receipt.get("goal_links"), str(receipt)
+    with store.engine.begin() as c:
+        [goal] = GS.goals(c, ORG)
+        assert goal.status == G.PROPOSED and GS.live_goals(c, ORG) == []
+        assert f"file:{file_id}" in goal.evidence_refs and goal.subject_ref == "file:node_first_fund"
+        brief.accept(c, org_id=ORG, line_id=line, decided_by="seat_owner", at=now)
+        GS.sync_from_brief(c, ORG, at=now)
+        [live] = GS.live_goals(c, ORG)
+    assert f"file:{file_id}" in live.evidence_refs, "approved later, the file that served it while it waited still does"

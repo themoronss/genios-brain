@@ -34,7 +34,8 @@ from genios_engine.reason.expert import prompt as expert
 from .dossier import L2Dossier
 from .plan import L2Plan
 
-PROMPT_VERSION = "l2-judgment.v3"        # v3: a goal is work with an end (G012 H-16); v2: the goals (S29)
+PROMPT_VERSION = "l2-judgment.v4"        # v4: waiting goals cited, a goal at the company's level (G012 H-19); v3: a goal
+#                                          is work with an end (G012 H-16); v2: the goals (S29)
 
 ROLE = (
     "You are the founder's chief of staff, thirty years in the work, and the reasoning layer of their company's "
@@ -65,13 +66,21 @@ _NEEDS = ("Ask the capture layer for evidence only when a fact that is not in th
           "when the blocks give one. A need that would not change the answer is not asked.")
 _ABSENCE = ("Never say something did not happen unless block F says that source was read for that window. A capped "
             "read is not an absence.")
-_GOALS = ("A goal is the company's only when block G prints it with a goal: id. Say which of those the next move "
-          "advances, threatens or depends on, and why, citing what shows it — or that it is unclear. A goal is work "
-          "with an END the company is driving to: getting into a programme it applied to, raising a round, making a "
-          "hire, winning a customer or a partner, completing a filing. Keeping a relationship warm, following up, "
-          "staying in touch, one investor's conversation or one introduction is a MOVE toward such a goal, never a "
-          "goal: say which printed goal it moves — or, when no printed goal and no waiting proposal names the end it "
-          "serves, propose that end once (\"raise the round\", not \"keep talking to this fund\"). At most one "
+#: G012 H-19 · v4: a waiting goal has an id and a move says it serves one; a goal is worded at the level the company
+#: pursues it. On the design partner's org (24 Oct) one judgment per partner proposed "land a partnership with <them>"
+#: (six of fourteen goals) and four investors' files each proposed the round — where the founder's own ten goals are
+#: "raise the pre-seed", "turn Boardy's intros into partners", "win paying design partners from your outreach".
+_GOALS = ("A goal is the company's only when block G lists it as approved; the goals waiting for the founder are listed "
+          "apart. Each has a goal: id. Say which of them the next move advances, threatens or depends on, and why, citing "
+          "what shows it — a waiting one too — or that it is unclear; never call a waiting goal the company's. A goal is "
+          "an END the company drives to, worded at the level the company pursues it: raising the round, getting into an "
+          "accelerator this cycle, winning paying design partners or customers, turning a connector's introductions "
+          "into partners, making a hire, completing a programme it is in, correcting a filing. One investor's, "
+          "partner's or customer's conversation — even one about to close — an introduction, a follow-up or keeping a "
+          "relationship warm is a MOVE toward such an end, never a goal: say which goal in block G it moves. One "
+          "counterparty is a goal of its own only when its single decision IS the end: an application or a "
+          "reconsideration the company awaits, a programme it is in, a filing. When no goal in block G names the end "
+          "this work serves, propose that end once (\"raise the round\", not \"land this fund\"). At most one "
           "proposal, in the founder's words, citing at least one act of the company's own (we applied, wrote, met) — "
           "never a target, a deadline or an owner the blocks did not print. A proposal waits for the founder.")
 RULES: tuple[str, ...] = (_BLOCKS, _UNTRUSTED, *expert.RULES[1:], _SIGNAL_QUOTE, _HISTORY, _CONFIDENCE, _MUTATIONS, _NEEDS,
@@ -103,10 +112,10 @@ L2_STEPS: tuple[expert.Step, ...] = (
                 "The evidence needs that would change your answer, each marked decision_changing, or none.",
                 ("evidence_needs",)),
     expert.Step("goals", "THE GOALS",
-                "Which printed goal (block G) the next move bears on and how — advances, threatens, depends_on or "
-                "unclear — with why and the ids; none when it bears on none. Then, only if the work has an end the "
-                "company is driving to and no printed goal or waiting proposal names that end: the one goal it is, or "
-                "null — never a goal of staying in touch.",
+                "Which goal block G lists — approved or waiting — the next move bears on and how: advances, threatens, "
+                "depends_on or unclear, with why and the ids; none when it bears on none. Then, only if the work "
+                "serves an end the company is driving to and no goal in block G names that end: the one goal it is, "
+                "at the company's level, or null — never a goal of staying in touch or of one counterparty's talk.",
                 ("goal_impacts", "goal_proposal")),
     expert.Step("limits", "WHAT WAS NOT SEEN",
                 "What block F and the capped context leave out that matters here; an open conflict between sources, "

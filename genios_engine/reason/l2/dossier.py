@@ -32,7 +32,8 @@ from .inputs import Subject
 from .snapshot import Snapshot
 from .tools import ToolResult
 
-L2_DOSSIER_VERSION = "l2-dossier.v3"        # v3: who you work for (G012 H-14); v2: block G, the goals (S29.U1)
+L2_DOSSIER_VERSION = "l2-dossier.v4"        # v4: waiting goals printed with ids (G012 H-19); v3: who you work for
+#                                             (G012 H-14); v2: block G, the goals (S29.U1)
 
 TITLES = {"A": "A · THE SIGNALS — what arrived for this subject", "B": "B · THE CONTEXT — what the company knows around it",
           "C": "C · THE HISTORY — comparable past work, and how it went",
@@ -159,15 +160,22 @@ def _coverage(subject: Subject, snapshot: Snapshot, cite: _Cite | None = None) -
 
 
 def _goals(goals: Sequence[Any], proposals: Sequence[Any], cite: _Cite) -> str:
-    """Block G (GeniOS-012 S29.U1): the goals a human made real, each with the id a move cites — and, apart and with
-    NO id, the proposals still waiting for the founder, so the work they name is not proposed again and none is ever
-    taken for the company's goal."""
+    """Block G (GeniOS-012 S29.U1): the goals a human made real, each with the id a move cites — and, apart, the
+    proposals still waiting for the founder, so the work they name is not proposed again and none is ever taken for
+    the company's goal.
+
+    G012 H-19 · a waiting goal is printed WITH its id, so a move may say it serves one: printed with none, 262
+    judgments on the design partner's org (24 Oct) wrote 0 impacts — every goal was still waiting — and "Raise the
+    pre-seed round" rested on one investor's file alone. What a move says of a waiting goal is kept as the work that
+    serves it (`context/goals.cover_work`); it reaches a card only once a human makes the goal real."""
     lines = [f"- {cite(g.ref)} {g.statement}" for g in goals]
     if not lines:
         lines = ["No goal is approved for this company yet."]
     if proposals:
-        lines.append("Proposed and waiting for the founder — NOT the company's goals yet, never cite one as its goal:")
-        lines += [f"- {p.statement}" + (f" (for {p.subject_ref})" if p.subject_ref else "") for p in proposals]
+        lines.append("Waiting for the founder — NOT the company's goals yet: a move may say it serves one, never that it "
+                     "is the company's goal:")
+        lines += [f"- {cite(p.ref)} {p.statement}" + (f" (proposed for {p.subject_ref})" if p.subject_ref else "")
+                  for p in proposals]
     return "\n".join(lines)
 
 

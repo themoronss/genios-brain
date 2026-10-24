@@ -107,3 +107,19 @@ def test_every_card_build_refreshes_the_goals_and_the_queue_serves_them():
     calls = {n.func.id for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
     assert "refresh_card_goals" in calls
     assert inspect.getsource(store.CardStore.queue).count("k.goal_refs") == 3
+
+
+def test_h19_a_card_carries_the_live_goal_its_file_serves(engine):
+    """G012 H-19: "Raise the pre-seed round" born from one investor's file reaches the card of another investor's file
+    that serves it — and a goal still waiting reaches none."""
+    import json
+    with engine.begin() as c:
+        _goal(c, "goal_round", "Raise the pre-seed round", subject="file:node_fund")
+        c.execute(text("update company_goals set evidence_refs = cast(:ev as jsonb) where org_id = :o and "
+                       "goal_id = 'goal_round'"), {"o": ORG, "ev": json.dumps(["file:node_fund", "file:node_titan"])})
+        _goal(c, "goal_hire", "Hire a founding engineer", status="proposed", subject="file:node_hire")
+        c.execute(text("update company_goals set evidence_refs = cast(:ev as jsonb) where org_id = :o and "
+                       "goal_id = 'goal_hire'"), {"o": ORG, "ev": json.dumps(["file:node_hire", "file:node_titan"])})
+        _card(c, "k_titan", "node_titan")
+        refresh_card_goals(c, ORG)
+        assert _refs(c, "k_titan") == [{"ref": "goal:goal_round", "statement": "Raise the pre-seed round"}]

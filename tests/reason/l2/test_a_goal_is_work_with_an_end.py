@@ -22,7 +22,7 @@ pytestmark = pytest.mark.unit
 def test_the_rule_says_a_goal_has_an_end_and_staying_in_touch_is_a_move():
     rule = next(r for r in P.RULES if r.startswith("A goal is the company's only"))
     assert "END" in rule and "never a goal" in rule and "raise the round" in rule
-    assert P.PROMPT_VERSION == "l2-judgment.v3"
+    assert P.PROMPT_VERSION == "l2-judgment.v4"
 
 
 @pytest.mark.parametrize("a, b, same", [
@@ -48,3 +48,18 @@ def test_a_proposal_is_ranked_by_its_works_stakes_then_urgency():
 def test_the_pass_admits_its_proposals_in_rank_order():
     """The call site: the admission loop walks the proposals sorted by rank, never in the order judged."""
     assert "sorted(goal_proposals, key=lambda p: p[0])" in inspect.getsource(sweep.l2_pass)
+
+
+def test_h19_a_goal_is_worded_at_the_companys_level_and_a_waiting_one_may_be_served():
+    """G012 H-19: six of fourteen goals were "land a partnership with <one company>"; the founder's are company-level."""
+    rule = next(r for r in P.RULES if r.startswith("A goal is the company's only"))
+    assert "at the level the company pursues it" in rule and "a waiting one too" in rule
+    assert "partner's or customer's conversation" in rule and "never call a waiting goal the company's" in rule
+
+
+def test_h19_the_pass_keeps_the_work_each_judgment_serves_and_syncs_the_goals():
+    """The call sites: every judged file's impacts reach `cover_work`, and the goals are synced after the writes."""
+    source = inspect.getsource(sweep.l2_pass)
+    assert "cover_work(conn, org_id, impacts=impacts, subject_ref=work_ref, at=now)" in source
+    assert "goal_work.append((impacts, f\"file:{subject.file_id}\"))" in source
+    assert "sync_from_brief(conn, org_id, at=now)" in source

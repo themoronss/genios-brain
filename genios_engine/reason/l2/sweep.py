@@ -386,6 +386,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     file_reviews: list[dict[str, Any]] = []
     goal_proposals: list[Any] = []   # S29.U3 · (the proposal, its subject filled by code) — L3 rules on each below
     goal_links: list[tuple] = []     # S30.U1 · (impacts, the situations L3 admitted, the result's fingerprint)
+    goal_work: list[tuple] = []      # G012 H-19 · (impacts, the judged file) — the work that serves each goal
     for i, (subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp) in enumerate(ready):
         request = L2Request(org_id=org_id, subject_ref=subject.subject_ref,
                             trigger=subject.trigger if subject.trigger else TRIGGER_BUNDLE, eval_time=now,
@@ -436,6 +437,8 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
             impacts = getattr(result.judgment, "goal_impacts", ()) or ()
             if impacts and admitted:
                 goal_links.append((impacts, admitted, fp))
+            if impacts and subject.file_id:
+                goal_work.append((impacts, f"file:{subject.file_id}"))
             # S29.U3 · a goal proposed for a piece of work — its subject is the judged file, filled here, never by the
             # model. A seed in no file is no piece of work: its proposal is not admitted.
             proposal = getattr(result.judgment, "goal_proposal", None)
@@ -522,6 +525,24 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                     except Exception:      # noqa: BLE001
                         _log.exception("the goal admission failed org=%s subject=%s", org_id, proposal.subject_ref)
                 receipt["goal_proposals"] = dict(ruled)
+            if goal_work:
+                from genios_engine.context.goals import cover_work
+                served = 0
+                for impacts, work_ref in goal_work:
+                    try:
+                        with conn.begin_nested():   # one file's work that fails costs that file's, never the pass
+                            served += cover_work(conn, org_id, impacts=impacts, subject_ref=work_ref, at=now)
+                    except Exception:      # noqa: BLE001
+                        _log.exception("the goal work failed org=%s subject=%s", org_id, work_ref)
+                receipt["goal_work"] = served
+            if goal_proposals or goal_work:
+                # G012 H-19 · the goals brought up to the lines just written, so this sweep's card build carries them.
+                from genios_engine.context.goals import sync_from_brief
+                try:
+                    with conn.begin_nested():
+                        sync_from_brief(conn, org_id, at=now)
+                except Exception:      # noqa: BLE001
+                    _log.exception("the goal sync after the pass failed org=%s", org_id)
             for review in file_reviews:
                 try:
                     with conn.begin_nested():     # one file's review that fails costs that file, never the pass

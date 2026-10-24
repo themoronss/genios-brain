@@ -18,6 +18,7 @@ from typing import Any
 from sqlalchemy import text
 
 from genios_engine.contracts import goals as G
+from genios_engine.platform.company_brief_store import SERVES
 
 #: The brief's line states (`platform/company_brief_store`) → the goal's status.
 _STATUS_OF_LINE = {"proposed": G.PROPOSED, "accepted": G.APPROVED, "rejected": G.CANCELLED, "removed": G.CANCELLED}
@@ -43,22 +44,32 @@ def goal_id_for(org_id: str, line_id: str) -> str:
     return "goal_" + hashlib.sha1(f"{org_id}:{line_id}".encode()).hexdigest()[:16]
 
 
-def _refs(evidence: Any) -> tuple[str, ...]:
+def _items(evidence: Any) -> list:
     if isinstance(evidence, str):
         try:
             evidence = json.loads(evidence)
         except ValueError:
-            return ()
+            return []
     if isinstance(evidence, dict):
         evidence = evidence.get("refs") or evidence.get("evidence") or []
+    return list(evidence or ())
+
+
+def _refs(evidence: Any) -> tuple[str, ...]:
+    """What a line was proposed on: the work it was born from and the lines it cites."""
     out: list[str] = []
-    for e in evidence or ():
+    for e in _items(evidence):
         if isinstance(e, dict):                  # the drafter's line: the work it rests on, by its file id
             if e.get("file_id"):
                 out.append(f"file:{e['file_id']}")
         elif isinstance(e, (str, int)) and str(e).strip():
             out.append(str(e))
     return tuple(dict.fromkeys(out))
+
+
+def _served(evidence: Any) -> tuple[str, ...]:
+    """G012 H-19 · the pieces of work L3 found SERVE the goal (`company_brief_store.add_work`)."""
+    return tuple(dict.fromkeys(str(e[SERVES]) for e in _items(evidence) if isinstance(e, dict) and e.get(SERVES)))
 
 
 def _goal_of(org_id: str, line: Any, superseded: set[str]) -> G.Goal:
@@ -70,8 +81,11 @@ def _goal_of(org_id: str, line: Any, superseded: set[str]) -> G.Goal:
     approver = (line.decided_by or (_BY_FOUNDER if founder else None)) if status in G.LIVE else None
     when = (line.accepted_at or line.decided_at) if status in G.LIVE else None
     refs = _refs(line.evidence)
+    # G012 H-19 · the work a goal was born from is its subject; the work that serves it is in its evidence too, so a
+    # card on any of it carries the goal (`deliver/goal_line`).
     return G.Goal(goal_id=goal_id_for(org_id, line.line_id), org_id=org_id, statement=words, status=status,
-                  source=source, line_id=line.line_id, evidence_refs=refs,
+                  source=source, line_id=line.line_id,
+                  evidence_refs=tuple(dict.fromkeys((*refs, *_served(line.evidence)))),
                   subject_ref=next((r for r in refs if r.startswith("file:")), None),
                   approved_by=approver, approved_at=when)
 
@@ -138,4 +152,27 @@ def link_impacts(conn, org_id: str, *, impacts, situation_ids, fingerprint: str 
     return len(rows)
 
 
-__all__ = ["goal_id_for", "goals", "link_impacts", "live_goals", "sync_from_brief"]
+#: G012 H-19 · the statuses a goal may still gather work in — a waiting one (the founder has not decided) or a live one.
+_GATHERS = (G.PROPOSED, *G.LIVE)
+
+
+def cover_work(conn, org_id: str, *, impacts, subject_ref: str, at: datetime) -> int:
+    """G012 H-19 · each `GoalImpact` of a judgment that bears on a goal (`unclear` does not), waiting or live: the
+    judged work SERVES it, kept on the goal's brief line, so the card of that work carries the goal once a human made
+    it real — with no new judgment. Block G prints the waiting goals with their ids for this: on the design partner's
+    org (24 Oct) 262 judgments wrote 0 impacts, because every goal was still waiting and printed with none. Returns the
+    lines that changed. Shown to no one as the company's goal until it is live (`deliver/goal_line` reads live only)."""
+    from genios_engine.platform.company_brief_store import add_work
+
+    if not str(subject_ref or "").startswith("file:"):
+        return 0
+    lines = {g.ref: g.line_id for g in goals(conn, org_id) if g.status in _GATHERS and g.line_id}
+    changed = 0
+    for i in impacts:
+        if i.relation != G.UNCLEAR and i.goal_ref in lines:
+            changed += add_work(conn, org_id=org_id, line_id=lines[i.goal_ref], work_ref=subject_ref, at=at,
+                                why=i.why)
+    return changed
+
+
+__all__ = ["cover_work", "goal_id_for", "goals", "link_impacts", "live_goals", "sync_from_brief"]

@@ -4,6 +4,8 @@
 
   HOLD   a duplicate — the same work already has a goal line, pending or accepted, or one the founder rejected
          lately, whoever proposed it (the drafter's lines carry the work's `file_id`, an L2 proposal its `file:` ref);
+         and the same goal in other words from ANOTHER piece of work — which then SERVES that goal (G012 H-19,
+         `company_brief_store.add_work`): a goal is many files' work, and the card of each carries it once it is live;
   HOLD   over the weekly cap (D12: 3 a week per tenant) — the founder is asked, never flooded;
   HOLD   no evidence of the company's OWN act (we applied, wrote, met): a goal is something the company pursues;
   REJECT a statement the brief cannot hold as one line;
@@ -28,12 +30,16 @@ PROPOSED_BY = "l2"
 #: How long a goal the founder rejected keeps the same work from being proposed again (the brief's own quiet).
 REJECTED_QUIET_DAYS = 90
 
+#: The work a line was BORN from: an L2 proposal's `file:` ref, or a drafter pattern's `file_id` — never a piece of work
+#: that only serves it (`company_brief_store.SERVES`, G012 H-19), which may still have a goal of its own.
 _SAME_WORK = text(
     "select count(*) from company_brief_lines where org_id = :o and section = 'goals' "
-    "   and (evidence::text like :file_ref or evidence::text like :file_id) "
+    "   and jsonb_typeof(evidence) = 'array' "
+    "   and (evidence @> jsonb_build_array(cast(:file_ref as text)) "
+    "        or exists (select 1 from jsonb_array_elements(evidence) e where e->>'file_id' = :file_id)) "
     "   and (status in ('proposed', 'accepted') or (status = 'rejected' and decided_at > :quiet))")
 _GOAL_LINES = text(
-    "select text from company_brief_lines where org_id = :o and section = 'goals' "
+    "select line_id, text, status from company_brief_lines where org_id = :o and section = 'goals' "
     "   and (status in ('proposed', 'accepted') or (status = 'rejected' and decided_at > :quiet))")
 #: G012 H-16 · how much of a goal's words another goal line may share before it is the same goal in other words —
 #: "Raise the pre-seed round" proposed from five investors' files is one goal, admitted once.
@@ -93,11 +99,20 @@ def admit_proposal(conn, *, org_id: str, proposal: GoalProposal, subject_ref: st
     from genios_engine.platform import company_brief_store as store
 
     file_id = subject_ref.split(":", 1)[1] if subject_ref.startswith("file:") else subject_ref
-    if conn.execute(_SAME_WORK, {"o": org_id, "file_ref": f"%{subject_ref}%", "file_id": f'%"{file_id}"%',
+    if conn.execute(_SAME_WORK, {"o": org_id, "file_ref": subject_ref, "file_id": file_id,
                                  "quiet": at - timedelta(days=REJECTED_QUIET_DAYS)}).scalar():
         return GoalAdmission(HOLD, "duplicate: this work already has a goal line")
     quiet = at - timedelta(days=REJECTED_QUIET_DAYS)
-    if any(same_goal(proposal.statement, r.text) for r in conn.execute(_GOAL_LINES, {"o": org_id, "quiet": quiet})):
+    same = next((r for r in conn.execute(_GOAL_LINES, {"o": org_id, "quiet": quiet})
+                 if same_goal(proposal.statement, r.text)), None)
+    if same is not None:
+        # G012 H-19 · the same goal from another piece of work: that work SERVES it (never for a goal the founder
+        # rejected — the company is not pursuing it).
+        if same.status != "rejected" and subject_ref.startswith("file:"):
+            store.add_work(conn, org_id=org_id, line_id=same.line_id, work_ref=subject_ref, at=at,
+                           why=proposal.why)
+            return GoalAdmission(HOLD, "duplicate: the same goal in other words is already a goal line — this work "
+                                       "now serves it", same.line_id)
         return GoalAdmission(HOLD, "duplicate: the same goal in other words is already a goal line")
     if conn.execute(_THIS_WEEK, {"o": org_id, "by": PROPOSED_BY, "since": at - timedelta(days=7)}).scalar() \
             >= WEEKLY_CAP:
