@@ -32,7 +32,7 @@ from .inputs import Subject
 from .snapshot import Snapshot
 from .tools import ToolResult
 
-L2_DOSSIER_VERSION = "l2-dossier.v2"        # v2: block G, the goals (GeniOS-012 S29.U1)
+L2_DOSSIER_VERSION = "l2-dossier.v3"        # v3: who you work for (G012 H-14); v2: block G, the goals (S29.U1)
 
 TITLES = {"A": "A · THE SIGNALS — what arrived for this subject", "B": "B · THE CONTEXT — what the company knows around it",
           "C": "C · THE HISTORY — comparable past work, and how it went",
@@ -171,10 +171,25 @@ def _goals(goals: Sequence[Any], proposals: Sequence[Any], cite: _Cite) -> str:
     return "\n".join(lines)
 
 
+def works_for_line(name: str | None, company: str | None, addresses=()) -> str | None:
+    """G012 H-14 · WHO THE MODEL WORKS FOR, said once in the head. The L2 pass read `us` and the org's names and never
+    printed them: with no company brief accepted, no line of any block said who the founder is — and on the design
+    partner's org (24 Oct) goals came back from the other side of the table ("applicants we decline", "we are
+    supporting <a fellow cohort startup> through the accelerator", "the question we owe <the founder himself>")."""
+    who = " ".join(str(name or company or "").split())
+    if not who:
+        return None
+    of = f" of {company}" if company and company != who else ""
+    reach = ", ".join(sorted(a for a in addresses if a)[:4])
+    return (f"YOU WORK FOR {who}{of}" + (f" ({reach})" if reach else "") + ". \"We\", \"us\" and \"our\" are them: a "
+            "mail they sent is the company's own act, and they are never the counterparty of a file.")
+
+
 def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot: Snapshot,
                      history: HistoricalContext, tools: Sequence[ToolResult], file_dossier: Any = None,
                      brief_block: str | None = None, depth_note: str | None = None,
-                     goals: Sequence[Any] = (), goal_proposals: Sequence[Any] = ()) -> L2Dossier:
+                     goals: Sequence[Any] = (), goal_proposals: Sequence[Any] = (),
+                     works_for: str | None = None) -> L2Dossier:
     """The seven blocks, in order. `file_dossier` is the STEP-12 `Dossier` for a file subject (its text and
     catalogue are kept whole); a seed subject passes `brief_block` instead. `goals` are the live goals
     (`context/goals.live_goals`), `goal_proposals` the pending ones."""
@@ -190,6 +205,8 @@ def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot
     blocks["F"] = _coverage(subject, snapshot, cite)
     blocks["G"] = _goals(goals, goal_proposals, cite)
     head = f"L2 DOSSIER {L2_DOSSIER_VERSION} — subject {subject.subject_ref}, as of {_when(as_of)}"
+    if works_for:
+        head += f"\n{works_for}"
     if depth_note:
         head += f"\n{depth_note}"
     text = "\n\n".join([head, *(f"# {TITLES[k]}\n{blocks[k]}" for k in ("A", "B", "C", "D", "E", "F", "G"))])
@@ -204,4 +221,4 @@ def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot
                      catalogue=catalogue, digest=digest)
 
 
-__all__ = ["L2Dossier", "L2_DOSSIER_VERSION", "TITLES", "build_l2_dossier"]
+__all__ = ["L2Dossier", "L2_DOSSIER_VERSION", "TITLES", "build_l2_dossier", "works_for_line"]

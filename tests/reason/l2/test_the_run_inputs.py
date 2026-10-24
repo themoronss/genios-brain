@@ -121,3 +121,10 @@ def test_the_dossier_is_the_same_bytes_for_the_same_parts():
 def test_every_number_in_the_dossier_is_in_its_catalogue():
     *_, dossier = file_world()
     assert {"30", "41"} <= dossier.catalogue.numbers           # the tool's hours, the snapshot revision
+
+
+def test_h14_who_the_model_works_for_is_one_line_with_names_and_addresses():
+    from genios_engine.reason.l2.dossier import works_for_line
+    line = works_for_line("Arjun Rao", "Nimbus Labs", ["arjun@nimbus.test"])
+    assert line.startswith("YOU WORK FOR Arjun Rao of Nimbus Labs (arjun@nimbus.test).") and "\n" not in line
+    assert works_for_line(None, None) is None

@@ -156,3 +156,12 @@ def test_s30_no_live_goal_no_link(ours):
     store, now, _file_id = ours
     receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9Goals())
     assert not receipt.get("goal_links"), str(receipt)
+
+
+def test_h14_every_dossier_says_who_the_model_works_for(ours):
+    """G012 H-14: the founder named once in the head — on 24 Oct goals came back from the other side of the table."""
+    store, now, _file_id = ours
+    r9 = _R9Goals()
+    l2_pass(store=store, org_id=ORG, now=now, llm=r9)
+    assert "YOU WORK FOR" in r9.prompts[0] and FOUNDER in r9.prompts[0]
+    assert "they are never the counterparty" in r9.prompts[0]

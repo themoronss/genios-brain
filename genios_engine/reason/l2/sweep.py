@@ -50,7 +50,7 @@ from genios_engine.reason.bundle.store import BundleStore
 from genios_engine.context import l2_admission as admission
 
 from . import evidence, store as results
-from .dossier import L2_DOSSIER_VERSION, build_l2_dossier
+from .dossier import L2_DOSSIER_VERSION, build_l2_dossier, works_for_line
 from .history import history_for
 from .inputs import Subject, conflicts_for, read_open_conflicts, read_signals, read_subjects, seed_of
 from .judge import judge
@@ -262,6 +262,8 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                     subjects.append(again)
                     receipt["reentries"] += 1
     our_names = tuple(n for n in (getattr(org, "company", None), getattr(org, "name", None)) if n)
+    # G012 H-14 · who the model works for, printed once in every dossier's head.
+    works_for = works_for_line(getattr(org, "name", None), getattr(org, "company", None), us.addresses)
     by_file = {str(f.file_id): f for f in files}
     brief_block = brief.prompt_block().strip() if brief is not None and brief else None
     receipt["subjects"] = len(subjects)
@@ -380,7 +382,8 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
         dossier = build_l2_dossier(org_id=org_id, subject=subject, as_of=now, snapshot=snapshot, history=history,
                                    tools=tools, file_dossier=file_dossier,
                                    brief_block=None if file_dossier is not None else brief_block,
-                                   depth_note=depth_note(plan), goals=live_goals, goal_proposals=waiting_goals)
+                                   depth_note=depth_note(plan), goals=live_goals, goal_proposals=waiting_goals,
+                                   works_for=works_for)
         expertise_ref = stable_ref("pkg", {"dossier": file_dossier.digest if file_dossier is not None else None,
                                            "brief": brief_block, "prompt": PROMPT_VERSION})
         judged = judge(org_id=org_id, request_ref=request.request_id, dossier=dossier, plan=plan, gate=gate,
