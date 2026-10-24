@@ -877,6 +877,47 @@ ABSENCE_CLAIMING_TYPES: frozenset[str] = frozenset({
     "condition_in_review",
 })
 
+#: G012 H-21 · THE CAPABILITY EACH ABSENCE RESTS ON. "They have not replied" is a statement about the MAIL, and it is
+#: licensed when the mail was covered — not when every system the domain could ever use is connected. The domain's
+#: verdict (`capture/coverage/model.PACK_REQUIREMENTS`: admin requires finance AND communication) held every admin
+#: silence on the design partner's org (local copy, 24 Oct): Gmail and Calendar connected and fresh, no finance tool,
+#: so 786 admin signals carried `coverage_ready = False` and 74 situations — the 11 Aug investor wave, the cohorts that
+#: never replied — were held `source_coverage_insufficient`, a payment ledger standing between a founder and the
+#: fact that twelve investors did not answer. Read from the tenant's own `source_coverage.freshness`.
+#: `first_response_overdue` is not here: a support reply may live in a helpdesk, so the domain's verdict stands for it.
+ABSENCE_RESTS_ON: Mapping[str, str] = {
+    "awaiting_response": "communication", "cohort_outreach_gap": "communication",
+    "commitment_overdue": "communication", "organization_gone_quiet": "communication",
+    "campaign_awaiting_reply": "communication", "condition_in_review": "communication",
+}
+
+_FRESHNESS = text(
+    "select freshness from source_coverage where org_id = :o order by computed_at desc limit 1")
+
+
+def read_capability_freshness(conn, org_id: str) -> dict[str, str]:
+    """G012 H-21 · the tenant's capability → `fresh | stale | not_connected`, as Layer 1 last declared it — `{}` when it
+    never did (the domain's verdict then stands for every absence, as before)."""
+    try:
+        value = conn.execute(_FRESHNESS, {"o": org_id}).scalar()
+    except Exception:      # noqa: BLE001 — no coverage row read is no licence widened
+        return {}
+    value = json.loads(value) if isinstance(value, str) else value
+    return {str(k): str(v) for k, v in (value or {}).items()} if isinstance(value, Mapping) else {}
+
+
+def absence_unlicensed(situation_type: str, l1: "L1Signals | None",
+                       freshness: Mapping[str, str] | None) -> bool:
+    """Whether an absence this situation claims stands on a source Layer 1 assessed as NOT covered: by the capability
+    the absence rests on (`ABSENCE_RESTS_ON`) when the tenant's freshness names it, else by the domain's verdict.
+    `None` from Layer 1 — never assessed — is not bad news, as before."""
+    if situation_type not in ABSENCE_CLAIMING_TYPES:
+        return False
+    capability = ABSENCE_RESTS_ON.get(situation_type)
+    if capability and freshness and capability in freshness:
+        return freshness[capability] != "fresh"
+    return (l1.coverage_ready if l1 is not None else None) is False
+
 ABSENCE_RECEIPT_FIELDS: Mapping[str, tuple[str, ...]] = {
     "awaiting_response": ("thread.last_outbound",),
     "cohort_outreach_gap": ("thread.last_outbound",),
@@ -1495,6 +1536,8 @@ def build_business_situation(
     brain_subject_keys: tuple[str, ...] = (),
     contradicted_by: tuple[str, ...] = (),
     variant_ids: tuple[str, ...] = (),
+    #: G012 H-21 · the tenant's `source_coverage.freshness` (`read_capability_freshness`), read once by the caller.
+    capability_freshness: Mapping[str, str] | None = None,
 ) -> BusinessSituationObject:
     """``members`` — real correlated counterparties from ``gather_members`` — is a separate,
     explicit parameter rather than a key smuggled onto ``situation``. Callers pass a raw DB row
@@ -1732,9 +1775,10 @@ def build_business_situation(
             # absence of information about coverage and must not masquerade as bad news — the
             # same discipline `freshness_score` keeps for an undated row. On the pilot that is
             # the difference between holding 55 and holding 274.
-            "requires_complete_coverage": (
-                str(situation.get("situation_type") or "") in ABSENCE_CLAIMING_TYPES
-                and (l1.coverage_ready if l1 is not None else None) is False),
+            #
+            # G012 H-21 · BY THE CAPABILITY THE ABSENCE RESTS ON (`ABSENCE_RESTS_ON`), not the domain's whole list.
+            "requires_complete_coverage": absence_unlicensed(
+                str(situation.get("situation_type") or ""), l1, capability_freshness),
             "shadow": True,
             # One anchor correlating more than SPLIT_REQUIRED_THRESHOLD distinct external
             # counterparties is not describing one relationship. Surfaced rather than silently
@@ -2146,7 +2190,10 @@ def build_context_slice(
 
 
 __all__ = [
+    "ABSENCE_RESTS_ON",
     "SELECTOR_VERSION",
+    "absence_unlicensed",
+    "read_capability_freshness",
     "TYPE_SOURCE_ANCHOR",
     "TYPE_SOURCE_PATTERN",
     "EVIDENCE_POOL",

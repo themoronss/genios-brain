@@ -46,6 +46,7 @@ from genios_engine.context.situation_bso import (
     gather_members,
     gather_pattern_fires,
     gather_visibility,
+    read_capability_freshness,
     stored_importance,
 )
 from genios_engine.context.situation_publisher import publish_situation
@@ -1541,6 +1542,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 conn, org_id, situations, l1_by_correlation)
         except Exception:      # noqa: BLE001 — evidence refinement, retried next sweep
             logger.exception("absence receipt backfill failed for org=%s", org_id)
+        # G012 H-21 · WHICH CAPABILITIES LAYER 1 DECLARED FRESH, once for the sweep: an absence is licensed by the
+        # capability it rests on (`situation_bso.ABSENCE_RESTS_ON`), never by the domain's whole list.
+        capability_freshness = read_capability_freshness(conn, org_id)
         # L2.5.8 · IS LAYER 1's SCORER LIVE FOR THIS TENANT AT ALL? Measured ONCE for the sweep,
         # TENANT-SCOPED, with one `select exists` against `qualified_signals`.
         #
@@ -1850,7 +1854,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     org_id=org_id, situation=row,
                     signal_ids=signal_ids, evidence=evidence, trace_id=trace_id,
                     members=members, visibility=situation_visibility, l1=l1,
-                    refusal=refusal,
+                    refusal=refusal, capability_freshness=capability_freshness,
                     composed=composed, pattern=pattern_fires.get(str(anchor)),
                     # THE BRAIN ADDRESS, resolved on the same connection as every other gather
                     # above and for the same reason. This is the writer

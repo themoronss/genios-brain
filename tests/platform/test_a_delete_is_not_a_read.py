@@ -266,7 +266,9 @@ def test_the_statement_count_did_NOT_move():
     #    work that serves it on the line's evidence.
     # ⛔ MOVED 3,448 → 3,453, G012 H-20 (24 Oct): `context/need_subjects` reads a thread node, an event's thread and a
     #    signal's event; `evidence_need_store.reframe_open`; `scripts/reframe_open_needs.py` reads the open queue.
-    assert r["statements"] == 3_453, (
+    # ⛔ MOVED 3,453 → 3,454, G012 H-21 (24 Oct): `context/situation_bso.read_capability_freshness`, the tenant's latest
+    #    capability freshness, so an absence is licensed by the mail and not by the domain's whole list.
+    assert r["statements"] == 3_454, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
