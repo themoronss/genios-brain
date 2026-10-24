@@ -28,6 +28,16 @@ already rests on (`brief_patterns.work_of`) is refused, however it is worded —
 proposes the same work once, never again in other words. Still only a proposal: nothing is a goal
 until the founder accepts it.
 
+THE COMPANY'S GOAL AND THE PIECE'S (G012 H-22). The founder's own ten goals on the design partner's org (24 Oct)
+are the company's ends — "raise the ₹3 Cr pre-seed", "get into an accelerator this cycle", "turn Boardy's intros
+into partners" — each served by many files, beside a few pieces whose own decision is the end (Antler's
+reconsideration). Asked for a goal per piece, the drafter wrote one per investor. A goal citing TWO OR MORE files
+is the company's: its files are kept as the work that SERVES it (`company_brief_store.SERVES`), never as work it was
+born from — so a piece among them may still have a goal of its own, and the card of each carries the company's
+goal once the founder accepts it (`deliver/goal_line`). It is refused only as the same goal in other words
+(`context/goal_admission.same_goal`), never for the pieces it names. A goal citing one file is the piece's, ruled
+as before.
+
 One Sonnet-class call (`Settings.company_brief_model`, `06` D28), recorded as `company_brief_draft`.
 """
 from __future__ import annotations
@@ -43,7 +53,9 @@ from genios_engine.contracts.company_brief import PROPOSABLE, WORK_KINDS, Compan
 
 #: v2 (STEP-11): the prompt asks for each in-motion line's kind of work and counterparty.
 #: v4 (GeniOS-011 S27.U1): the prompt shows the work in motion and asks for a goal per piece of it.
-PROMPT_VERSION = "company-brief-draft.v4"
+#: v5 (G012 H-22): a goal is the company's END and cites every file whose work serves it; one counterparty is a goal
+#: of its own only when its single decision is the end.
+PROMPT_VERSION = "company-brief-draft.v5"
 COST_PURPOSE = "company_brief_draft"
 MAX_LINES = 30
 MAX_PER_SECTION = 8
@@ -79,9 +91,14 @@ must never be missed. Use only addresses and domains that appear in the patterns
 - An in_motion line names its kind of work: {kinds} — or null when none fits. It may give its \
 counterparty, the one on the other side of that work: the person's address, or the domain of the fund, \
 program, portal or company. No other section has a kind.
-- A goal names one piece of work in motion the founder is pursuing — an application, a raise, a \
-filing, a hire — and cites its file, situation or in-motion line. A goal worded in general terms does \
-not say a particular piece of work; a file or in-motion line marked with a goal has one already.
+- A goal is an END the company drives to, worded at the level the founder pursues it — raise the \
+pre-seed round, get into an accelerator this cycle, win paying design partners, turn a connector's \
+introductions into partners, hire a founding engineer, correct a filing — and cites EVERY file, \
+situation or in-motion line whose work serves it: each investor's file for the raise, each application \
+for the accelerator. One counterparty is a goal of its own only when its single decision is the end \
+itself — an application or a reconsideration the founder awaits, a programme the company is in, a \
+filing — and a file or in-motion line marked with a goal has one already. Never a goal of staying in \
+touch.
 - Every line cites the ids of the patterns it rests on.
 - Never invent a name, an amount, a date or a fact the patterns do not show. When unsure, leave it out.
 - At most {per_section} lines in a section and {total} in all; each line under {chars} characters.
@@ -213,18 +230,42 @@ def parse(parsed: Any, patterns: dict[str, Any]) -> tuple[list[Proposal], list[s
     return kept, refused
 
 
-def _one_goal_per_work(proposals: list[Proposal],
-                       patterns: dict[str, Any]) -> tuple[list[Proposal], list[str]]:
+def _files_of(proposal: Proposal, by_id: dict[str, Any]) -> frozenset[str]:
+    return frozenset(f"file:{by_id[e]['file_id']}" for e in proposal.evidence if e in by_id and by_id[e].get("file_id"))
+
+
+def is_company_goal(proposal: Proposal, patterns: dict[str, Any]) -> bool:
+    """G012 H-22 · a goal citing two or more files is the company's end, served by each of them."""
+    by_id = {i["id"]: i for i in patterns.get("items", ())}
+    return proposal.section == "goals" and len(_files_of(proposal, by_id)) >= 2
+
+
+def _one_goal_per_work(proposals: list[Proposal], patterns: dict[str, Any],
+                       existing: tuple[str, ...] = ()) -> tuple[list[Proposal], list[str]]:
     """GeniOS-011 S27.U1 · a goal resting on work a goal already rests on is refused — one pending,
     accepted or lately rejected (`patterns["goal_work"]`), or one above it in this answer — however it
-    is worded. A goal resting on no work in motion, and a line of any other section, pass untouched."""
+    is worded. A goal resting on no work in motion, and a line of any other section, pass untouched.
+
+    G012 H-22 · a COMPANY goal (`is_company_goal`) is not ruled by the pieces it names — they serve it — but by its
+    words: refused when a goal line in force (`existing`) or one above it in this answer is the same goal in other
+    words. It holds none of its pieces, so a piece's own goal is still proposable."""
+    from genios_engine.context.goal_admission import same_goal
     from genios_engine.reason.brief_patterns import work_of
 
     by_id = {i["id"]: i for i in patterns.get("items", ())}
     held = set(patterns.get("goal_work") or ())
+    company: list[str] = list(existing)
     kept: list[Proposal] = []
     refused: list[str] = []
     for p in proposals:
+        if is_company_goal(p, patterns):
+            twin = next((w for w in company if same_goal(p.text, w)), None)
+            if twin is not None:
+                refused.append(f"goal {p.text!r}: the same goal in other words as {twin!r}")
+                continue
+            company.append(p.text)
+            kept.append(p)
+            continue
         work = frozenset().union(*(work_of(by_id[e]) for e in p.evidence if e in by_id))
         if p.section == "goals" and work & held:
             refused.append(f"goal {p.text!r}: a goal already rests on "
@@ -238,10 +279,21 @@ def _one_goal_per_work(proposals: list[Proposal],
 
 def _evidence(proposal: Proposal, patterns: dict[str, Any]) -> list[dict[str, Any]]:
     """What a proposal rests on, kept with it: the pattern items themselves — counts, names,
-    domains and dates — so the founder sees why it was proposed long after the ids are gone."""
+    domains and dates — so the founder sees why it was proposed long after the ids are gone.
+    G012 H-22 · a company goal's files are kept as the work that SERVES it, not the work it was born from."""
+    from genios_engine.platform.company_brief_store import SERVES
+
     by_id = {i["id"]: i for i in patterns.get("items", ())}
-    return [{"pattern": e, **{k: v for k, v in by_id[e].items() if k != "id"}}
-            for e in proposal.evidence if e in by_id]
+    company = is_company_goal(proposal, patterns)
+    out = []
+    for e in proposal.evidence:
+        if e not in by_id:
+            continue
+        item = {"pattern": e, **{k: v for k, v in by_id[e].items() if k != "id"}}
+        if company and item.get("file_id"):
+            item[SERVES] = f"file:{item.pop('file_id')}"
+        out.append(item)
+    return out
 
 
 def draft_company_brief(engine, org_id: str, llm: Any, *, now: datetime, cost_sink=None,
@@ -280,7 +332,7 @@ def draft_company_brief(engine, org_id: str, llm: Any, *, now: datetime, cost_si
         return DraftOutcome(skipped=f"model:{error or 'no answer'}"[:200],
                             model=model, input_tokens=it, output_tokens=ot)
     proposals, refused = parse(res.parsed, patterns)
-    proposals, held = _one_goal_per_work(proposals, patterns)
+    proposals, held = _one_goal_per_work(proposals, patterns, tuple(patterns.get("goal_texts") or ()))
     refused += held
     written = 0
     if apply:
@@ -295,4 +347,4 @@ def draft_company_brief(engine, org_id: str, llm: Any, *, now: datetime, cost_si
 
 
 __all__ = ["COST_PURPOSE", "DraftOutcome", "MAX_LINES", "MAX_PER_SECTION", "PROMPT_VERSION", "TIMEOUT_S",
-           "Proposal", "build_prompt", "draft_company_brief", "parse"]
+           "Proposal", "build_prompt", "draft_company_brief", "is_company_goal", "parse"]

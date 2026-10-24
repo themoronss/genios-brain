@@ -160,7 +160,7 @@ _IN_MOTION = text(
 
 #: GeniOS-011 S27.U1 · the goals the brief holds, waits on, or was told no to — with what they rest on.
 _GOALS = text(
-    "select status, evidence, decided_at from company_brief_lines "
+    "select status, evidence, decided_at, text from company_brief_lines "
     " where org_id = :o and section = 'goals' and status in ('proposed', 'accepted', 'rejected') "
     " order by proposed_at, line_id")
 
@@ -214,10 +214,11 @@ def work_of(item: Mapping[str, Any]) -> frozenset[str]:
     return frozenset(out)
 
 
-def _goal_work(conn, org_id: str, *, now: datetime) -> dict[str, str]:
+def _goal_work(conn, org_id: str, *, now: datetime, texts: list | None = None) -> dict[str, str]:
     """Each piece of work a goal rests on → that goal's status, the strongest when several do. A goal
     the founder rejected counts within `REJECTED_QUIET_DAYS`, as the store's own rule does
-    (`company_brief_store._same_line`), so the weekly review cannot nag."""
+    (`company_brief_store._same_line`), so the weekly review cannot nag. G012 H-22 · each such goal's words are
+    appended to `texts`, so a company goal is never proposed again in other words (`brief_drafter`)."""
     from genios_engine.platform.company_brief_store import REJECTED_QUIET_DAYS
 
     quiet = now - timedelta(days=REJECTED_QUIET_DAYS)
@@ -225,6 +226,8 @@ def _goal_work(conn, org_id: str, *, now: datetime) -> dict[str, str]:
     for r in conn.execute(_GOALS, {"o": org_id}).fetchall():
         if r.status == "rejected" and (r.decided_at is None or r.decided_at < quiet):
             continue
+        if texts is not None and r.text:
+            texts.append(str(r.text))
         evidence = json.loads(r.evidence or "[]") if isinstance(r.evidence, str) else r.evidence
         for e in evidence or ():
             if not isinstance(e, Mapping):
@@ -415,11 +418,12 @@ def patterns_for(conn, org_id: str, *, now: datetime, window_days: int = WINDOW_
         if about and kept < MAX_THREADS:
             add("thread", about=about, last=_day(t.at))
             kept += 1
-    held = _goal_work(conn, org_id, now=now)
+    goal_texts: list[str] = []
+    held = _goal_work(conn, org_id, now=now, texts=goal_texts)
     _work_in_motion(conn, org_id, now=now, since=since, add=add, held=held)
     return {"company": getattr(org, "company", None), "founder": getattr(org, "name", None),
             "us": sorted(us.addresses) + sorted(us.domains), "window_days": window_days,
-            "items": items, "goal_work": sorted(held)}
+            "items": items, "goal_work": sorted(held), "goal_texts": goal_texts}
 
 
 def addresses_in(patterns: dict[str, Any]) -> frozenset[str]:

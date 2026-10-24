@@ -155,9 +155,9 @@ def test_the_prompt_shows_the_work_in_motion_and_asks_a_goal_for_each_piece_of_i
         assert f'"kind": "{kind}"' in rendered, f"the prompt never shows a {kind} pattern"
     rules = prompt.split("Return JSON only")[0]
     assert "the work in motion" in rules.lower()
-    assert "A goal names one piece of work in motion" in rules
+    assert "A goal is an END the company drives to" in rules and "cites EVERY file" in rules
     assert "already holds" not in prompt            # the base prompt holds no brief
-    assert D.PROMPT_VERSION == "company-brief-draft.v4"
+    assert D.PROMPT_VERSION == "company-brief-draft.v5"
 
 
 @pytest.mark.unit
@@ -183,6 +183,38 @@ def test_two_goals_on_one_piece_of_work_keep_the_first_and_other_sections_are_un
         ("goals", "Get into the Gulf Launchpad cohort"), ("goals", "Raise the pre-seed round"),
         ("in_motion", "Program · Gulf Launchpad")]
     assert len(out.refused) == 1 and "Win the Gulf Launchpad interview" in out.refused[0]
+
+
+@pytest.mark.unit
+def test_h22_a_company_goal_is_served_by_every_file_it_cites_and_holds_none_of_them(seams):
+    """G012 H-22: "raise the pre-seed" cites two investors' files — they SERVE it; a piece among them may still have a
+    goal of its own, and the same company goal in other words is refused."""
+    from genios_engine.platform.company_brief_store import SERVES
+    proposed, patterns = seams
+    two_files = {**WORK, "items": [*WORK["items"], {"id": "p9", "kind": "file", "file_id": "node_kestrel",
+                                                    "name": "Kestrel Capital"}],
+                 "goal_work": ["file:node_kestrel"], "goal_texts": ["Hire a founding engineer"]}
+    patterns["value"] = two_files
+    model = _Says([_goal("Raise the pre-seed round", ("p2", "p9")),
+                   _goal("Close the pre-seed round for the company", ("p2", "p9")),
+                   _goal("Get into the Gulf Launchpad cohort", ("p2",))])
+    out = D.draft_company_brief(_Engine(), ORG, model, now=NOW)
+    assert [p["words"] for p in proposed] == ["Raise the pre-seed round", "Get into the Gulf Launchpad cohort"], \
+        "the company goal is not held by a piece already served, and a piece's own goal still stands"
+    company = proposed[0]["evidence"]
+    assert {e.get(SERVES) for e in company if e.get(SERVES)} == {"file:node_gulf", "file:node_kestrel"}
+    assert not any(e.get("file_id") for e in company), "a company goal is born from no one file"
+    assert len(out.refused) == 1 and "the same goal in other words" in out.refused[0], out.refused
+
+
+@pytest.mark.unit
+def test_h22_a_company_goal_already_in_force_is_not_proposed_again_in_other_words(seams):
+    proposed, patterns = seams
+    patterns["value"] = {**WORK, "items": [*WORK["items"], {"id": "p9", "kind": "file", "file_id": "node_kestrel"}],
+                         "goal_texts": ["Raise the pre-seed round"]}
+    out = D.draft_company_brief(_Engine(), ORG, _Says([_goal("Close the pre-seed round for us", ("p2", "p9"))]),
+                                now=NOW)
+    assert proposed == [] and "the same goal in other words" in out.refused[0]
 
 
 @pytest.mark.unit

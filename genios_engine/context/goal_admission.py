@@ -129,4 +129,4 @@ def admit_proposal(conn, *, org_id: str, proposal: GoalProposal, subject_ref: st
     return GoalAdmission(ADMIT, "a pending goals line", line_id)
 
 
-__all__ = ["ADMIT", "GoalAdmission", "HOLD", "PROPOSED_BY", "REJECT", "WEEKLY_CAP", "admit_proposal"]
+__all__ = ["ADMIT", "GoalAdmission", "HOLD", "PROPOSED_BY", "REJECT", "WEEKLY_CAP", "admit_proposal", "same_goal"]

@@ -22,7 +22,7 @@ pytestmark = pytest.mark.unit
 def test_the_rule_says_a_goal_has_an_end_and_staying_in_touch_is_a_move():
     rule = next(r for r in P.RULES if r.startswith("A goal is the company's only"))
     assert "END" in rule and "never a goal" in rule and "raise the round" in rule
-    assert P.PROMPT_VERSION == "l2-judgment.v4"
+    assert P.PROMPT_VERSION == "l2-judgment.v5"
 
 
 @pytest.mark.parametrize("a, b, same", [
@@ -63,3 +63,15 @@ def test_h19_the_pass_keeps_the_work_each_judgment_serves_and_syncs_the_goals():
     assert "cover_work(conn, org_id, impacts=impacts, subject_ref=work_ref, at=now)" in source
     assert "goal_work.append((impacts, f\"file:{subject.file_id}\"))" in source
     assert "sync_from_brief(conn, org_id, at=now)" in source
+
+
+def test_h22_a_waiting_goal_is_the_companys_whichever_file_first_proposed_it():
+    """G012 H-22: printed "(proposed for <file>)", 22 of 23 impacts on waiting goals came back "unclear" (24 Oct)."""
+    from genios_engine.contracts.goals import Goal
+    from genios_engine.reason.l2.dossier import _Cite, _goals
+    waiting = Goal(goal_id="goal_round", org_id="o", statement="Raise the pre-seed round", status="proposed",
+                   source="inferred", subject_ref="file:node_first_fund")
+    block = _goals([], [waiting], _Cite())
+    assert "[goal:goal_round] Raise the pre-seed round" in block and "proposed for" not in block
+    rule = next(r for r in P.RULES if r.startswith("A goal is the company's only"))
+    assert "whichever file first proposed it" in rule

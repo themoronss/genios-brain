@@ -34,7 +34,8 @@ from genios_engine.reason.expert import prompt as expert
 from .dossier import L2Dossier
 from .plan import L2Plan
 
-PROMPT_VERSION = "l2-judgment.v4"        # v4: waiting goals cited, a goal at the company's level (G012 H-19); v3: a goal
+PROMPT_VERSION = "l2-judgment.v5"        # v5: a goal is no file's (H-22); v4: waiting goals cited, a goal at the
+#                                          company's level (G012 H-19); v3: a goal
 #                                          is work with an end (G012 H-16); v2: the goals (S29)
 
 ROLE = (
@@ -71,7 +72,8 @@ _ABSENCE = ("Never say something did not happen unless block F says that source 
 #: (six of fourteen goals) and four investors' files each proposed the round — where the founder's own ten goals are
 #: "raise the pre-seed", "turn Boardy's intros into partners", "win paying design partners from your outreach".
 _GOALS = ("A goal is the company's only when block G lists it as approved; the goals waiting for the founder are listed "
-          "apart. Each has a goal: id. Say which of them the next move advances, threatens or depends on, and why, citing "
+          "apart. Each has a goal: id, and each is the company's end, whichever file first proposed it. Say which of "
+          "them the next move advances, threatens or depends on, and why, citing "
           "what shows it — a waiting one too — or that it is unclear; never call a waiting goal the company's. A goal is "
           "an END the company drives to, worded at the level the company pursues it: raising the round, getting into an "
           "accelerator this cycle, winning paying design partners or customers, turning a connector's introductions "

@@ -32,7 +32,8 @@ from .inputs import Subject
 from .snapshot import Snapshot
 from .tools import ToolResult
 
-L2_DOSSIER_VERSION = "l2-dossier.v4"        # v4: waiting goals printed with ids (G012 H-19); v3: who you work for
+L2_DOSSIER_VERSION = "l2-dossier.v5"        # v5: a waiting goal is no file's (H-22); v4: waiting goals printed with ids
+#                                             (G012 H-19); v3: who you work for
 #                                             (G012 H-14); v2: block G, the goals (S29.U1)
 
 TITLES = {"A": "A · THE SIGNALS — what arrived for this subject", "B": "B · THE CONTEXT — what the company knows around it",
@@ -174,8 +175,10 @@ def _goals(goals: Sequence[Any], proposals: Sequence[Any], cite: _Cite) -> str:
     if proposals:
         lines.append("Waiting for the founder — NOT the company's goals yet: a move may say it serves one, never that it "
                      "is the company's goal:")
-        lines += [f"- {cite(p.ref)} {p.statement}" + (f" (proposed for {p.subject_ref})" if p.subject_ref else "")
-                  for p in proposals]
+        # G012 H-22 · no "(proposed for <file>)": printed with it, the model read a waiting goal as another file's and
+        # called 22 of 23 of its moves' bearing on one "unclear" (24 Oct). A goal is the company's, whichever file first
+        # proposed it.
+        lines += [f"- {cite(p.ref)} {p.statement}" for p in proposals]
     return "\n".join(lines)
 
 
