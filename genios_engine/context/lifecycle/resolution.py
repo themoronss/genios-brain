@@ -103,7 +103,9 @@ def _terminal_by_fact(deal_stage: Any) -> bool:
 
 
 _ATTEMPTS = (
-    "select subject_ref, count(*) as n from l2_model_runs "
+    "select subject_ref, count(*) as n, "
+    "       bool_or(success and parsed_output->>'verdict' = 'NOT_RESOLVED') as settled "
+    "from l2_model_runs "
     "where org_id = :o and site = 'resolution' and called_at >= :since "
     "group by subject_ref"
 )
@@ -124,7 +126,12 @@ def _attempts_by_subject(conn, org_id: str, *, now: datetime) -> dict[str, int]:
     """
     try:
         since = now - timedelta(days=store_mod.LOOKBACK_DAYS)
-        return {str(r[0]): int(r[1] or 0)
+        # G012 H-15 · A MESSAGE THE MODEL SAID RESOLVES NOTHING IS EXAMINED. Its honest answer — `NOT_RESOLVED`
+        # with an empty quote, there being nothing to quote — fails `parse_description` (a claim needs its quote),
+        # stores no claim, and so was asked again on the next two sweeps: on the design partner's org (local copy,
+        # 24 Oct) 217 of 656 messages were asked three times, every call successful. A successful `NOT_RESOLVED` now
+        # counts as every attempt spent; a FAILED call is still tried again (`test_a_transient_failure_is_not_stored`).
+        return {str(r.subject_ref): (gate_mod.MAX_ATTEMPTS_PER_MESSAGE if r.settled else int(r.n or 0))
                 for r in conn.execute(text(_ATTEMPTS), {"o": org_id, "since": since}).all()}
     except Exception:      # noqa: BLE001 — a budget hint, never a reason to skip the sweep
         log.info("m4 resolution: could not read prior attempts for org=%s", org_id)

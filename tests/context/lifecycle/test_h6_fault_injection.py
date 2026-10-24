@@ -242,3 +242,36 @@ def test_a_partially_resolved_situation_is_still_live_to_the_reader(pg_store):
             "the widening swallowed the resolved state too")
     finally:
         _drop(pg_store, org)
+
+
+
+@dataclass
+class _SaysNothingResolved:
+    """The answer the design partner's model gave 217 messages three times over: nothing resolved, nothing to quote."""
+
+    model: str = "m4-not-resolved"
+    prompts: list = field(default_factory=list)
+
+    def call(self, prompt: str, *, max_tokens: int = 500) -> Any:
+        self.prompts.append(prompt)
+        return _R(parsed={"verdict": "NOT_RESOLVED", "certainty": "EXPLICIT_COMPLETION", "scope": [], "quote": "",
+                          "start_offset": 0, "end_offset": 0, "speaker_role_said": "external"}, ok=True)
+
+
+@pytest.mark.pg
+def test_g012_a_message_the_model_said_resolves_nothing_is_not_asked_again(pg_store):
+    """G012 H-15: one honest NOT_RESOLVED and the message is examined — the next sweep pays nothing for it, and the
+    situation stays as it was."""
+    org = "org_m4_not_resolved"
+    ids = _ids(org)
+    _seed(pg_store, org, resolution_text=RESOLUTION_TEXT)
+    try:
+        first = _SaysNothingResolved()
+        _sweep(pg_store, org, first)
+        assert first.prompts, "the premise: the message was asked once"
+        again = _SaysNothingResolved()
+        _sweep(pg_store, org, again)
+        assert again.prompts == [], "a message the model already said resolves nothing was paid for again"
+        assert _status(pg_store, org, ids["situation"])["status"] == STATUS_ACTIVE
+    finally:
+        _drop(pg_store, org)
