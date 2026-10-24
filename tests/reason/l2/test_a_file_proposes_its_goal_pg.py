@@ -81,11 +81,23 @@ def test_a_judged_file_proposes_its_goal_as_a_pending_brief_line(ours):
         assert GS.live_goals(c, ORG) == [], "a proposal is never the company's goal"
 
 
-def test_a_proposal_with_no_act_of_ours_is_held(ours):
+def test_a_proposal_citing_their_mail_in_a_file_we_acted_in_is_admitted(ours):
+    """G012 H-17: the proposal cites Kunal's mail, and the file holds the mail we sent — the company acted in it."""
     store, now, _file_id = ours
     receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9Goals(cite="evt_k_in"))
-    assert receipt.get("goal_proposals") == {HOLD: 1}, str(receipt)
-    assert _goal_lines(store) == []
+    assert receipt.get("goal_proposals") == {ADMIT: 1}, str(receipt)
+
+
+def test_a_proposal_for_work_we_never_acted_in_is_held(world):
+    """The same proposal on the world WITHOUT our mail: nothing of ours, cited or in the file — held."""
+    store, now, _file_id = world
+    try:
+        receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9Goals(cite="evt_k_in"))
+        assert receipt.get("goal_proposals") == {HOLD: 1}, str(receipt)
+        assert _goal_lines(store) == []
+    finally:
+        with store.engine.begin() as c:
+            c.execute(text("delete from company_brief_lines where org_id = :o"), {"o": ORG})
 
 
 def test_the_same_work_is_proposed_once_and_the_week_holds_three(ours):

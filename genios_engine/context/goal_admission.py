@@ -45,6 +45,12 @@ _THIS_WEEK = text(
     "   and proposed_at > :since")
 _OUR_MAIL = text(
     "select actor->>'email' as sender from source_events where org_id = :o and event_id = any(:ids)")
+#: G012 H-17 · the senders of the mail in the work's own file — the file's correlations' members.
+_FILE_SENDERS = text(
+    "select distinct se.actor->>'email' as sender from context_correlations k "
+    "  join context_correlation_members m on m.org_id = k.org_id and m.correlation_id = k.correlation_id "
+    "  join source_events se on se.org_id = m.org_id and se.event_id = m.event_id "
+    " where k.org_id = :o and k.anchor_node_id = :file")
 _OUR_SIGNALS = text(
     "select count(*) from qualified_signals where org_id = :o and signal_id = any(:ids) and direction = 'outbound'")
 
@@ -56,13 +62,18 @@ class GoalAdmission:
     line_id: str | None = None
 
 
-def _own_act(conn, org_id: str, evidence: tuple[str, ...], us: Any) -> bool:
-    """Does the proposal cite an act of the company's own — a mail we sent, a signal read from one?"""
+def _own_act(conn, org_id: str, evidence: tuple[str, ...], us: Any, file_id: str | None = None) -> bool:
+    """Did the company act in this work — a mail we sent or a signal read from one, cited; or, G012 H-17, a mail we
+    sent in the work's own file? The model cites what shows the GOAL (an investor's reply to our pitch), and the
+    act that makes it ours is often the mail beside it: on the design partner's org (24 Oct) "Raise the seed round",
+    proposed from an investor's file our founder had pitched, was held for citing the investor's reply."""
     events = [e for e in evidence if ":" not in e]
     signals = [e.split(":", 1)[1] for e in evidence if e.startswith("sig:")]
     if events and any(us.is_us(r.sender) for r in conn.execute(_OUR_MAIL, {"o": org_id, "ids": events})):
         return True
-    return bool(signals) and bool(conn.execute(_OUR_SIGNALS, {"o": org_id, "ids": signals}).scalar())
+    if signals and conn.execute(_OUR_SIGNALS, {"o": org_id, "ids": signals}).scalar():
+        return True
+    return bool(file_id) and any(us.is_us(r.sender) for r in conn.execute(_FILE_SENDERS, {"o": org_id, "file": file_id}))
 
 
 def _content(words: str) -> frozenset[str]:
@@ -91,7 +102,7 @@ def admit_proposal(conn, *, org_id: str, proposal: GoalProposal, subject_ref: st
     if conn.execute(_THIS_WEEK, {"o": org_id, "by": PROPOSED_BY, "since": at - timedelta(days=7)}).scalar() \
             >= WEEKLY_CAP:
         return GoalAdmission(HOLD, f"over the weekly cap of {WEEKLY_CAP}")
-    if not _own_act(conn, org_id, proposal.evidence, us):
+    if not _own_act(conn, org_id, proposal.evidence, us, file_id if subject_ref.startswith("file:") else None):
         return GoalAdmission(HOLD, "no evidence of the company's own act")
     try:
         line_id = store.propose(conn, org_id=org_id, section="goals", words=proposal.statement,
