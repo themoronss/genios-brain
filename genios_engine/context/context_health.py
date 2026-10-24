@@ -34,6 +34,11 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/context/test_the_context_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
+    "goals.live_goals": (
+        "GeniOS-012 S28.U1 · the goals a human made real (approved / active), synced from the brief every sweep — "
+        "the only goals a model may be shown as the company's",
+        "MOVES WITH S29.U1 (`speedrun008/GeniOS-012/07-GOALS.md`): block G of both dossiers prints them"),
+
     "l2_admission.admitted": (
         "L2 rebuild B3 · a tenant's ADMITTED situations — the read the card built from a ReasoningResult starts from. "
         "Written each L2 pass (`write_admissions`, in shadow); nothing makes a card from it yet",

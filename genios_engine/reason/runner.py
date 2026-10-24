@@ -1950,6 +1950,14 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     eval_time = eval_time or datetime.now(timezone.utc)
     registry = registry or make_registry()
     ensure_defaults(registry, org_id)
+    # GeniOS-012 S28.U1 · L3 SYNCS THE GOALS FROM THE BRIEF EVERY SWEEP (the brief is the one door, D11) — before any
+    # pass reads them. A failure costs this sweep's goal revisions, never the sweep.
+    try:
+        from genios_engine.context.goals import sync_from_brief
+        with store.engine.begin() as _gc:
+            sync_from_brief(_gc, org_id, at=eval_time)
+    except Exception:      # noqa: BLE001
+        logger.exception("the goal sync failed org=%s", org_id)
 
     # Layer 3 Domain Expertise compiler — the CUTOVER pass (flag off by default). It compiles the
     # active L2 situations into ExpertisePackages, reasons over them, and emits the decisions as

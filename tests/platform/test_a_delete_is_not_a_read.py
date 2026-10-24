@@ -253,7 +253,9 @@ def test_the_statement_count_did_NOT_move():
     # once per row so an expired tenant's row says so and raises `plan_expired` — the engine gaining one SELECT.
     # ⛔ MOVED 3,432 → 3,435, G012 H-02 (23 Oct): `scripts/backfill_signal_threads.py` — the signals with no thread
     # (`_TODO`), the five columns it fills (`_SET`) and the org's mailbox owner — three statements.
-    assert r["statements"] == 3_435, (
+    # ⛔ MOVED 3,435 → 3,438, GeniOS-012 S28.U1 (24 Oct): `context/goals` — the brief's goals lines (`_LINES`), each goal's
+    # latest revision (`_LATEST`) and a new revision (`_INSERT`) — three statements.
+    assert r["statements"] == 3_438, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

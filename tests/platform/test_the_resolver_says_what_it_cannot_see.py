@@ -507,5 +507,8 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # health row per org per day): one new table, read, written and purged by `platform/daily_health` — measured:
     # `table_usage()["daily_health"]` is `{"read", "insert", "delete"}`. An engine change, not a resolver change; read
     # as well as written, so the write-only members above did not move.
-    assert len(TC.table_usage()) == 201
-    assert len(TC._known_tables()) == 203
+    # ⛔ RE-PINNED 201 → 202 and 203 → 205 on 2026-10-24 by migration `0254_company_goals` (GeniOS-012 S28.U1, the goal
+    # object): two new tables; `company_goals` read and written by `context/goals` (synced from the brief every sweep),
+    # `goal_situation_links` not yet written (S30.U1). An engine change, not a resolver change.
+    assert len(TC.table_usage()) == 202
+    assert len(TC._known_tables()) == 205
