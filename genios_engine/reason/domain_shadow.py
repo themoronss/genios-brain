@@ -107,7 +107,12 @@ _ACTIVE_SITUATIONS = (
     "left join graph_nodes n on n.org_id = s.org_id and n.node_id = s.anchor_node_id "
     "     and n.valid_to is null "
     "where s.org_id = :o and s.status in ('active', 'partial') "
-    "order by s.confidence_overall desc, s.last_seen_at desc nulls last limit :lim"
+    # G012 H-24 · THE WINDOW GOES TO WHAT CAN MAKE A CARD FIRST: the situations of a domain whose corpus is live here,
+    # then the rest, each confidence-descending as before. On the design partner's org (local copy, 24 Oct) 562
+    # situations were active and 259 of them a live domain's; ordered by confidence alone, the 200 read were mostly
+    # support and sales readings no live lane could card, and the 11 Aug investor wave — "6 unanswered", confidence 10
+    # — ranked 298th and was never compiled. With no live domain the order is unchanged.
+    "order by (s.domain = any(:live)) desc, s.confidence_overall desc, s.last_seen_at desc nulls last limit :lim"
 )
 
 
@@ -1497,9 +1502,12 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     # READS only on this connection, in both modes. Every live write (package, audit bundle,
     # signal) opens its own transaction per situation, so one unroutable row can never abort the
     # rest of the pass.
+    # G012 H-24 · the L2 domains whose corpus is live here, as `_decide_covered_files` reads them.
+    live_l2 = sorted(d for d, corpus in _L2_TO_L3_DOMAIN.items()
+                     if live_lane(forced=live, domain=corpus, activated=live_domains) and corpus)
     with store.engine.connect() as conn:
         situations = conn.execute(text(_ACTIVE_SITUATIONS),
-                                  {"o": org_id, "lim": limit}).mappings().all()
+                                  {"o": org_id, "lim": limit, "live": live_l2}).mappings().all()
         gate = _CompiledGate.load(conn, org_id)
         # STEP-06 · beside the gate, and for the same reason: noted per row, written once.
         ends = _SituationEnds()

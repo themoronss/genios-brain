@@ -78,7 +78,7 @@ def main() -> int:
 
     slices, rows = [], []
     with engine.connect() as conn:
-        for row in conn.execute(text(_SITUATIONS), {"o": args.org, "lim": args.sample}):
+        for row in conn.execute(text(_SITUATIONS), {"o": args.org, "lim": args.sample, "live": []}):
             record = dict(row._mapping)
             anchor = str(record["anchor_node_id"])
             node_ctx = _load_context(store, args.org, anchor, record["anchor_type"],

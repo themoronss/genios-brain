@@ -977,7 +977,7 @@ def test_the_layer_three_object_carries_the_composed_number_not_the_base(h5_org)
     from genios_engine.reason.domain_shadow import _ACTIVE_SITUATIONS
 
     with h5_org.engine.connect() as conn:
-        rows = conn.execute(sql(_ACTIVE_SITUATIONS), {"o": _ORG, "lim": _SITUATIONS}).mappings()
+        rows = conn.execute(sql(_ACTIVE_SITUATIONS), {"o": _ORG, "lim": _SITUATIONS, "live": []}).mappings()
         rows = list(rows)
     assert rows, "the live compile's own query returned nothing to publish"
 

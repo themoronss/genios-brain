@@ -83,7 +83,7 @@ def main() -> int:
     samples: dict[str, str] = {}   # one verbatim reason per (type, outcome) — the actionable half
 
     with store.engine.connect() as conn:
-        situations = conn.execute(text(_ACTIVE_SITUATIONS), {"o": org_id, "lim": 200}).mappings().all()
+        situations = conn.execute(text(_ACTIVE_SITUATIONS), {"o": org_id, "lim": 200, "live": []}).mappings().all()
         compiler = DomainCompiler(catalog=catalog, runtime_brains=PostgresRuntimeBrains(conn),
                                   publisher=None, require_admission=False)
         for row in situations:
