@@ -258,7 +258,8 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,438 → 3,442, GeniOS-012 S29.U3 (24 Oct): `context/goal_admission` — the same work's goal lines
     # (`_SAME_WORK`), this week's L2 proposals (`_THIS_WEEK`), and the company's own act (`_OUR_MAIL`, `_OUR_SIGNALS`).
     # ⛔ MOVED 3,442 → 3,443, GeniOS-012 S30.U1 (24 Oct): `context/goals._LINK`, a goal impact linked to its situation.
-    assert r["statements"] == 3_443, (
+    # ⛔ MOVED 3,443 → 3,444, GeniOS-012 S31.U1 (24 Oct): `deliver/goal_line._REFRESH`, the open cards' live goals.
+    assert r["statements"] == 3_444, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -807,9 +808,9 @@ def test_the_write_only_count_held_while_its_MEMBERSHIP_turned_over():
     # ⛔ 8 → 7 on 2026-10-23 (GeniOS-011 S40.U2): `learning_metrics` gained its reader, GET
     # /feedback/precision's precision by layer (`api/routes._precision_by_layer`) — again a new
     # reader, not a resolver change.
-    # ⛔ 7 → 8 on 2026-10-24 (GeniOS-012 S30.U1): `goal_situation_links` is written by the L2 pass and its readers
-    # (S30.U2 progress, S31.U1 the card's goal) come next — declared in `UNREAD_WRITES`, a new table, not a resolver change.
-    assert len(now) == 8, sorted(now)
+    # ⛔ 7 → 8 → 7 on 2026-10-24 (GeniOS-012 S30.U1, S31.U1): `goal_situation_links` was written by the L2 pass and read
+    # the same day by the card's goal line (`deliver/goal_line`) — retracted in `RETRACTED_UNREAD_WRITES`.
+    assert len(now) == 7, sorted(now)
     assert "learning_metrics" not in now
     assert "source_identity_map" not in now
     assert "warm_lane_slots" in now

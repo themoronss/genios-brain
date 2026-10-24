@@ -220,6 +220,9 @@ def test_the_live_pass_counts_a_held_review_its_drop_and_its_note(monkeypatch, t
             self.served += 1
             answer = copy.deepcopy(result.parsed)
             answer["facts"][0]["quote"] = "words no mail of the file holds at all"
+            # ⛔ G012 H-07 (P-c): a move now stands on the mail-facts of it that stand, so the misquote holds it only
+            # when the move rests on that fact alone — the held fate this counter must see.
+            answer["next_move"]["rests_on"] = ["fact:1"]
             answer["frames"]["primary"] = "the founder owes Mohit the traction summary before Monday"
             return dataclasses.replace(result, parsed=answer, raw=json.dumps(answer))
     monkeypatch.setattr(module, "LiveModel", _OneMisquote)
@@ -232,5 +235,7 @@ def test_the_live_pass_counts_a_held_review_its_drop_and_its_note(monkeypatch, t
     [row] = card["cases"]
     assert row["reviews"] == {"valid": 1}, row
     assert row["fates"] == {"held": 1} and card["fates"] == {"held": 1}
-    assert row["dropped"] == {"misquoted": 1} and card["dropped"] == {"misquoted": 1}
+    # ⛔ G012 H-07: resting on the misquoted fact alone, the draft has no standing fact to name its words — dropped
+    # `unsupported` beside the misquote. Two drops, both counted: still what the counter must not lose.
+    assert row["dropped"] == {"misquoted": 1, "unsupported": 1} and card["dropped"] == {"misquoted": 1, "unsupported": 1}
     assert row["noted"] == {"speaks_of_you": 1} and card["noted"] == {"speaks_of_you": 1}

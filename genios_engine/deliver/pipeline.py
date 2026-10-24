@@ -1206,4 +1206,14 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
         # ⛔ The same rule as `collapse_unmeasured` above: a pass that could not measure itself must
         # not look identical to one that measured zero.
         out["lane_recall_unmeasured"] = 1
+    # GeniOS-012 S31.U1 · every open card carries the live goals its work moves (`deliver/goal_line`) — refreshed here,
+    # once a build, so a goal approved after its file was judged reaches the card with no new judgment.
+    try:
+        from genios_engine.deliver.goal_line import refresh_card_goals
+        with graph.engine.begin() as _gc:
+            out["cards_goal_refreshed"] = refresh_card_goals(_gc, org_id)
+    except Exception:      # noqa: BLE001 — a goal line that fails costs the line, never the build
+        import logging
+
+        logging.getLogger(__name__).exception("the card goal refresh failed for org=%s", org_id)
     return out

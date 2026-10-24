@@ -424,11 +424,10 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # declared mover came true — GET /feedback/precision reads it for precision by layer
     # (`api/routes._precision_by_layer`). A new reader, not a resolver change; the entry moved to
     # `RETRACTED_UNREAD_WRITES`.
-    # ⛔ RE-PINNED 7 → 8 on 2026-10-24 by GeniOS-012 S30.U1: `goal_situation_links` arrived — written by the L2 pass,
-    # its readers (S30.U2, S31.U1) next; declared in `UNREAD_WRITES`. A new table, not a resolver change.
+    # ⛔ 7 → 8 → 7 on 2026-10-24 (GeniOS-012 S30.U1 wrote `goal_situation_links`, S31.U1 read it the same day).
     assert sorted(TC.written_and_unread()) == [
         "agent_metering", "card_feedback_revisions", "contract_spend_attributions",
-        "delivery_rate_windows", "domain_requests", "goal_situation_links",
+        "delivery_rate_windows", "domain_requests",
         "situation_interpretations", "warm_lane_slots"], (
         "⛔ RE-PINNED 2026-10-04 by `3.1b`. The COUNT is still 9 and the MEMBERS turned over: "
         "`source_identity_map` left, because the loop hop made `context/merge.py`'s read visible; "

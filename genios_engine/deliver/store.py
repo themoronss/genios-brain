@@ -912,7 +912,7 @@ class CardStore:
                   "and 'app' = any(k.surfaces) and k.expires_at > :authority_time ")
         q = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
              "k.situation, " + AUTHORITATIVE_SCORE_SQL +
-             " as score, k.state, k.render_mode, k.created_at, k.expires_at, "
+             " as score, k.state, k.render_mode, k.created_at, k.expires_at, k.goal_refs, "
              # GeniOS-011 S34.U3 (0252): the card writer's subject and two lines (`QUEUE_COPY_SQL`, spelled in place).
              "case when k.copy is null then null else jsonb_build_object('subject', k.copy -> 'subject', "
              "'summary', k.copy -> 'summary') end as copy "
@@ -922,7 +922,7 @@ class CardStore:
         # meeting follow-up alike: it keys on emit_situation's builder stamp (GeniOS-011 S36.U1). Same
         # states, surface, expiry and seat-visibility clauses; the L4 query above is untouched.
         sq = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
-              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at, "
+              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at, k.goal_refs, "
               "case when k.copy is null then null else jsonb_build_object('subject', k.copy -> 'subject', "
               "'summary', k.copy -> 'summary') end as copy "
               "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id"
@@ -930,7 +930,7 @@ class CardStore:
         # THE THIRD DOOR, for question cards only (QUESTION_CARD_SQL): the same states, surface, expiry
         # and seat-visibility clauses, the question's own authority in place of the decision's.
         qq = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
-              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at, "
+              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at, k.goal_refs, "
               "case when k.copy is null then null else jsonb_build_object('subject', k.copy -> 'subject', "
               "'summary', k.copy -> 'summary') end as copy "
               "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "

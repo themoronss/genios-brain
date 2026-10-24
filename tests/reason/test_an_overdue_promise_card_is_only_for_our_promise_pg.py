@@ -24,7 +24,7 @@ pytestmark = pytest.mark.pg
 
 NOW = datetime(2026, 10, 23, 12, 0, tzinfo=timezone.utc)
 ORG = "g012h03_promises"
-US, VENDOR = "founder@nimbus.test", "antonio@vendor.test"
+US, VENDOR = "founder@h03-promises.test", "antonio@vendor.test"     # its own address: orgs.email is unique
 OURS, THEIRS, SENT = "g012h03_c_ours", "g012h03_c_theirs", "g012h03_c_sent"
 
 
@@ -93,6 +93,7 @@ def world(pg_store):
         with pg_store.engine.begin() as conn:
             _wipe(conn, ORG)
             conn.execute(text("delete from source_events where org_id = :o"), {"o": ORG})
+            conn.execute(text("delete from orgs where id = :o"), {"o": ORG})
 
 
 @pytest.fixture

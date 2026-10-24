@@ -126,7 +126,9 @@ FIELDS: tuple[Field, ...] = (
     Field("done_when", "Done when", ("doneWhen",)),
     Field("alternative", "Alternative", ("alt",)),
     Field("wait_or_stop", "Wait or stop", ("wait",)),
-    Field("goal", "Goal it moves", ("goal",)),
+    # ⛔ shared_ok (GeniOS-012 S31.U1): a goal is MANY cards' — Rohit's own 20 ideal cards move 10 goals — so two
+    # cards naming the same goal is the design, never "not its own".
+    Field("goal", "Goal it moves", ("goal",), shared_ok=True),
     Field("draft", "Draft", ("draft",)),
     Field("sources", "Source / tool tags", ("tools",), shared_ok=True),
     Field("quotes", "Quotes — their own words", ("quotes",)),
@@ -398,7 +400,9 @@ def _product_value(card: dict, name: str) -> str:
         for key in ("goal", "goals", "goal_id", "suggested_goal"):
             if _text(card.get(key)):
                 return _text(card.get(key))
-        return ""
+        # GeniOS-012 S31.U1 · `cards.goal_refs`, the live goals the card's work moves: their statements.
+        refs = [r.get("statement") for r in _list(card.get("goal_refs")) if isinstance(r, dict) and r.get("statement")]
+        return " | ".join(refs)
     if name == "draft":
         artifact = card.get("artifact")
         return _text(_dict(artifact).get("body") if not isinstance(artifact, str) else artifact)
