@@ -34,7 +34,7 @@ from genios_engine.reason.expert import prompt as expert
 from .dossier import L2Dossier
 from .plan import L2Plan
 
-PROMPT_VERSION = "l2-judgment.v2"        # v2: the goals — block G, goal_impacts, goal_proposal (S29)
+PROMPT_VERSION = "l2-judgment.v3"        # v3: a goal is work with an end (G012 H-16); v2: the goals (S29)
 
 ROLE = (
     "You are the founder's chief of staff, thirty years in the work, and the reasoning layer of their company's "
@@ -66,10 +66,14 @@ _NEEDS = ("Ask the capture layer for evidence only when a fact that is not in th
 _ABSENCE = ("Never say something did not happen unless block F says that source was read for that window. A capped "
             "read is not an absence.")
 _GOALS = ("A goal is the company's only when block G prints it with a goal: id. Say which of those the next move "
-          "advances, threatens or depends on, and why, citing what shows it — or that it is unclear. When this subject "
-          "is a piece of work in motion that no printed goal and no waiting proposal names, you may propose ONE goal "
-          "for it, in the founder's words, citing at least one act of the company's own (we applied, wrote, met) — "
-          "never a target or a deadline the blocks did not print, never an owner. A proposal waits for the founder.")
+          "advances, threatens or depends on, and why, citing what shows it — or that it is unclear. A goal is work "
+          "with an END the company is driving to: getting into a programme it applied to, raising a round, making a "
+          "hire, winning a customer or a partner, completing a filing. Keeping a relationship warm, following up, "
+          "staying in touch, one investor's conversation or one introduction is a MOVE toward such a goal, never a "
+          "goal: say which printed goal it moves — or, when no printed goal and no waiting proposal names the end it "
+          "serves, propose that end once (\"raise the round\", not \"keep talking to this fund\"). At most one "
+          "proposal, in the founder's words, citing at least one act of the company's own (we applied, wrote, met) — "
+          "never a target, a deadline or an owner the blocks did not print. A proposal waits for the founder.")
 RULES: tuple[str, ...] = (_BLOCKS, _UNTRUSTED, *expert.RULES[1:], _SIGNAL_QUOTE, _HISTORY, _CONFIDENCE, _MUTATIONS, _NEEDS,
                           _ABSENCE, _GOALS)
 
@@ -100,8 +104,9 @@ L2_STEPS: tuple[expert.Step, ...] = (
                 ("evidence_needs",)),
     expert.Step("goals", "THE GOALS",
                 "Which printed goal (block G) the next move bears on and how — advances, threatens, depends_on or "
-                "unclear — with why and the ids; none when it bears on none. Then, only if this is work in motion that "
-                "no printed goal and no waiting proposal names: the one goal it is, or null.",
+                "unclear — with why and the ids; none when it bears on none. Then, only if the work has an end the "
+                "company is driving to and no printed goal or waiting proposal names that end: the one goal it is, or "
+                "null — never a goal of staying in touch.",
                 ("goal_impacts", "goal_proposal")),
     expert.Step("limits", "WHAT WAS NOT SEEN",
                 "What block F and the capped context leave out that matters here; an open conflict between sources, "

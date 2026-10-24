@@ -32,6 +32,14 @@ _SAME_WORK = text(
     "select count(*) from company_brief_lines where org_id = :o and section = 'goals' "
     "   and (evidence::text like :file_ref or evidence::text like :file_id) "
     "   and (status in ('proposed', 'accepted') or (status = 'rejected' and decided_at > :quiet))")
+_GOAL_LINES = text(
+    "select text from company_brief_lines where org_id = :o and section = 'goals' "
+    "   and (status in ('proposed', 'accepted') or (status = 'rejected' and decided_at > :quiet))")
+#: G012 H-16 · how much of a goal's words another goal line may share before it is the same goal in other words —
+#: "Raise the pre-seed round" proposed from five investors' files is one goal, admitted once.
+SAME_GOAL_SHARE = 0.6
+_PLAIN = frozenset("a an the and or of to for with from into on in by our your its this that we us it is be "
+                   "get keep make".split())
 _THIS_WEEK = text(
     "select count(*) from company_brief_lines where org_id = :o and section = 'goals' and proposed_by = :by "
     "   and proposed_at > :since")
@@ -57,6 +65,17 @@ def _own_act(conn, org_id: str, evidence: tuple[str, ...], us: Any) -> bool:
     return bool(signals) and bool(conn.execute(_OUR_SIGNALS, {"o": org_id, "ids": signals}).scalar())
 
 
+def _content(words: str) -> frozenset[str]:
+    import re
+    return frozenset(w for w in re.findall(r"[a-z0-9₹$]+", str(words or "").casefold()) if w not in _PLAIN and len(w) > 1)
+
+
+def same_goal(a: str, b: str) -> bool:
+    """Two goal statements that share most of their content words are one goal in other words."""
+    x, y = _content(a), _content(b)
+    return bool(x and y) and len(x & y) >= SAME_GOAL_SHARE * min(len(x), len(y))
+
+
 def admit_proposal(conn, *, org_id: str, proposal: GoalProposal, subject_ref: str, us: Any,
                    at: datetime) -> GoalAdmission:
     """L3's ruling on one proposal for the work `subject_ref` (`file:<id>`), on the caller's transaction."""
@@ -66,6 +85,9 @@ def admit_proposal(conn, *, org_id: str, proposal: GoalProposal, subject_ref: st
     if conn.execute(_SAME_WORK, {"o": org_id, "file_ref": f"%{subject_ref}%", "file_id": f'%"{file_id}"%',
                                  "quiet": at - timedelta(days=REJECTED_QUIET_DAYS)}).scalar():
         return GoalAdmission(HOLD, "duplicate: this work already has a goal line")
+    quiet = at - timedelta(days=REJECTED_QUIET_DAYS)
+    if any(same_goal(proposal.statement, r.text) for r in conn.execute(_GOAL_LINES, {"o": org_id, "quiet": quiet})):
+        return GoalAdmission(HOLD, "duplicate: the same goal in other words is already a goal line")
     if conn.execute(_THIS_WEEK, {"o": org_id, "by": PROPOSED_BY, "since": at - timedelta(days=7)}).scalar() \
             >= WEEKLY_CAP:
         return GoalAdmission(HOLD, f"over the weekly cap of {WEEKLY_CAP}")

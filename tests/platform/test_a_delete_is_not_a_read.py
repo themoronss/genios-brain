@@ -259,7 +259,9 @@ def test_the_statement_count_did_NOT_move():
     # (`_SAME_WORK`), this week's L2 proposals (`_THIS_WEEK`), and the company's own act (`_OUR_MAIL`, `_OUR_SIGNALS`).
     # ⛔ MOVED 3,442 → 3,443, GeniOS-012 S30.U1 (24 Oct): `context/goals._LINK`, a goal impact linked to its situation.
     # ⛔ MOVED 3,443 → 3,444, GeniOS-012 S31.U1 (24 Oct): `deliver/goal_line._REFRESH`, the open cards' live goals.
-    assert r["statements"] == 3_444, (
+    # ⛔ MOVED 3,444 → 3,445, G012 H-16 (24 Oct): `context/goal_admission._GOAL_LINES`, the goal lines a proposal is
+    # compared with (the same goal in other words).
+    assert r["statements"] == 3_445, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

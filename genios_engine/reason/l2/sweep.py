@@ -66,6 +66,17 @@ MAX_PER_PASS = 10
 LIVE_DUE_HOURS = 7 * 24
 
 
+#: G012 H-16 · how a judged file's goal proposal is ranked for admission: its stakes, then its urgency (the review's
+#: own appraisal — a word each, `contracts/expert_review`).
+_STAKES_RANK = {"high": 0, "medium": 1, "low": 2}
+
+
+def _goal_rank(result: Any) -> tuple:
+    appraisal = getattr(getattr(result, "review", None), "appraisal", None)
+    return (_STAKES_RANK.get(str(getattr(appraisal, "stakes", "") or ""), 3),
+            _STAKES_RANK.get(str(getattr(appraisal, "urgency", "") or ""), 3))
+
+
 def _priority(measured: Mapping[str, Any], importance: int | None, order: int) -> tuple:
     """Which subjects the day's judgments go to first — the ones a manager would want looked at now.
 
@@ -429,7 +440,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
             # model. A seed in no file is no piece of work: its proposal is not admitted.
             proposal = getattr(result.judgment, "goal_proposal", None)
             if proposal is not None and subject.file_id:
-                goal_proposals.append(replace(proposal, subject_ref=f"file:{subject.file_id}"))
+                goal_proposals.append((_goal_rank(result), replace(proposal, subject_ref=f"file:{subject.file_id}")))
             interpreted.extend((a, result) for a in decided)
             # A judgment L3 ADMITTED or REJECTED is the file's review: "nothing owed" is a judgment too — it covers
             # the file, so the old lane's situations on it and its people stand down, exactly as the expert's
@@ -501,7 +512,9 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
             if goal_proposals:
                 from genios_engine.context.goal_admission import admit_proposal
                 ruled: Counter = Counter()
-                for proposal in goal_proposals:
+                # G012 H-16 · RANKED, then admitted: under the week's cap the most important work's goal goes first,
+                # never the first file judged.
+                for _rank, proposal in sorted(goal_proposals, key=lambda p: p[0]):
                     try:
                         with conn.begin_nested():   # one proposal that fails costs that proposal, never the pass
                             ruled[admit_proposal(conn, org_id=org_id, proposal=proposal,

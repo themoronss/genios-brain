@@ -99,11 +99,12 @@ def test_the_same_work_is_proposed_once_and_the_week_holds_three(ours):
                                   evidence=("evt_k_out",))         # other words, the SAME work
         again = admit_proposal(c, org_id=ORG, proposal=reworded, subject_ref=f"file:{file_id}", us=us, at=now)
         assert (first.decision, again.decision) == (ADMIT, HOLD) and "duplicate" in again.reason
+        distinct = ("Hire a founding engineer", "Win the first paying customer", "Complete the company filing")
         for n in range(WEEKLY_CAP - 1):
-            other = G.GoalProposal(statement=f"Another piece of work {chr(65 + n)}", why="we wrote", evidence=("evt_k_out",))
+            other = G.GoalProposal(statement=distinct[n], why="we wrote", evidence=("evt_k_out",))
             assert admit_proposal(c, org_id=ORG, proposal=other, subject_ref=f"file:node_other_{n}", us=us,
                                   at=now).decision == ADMIT
-        over = G.GoalProposal(statement="One more piece of work", why="we wrote", evidence=("evt_k_out",))
+        over = G.GoalProposal(statement="Open an office abroad", why="we wrote", evidence=("evt_k_out",))
         ruled = admit_proposal(c, org_id=ORG, proposal=over, subject_ref="file:node_other_x", us=us, at=now)
     assert ruled.decision == HOLD and "weekly cap" in ruled.reason
 
@@ -165,3 +166,17 @@ def test_h14_every_dossier_says_who_the_model_works_for(ours):
     l2_pass(store=store, org_id=ORG, now=now, llm=r9)
     assert "YOU WORK FOR" in r9.prompts[0] and FOUNDER in r9.prompts[0]
     assert "they are never the counterparty" in r9.prompts[0]
+
+
+def test_h16_the_same_goal_in_other_words_from_another_file_is_held(ours):
+    """Five investors' files proposing the round: one goal, admitted once."""
+    store, now, file_id = ours
+    with store.engine.begin() as c:
+        us = identity_for(c, ORG)
+        first = admit_proposal(c, org_id=ORG, proposal=G.GoalProposal(
+            statement="Raise the pre-seed round", why="we pitched funds", evidence=("evt_k_out",)),
+            subject_ref=f"file:{file_id}", us=us, at=now)
+        other = admit_proposal(c, org_id=ORG, proposal=G.GoalProposal(
+            statement="Close the pre-seed round for the company", why="we pitched them", evidence=("evt_k_out",)),
+            subject_ref="file:node_another_fund", us=us, at=now)
+    assert first.decision == ADMIT and other.decision == HOLD and "other words" in other.reason
