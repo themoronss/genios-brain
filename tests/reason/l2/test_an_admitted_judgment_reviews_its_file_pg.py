@@ -112,6 +112,9 @@ def world(pg_store, monkeypatch):
         yield pg_store, NOW, cor.anchor_node_id
     finally:
         with pg_store.engine.begin() as c:
+            c.execute(text("delete from context_situations where org_id = :o and situation_id = 'sit_c2'"), {"o": ORG})
+            c.execute(text("delete from context_correlations where org_id = :o and correlation_id = 'corr_c1_two'"),
+                      {"o": ORG})
             for table in ("reasoning_results", "evidence_needs", "signal_bundles", "qualified_signals",
                           "post_pass_watermarks", "l4_r_site_calls", "l2_admissions", "expert_reviews",
                           "situation_interpretations"):
@@ -269,3 +272,43 @@ def test_without_l2_cards_the_newer_seed_is_judged_first_as_before(world):
     _an_orphan_seed_newer_than_the_file(store, now)
     l2_pass(store=store, org_id=ORG, now=now, llm=_R9(), max_per_pass=1)
     assert [ref for ref in _judged(store) if "t_orphan" in ref], _judged(store)
+
+
+class _R9NamesOne(_R9):
+    """R-9 judging the file and naming ONE of its two live situations (an update of `sit_c1`)."""
+
+    def call(self, prompt, *, max_tokens=400, **kw):
+        out = super().call(prompt, max_tokens=max_tokens, **kw)
+        evt = re.search(r"\[(evt_[^\]\s]+)\]", prompt).group(1)
+        out.parsed["proposed_mutations"] = [{"op": "update", "situation": "the fund's relationship",
+                                             "why": "Kunal wrote again", "evidence": [evt],
+                                             "situation_ref": "sit:sit_c1"}]
+        return out
+
+
+def _a_second_live_situation(store, file_id, now):
+    with store.engine.begin() as c:
+        c.execute(text("insert into context_correlations (correlation_id, org_id, anchor_node_id, domain) "
+                       "values ('corr_c1_two', :o, :a, 'admin')"), {"o": ORG, "a": file_id})
+        c.execute(text("insert into context_situations (situation_id, org_id, correlation_id, anchor_node_id, "
+                       " situation_type, domain, status, last_seen_at) values ('sit_c2', :o, 'corr_c1_two', :a, "
+                       " 'dependency_stated', 'admin', 'active', :at)"), {"o": ORG, "a": file_id, "at": now - timedelta(days=2)})
+
+
+def test_g012_a_file_judged_with_one_situation_admitted_and_another_held_is_still_reviewed(world):
+    """G012 H-13: L3 admitted the update the judgment named and HELD the other live situation it named nothing of —
+    the file is reviewed (covered) all the same; what L3 held stays held."""
+    store, now, file_id = world
+    _a_second_live_situation(store, file_id, now)
+    receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9NamesOne())
+    assert receipt.get("admissions") == {"admit": 1, "hold": 1}, str(receipt)
+    assert list(receipt["covered"]) == [file_id], receipt["covered"]
+
+
+def test_g012_a_file_whose_every_admission_holds_is_left_to_the_old_lane(world):
+    """Unchanged: two live situations and a judgment that names neither — every admission holds, no review."""
+    store, now, file_id = world
+    _a_second_live_situation(store, file_id, now)
+    receipt = l2_pass(store=store, org_id=ORG, now=now, llm=_R9())
+    assert receipt.get("admissions") == {"hold": 2}, str(receipt)
+    assert not receipt["covered"], receipt["covered"]

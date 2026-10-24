@@ -408,8 +408,12 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
             # A judgment L3 ADMITTED or REJECTED is the file's review: "nothing owed" is a judgment too — it covers
             # the file, so the old lane's situations on it and its people stand down, exactly as the expert's
             # `nothing` review does (D1: F54, F64). Only an undecided HOLD leaves the file to the old lane.
+            # G012 H-13 · ONLY WHEN EVERY ADMISSION HOLDS. One held situation beside an admitted one held the whole
+            # file: the design partner's intro-platform file (8 stated dependencies, one admitted, four held as "one
+            # of several live situations, and the judgment named none") kept its 8 old-lane cards and never got
+            # the judgment's card (24 Oct). L3 ruled on the file; what it held stays held, the file is reviewed.
             if makes_cards and parts is not None and result.checked is not None \
-                    and not any(a.decision == admission.HOLD for a in decided):
+                    and (not decided or any(a.decision != admission.HOLD for a in decided)):
                 file_reviews.append(_file_review(parts, result, dossier, rcpt, model=rcpt.model or model,
                                                  trigger=request.trigger, now=now))
         rows.append(results.L2Row(
