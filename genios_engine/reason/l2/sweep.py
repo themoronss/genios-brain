@@ -413,7 +413,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
         raised = []
         if result is not None:
             raised = evidence.needs_from(result, org_id=org_id, trace_id=request.request_id, eval_time=now)
-            needs.extend(raised)
+            needs.extend((need, subject.file_id) for need in raised)
             receipt["lanes"][result.lane] += 1
         audit = ReasoningReceipt(
             request_ref=request.request_id, org_id=org_id, subject_ref=subject.subject_ref, trigger=request.trigger,
@@ -491,7 +491,10 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
         from genios_engine.context.evidence_need_store import store_needs
         with engine.begin() as conn:
             receipt["written"] = results.write_sweep(conn, rows, org_id=org_id, watermark=watermark)
-            receipt["needs_filed"] = store_needs(conn, needs)
+            # G012 H-20 · each need filed with a subject Layer 1 can fetch, resolved by what memory holds now.
+            from genios_engine.context.need_subjects import fetchable
+            receipt["needs_filed"] = store_needs(conn, [fetchable(conn, org_id, need, file_id=file_id)
+                                                        for need, file_id in needs])
             if admissions:
                 try:
                     with conn.begin_nested():     # a shadow admission that fails never costs the results

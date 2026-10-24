@@ -52,15 +52,30 @@ def need_id_for(org_id: str, subject_ref: str, question: str) -> str:
                                     "question": " ".join(question.lower().split())})
 
 
+def source_names(sources: Iterable[str]) -> tuple[str, ...]:
+    """G012 H-20 · the SOURCE NAMES among what the model wrote (`capture/source_registry`: gmail, gcal, …) — never its
+    prose. The executor compares the source a fetch returned (`gmail`) with these; the model wrote "a mailbox read of
+    the relevant thread" (329 of 336 open needs, 24 Oct), so every answer found would have been refused as one the
+    need does not accept, and the need closed for good."""
+    from genios_engine.capture.source_registry import known_ids
+    known = known_ids()
+    return tuple(dict.fromkeys(n for n in (" ".join(str(x).split()).lower() for x in sources) if n in known))
+
+
 def needs_from(result: ReasoningResult, *, org_id: str, trace_id: str, eval_time: datetime) -> list[EvidenceNeed]:
-    """The decision-changing needs of one result, as the queue's contract. Pure."""
+    """The decision-changing needs of one result, as the queue's contract. Pure. G012 H-20: the sources are names the
+    executor can compare (`source_names`), and a paraphrase never closes one (`context/evidence_needs`' default)."""
+    from genios_engine.context.evidence_needs import DEFAULT_UNACCEPTABLE
     out: list[EvidenceNeed] = []
     for raised in [n for n in result.evidence_needs if n.decision_changing][:MAX_NEEDS_PER_RUN]:
-        unacceptable = tuple(s for s in raised.unacceptable_sources if s not in raised.acceptable_sources)
+        acceptable = source_names(raised.acceptable_sources)
+        unacceptable = tuple(s for s in dict.fromkeys((*DEFAULT_UNACCEPTABLE,
+                                                       *source_names(raised.unacceptable_sources)))
+                             if s not in acceptable)
         out.append(EvidenceNeed(
             need_id=need_id_for(org_id, result.subject_ref, raised.question), org_id=org_id, trace_id=trace_id,
             question=raised.question, why_it_matters=raised.why_it_matters, subject_ref=raised.subject_ref,
-            acceptable_sources=tuple(raised.acceptable_sources), unacceptable_sources=unacceptable,
+            acceptable_sources=acceptable, unacceptable_sources=unacceptable,
             max_cost_usd=NEED_MAX_USD, expires_at=eval_time + NEED_TTL))
     return out
 

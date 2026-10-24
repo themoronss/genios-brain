@@ -73,7 +73,8 @@ def plan_fetch(need: EvidenceNeed) -> str | None:
         return FETCH_THREAD
     if subject.startswith(("document:", "attachment:")):
         return REEXTRACT
-    if subject.startswith("signal:") or need.window_from is not None:
+    # G012 H-20 · `party:<address or domain>` — the mail to and from one counterparty (`context/need_subjects`).
+    if subject.startswith(("signal:", "party:")) or need.window_from is not None:
         return BACKFILL_WINDOW
     return None
 

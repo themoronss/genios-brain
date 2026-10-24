@@ -82,10 +82,25 @@ def _gmail_day(at: Any) -> str | None:
     return at.strftime("%Y/%m/%d") if isinstance(at, datetime) else None
 
 
+#: G012 H-20 · a need about one counterparty's mail (`context/need_subjects.PARTY`).
+PARTY = "party:"
+#: What a party may be: an address or a domain — never Gmail query syntax smuggled in through a model's words.
+_PARTY_SHAPE = __import__("re").compile(r"[a-z0-9._%+\-]+(@[a-z0-9.\-]+)?")
+
+
+def party_of(need: EvidenceNeed) -> str | None:
+    ref = (need.subject_ref or "").strip().lower()
+    party = ref[len(PARTY):].strip() if ref.startswith(PARTY) else ""
+    return party if party and _PARTY_SHAPE.fullmatch(party) else None
+
+
 def window_query(need: EvidenceNeed) -> str | None:
-    """Gmail's own query words for the need's window — None when it names none."""
+    """Gmail's own query words for the need's window — and, G012 H-20, the one party's mail it is about
+    (`{from:x to:x}` is Gmail's OR) — None when it names neither."""
     after, before = _gmail_day(need.window_from), _gmail_day(need.window_to)
-    words = [w for w in (f"after:{after}" if after else None, f"before:{before}" if before else None) if w]
+    party = party_of(need)
+    words = [w for w in (f"{{from:{party} to:{party}}}" if party else None,
+                         f"after:{after}" if after else None, f"before:{before}" if before else None) if w]
     return " ".join(words) or None
 
 
@@ -128,5 +143,5 @@ def make_fetchers(*, connector_for: Callable[[], Any], sync: Callable[[Any], Any
     return {FETCH_THREAD: fetch_thread, BACKFILL_WINDOW: backfill_window}
 
 
-__all__ = ["FETCHERS_ENV", "ScopedBatchConnector", "THREAD_SLUG", "WINDOW_MAX", "armed", "make_fetchers",
-           "thread_id_of", "window_query"]
+__all__ = ["FETCHERS_ENV", "PARTY", "ScopedBatchConnector", "THREAD_SLUG", "WINDOW_MAX", "armed", "make_fetchers",
+           "party_of", "thread_id_of", "window_query"]

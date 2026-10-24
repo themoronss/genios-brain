@@ -121,6 +121,23 @@ def close_need(conn, need_id: str, *, state: str, reason: str | None = None) -> 
     return bool(result.rowcount)
 
 
+_REFRAME = text(
+    "update evidence_needs set subject_ref = :subject, acceptable_sources = cast(:acceptable as jsonb), "
+    "       unacceptable_sources = cast(:unacceptable as jsonb) "
+    " where need_id = :need_id and state = 'open'")
+
+
+def reframe_open(conn, need: EvidenceNeed) -> bool:
+    """G012 H-20 · an OPEN need's subject and sources as Layer 1 can fetch and compare them
+    (`context/need_subjects`, `reason/l2/evidence.source_names`) — the one change a filed need may take, and only
+    while no one has worked it: the question and why it matters are never touched, and a closed need's answer stands.
+    For the needs filed before H-20 (`scripts/reframe_open_needs.py`). Returns whether the row changed."""
+    return bool(conn.execute(_REFRAME, {
+        "need_id": need.need_id, "subject": need.subject_ref,
+        "acceptable": json.dumps(list(need.acceptable_sources)),
+        "unacceptable": json.dumps(list(need.unacceptable_sources))}).rowcount)
+
+
 def file_needs(store, needs: Sequence[EvidenceNeed]) -> int:
     """`store_needs` in its own transaction, swallowing failure. For use inside a sweep.
 
@@ -137,4 +154,4 @@ def file_needs(store, needs: Sequence[EvidenceNeed]) -> int:
         return 0
 
 
-__all__ = ["close_need", "file_needs", "read_open_needs", "store_needs"]
+__all__ = ["close_need", "file_needs", "read_open_needs", "reframe_open", "store_needs"]

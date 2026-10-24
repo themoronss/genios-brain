@@ -264,7 +264,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,445 → 3,446, G012 H-17 (24 Oct): `context/goal_admission._FILE_SENDERS`, who wrote in the work's file.
     # ⛔ MOVED 3,446 → 3,448, G012 H-19 (24 Oct): `platform/company_brief_store.add_work` reads a goals line and keeps the
     #    work that serves it on the line's evidence.
-    assert r["statements"] == 3_448, (
+    # ⛔ MOVED 3,448 → 3,453, G012 H-20 (24 Oct): `context/need_subjects` reads a thread node, an event's thread and a
+    #    signal's event; `evidence_need_store.reframe_open`; `scripts/reframe_open_needs.py` reads the open queue.
+    assert r["statements"] == 3_453, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
