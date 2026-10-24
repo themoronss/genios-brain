@@ -92,10 +92,11 @@ def test_the_model_asking_for_depth_is_heard_and_recorded():
 
 # ── the dossier: six blocks, every id in the catalogue ─────────────────────────────────────────
 
-def test_the_dossier_is_six_labelled_blocks_in_order():
+def test_the_dossier_is_seven_labelled_blocks_in_order():
+    """⛔ RESTATED by GeniOS-012 S29.U1: block G, the goals, follows F."""
     *_, dossier = file_world()
     heads = [line for line in dossier.text.splitlines() if line.startswith("# ")]
-    assert [h[2] for h in heads] == ["A", "B", "C", "D", "E", "F"]
+    assert [h[2] for h in heads] == ["A", "B", "C", "D", "E", "F", "G"]
 
 
 def test_every_printed_id_can_be_cited_and_the_files_ids_are_kept():

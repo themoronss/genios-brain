@@ -255,7 +255,9 @@ def test_the_statement_count_did_NOT_move():
     # (`_TODO`), the five columns it fills (`_SET`) and the org's mailbox owner — three statements.
     # ⛔ MOVED 3,435 → 3,438, GeniOS-012 S28.U1 (24 Oct): `context/goals` — the brief's goals lines (`_LINES`), each goal's
     # latest revision (`_LATEST`) and a new revision (`_INSERT`) — three statements.
-    assert r["statements"] == 3_438, (
+    # ⛔ MOVED 3,438 → 3,442, GeniOS-012 S29.U3 (24 Oct): `context/goal_admission` — the same work's goal lines
+    # (`_SAME_WORK`), this week's L2 proposals (`_THIS_WEEK`), and the company's own act (`_OUR_MAIL`, `_OUR_SIGNALS`).
+    assert r["statements"] == 3_442, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")

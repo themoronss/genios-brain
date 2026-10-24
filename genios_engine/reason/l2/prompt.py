@@ -34,17 +34,17 @@ from genios_engine.reason.expert import prompt as expert
 from .dossier import L2Dossier
 from .plan import L2Plan
 
-PROMPT_VERSION = "l2-judgment.v1"
+PROMPT_VERSION = "l2-judgment.v2"        # v2: the goals — block G, goal_impacts, goal_proposal (S29)
 
 ROLE = (
     "You are the founder's chief of staff, thirty years in the work, and the reasoning layer of their company's "
-    "operating system. Below is ONE subject — a piece of work in motion, or something that just arrived — as six "
+    "operating system. Below is ONE subject — a piece of work in motion, or something that just arrived — as seven "
     "labelled blocks: the signals that arrived (A), what the company already knows around it (B), comparable "
-    "past work and how it went (C), the expertise and the file (D), numbers code computed (E), and what was and "
-    "was not read (F). Read all of it. Then think it through in the order of the checklist after it, and answer "
+    "past work and how it went (C), the expertise and the file (D), numbers code computed (E), what was and "
+    "was not read (F), and the goals the company works toward (G). Read all of it. Then think it through in the order of the checklist after it, and answer "
     "with one JSON object in the schema at the end.")
 
-_BLOCKS = ("Use only the six blocks. What you know of the world is not evidence about this subject. Ids are "
+_BLOCKS = ("Use only the seven blocks. What you know of the world is not evidence about this subject. Ids are "
            "printed in square brackets in every block — sig:, node:, case:, tool: and the file's own — and any of "
            "them may be cited.")
 _SIGNAL_QUOTE = ("A signal's line prints the mail's own id beside its sig: id. A fact that quotes the mail's words "
@@ -65,7 +65,13 @@ _NEEDS = ("Ask the capture layer for evidence only when a fact that is not in th
           "when the blocks give one. A need that would not change the answer is not asked.")
 _ABSENCE = ("Never say something did not happen unless block F says that source was read for that window. A capped "
             "read is not an absence.")
-RULES: tuple[str, ...] = (_BLOCKS, _UNTRUSTED, *expert.RULES[1:], _SIGNAL_QUOTE, _HISTORY, _CONFIDENCE, _MUTATIONS, _NEEDS, _ABSENCE)
+_GOALS = ("A goal is the company's only when block G prints it with a goal: id. Say which of those the next move "
+          "advances, threatens or depends on, and why, citing what shows it — or that it is unclear. When this subject "
+          "is a piece of work in motion that no printed goal and no waiting proposal names, you may propose ONE goal "
+          "for it, in the founder's words, citing at least one act of the company's own (we applied, wrote, met) — "
+          "never a target or a deadline the blocks did not print, never an owner. A proposal waits for the founder.")
+RULES: tuple[str, ...] = (_BLOCKS, _UNTRUSTED, *expert.RULES[1:], _SIGNAL_QUOTE, _HISTORY, _CONFIDENCE, _MUTATIONS, _NEEDS,
+                          _ABSENCE, _GOALS)
 
 _FITS = "; ".join(f"{mode} — {', '.join(sorted(MODE_FITS[mode]))}" for mode in MODE_FITS)
 L2_STEPS: tuple[expert.Step, ...] = (
@@ -92,6 +98,11 @@ L2_STEPS: tuple[expert.Step, ...] = (
     expert.Step("needs", "WHAT TO ASK FOR",
                 "The evidence needs that would change your answer, each marked decision_changing, or none.",
                 ("evidence_needs",)),
+    expert.Step("goals", "THE GOALS",
+                "Which printed goal (block G) the next move bears on and how — advances, threatens, depends_on or "
+                "unclear — with why and the ids; none when it bears on none. Then, only if this is work in motion that "
+                "no printed goal and no waiting proposal names: the one goal it is, or null.",
+                ("goal_impacts", "goal_proposal")),
     expert.Step("limits", "WHAT WAS NOT SEEN",
                 "What block F and the capped context leave out that matters here; an open conflict between sources, "
                 "if one is open; and whether this needs deeper thought than you were asked for, and why — or null.",
@@ -119,6 +130,13 @@ L2_SCHEMA: dict[str, Any] = {
     "coverage_limitations": ["what was not seen"],
     "open_conflict": {"about": "what sources disagree on", "between": ["a printed id", "another printed id"]},
     "deeper": "why this needs deeper thought — or null",
+    "goal_impacts": [{"goal_ref": "a goal: id block G printed", "relation": "advances | threatens | depends_on | unclear",
+                      "why": "why, in the founder's words", "evidence": ["a printed id"],
+                      "size_basis": "a printed tool line, or not measurable"}],
+    "goal_proposal": {"statement": "the goal this work is, in the founder's words, one short line",
+                      "why": "why the company is pursuing it", "evidence": ["a printed id — one the company's own act"],
+                      "parent_goal_ref": "a goal: id block G printed, or null", "deadline": "only as printed, or null",
+                      "target": "only as printed, or null", "metric": "only as printed, or null"},
 }
 
 

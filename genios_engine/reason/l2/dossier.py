@@ -32,12 +32,13 @@ from .inputs import Subject
 from .snapshot import Snapshot
 from .tools import ToolResult
 
-L2_DOSSIER_VERSION = "l2-dossier.v1"
+L2_DOSSIER_VERSION = "l2-dossier.v2"        # v2: block G, the goals (GeniOS-012 S29.U1)
 
 TITLES = {"A": "A · THE SIGNALS — what arrived for this subject", "B": "B · THE CONTEXT — what the company knows around it",
           "C": "C · THE HISTORY — comparable past work, and how it went",
           "D": "D · THE EXPERTISE AND THE FILE", "E": "E · THE TOOLS — numbers code computed",
-          "F": "F · THE COVERAGE — what was read, and what was not"}
+          "F": "F · THE COVERAGE — what was read, and what was not",
+          "G": "G · THE GOALS — what the company works toward"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,11 +158,26 @@ def _coverage(subject: Subject, snapshot: Snapshot, cite: _Cite | None = None) -
     return "\n".join(lines)
 
 
+def _goals(goals: Sequence[Any], proposals: Sequence[Any], cite: _Cite) -> str:
+    """Block G (GeniOS-012 S29.U1): the goals a human made real, each with the id a move cites — and, apart and with
+    NO id, the proposals still waiting for the founder, so the work they name is not proposed again and none is ever
+    taken for the company's goal."""
+    lines = [f"- {cite(g.ref)} {g.statement}" for g in goals]
+    if not lines:
+        lines = ["No goal is approved for this company yet."]
+    if proposals:
+        lines.append("Proposed and waiting for the founder — NOT the company's goals yet, never cite one as its goal:")
+        lines += [f"- {p.statement}" + (f" (for {p.subject_ref})" if p.subject_ref else "") for p in proposals]
+    return "\n".join(lines)
+
+
 def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot: Snapshot,
                      history: HistoricalContext, tools: Sequence[ToolResult], file_dossier: Any = None,
-                     brief_block: str | None = None, depth_note: str | None = None) -> L2Dossier:
-    """The six blocks, in order. `file_dossier` is the STEP-12 `Dossier` for a file subject (its text and
-    catalogue are kept whole); a seed subject passes `brief_block` instead."""
+                     brief_block: str | None = None, depth_note: str | None = None,
+                     goals: Sequence[Any] = (), goal_proposals: Sequence[Any] = ()) -> L2Dossier:
+    """The seven blocks, in order. `file_dossier` is the STEP-12 `Dossier` for a file subject (its text and
+    catalogue are kept whole); a seed subject passes `brief_block` instead. `goals` are the live goals
+    (`context/goals.live_goals`), `goal_proposals` the pending ones."""
     cite = _Cite()
     blocks = {"A": _signals(subject, cite), "B": _context(snapshot, cite), "C": _history(history, cite)}
     if file_dossier is not None:
@@ -172,10 +188,11 @@ def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot
               "and the context."
     blocks["E"] = _tools(tools, cite)
     blocks["F"] = _coverage(subject, snapshot, cite)
+    blocks["G"] = _goals(goals, goal_proposals, cite)
     head = f"L2 DOSSIER {L2_DOSSIER_VERSION} — subject {subject.subject_ref}, as of {_when(as_of)}"
     if depth_note:
         head += f"\n{depth_note}"
-    text = "\n\n".join([head, *(f"# {TITLES[k]}\n{blocks[k]}" for k in ("A", "B", "C", "D", "E", "F"))])
+    text = "\n\n".join([head, *(f"# {TITLES[k]}\n{blocks[k]}" for k in ("A", "B", "C", "D", "E", "F", "G"))])
     ids = set(cite.seen)
     stages: tuple[str, ...] = ()
     if file_dossier is not None:

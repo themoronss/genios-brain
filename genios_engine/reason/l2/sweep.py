@@ -226,6 +226,16 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     with engine.connect() as conn:
         files = files_for(conn, org_id, now=now).files
         us = identity_for(conn, org_id)
+        # GeniOS-012 S29.U1 · the goals, read once a pass: the live ones are block G's, the waiting ones listed apart.
+        from genios_engine.context.goals import goals as goals_of, live_goals as live_goals_of
+        from genios_engine.contracts.goals import PROPOSED as GOAL_PROPOSED
+        try:
+            with conn.begin_nested():
+                live_goals = live_goals_of(conn, org_id)
+                waiting_goals = [g for g in goals_of(conn, org_id) if g.status == GOAL_PROPOSED]
+        except Exception:      # noqa: BLE001 — no goal table yet is no goal, never a failed pass
+            _log.exception("the L2 pass could not read the goals org=%s", org_id)
+            live_goals, waiting_goals = [], []
         org = conn.execute(text("select name, company from orgs where id = :o"), {"o": org_id}).first()
         brief = brief_for(conn, org_id)
         after = results.read_watermark(conn, org_id)
@@ -361,6 +371,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
     # way the expert pass keys one, so the review path decides it and the expert pass covers it from then on.
     # (`makes_cards` is read above, where the due subjects are ordered.)
     file_reviews: list[dict[str, Any]] = []
+    goal_proposals: list[Any] = []   # S29.U3 · (the proposal, its subject filled by code) — L3 rules on each below
     for i, (subject, parts, file_dossier, people, snapshot, history, tools, measured, plan, fp) in enumerate(ready):
         request = L2Request(org_id=org_id, subject_ref=subject.subject_ref,
                             trigger=subject.trigger if subject.trigger else TRIGGER_BUNDLE, eval_time=now,
@@ -368,7 +379,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
         dossier = build_l2_dossier(org_id=org_id, subject=subject, as_of=now, snapshot=snapshot, history=history,
                                    tools=tools, file_dossier=file_dossier,
                                    brief_block=None if file_dossier is not None else brief_block,
-                                   depth_note=depth_note(plan))
+                                   depth_note=depth_note(plan), goals=live_goals, goal_proposals=waiting_goals)
         expertise_ref = stable_ref("pkg", {"dossier": file_dossier.digest if file_dossier is not None else None,
                                            "brief": brief_block, "prompt": PROMPT_VERSION})
         judged = judge(org_id=org_id, request_ref=request.request_id, dossier=dossier, plan=plan, gate=gate,
@@ -404,6 +415,11 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 org_id=org_id, subject_ref=subject.subject_ref, fingerprint=fp, result=result,
                 situations=getattr(getattr(parts, "lifecycle", None), "situations", ()) or ())
             admissions.extend(decided)
+            # S29.U3 · a goal proposed for a piece of work — its subject is the judged file, filled here, never by the
+            # model. A seed in no file is no piece of work: its proposal is not admitted.
+            proposal = getattr(result.judgment, "goal_proposal", None)
+            if proposal is not None and subject.file_id:
+                goal_proposals.append(replace(proposal, subject_ref=f"file:{subject.file_id}"))
             interpreted.extend((a, result) for a in decided)
             # A judgment L3 ADMITTED or REJECTED is the file's review: "nothing owed" is a judgment too — it covers
             # the file, so the old lane's situations on it and its people stand down, exactly as the expert's
@@ -461,6 +477,17 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                 except Exception:      # noqa: BLE001
                     _log.exception("the L2 admission write failed org=%s", org_id)
                     receipt["admissions_failed"] = True
+            if goal_proposals:
+                from genios_engine.context.goal_admission import admit_proposal
+                ruled: Counter = Counter()
+                for proposal in goal_proposals:
+                    try:
+                        with conn.begin_nested():   # one proposal that fails costs that proposal, never the pass
+                            ruled[admit_proposal(conn, org_id=org_id, proposal=proposal,
+                                                 subject_ref=proposal.subject_ref, us=us, at=now).decision] += 1
+                    except Exception:      # noqa: BLE001
+                        _log.exception("the goal admission failed org=%s subject=%s", org_id, proposal.subject_ref)
+                receipt["goal_proposals"] = dict(ruled)
             for review in file_reviews:
                 try:
                     with conn.begin_nested():     # one file's review that fails costs that file, never the pass

@@ -43,6 +43,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from .goals import GoalImpact, GoalProposal
 from .expert_review import (REVERSIBILITY, DossierCatalogue, ExpertReview, _items, _list, _mapping,
                             _one_of, _text, _texts, number_tokens)
 
@@ -236,10 +237,16 @@ class L2Judgment:
     coverage_limitations: tuple[str, ...] = ()
     open_conflict: OpenConflict | None = None
     deeper: str | None = None        # the model asking for more depth, and why — None when it does not
+    #: GeniOS-012 S29.U2 · which printed goal (block G) the move bears on, and how — a word, never a score.
+    goal_impacts: tuple[GoalImpact, ...] = ()
+    #: GeniOS-012 S29.U3 · at most one goal this work is, when no printed goal names it — L3 admits it as a PENDING
+    #: brief line (`context/goal_admission`); its subject is filled by code, never by the model.
+    goal_proposal: GoalProposal | None = None
 
     #: The keys this half reads from the model's answer; the rest of the answer is the review's.
     KEYS = ("intervention_mode", "confidence", "options", "history_used", "second_order", "decision_need",
-            "proposed_mutations", "evidence_needs", "coverage_limitations", "open_conflict", "deeper")
+            "proposed_mutations", "evidence_needs", "coverage_limitations", "open_conflict", "deeper",
+            "goal_impacts", "goal_proposal")
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "L2Judgment":
@@ -304,7 +311,9 @@ class L2Judgment:
                 for n in _items(raw.get("evidence_needs"), "evidence_needs", "an evidence need")),
             coverage_limitations=_texts(raw.get("coverage_limitations"), "a coverage limitation"),
             open_conflict=conflict,
-            deeper=_text(raw.get("deeper"), "why more depth", required=False) or None)
+            deeper=_text(raw.get("deeper"), "why more depth", required=False) or None,
+            goal_impacts=_goal_impacts(raw.get("goal_impacts")),
+            goal_proposal=_goal_proposal(raw.get("goal_proposal")))
 
     def as_mapping(self) -> dict[str, Any]:
         dn, oc = self.decision_need, self.open_conflict
@@ -330,6 +339,8 @@ class L2Judgment:
             "coverage_limitations": list(self.coverage_limitations),
             "open_conflict": None if oc is None else {"about": oc.about, "between": list(oc.between)},
             "deeper": self.deeper,
+            "goal_impacts": [g.as_mapping() for g in self.goal_impacts],
+            "goal_proposal": None if self.goal_proposal is None else self.goal_proposal.as_mapping(),
         }
 
     def texts(self) -> tuple[str, ...]:
@@ -346,7 +357,33 @@ class L2Judgment:
             out.append(self.open_conflict.about)
         if self.deeper:
             out.append(self.deeper)
+        out += [g.why for g in self.goal_impacts]
+        if self.goal_proposal is not None:
+            out += [self.goal_proposal.statement, self.goal_proposal.why]
         return tuple(t for t in out if t)
+
+
+def _goal_impacts(raw: Any) -> tuple[GoalImpact, ...]:
+    """The goal impacts the answer gives — each one that keeps its own shape; one that does not is dropped, never the
+    judgment (the STEP-13 rule, `06` D59: drop the line, keep the result)."""
+    out: list[GoalImpact] = []
+    for item in raw if isinstance(raw, list) else ():
+        if isinstance(item, Mapping):
+            try:
+                out.append(GoalImpact.from_mapping(item))
+            except ValueError:
+                continue
+    return tuple(out)
+
+
+def _goal_proposal(raw: Any) -> GoalProposal | None:
+    """The one goal proposal the answer gives, or None — a malformed one is dropped, never the judgment."""
+    if not isinstance(raw, Mapping) or not raw:
+        return None
+    try:
+        return GoalProposal.from_mapping(raw)
+    except ValueError:
+        return None
 
 
 def _printed(ref: str, catalogue: DossierCatalogue, facts: int) -> bool:
@@ -389,6 +426,15 @@ def validate_judgment(review: ExpertReview, judgment: L2Judgment, catalogue: Dos
         for ref in judgment.open_conflict.between:
             if not _printed(ref, catalogue, facts):
                 problems.append((UNPRINTED_REF, f"the conflict cites {ref}"))
+    # GeniOS-012 S29.U2 · a goal is cited only as block G printed it; a pending proposal is never printed with an id.
+    for n, g in enumerate(judgment.goal_impacts, start=1):
+        for ref in (g.goal_ref, *g.evidence):
+            if not _printed(ref, catalogue, facts):
+                problems.append((UNPRINTED_REF, f"goal impact {n} cites {ref}"))
+    if judgment.goal_proposal is not None:
+        for ref in judgment.goal_proposal.evidence:
+            if not _printed(ref, catalogue, facts):
+                problems.append((UNPRINTED_REF, f"the goal proposal cites {ref}"))
     if review.mode in ("act", "find_out") and not judgment.options:
         problems.append((NO_OPTION, f"a {review.mode} result names no option"))
     if judgment.decision_need.needed and not judgment.decision_need.who:
@@ -427,7 +473,23 @@ def drop_unprinted(judgment: L2Judgment, catalogue: DossierCatalogue, facts: int
         evidence_needs=judgment.evidence_needs,
         coverage_limitations=judgment.coverage_limitations,
         open_conflict=conflict,
-        deeper=judgment.deeper)
+        deeper=judgment.deeper,
+        goal_impacts=tuple(g for g in judgment.goal_impacts if ok((g.goal_ref, *g.evidence))),
+        goal_proposal=_proposal_kept(judgment.goal_proposal, catalogue, facts))
+
+
+def _proposal_kept(proposal: GoalProposal | None, catalogue: DossierCatalogue, facts: int) -> GoalProposal | None:
+    """The goal proposal with what it cites as printed: its evidence the printed ids alone (none left, no proposal),
+    its parent dropped when block G never printed it."""
+    if proposal is None:
+        return None
+    kept = tuple(r for r in proposal.evidence if _printed(r, catalogue, facts))
+    if not kept:
+        return None
+    parent = proposal.parent_goal_ref if proposal.parent_goal_ref in catalogue.evidence_ids else None
+    return GoalProposal(statement=proposal.statement, why=proposal.why, evidence=kept, subject_ref=proposal.subject_ref,
+                        parent_goal_ref=parent, deadline=proposal.deadline, target=proposal.target,
+                        metric=proposal.metric)
 
 
 # ── the lane (code's) ──────────────────────────────────────────────────────────────────────────

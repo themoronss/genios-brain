@@ -51,7 +51,14 @@ def _refs(evidence: Any) -> tuple[str, ...]:
             return ()
     if isinstance(evidence, dict):
         evidence = evidence.get("refs") or evidence.get("evidence") or []
-    return tuple(str(e) for e in evidence or () if isinstance(e, (str, int)) and str(e).strip())
+    out: list[str] = []
+    for e in evidence or ():
+        if isinstance(e, dict):                  # the drafter's line: the work it rests on, by its file id
+            if e.get("file_id"):
+                out.append(f"file:{e['file_id']}")
+        elif isinstance(e, (str, int)) and str(e).strip():
+            out.append(str(e))
+    return tuple(dict.fromkeys(out))
 
 
 def _goal_of(org_id: str, line: Any, superseded: set[str]) -> G.Goal:
