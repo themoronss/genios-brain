@@ -218,6 +218,33 @@ def test_h22_a_company_goal_already_in_force_is_not_proposed_again_in_other_word
 
 
 @pytest.mark.unit
+def test_h23_the_people_a_goal_names_serve_it_through_their_files(seams):
+    """G012 H-23: the drafter cited Boardy's introductions BY THEIR PEOPLE and the goal rested on no file — so no card
+    carried it. Each person's file serves it; two people's files make it the company's; a pattern naming no one, no
+    file."""
+    from genios_engine.platform.company_brief_store import SERVES
+    proposed, patterns = seams
+    items = [*WORK["items"],
+             {"id": "p20", "kind": "file", "file_id": "node_sanchit", "address": "sanchit@cortex.test"},
+             {"id": "p21", "kind": "file", "file_id": "node_nick", "address": "nick@bean.test"},
+             {"id": "p22", "kind": "correspondent", "address": "sanchit@cortex.test", "inbound": 3},
+             {"id": "p23", "kind": "correspondent", "address": "nick@bean.test", "inbound": 2},
+             {"id": "p24", "kind": "wave", "day": "2026-08-11", "count": 12}]
+    patterns["value"] = {**WORK, "items": items}
+    D.draft_company_brief(_Engine(), ORG, _Says([_goal("Turn the intros into partners", ("p22", "p23", "p24"))]),
+                          now=NOW)
+    [goal] = proposed
+    assert {e[SERVES] for e in goal["evidence"] if e.get(SERVES)} == {"file:node_sanchit", "file:node_nick"}
+    assert not any(e.get("file_id") for e in goal["evidence"])
+    proposed.clear()
+    patterns["value"] = {**WORK, "items": items, "goal_texts": ["Turn the introductions into partners"]}
+    out = D.draft_company_brief(_Engine(), ORG, _Says([_goal("Turn the intros into partners", ("p22", "p23"))]),
+                                now=NOW)
+    assert proposed == [] and "the same goal in other words" in out.refused[0], \
+        "two people's files make it the company's goal, ruled by its words"
+
+
+@pytest.mark.unit
 def test_a_pattern_stands_for_its_file_and_its_line():
     assert P.work_of(WORK["items"][1]) == frozenset({"file:node_gulf"})
     assert P.work_of(WORK["items"][2]) == frozenset({"file:node_gulf"})

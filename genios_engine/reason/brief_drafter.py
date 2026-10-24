@@ -230,14 +230,37 @@ def parse(parsed: Any, patterns: dict[str, Any]) -> tuple[list[Proposal], list[s
     return kept, refused
 
 
-def _files_of(proposal: Proposal, by_id: dict[str, Any]) -> frozenset[str]:
-    return frozenset(f"file:{by_id[e]['file_id']}" for e in proposal.evidence if e in by_id and by_id[e].get("file_id"))
+def _named_files(item: dict[str, Any], patterns: dict[str, Any]) -> frozenset[str]:
+    """G012 H-23 · the files a cited person or company is the counterparty of — by their address or domain, as
+    `brief_patterns._names_file` reads an in-motion line's. The drafter cites the PEOPLE of a goal ("Turn Boardy's
+    introductions (Sanchit, Saral, Praveen, Nick, Antonio) into…", 24 Oct) and a goal resting on no file item reached
+    no card. A pattern that names no one names no file."""
+    from genios_engine.reason.brief_patterns import _names_file
+
+    if item.get("file_id") or not (item.get("address") or item.get("domain")):
+        return frozenset()
+    return frozenset(f"file:{f['file_id']}" for f in patterns.get("items", ())
+                     if f.get("kind") == "file" and f.get("file_id")
+                     and _names_file(item.get("address"), item.get("domain"), f))
+
+
+def _files_of(proposal: Proposal, by_id: dict[str, Any], patterns: dict[str, Any]) -> frozenset[str]:
+    out: set[str] = set()
+    for e in proposal.evidence:
+        item = by_id.get(e)
+        if item is None:
+            continue
+        if item.get("file_id"):
+            out.add(f"file:{item['file_id']}")
+        out |= _named_files(item, patterns)
+    return frozenset(out)
 
 
 def is_company_goal(proposal: Proposal, patterns: dict[str, Any]) -> bool:
-    """G012 H-22 · a goal citing two or more files is the company's end, served by each of them."""
+    """G012 H-22 · a goal resting on two or more files — cited, or the files of the people it cites (H-23) — is the
+    company's end, served by each of them."""
     by_id = {i["id"]: i for i in patterns.get("items", ())}
-    return proposal.section == "goals" and len(_files_of(proposal, by_id)) >= 2
+    return proposal.section == "goals" and len(_files_of(proposal, by_id, patterns)) >= 2
 
 
 def _one_goal_per_work(proposals: list[Proposal], patterns: dict[str, Any],
@@ -286,13 +309,18 @@ def _evidence(proposal: Proposal, patterns: dict[str, Any]) -> list[dict[str, An
     by_id = {i["id"]: i for i in patterns.get("items", ())}
     company = is_company_goal(proposal, patterns)
     out = []
+    named: set[str] = set()
     for e in proposal.evidence:
         if e not in by_id:
             continue
         item = {"pattern": e, **{k: v for k, v in by_id[e].items() if k != "id"}}
+        if proposal.section == "goals":
+            named |= _named_files(by_id[e], patterns)
         if company and item.get("file_id"):
             item[SERVES] = f"file:{item.pop('file_id')}"
         out.append(item)
+    # G012 H-23 · the file of each person or company the goal names serves it.
+    out += [{SERVES: f} for f in sorted(named - {e.get(SERVES) for e in out})]
     return out
 
 
