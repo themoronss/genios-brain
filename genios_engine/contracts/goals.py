@@ -20,7 +20,13 @@ from typing import Any, Mapping
 
 #: A goal's life. `proposed` waits on a human; `approved` and `active` were made real by one.
 STATUSES: tuple[str, ...] = ("proposed", "approved", "active", "completed", "superseded", "cancelled")
-PROPOSED, APPROVED, ACTIVE, COMPLETED, SUPERSEDED, CANCELLED = STATUSES
+PROPOSED = "proposed"
+APPROVED = "approved"
+ACTIVE = "active"
+COMPLETED = "completed"
+SUPERSEDED = "superseded"
+CANCELLED = "cancelled"
+assert (PROPOSED, APPROVED, ACTIVE, COMPLETED, SUPERSEDED, CANCELLED) == STATUSES
 #: The statuses a human made real — printed to a model as the company's goal (block G).
 LIVE: frozenset[str] = frozenset({APPROVED, ACTIVE})
 #: The statuses that require `approved_by` and `approved_at` (the table's check constraint says the same).

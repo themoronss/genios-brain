@@ -690,6 +690,10 @@ RETAINED_AFTER_ERASURE: frozenset[str] = frozenset({
 })
 
 _ORG_SCOPED_TABLES = [
+    # GeniOS-012 S28.U1 (0254): the tenant's goals, every revision, and the links of its situations to them — the
+    # founder's own words about what the company works toward.
+    "goal_situation_links",
+    "company_goals",
     # GeniOS-011 S05.U1 (0251): one health row per org per day — counts of the tenant's cards, refusals, reviews
     # and judgments. Derived from the tables below, never content; a reset tenant starts its baseline afresh,
     # and an old median would alert against a tenant that no longer exists.

@@ -22,7 +22,9 @@ from sqlalchemy import text
 
 from genios_engine.contracts.goals import GoalProposal
 
-ADMIT, HOLD, REJECT = "admit", "hold", "reject"
+ADMIT = "admit"
+HOLD = "hold"
+REJECT = "reject"
 #: D12 · the goals L2 may propose to one tenant in a week.
 WEEKLY_CAP = 3
 #: Who a line says proposed it.

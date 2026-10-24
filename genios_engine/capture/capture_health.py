@@ -89,15 +89,9 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "MOVES WITH `unknown_rate_bp`, into the same surface or neither. ⛔ Splitting them would "
         "ship the filter without the ordering that makes it useful"),
 
-    # ── the registry's two reads ────────────────────────────────────────────────────────────
-    "source_registry.known_ids": (
-        "*'Every accepted source id, canonical and alias.'* Two test callers. The registry's "
-        "WRITERS and its lookup are on live paths; this is the full enumeration, which the engine "
-        "never needs because every production question is *is THIS id known* rather than *list "
-        "them all*. The tests need the enumeration to prove the lookup agrees with it.",
-        "MOVES WHEN a surface lists the supported sources — an onboarding screen is the obvious "
-        "caller. Until then the enumeration exists to be checked against, which is a real job"),
-
+    # ── the registry's read ─────────────────────────────────────────────────────────────────
+    # `source_registry.known_ids` left this table in G012 H-20: `reason/l2/evidence.source_names` keeps only the
+    # source names among what a model wrote, so an answer found is one the need accepts.
     "source_registry.is_buildable": (
         "⛔ NO DOCSTRING, NO TEST, NO CALLER — AND THAT IS THE ENTRY. The only one of `capture/`'s "
         "seven with nothing anywhere: six are exercised by tests and this is reached by nothing at "
