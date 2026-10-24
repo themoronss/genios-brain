@@ -130,3 +130,30 @@ H-07 in detail:
    - glosses on readings, such as "turn is with them (Antler/Theresa)";
    - absence claims with no quote;
    - "(n=19)", which the check strips from the lines but not from the claim.
+
+---
+
+## Update, 24 Oct · the goals (Step 6), built on this branch
+
+Harsh asked for goals first, and so did Rohit (WhatsApp, 24 Oct: "Goals pahle banaiye… goals se related cards aane easy hain"). On 24 Oct the design partner had **no goal anywhere**: 0 brief goal lines and no goal object. The drafter (S27.U1) was run once locally and proposed 4 goals, about 2 of the ideal 10 (NSRCEL, Boardy).
+
+Built exactly as `07-GOALS.md` and `GeniOS-008/00-ARCHITECTURE.md` "Goals" describe:
+
+| Unit | Commit | What |
+|---|---|---|
+| S28.U1 | `932b98ea` | `contracts/goals.py`; migration 0254 `company_goals` (revision rows; approved/active require an approver, as a constraint) and `goal_situation_links`; `context/goals.sync_from_brief`, run first in every sweep. |
+| S29.U1–U3 | `b2186e68` | Block G in the L2 dossier (live goals with `[goal:<id>]`; waiting proposals listed apart, with no id). `goal_impacts` and `goal_proposal` on `L2Judgment` (validated and pruned like every judgment line). Prompt `l2-judgment.v2`. `context/goal_admission` HOLDs a duplicate for the same work, anything over the weekly cap (D12: 3), and a proposal with no act of our own; ADMIT writes a pending brief goals line. |
+| S30.U1 | `1e2d9fe0` | Each impact on a live goal is linked to the situations L3 admitted. |
+| S31.U1 | `2c8800cd` | Migration 0255 `cards.goal_refs`, refreshed at every card build: the live goals proposed for the card's file, or linked to its admitted situations. The queue's three doors serve it. `ideal_card_gap` reads it, and the goal field is `shared_ok`. |
+
+### Not built
+
+- Block G in the **expert** dossier. Rohit's org judges files through L2 under `l2_cards`.
+- S28.U2 `GET /v1/goals`.
+- S30.U2 progress.
+- S31.U2–U3, the goal board and the dashboard goal row.
+- N2 categories.
+
+### Decision for Rohit: D12
+
+The weekly cap of 3 L2 goal proposals conflicts with a new tenant's first week: `/preview` expects 10 goals on day one. Proposed: an onboarding allowance, for example 10 in the first week after connect, and 3 a week after that.
