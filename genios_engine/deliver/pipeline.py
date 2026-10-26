@@ -247,6 +247,17 @@ def _open_questions_without_cards(graph, org_id: str, evaluation_time: datetime 
             "refreshable": list(CardStore.REFRESHABLE_STATES)}).mappings()]
 
 
+def _file_source_tags(graph, org_id: str, node: str | None) -> list[str]:
+    """G012 H-27 · the app tags of the sources behind a file's work (`card_builder.real_sources`)."""
+    from genios_engine.deliver.card_builder import real_sources, source_tags
+    if not node:
+        return []
+    try:
+        return source_tags(real_sources(graph, org_id, node))
+    except Exception:      # noqa: BLE001 — a tag that cannot be read costs the tag, never the card
+        return []
+
+
 def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[dict, dict]:
     """The card a held file asks its question on, and its copy — every word the question's or the file's
     checked review's own; nothing written for it. Its situation is the expert's reading of the file as the
@@ -321,7 +332,8 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
                      "words": QUESTION_WRONG_WORDS}],
         "why": why,
         # The app and the API; never an agent's to answer for you.
-        "surfaces": ["app", "api"], "context_tags": [],
+        # G012 H-27 · the sources of the file's work, as a file's own card names them — never none.
+        "surfaces": ["app", "api"], "context_tags": _file_source_tags(graph, org_id, node),
         "config_snapshot_id": row.get("config_snapshot_id"), "builder_version": QUESTION_CARD_BUILDER,
         # STEP-14: the file's card, asking — a version of the file's one card, its ask the question (s14-D1).
         "file_id": node,

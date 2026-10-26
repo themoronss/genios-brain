@@ -675,6 +675,23 @@ def resolved_person_name(quotes: list[dict], fallback: str, is_us=None) -> str:
     return fallback
 
 
+_FILE_SOURCES = text(
+    "select distinct se.source from context_correlations k "
+    "  join context_correlation_members m on m.org_id = k.org_id and m.correlation_id = k.correlation_id "
+    "  join source_events se on se.org_id = m.org_id and se.event_id = m.event_id "
+    " where k.org_id = :o and k.anchor_node_id = :n and se.visibility_scope is distinct from 'private'")
+
+
+def real_sources(store, org_id: str, node_id: str) -> set[str]:
+    """The sources behind a node's work — the public name of `_real_sources` (G012 H-27: the question card reads it)."""
+    return _real_sources(store, org_id, node_id)
+
+
+def source_tags(sources: set[str]) -> list[str]:
+    """The app tags of some sources (`_SOURCE_APP`), sorted."""
+    return sorted({_SOURCE_APP[s] for s in sources if s in _SOURCE_APP})
+
+
 def _real_sources(store, org_id: str, node_id: str) -> set[str]:
     """The TRUE app(s) behind this node's current facts, via graph_source_refs — never guessed from
     a field-name prefix. Fixes the bug where an LLM-extracted "deal.*" field from a Gmail email got
@@ -686,7 +703,14 @@ def _real_sources(store, org_id: str, node_id: str) -> set[str]:
             "join graph_source_refs sr on sr.fact_version_id = f.fact_version_id "
             "where f.org_id=:o and f.subject_node_id=:n and f.valid_to is null and f.status='active'"),
             {"o": org_id, "n": node_id}).fetchall()
-    return {r.source for r in rows if r.source}
+        found = {r.source for r in rows if r.source}
+        if not found:
+            # G012 H-27 · A FILE'S CARD IS ABOUT ITS FILE'S WORK: when the node's own facts carry no source ref, the
+            # sources are those of the events in the files anchored on it — the mail and the meetings it is made of,
+            # each its recorded `source_events.source`, never a guess. On the design partner's org (24 Oct) 12 of 23
+            # file cards and every question card named no source at all; the founder's own cards each name theirs.
+            found = {r.source for r in c.execute(_FILE_SOURCES, {"o": org_id, "n": node_id}) if r.source}
+    return found
 
 
 #: Situations whose own status says the work is finished. Not a guess about relevance — the value

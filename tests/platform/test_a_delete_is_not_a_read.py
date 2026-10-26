@@ -270,7 +270,8 @@ def test_the_statement_count_did_NOT_move():
     #    capability freshness, so an absence is licensed by the mail and not by the domain's whole list.
     # ⛔ MOVED 3,454 → 3,455, G012 H-25 (25 Oct): `context/coverage_receipt._STALE_SOURCES`, the source a file's mail
     #    came through under a connection since reconnected.
-    assert r["statements"] == 3_455, (
+    # ⛔ MOVED 3,455 → 3,456, G012 H-27 (25 Oct): `deliver/card_builder._FILE_SOURCES`, the sources of a file's events.
+    assert r["statements"] == 3_456, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
