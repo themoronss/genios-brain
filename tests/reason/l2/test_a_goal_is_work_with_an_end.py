@@ -22,7 +22,7 @@ pytestmark = pytest.mark.unit
 def test_the_rule_says_a_goal_has_an_end_and_staying_in_touch_is_a_move():
     rule = next(r for r in P.RULES if r.startswith("A goal is the company's only"))
     assert "END" in rule and "never a goal" in rule and "raise the round" in rule
-    assert P.PROMPT_VERSION == "l2-judgment.v5"
+    assert P.PROMPT_VERSION == "l2-judgment.v7"
 
 
 @pytest.mark.parametrize("a, b, same", [
@@ -75,3 +75,10 @@ def test_h22_a_waiting_goal_is_the_companys_whichever_file_first_proposed_it():
     assert "[goal:goal_round] Raise the pre-seed round" in block and "proposed for" not in block
     rule = next(r for r in P.RULES if r.startswith("A goal is the company's only"))
     assert "whichever file first proposed it" in rule
+
+
+def test_h28_find_out_only_what_the_capture_layer_can_fetch():
+    """G012 H-28: 27 of 84 find_out questions asked what was said at a meeting — no fetch answers that."""
+    rule = next(r for r in P.RULES if r.startswith("Choose find_out only when"))
+    assert "the capture layer can fetch" in rule and "what was said in a meeting" in rule
+    assert "ask the founder" in rule and "that message IS the move: choose act" in rule

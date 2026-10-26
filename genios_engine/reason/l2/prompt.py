@@ -34,7 +34,9 @@ from genios_engine.reason.expert import prompt as expert
 from .dossier import L2Dossier
 from .plan import L2Plan
 
-PROMPT_VERSION = "l2-judgment.v5"        # v5: a goal is no file's (H-22); v4: waiting goals cited, a goal at the
+PROMPT_VERSION = "l2-judgment.v7"        # v7: asking them is a move (H-28); v6: find out only what can be fetched
+#                                          (H-28); v5: a goal is no file's
+#                                          (H-22); v4: waiting goals cited, a goal at the
 #                                          company's level (G012 H-19); v3: a goal
 #                                          is work with an end (G012 H-16); v2: the goals (S29)
 
@@ -67,6 +69,16 @@ _NEEDS = ("Ask the capture layer for evidence only when a fact that is not in th
           "when the blocks give one. A need that would not change the answer is not asked.")
 _ABSENCE = ("Never say something did not happen unless block F says that source was read for that window. A capped "
             "read is not an absence.")
+#: G012 H-28 · WHEN TO FIND OUT. On the design partner's org (local copy, 26 Oct) 59 of 133 file judgments chose
+#: find_out — a question card — and of their 84 questions 27 asked what was said at a meeting (a calendar holds no
+#: notes) and some 20 asked who someone is, what a portal shows or what the founder remembers: questions no fetch can
+#: answer. The founder's own cards act on the same files ("send Neel Jain the follow-up from your 8 Oct call").
+_FIND_OUT = ("Choose find_out only when the missing fact is one the capture layer can fetch — a thread, a window of mail, "
+             "a document — and it would change which move you make. What no mailbox holds — what was said in a "
+             "meeting, what someone remembers, what a portal or a dashboard shows — is no reason to find out: make the "
+             "move that is right either way (a follow-up that recaps and asks, a reply that confirms), and say in it "
+             "what it checks. When the way to find out is to ask the counterparty, that message IS the move: choose act "
+             "and write it. When only the founder can know, the move is to ask the founder, in one short question.")
 #: G012 H-19 · v4: a waiting goal has an id and a move says it serves one; a goal is worded at the level the company
 #: pursues it. On the design partner's org (24 Oct) one judgment per partner proposed "land a partnership with <them>"
 #: (six of fourteen goals) and four investors' files each proposed the round — where the founder's own ten goals are
@@ -86,7 +98,7 @@ _GOALS = ("A goal is the company's only when block G lists it as approved; the g
           "proposal, in the founder's words, citing at least one act of the company's own (we applied, wrote, met) — "
           "never a target, a deadline or an owner the blocks did not print. A proposal waits for the founder.")
 RULES: tuple[str, ...] = (_BLOCKS, _UNTRUSTED, *expert.RULES[1:], _SIGNAL_QUOTE, _HISTORY, _CONFIDENCE, _MUTATIONS, _NEEDS,
-                          _ABSENCE, _GOALS)
+                          _ABSENCE, _FIND_OUT, _GOALS)
 
 _FITS = "; ".join(f"{mode} — {', '.join(sorted(MODE_FITS[mode]))}" for mode in MODE_FITS)
 L2_STEPS: tuple[expert.Step, ...] = (
