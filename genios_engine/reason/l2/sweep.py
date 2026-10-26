@@ -50,7 +50,7 @@ from genios_engine.reason.bundle.store import BundleStore
 from genios_engine.context import l2_admission as admission
 
 from . import evidence, store as results
-from .dossier import L2_DOSSIER_VERSION, build_l2_dossier, works_for_line
+from .dossier import L2_DOSSIER_VERSION, build_l2_dossier, file_reads, works_for_line
 from .history import history_for
 from .inputs import Subject, conflicts_for, read_open_conflicts, read_signals, read_subjects, seed_of
 from .judge import judge
@@ -395,7 +395,7 @@ def l2_pass(*, store, org_id: str, now: datetime | None = None, llm=None, budget
                                    tools=tools, file_dossier=file_dossier,
                                    brief_block=None if file_dossier is not None else brief_block,
                                    depth_note=depth_note(plan), goals=live_goals, goal_proposals=waiting_goals,
-                                   works_for=works_for)
+                                   works_for=works_for, reads=file_reads(parts) if parts is not None else ())
         expertise_ref = stable_ref("pkg", {"dossier": file_dossier.digest if file_dossier is not None else None,
                                            "brief": brief_block, "prompt": PROMPT_VERSION})
         judged = judge(org_id=org_id, request_ref=request.request_id, dossier=dossier, plan=plan, gate=gate,

@@ -32,7 +32,8 @@ from .inputs import Subject
 from .snapshot import Snapshot
 from .tools import ToolResult
 
-L2_DOSSIER_VERSION = "l2-dossier.v5"        # v5: a waiting goal is no file's (H-22); v4: waiting goals printed with ids
+L2_DOSSIER_VERSION = "l2-dossier.v6"        # v6: block F carries the file's mailbox receipt (H-26); v5: a waiting goal
+#                                             is no file's (H-22); v4: waiting goals printed with ids
 #                                             (G012 H-19); v3: who you work for
 #                                             (G012 H-14); v2: block G, the goals (S29.U1)
 
@@ -138,7 +139,29 @@ def _conflicts(subject: Subject, cite: _Cite) -> list[str]:
     return lines
 
 
-def _coverage(subject: Subject, snapshot: Snapshot, cite: _Cite | None = None) -> str:
+def file_reads(parts: Any) -> tuple[str, ...]:
+    """G012 H-26 · what the file's own mailboxes read, for block F — the receipt block D's WHAT WAS CHECKED prints
+    (`context/coverage_receipt`). The absence rule reads block F alone, and block F read only the signals' coverage:
+    on the design partner's org (local copy, 25 Oct) 64 file judgments said "find out" — 48 of them on files whose
+    receipt was missing or never reached block F — where the founder's own cards say "Gmail fully read — no reply"."""
+    numbers = getattr(parts, "numbers", None)
+    mailboxes = tuple(getattr(numbers, "mailboxes", ()) or ())
+    if not mailboxes:
+        return ()
+    out = [f"- The file's mail: {m.address or m.connection_id} reads {m.window_days} days back"
+           + (f" from {_when(m.window_start)}" if m.window_start else "")
+           + (f"; its last sync completed {_when(m.last_finished_at)}" if m.last_completed
+              else "; its last sync did NOT complete") for m in mailboxes]
+    since = getattr(numbers, "no_reply_since", None)
+    if since is not None and getattr(numbers, "no_reply_can_be_said", False):
+        out.append(f"- \"No reply since our last mail ({_when(since)})\" may be said of this file: a mailbox that completed "
+                   "its sync read past it.")
+    elif since is not None:
+        out.append(f"- \"No reply since our last mail ({_when(since)})\" may NOT be said: no completed sync read past it.")
+    return tuple(out)
+
+
+def _coverage(subject: Subject, snapshot: Snapshot, cite: _Cite | None = None, reads: Sequence[str] = ()) -> str:
     lines = []
     for cov in subject.coverage:
         for src in cov.get("sources", ()) or ():
@@ -149,8 +172,11 @@ def _coverage(subject: Subject, snapshot: Snapshot, cite: _Cite | None = None) -
                          + (f"{done} bp of it read" if done is not None else "how much was read is NOT known")
                          + (f", window {cov.get('window_from')} → {cov.get('window_to')}"
                             if cov.get("window_from") or cov.get("window_to") else ""))
-    if not lines:
+    if not lines and reads:
+        lines.append("- The signals carried no coverage of their own; the file's mailboxes below say what was read.")
+    elif not lines:
         lines.append("- No source said how much of it was read: a negative claim (\"nobody replied\") is not licensed.")
+    lines.extend(reads)
     if cite is not None:
         lines.extend(_conflicts(subject, cite))
     if snapshot.truncated:
@@ -200,7 +226,7 @@ def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot
                      history: HistoricalContext, tools: Sequence[ToolResult], file_dossier: Any = None,
                      brief_block: str | None = None, depth_note: str | None = None,
                      goals: Sequence[Any] = (), goal_proposals: Sequence[Any] = (),
-                     works_for: str | None = None) -> L2Dossier:
+                     works_for: str | None = None, reads: Sequence[str] = ()) -> L2Dossier:
     """The seven blocks, in order. `file_dossier` is the STEP-12 `Dossier` for a file subject (its text and
     catalogue are kept whole); a seed subject passes `brief_block` instead. `goals` are the live goals
     (`context/goals.live_goals`), `goal_proposals` the pending ones."""
@@ -213,7 +239,7 @@ def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot
             + "\n\nNo file holds this subject, so no kind of work and no playbook: judge from the brief, the signals " \
               "and the context."
     blocks["E"] = _tools(tools, cite)
-    blocks["F"] = _coverage(subject, snapshot, cite)
+    blocks["F"] = _coverage(subject, snapshot, cite, reads)
     blocks["G"] = _goals(goals, goal_proposals, cite)
     head = f"L2 DOSSIER {L2_DOSSIER_VERSION} — subject {subject.subject_ref}, as of {_when(as_of)}"
     if works_for:
@@ -232,4 +258,4 @@ def build_l2_dossier(*, org_id: str, subject: Subject, as_of: datetime, snapshot
                      catalogue=catalogue, digest=digest)
 
 
-__all__ = ["L2Dossier", "L2_DOSSIER_VERSION", "TITLES", "build_l2_dossier", "works_for_line"]
+__all__ = ["L2Dossier", "L2_DOSSIER_VERSION", "TITLES", "build_l2_dossier", "file_reads", "works_for_line"]
