@@ -84,6 +84,8 @@ def receipt_for(conn, org_id: str, *, connection_ids: Iterable[str] | None = Non
         " where org_id = :o and status = 'connected' order by connection_id"),
         {"o": org_id}).fetchall(), [])
     wanted = None if connection_ids is None else set(connection_ids)
+    if wanted:
+        wanted |= _reconnected(conn, org_id, wanted, rows)
     receipts: list[MailboxReceipt] = []
     for row in rows:
         if row.source_type not in MAILBOX_SOURCES or (
@@ -99,6 +101,32 @@ def receipt_for(conn, org_id: str, *, connection_ids: Iterable[str] | None = Non
             window_days=window.window_days, window_start=window.window_start,
             last_finished_at=finished, last_completed=completed))
     return receipts
+
+
+#: G012 H-25 · which sources a file's mail came through under connections no longer connected.
+_STALE_SOURCES = text("select distinct source from source_events where org_id = :o and connection_id = any(:ids)")
+
+
+def _reconnected(conn, org_id: str, wanted: set[str], rows) -> set[str]:
+    """G012 H-25 · THE SAME MAILBOX, RECONNECTED. A file's mail is selected by the connection it was captured through,
+    and a reconnect gives the mailbox a new connection: on the design partner's org (local copy of production, 24 Oct)
+    1,710 of 2,709 messages carried the Gmail connection used until 22 Oct, which no `connections` row holds any more —
+    so 72 of 175 files read "No mailbox is shown to have read this file's mail", "no reply" could not be said on any of
+    them, and their judgments asked to find out what the mailbox had already read. A stale connection's mailbox source
+    is vouched for by the tenant's connected mailbox of that source — only when there is exactly ONE: with two, which one
+    read it is not known, and nothing is assumed. The vouching mailbox's own window and last sync still bound what it
+    may say (`covers`)."""
+    stale = wanted - {str(r.connection_id) for r in rows}
+    if not stale:
+        return set()
+    sources = {str(r.source) for r in _optional(conn, f"its reconnected mailboxes, org={org_id}", lambda: conn.execute(
+        _STALE_SOURCES, {"o": org_id, "ids": sorted(stale)}).fetchall(), [])}
+    out: set[str] = set()
+    for source in sources & MAILBOX_SOURCES:
+        connected = [str(r.connection_id) for r in rows if r.source_type == source]
+        if len(connected) == 1:
+            out.add(connected[0])
+    return out
 
 
 def covers(receipts: Sequence[MailboxReceipt], since: datetime) -> bool:

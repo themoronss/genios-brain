@@ -86,3 +86,33 @@ def test_an_unreadable_last_sync_has_not_completed_and_the_reads_after_it_go_on(
         "con_x", None, False, 1)
     [said] = _said(caplog)
     assert ORG in said and "con_x" in said
+
+
+def _old_mail(store, connection_id: str) -> None:
+    with store.engine.begin() as c:
+        c.execute(text("insert into source_events (event_id, org_id, connection_id, source, object_type, "
+                       "source_object_id, dedup_key, actor, occurred_at) values (:e, :o, :c, 'gmail', 'email_message', "
+                       ":e, :e, cast('{}' as jsonb), :at)"),
+                  {"e": f"evt_{connection_id}", "o": ORG, "c": connection_id, "at": NOW - timedelta(days=5)})
+
+
+def test_h25_mail_captured_through_a_mailbox_since_reconnected_is_vouched_for_by_it(store):
+    """G012 H-25: 1,710 of the design partner's 2,709 messages carried the Gmail connection used until a reconnect;
+    the file asked for that id read "no mailbox read this file's mail". The tenant's ONE connected Gmail is the same
+    mailbox, and it vouches — within its own window and last sync."""
+    _old_mail(store, "con_before_reconnect")
+    with store.engine.connect() as c:
+        [receipt] = receipt_for(c, ORG, now=NOW, connection_ids={"con_before_reconnect"})
+        assert receipt.connection_id == "con_x" and receipt.last_completed
+        assert receipt_for(c, ORG, now=NOW, connection_ids={"con_never_seen"}) == [], \
+            "an id no mail came through is vouched for by nothing"
+
+
+def test_h25_with_two_connected_mailboxes_nobody_vouches_for_a_stale_one(store):
+    _old_mail(store, "con_before_reconnect")
+    with store.engine.begin() as c:
+        c.execute(text("insert into connections (connection_id, org_id, source_type, capture_scope, status) "
+                       "values ('con_y', :o, 'gmail', cast('{\"backfill_days\": 60}' as jsonb), 'connected')"),
+                  {"o": ORG})
+    with store.engine.connect() as c:
+        assert receipt_for(c, ORG, now=NOW, connection_ids={"con_before_reconnect"}) == []
