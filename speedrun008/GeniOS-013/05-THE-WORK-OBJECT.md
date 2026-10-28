@@ -1,4 +1,4 @@
-# 03 · The piece of work: the situation as Atlas v2 means it
+# 05 · The piece of work: the situation as Atlas v2 means it
 
 **Written for:** everyone. §1, §2 and §12 are written in plain words. The rest is the specification an agent builds from.
 **Architecture source:** GeniOS-008 `00-ARCHITECTURE.md`. Two lines from it settle the design: L2 is the primary layer, and *"the situation is formed by reasoning over the bundle, the expertise and what the company already knows. L3 only remembers what L2 concluded."* L3's job is described as *"Intelligence Graph: situations → interpretations … It records what GeniOS concluded."*
@@ -225,7 +225,7 @@ There is one writer per table: `context/work_store.py`. A CI guard (like the exi
 
 ## §12 · A worked example: `i1` before and after
 
-**Before (today's graph):** six notes from different readers, four of them contradicting each other ([01 §5](01-WHAT-IS-TRUE.md)). Two situations, both "dormant". No conclusion stored.
+**Before (today's graph):** six notes from different readers, four of them contradicting each other ([06 §5](06-MEASUREMENTS.md)). Two situations, both "dormant". No conclusion stored.
 
 **After (one work item):**
 

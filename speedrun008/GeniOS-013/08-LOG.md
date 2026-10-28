@@ -1,4 +1,4 @@
-# 05 · Log
+# 08 · Log
 
 Append-only. Each line records the date, what was done or measured, the number it moved, and who did it. Corrections are new lines; existing lines are never edited.
 
@@ -6,3 +6,4 @@ Append-only. Each line records the date, what was done or measured, the number i
 |---|---|---|---|
 | 2026-10-28 | Folder written: the plan and the measured baseline, on a local copy of the design partner's org (production cut 12:45 UTC, code `harsh/mvp` `7d2c3615`) | cards 8/20 found, fields 28/220 (`ideal_card_gap.py`); stricter trace: 0 the same, 9 partial or wrong, 11 missing | Claude |
 | 2026-10-28 | Correction recorded: the 547 parked rows are attachment stubs whose mails were emitted, not parked mails | emitted 1,193 / archived 636 of 1,829 mails | Claude |
+| 2026-10-28 | Folder reordered on Rohit's ask into four questions: 01 what is happening, 02 what should happen, 03 how it gets fixed, 04 how it runs smoothly; spec, measurements, decisions and log became 05–08. Added the problem → step map (03), the target flow (02) and operations (04, units U13-39 to U13-42) | — | Claude |

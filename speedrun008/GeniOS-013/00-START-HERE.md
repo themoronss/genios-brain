@@ -1,131 +1,117 @@
-# GeniOS-013 · Finish L3's second half: from facts about mail to an understanding of the work
+# GeniOS-013 · From facts about mail to an understanding of the work
 
-**Written for:** Rohit (§1 to §4) and Harsh with the coding agents he assigns (everything).
+**Written for:** Rohit (everything in this file, then 01, 02 and 04) and Harsh with the coding agents he assigns (everything).
 **Date:** 28 Oct 2026.
-**Measured on:** a local copy of the design partner's org. It was taken from production in one read-only transaction at 2026-10-28 12:45 UTC. The code was read at `harsh/mvp` `7d2c3615`, and every `file:line` in this folder is from that head.
-**Status:** this is a plan. Nothing in it is built yet. Rohit opens each step.
-
-**No names, by design.** This repo is public. The ideal cards are referred to by their ids in the private ideal file (`p1`, `i1` … `l1`). No person, company or mail text appears here.
-
----
-
-## §1 · The answer in one page
-
-**The question.** A Claude session read the founder's mailbox and produced 20 good cards and 10 goals. GeniOS read the same mailbox and produced:
-- 103 live cards, few of them useful;
-- 7 goals, none of them live.
-
-Why?
-
-**What we measured** (details and SQL in [01](01-WHAT-IS-TRUE.md)):
-
-1. **The model is not the problem.** When L2 judges a file, it usually reads it the way Claude did. Take `i1`, an accelerator that rejected the application and invited updates. L2:
-   - named the stalled reconsideration;
-   - noticed that the founder's traction claims rose between updates;
-   - proposed one concise follow-up, with a draft.
-
-   Then the claim check blocked it over formatting: a date written another way, a first name, "UTC". What the founder saw was "We held the one we found…".
-2. **The context graph is rich, but it holds no conclusions.** It has 16,792 facts and 2,352 relations, all timestamped. Every fact is one of two kinds:
-   - what a source said (6,148);
-   - what code computed (10,644).
-
-   **0 facts come from L2's reasoning.**
-3. **L2's conclusions have no write path.**
-   - The admission code says so in a comment: "⛔ SHADOW: nothing here touches `context_situations`" (`context/l2_admission.py:25`).
-   - Merging two pieces of work, or linking them, has no code that would apply it.
-   - L2 has written 30 interpretations, and nothing in reasoning or delivery reads them.
-4. **So GeniOS never keeps what it understood.** Every judgment:
-   - starts again from about 70,000 characters of raw evidence;
-   - is capped by a ~$2/day budget, which works out to about 12 judgments a day;
-   - wakes only on new mail (all 138 runs);
-   - is used once, for a card, and then forgotten.
-5. **The rules still decide what the founder sees.** Cards come from situations made by rules. Those rules key work by sender: "a file is one counterparty's correlations". 71 of the 103 live cards come from them.
-
-**The trunk root cause.** Design Atlas v2 splits L3 into two graphs:
-- an **Evidence Graph**: what the sources said;
-- an **Intelligence Graph**: what GeniOS concluded. In the Atlas's words, *"L3 only remembers what L2 concluded."*
-
-In production, only the Evidence Graph exists. We measured nine symptoms: wrong unit of work, goals stuck, silence invisible, loops never closed, huge dossiers, held cards, a tiny budget, three card engines, and no measurement. All nine follow from that missing half ([01 §10](01-WHAT-IS-TRUE.md)).
-
-**The fix in one line.** Build the core of the Intelligence Graph: a stored **piece of work**, which is the *situation* as Atlas v2 means it.
-- L2 writes it.
-- L3 checks and keeps it.
-- A clock watches it.
-- Cards are made from it.
-
-There is no new layer, no memory product and no third-party service, and it lives in the same database ([03](03-THE-WORK-OBJECT.md)).
+**Measured on:** a local copy of the design partner's org, taken from production in one read-only transaction at 2026-10-28 12:45 UTC. Code read at `harsh/mvp` `7d2c3615`; every `file:line` is from that head.
+**Status:** a plan. Nothing in it is built. Rohit opens each step.
+**No names, by design.** This repo is public. The ideal cards are referred to by their ids in the private ideal file (`p1`, `i1` … `l1`) and a short description.
 
 ---
 
-## §2 · The steps
+## How this folder is organised: four questions, in order
 
-Each step is built and gated on the local copy first, then switched on for this org in production. Details, units and commands are in [02](02-PLAN.md).
+| # | The question | File |
+|---|---|---|
+| 1 | **What is happening?** The detailed reasoning: where it breaks, and why | [01-WHAT-IS-HAPPENING](01-WHAT-IS-HAPPENING.md) |
+| 2 | **What should happen?** How GeniOS should work instead | [02-WHAT-SHOULD-HAPPEN](02-WHAT-SHOULD-HAPPEN.md) |
+| 3 | **How does it get fixed?** Eight steps: what, why and how | [03-HOW-IT-GETS-FIXED](03-HOW-IT-GETS-FIXED.md) |
+| 4 | **How does it run smoothly?** Rollout, measurement, cost, storage, new customers, tools, agents | [04-HOW-IT-RUNS-SMOOTHLY](04-HOW-IT-RUNS-SMOOTHLY.md) |
 
-| Step | What | Size | Done when |
-|---|---|---|---|
-| **0** | Make "good" measurable: a card score, a work score and the stage where each item was lost, from one command | S | baseline recorded (today: cards **8/20** found, fields **28/220**) |
-| **1** | The piece-of-work contract and its tables, built beside today's situations | M | 17 hand-filled works validate, and every in-window ideal card's facts fit the contract |
-| **2** | L2's write path: admission applies the change instead of logging it; loops close only with evidence; works can merge, gain members and split | L | ≥ 15 of 17 works are right (members, status, whose move, loops) |
-| **3** | L2 reads the work first, then only what is new, and re-judges only on a real change | M | median dossier ≤ 12k characters; 0 re-judgments without new input |
-| **4** | The clock: each work has an expected-by date, silence wakes L2, and the budget goes to important work first | M | ≥ 10 of the 11 in-window silence items raised |
-| **5** | Cold start: who we are; kinds and goals usable while unconfirmed; a one-time onboarding pass | M | ≥ 8 of 10 ideal goals proposed; a playbook in ≥ 90% of dossiers |
-| **6** | One card path: cards come from works, the old lanes stop delivering for this org, and no "held" card is ever shown | M | ≥ 15 of 17 ideal cards carry the right recommendation; 0 duplicates |
-| **7** | Input fixes, in parallel: archive rescue, bounce → work, attachment text, the capture window | S–M | the archived ideal item reaches its work; bounces show on their works |
+Supporting files:
 
-*In-window* means the 17 ideal cards whose mail falls inside the 180-day capture window. `i6`, `s1` and `s2` are older and depend on decision D4.
+| File | Holds |
+|---|---|
+| [05-THE-WORK-OBJECT](05-THE-WORK-OBJECT.md) | The specification of the "piece of work": fields, tables, loops, links, claims, checks, a worked example |
+| [06-MEASUREMENTS](06-MEASUREMENTS.md) | Every number used here, with the SQL to re-run it on production |
+| [07-DECISIONS](07-DECISIONS.md) | Six decisions for Rohit, each with a default |
+| [08-LOG](08-LOG.md) | An append-only record of what was built and measured |
 
 ---
 
-## §3 · What Rohit decides
+## The four answers on one page
 
-Full text, defaults and consequences are in [04](04-DECISIONS.md).
+### 1 · What is happening
+
+- **The brain (L2) thinks well.** On the accelerator application (`i1`) it reached almost the same reading as the ideal card: a stalled reconsideration, traction numbers that rose between updates, and one short follow-up to send.
+- **It is handed the wrong bundle.** Mail is filed by sender, not by piece of work:
+  - one application is split into 2 files;
+  - one intro platform is a single file of 500 mails and 61 people, too big to judge at all.
+- **It is woken at the wrong time.** Only new mail wakes it (138 of 138 runs), yet 13 of the 20 ideal cards are about something that did *not* happen.
+- **It has no company context.** No brief (138 of 138 dossiers), no expert playbook (38 of 38 current dossiers), no approved goals.
+- **Good answers are thrown out.** A word-by-word checker held 66 of 86 results, and the founder saw "We held…".
+- **Nothing it concludes is saved.** Admission runs in "shadow", and 0 of the graph's 16,792 facts came from the brain. So every judgment:
+  - re-reads ~70,000 characters;
+  - is capped at ~12 a day;
+  - is forgotten afterwards.
+
+  The cards come mostly from old rules: 71 of 103.
+
+**The root:** the architecture's L3 has two halves. The Evidence Graph (what the sources said) is built. The Intelligence Graph (what GeniOS concluded) is not.
+
+### 2 · What should happen
+
+**GeniOS keeps an up-to-date understanding of every piece of work, and only thinks about what changed or what is overdue.** Each piece of work has a small saved page:
+- what it is, and which goal it serves;
+- where it stands, and whose move it is;
+- what is owed, and what we have claimed;
+- what should happen next, and by when;
+- the latest conclusion.
+
+The flow then works like this:
+1. New items from any tool attach to the page.
+2. The brain reads the page plus only what is new, and proposes an updated page.
+3. Code checks the update and saves it.
+4. A clock notices missed dates.
+5. Cards are views of pages.
+
+### 3 · How it gets fixed
+
+| Step | What | Done when |
+|---|---|---|
+| 0 | Make "good" measurable: card score, work score, stage of loss, from one command | baseline recorded (today 8/20 cards, 28/220 fields) |
+| 1 | The piece-of-work contract and tables, built beside today's situations | the 17 in-window ideal items fit |
+| 2 | The brain writes the page; code checks each change; loops close only with evidence | ≥ 15 of 17 pages right |
+| 3 | Read the page and only what is new; re-think only on a real change | dossier ≤ 12k characters; 0 wasted re-reads |
+| 4 | The clock: expected-by dates wake the brain; budget goes to important work first | ≥ 10 of 11 silence items raised |
+| 5 | Cold start: who we are; kinds and goals usable while unconfirmed; first pass on day one | ≥ 8 of 10 ideal goals proposed |
+| 6 | One card per piece of work; old rule cards off for this org; no "held" cards | ≥ 15 of 17 ideal cards right; 0 duplicates |
+| 7 | Inputs, in parallel: keep mail from people in active work, bounces join their work, retry attachments, 365 days at onboarding | the archived and bounced items reach their work |
+
+### 4 · How it runs smoothly
+
+- **Releases:** every step is gated on the local copy, then switched on for one tenant with a row, measured the next day, and switched off the same way.
+- **First fixes:**
+  - CI must be green (today `golden-pg` and `database` fail);
+  - `/health` must name the running build (today it says `dev`).
+- **Health:** `daily_health` gains numbers for the pieces of work. Pages past their date, held changes, wasted re-reads, duplicates and budget skips are all visible within a day.
+- **Cost:** reading in proportion to what changed, finding silence for free, the old flow's model calls switched off, and onboarding as a one-time budget.
+- **Storage:** the database is already over its ceiling (about 570 MB against 472 MB on 27 Oct). Pages add about 1 MB; retention for the heavy tables is proposed.
+- **Growth:** new tools add members, not redesigns. Agents work from the page and write their results back to it.
+
+---
+
+## Decisions for Rohit (full text in [07](07-DECISIONS.md))
 
 | # | Decision | Default |
 |---|---|---|
-| D1 | L2 may use **unconfirmed** kinds of work and goals for reasoning and priority, clearly labelled. Approving them stays with the founder | yes |
-| D2 | A one-time onboarding budget for the first pass over history. The daily L2 budget is re-set from the measured cost after Step 3 | ~$20 one-time; $2/day until Step 3 |
-| D3 | The weekly cap on goal proposals is lifted during onboarding | 10 in the first week, then 3 a week |
-| D4 | The capture window at onboarding goes from 180 to 365 days | 365 |
-| D5 | For this org, once Step 6 passes, only the work path delivers cards | yes |
-| D6 | The stored-event fetcher, which reads only our own database, is on by default and separate from the Gmail fetchers' switch | yes (Harsh) |
+| D1 | L2 may use **unconfirmed** kinds and goals for reasoning and priority, labelled. Approval stays with the founder | yes |
+| D2 | A one-time onboarding budget; the daily L2 budget is re-set from the measured cost after Step 3 | ~$20 one-time; $2/day until Step 3 |
+| D3 | More goal proposals during onboarding | 10 in week one, then 3 a week |
+| D4 | Capture 365 days at onboarding | 365 |
+| D5 | For this org, after Step 6, only the work path delivers cards | yes |
+| D6 | The stored-event fetcher, which reads only our own database, is on by default | yes (Harsh) |
 
----
+## A correction to what was said earlier
 
-## §4 · A correction to what was said earlier
+GeniOS does not "read only half the mailbox" or "park whole mails for an attachment". The 547 parked rows are attachments, and all 547 of their mails were read. The real numbers: of 1,829 mails, 1,193 (65%) were emitted and 636 (35%) were archived.
 
-Earlier in this investigation Rohit was told two things: that GeniOS "reads only half the mailbox", and that it "parks whole mails because of an attachment". **Both were wrong.**
+The claim-check counts were also restated: it held 57 of 63 results with the older check and 9 of 23 with the newer one.
 
-- The 547 "parked" rows are **attachment stubs**, and all 547 of their parent mails were emitted.
-- The real numbers: of 1,829 mails in the window, **1,193 (65%) were emitted** and **636 (35%) were archived**.
-- 547 attachments were not read:
-  - 421 unsupported, almost all calendar invites (the calendar itself is captured separately);
-  - 125 failed downloads;
-  - 1 had no OCR engine available.
+## How this relates to the other folders
 
-Step 7 is sized to these corrected numbers ([01 §3](01-WHAT-IS-TRUE.md)).
-
----
-
-## §5 · How this relates to the other folders
-
-- **GeniOS-008 (the architecture)** is unchanged. This plan completes its L3 Intelligence Graph and the L2 → L3 write-back, which is step 11 of the Orchestrator ("write back to L3 with compare-and-set").
-- **GeniOS-012 (ideal → live, loss points D1–D32).** Its loss points are still true as symptoms.
-  - Superseded by the work object (Step 2): the L3 filing items. These are: one counterparty with several live situations; a wave never treated as one subject; any reply closing every ask; a bounce erasing the waiting card; equal-rank conflicting numbers overwriting each other.
-  - Carried into Step 7: its L1 items, such as the window and the archive.
-  - Reused here: the work Harsh built since 23 Oct, H-01 … H-28 and goals S28–S31 (block G, `goal_impacts`, `goal_proposal`, `company_goals`, `cards.goal_refs`).
-- **The cutover rule still holds: beside, not instead.**
-  - Works are built beside today's `context_situations`. The old lanes keep running.
-  - For this org, the old lanes stop delivering only when Step 6's gate passes, and then by an activation row, not by deleting code.
-
----
-
-## §6 · Read in this order
-
-| # | File | What it holds | For |
-|---|---|---|---|
-| 00 | this file | the answer, the steps, the decisions, the correction | everyone |
-| 01 | [01-WHAT-IS-TRUE](01-WHAT-IS-TRUE.md) | every measured number, with the SQL to re-run it | Harsh, agents |
-| 03 | [03-THE-WORK-OBJECT](03-THE-WORK-OBJECT.md) | the piece of work: contract, tables, loops, links, claims, admission rules, a worked example | everyone |
-| 02 | [02-PLAN](02-PLAN.md) | the steps: why, what, how (by module), switches, tests, gate, risks, units | Harsh, agents |
-| 04 | [04-DECISIONS](04-DECISIONS.md) | D1–D6 with defaults | Rohit |
-| 05 | [05-LOG](05-LOG.md) | append-only record of what was built and measured | everyone |
+- **GeniOS-008 (the architecture)** is unchanged. This plan completes its L3 Intelligence Graph and the L2 → L3 write-back, which is step 11 of the Orchestrator.
+- **GeniOS-012 (loss points D1–D32).** Its loss points are still true as symptoms.
+  - Superseded by the piece of work: the L3 filing items. These are one counterparty with several live situations, waves, any reply closing every ask, a bounce erasing the waiting card, and conflicting numbers overwriting each other.
+  - Continued in Step 7: its L1 items.
+  - Reused here: H-01…H-28 and goals S28–S31.
+- **Beside, not instead.** The old lanes stop delivering for this org only after Step 6 passes, and only by an activation row.

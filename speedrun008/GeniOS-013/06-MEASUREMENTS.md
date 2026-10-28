@@ -1,4 +1,4 @@
-# 01 · What is true today, measured
+# 06 · Measurements: every number, with the SQL to re-run it
 
 **Written for:** Harsh and the coding agents.
 **Source:** a local copy of the design partner's org, cut from production at 2026-10-28 12:45 UTC in one read-only `REPEATABLE READ` transaction. It holds all 204 public tables, but only this org's rows. Code is at `harsh/mvp` `7d2c3615`.
