@@ -22,8 +22,8 @@ Then read [10 · The acceptance set](10-ACCEPTANCE.md): the cards, goals and rep
 | Part | Folder |
 |---|---|
 | P1 · Orchestrator: what runs when (the four loops, the triggers, the clock, the budget). Also holds `06`, onboarding a new customer | [P1-ORCHESTRATOR](P1-ORCHESTRATOR/) |
-| P2 · Notebook (Context Graph, L3): the evidence and the conclusions, checked before they are kept. Also holds `06`, a new customer's notebook | [P2-NOTEBOOK](P2-NOTEBOOK/) |
-| P3 · Plane D: domain expertise, what a professional knows | [P3-PLANE-D](P3-PLANE-D/) |
+| P2 · Notebook (Context Graph, L3): the evidence and the conclusions, checked before they are kept. Also holds `06`, a new customer's notebook; `07`, the full specification; and `08`, where every requirement from the four references is built | [P2-NOTEBOOK](P2-NOTEBOOK/) |
+| P3 · Plane D: domain expertise, what a professional knows, and how it reaches the model. Also holds `06`, a new customer's expertise; `07`, the full specification; and `08`, where every requirement from the four references is built | [P3-PLANE-D](P3-PLANE-D/) |
 | P4 · Plane R: reasoning, how a professional thinks | [P4-PLANE-R](P4-PLANE-R/) |
 | P5 · Cards: the intelligence a person sees, and what they do with it | [P5-CARDS](P5-CARDS/) |
 
@@ -33,6 +33,8 @@ Every part folder holds the same five files:
 - `03-EXPECTED-VS-HAPPENING`;
 - `04-WHAT-NEEDS-TO-BE-DONE-NOW`;
 - `05-HOW-AT-PRODUCTION-LEVEL`.
+
+A part planned in full detail adds `06` (a new customer), `07` (the full specification) and `08` (the requirements trace).
 
 The four-question files below (01–08) are the 28 Oct analysis the parts build on.
 

@@ -12,12 +12,14 @@ In the order the Onboard loop builds it:
 
 | # | What | Built from | Why it comes at this point |
 |---|---|---|---|
-| 1 | **The company page:** who we are, our addresses and domains, our time zone, what we do, the founders, what we told people | the signup, our own sent mail | Everything after it needs to know who "us" is. Our addresses decide whose move it is, and our time zone decides "today" |
-| 2 | **Parties:** each person and organisation, its kind, and what it is to us | mail headers, signatures, the company page | Grouping and judging read parties, not addresses |
-| 3 | **Situations:** one per piece of work, with their members | threads clustered by organisation; the model per cluster; code for system mail | The unit everything else hangs on (D-P2-1) |
-| 4 | **Pages:** each live situation judged once. This includes its status, whose move it is, what comes next and by when, its questions and promises, and our claims | the situation's evidence, Plane D and Plane R | The date index (P1) and the cards (P5) read pages |
-| 5 | **Goals, proposed:** each with its target, the evidence and the situations that serve it | the pages | The founder confirms them; until then they are labelled "proposed" (D-P2-5) |
-| 6 | **Links and lifecycle** | relate, and the pages | Facts travel along them (P2-6), and dormant work stops making cards (P2-3) |
+| 1 | **The company page** (07 §3.4): who we are, our addresses and domains, our time zone, what we do, the founders, what we told people, the needed facts (each filled or "not stated anywhere") | the signup, our own sent mail | Everything after it needs to know who "us" is. Our addresses decide whose move it is, and our time zone decides "today" |
+| 2 | **Parties** (07 §3.1): each person and organisation, with its kind, what it is to us, affiliations, identity strength, who introduced whom, and relationship state | mail headers, signatures, the company page | Placement and judging read parties, not addresses |
+| 3 | **Coverage** (07 §2.6): per source and per thread, what was read and what could not be | the capture run | Every later "no reply" rests on it |
+| 4 | **Situations:** one per piece of work, with their members | **L2's placement** over code's candidate bundles (P4), admitted here. Bundles come from organisation clusters, one per introduction, and system mail about what it names | The unit everything else hangs on (D-P2-1) |
+| 5 | **Pages:** each live situation judged once. A page holds its Atlas state, whose move it is (derived), expectations and dates, loops and conditions, our claims, and the four kinds of absence | the snapshot: the situation's evidence, Plane D and Plane R | The date index (P1) and the cards (P5) read pages |
+| 6 | **Loops by code** (07 §4.4, §4.8): follow-throughs after meetings, bounces made moot and re-sends opened, waves with their recipients | code, from members | These are the silences most ideal cards rest on |
+| 7 | **Goals, proposed:** each with its target, the evidence and the situations that serve it, at the right grain | the pages | The founder confirms them; until then they are printed apart, as "proposed" (D-P2-13) |
+| 8 | **Links, conflicts and lifecycle** | relate, and the pages | Facts travel along links (P2-6); conflicts wait for the founder (§4.5); quiet work stops making cards (P2-3) |
 
 The **founder's corrections** come in from the first screen: the company page, the goals, and answers to questions. They are stored as evidence (P2-7). Nothing is "confirmed" until the founder confirms it.
 
@@ -43,8 +45,8 @@ Measured on `b2`, the design partner's six months (about 1,800 mails):
 | | Size | Kept |
 |---|---|---|
 | Conclusions (pages, versions, loops, claims, links, goals, held changes) | a few MB per founder; target under 50 MB after a year | until the tenant is erased |
-| Evidence, clean text | about 8 MB in the first week, for six months of mail | while live work cites it, then 180 days (D-P2-7) |
-| Evidence, encrypted raw copies | about 30 MB in the first week | until clean text exists and promotion is decided |
+| Evidence, clean text | about 8 MB in the first week, for six months of mail | while live work cites it; then 180 days after the work closes, or after capture for mail no work holds (D-P2-7; 07 §14) |
+| Evidence, encrypted raw copies | about 30 MB in the first week | until clean text exists and promotion is decided, and never while a fact or provenance row points at them (D-P2-7) |
 | Screen captures | 45 MB in the first week | a retention per org, to be set (Q2) |
 | Provenance links | 49 MB in the first week | to be trimmed (Q2) |
 
@@ -79,8 +81,15 @@ Measured on `b2`, the design partner's six months (about 1,800 mails):
 
 ## 6 · Ready when
 
-All six must hold, each checked by a test or a measurement:
+All of these must hold, each checked by a test or a measurement:
 
+0. **The specification is built, not approximated:**
+   - every admission law (07 §11.2) and invariant (§15) passes with its fixtures;
+   - every read goes through the API (§12);
+   - every table is on row-level security and the erasure path (P2-10, P2-24), and every guard fails on its seeded mutation (P2-8);
+   - a tenant's export, loaded into an empty database, passes every invariant and guard (P2-24);
+   - the 309 requirements in [08](08-REQUIREMENTS-TRACE.md) are each built or explicitly owned elsewhere;
+   - snapshot reads are under 2 s and admissions under 1 s at p95.
 1. **The golden tenant's Notebook passes** the P2 targets in [03](03-EXPECTED-VS-HAPPENING.md) and the acceptance set in [10](../10-ACCEPTANCE.md).
 2. **Grouping at scale** (P2-12) holds its cost and finds the 17 ideal items.
 3. **Visibility** (P2-10) passes its test, before any team.

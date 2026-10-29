@@ -2,7 +2,52 @@
 
 "Us" means the AI sessions that built the product and the notebook under Rohit's direction. "Mine" means this notebook's own code (29 Oct). None of these is a misunderstanding by Rohit.
 
-F1–F8 and N1–N8 were written on 29 Oct morning. F9–F12 and N9–N10 come from the deeper measurement in [01](01-WHATS-EXACTLY-THERE.md).
+F1–F8 and N1–N8 were written on 29 Oct morning. F9–F12 and N9–N10 come from the deeper measurement in [01](01-WHATS-EXACTLY-THERE.md). P0 comes from the review on 29 Oct evening.
+
+---
+
+## P0 · The plan itself was not complete
+
+**Evidence.** Rohit asked whether P2 was written perfectly. Four references were read in full, and every requirement each one places on the Notebook was checked against P2's six files and the built notebook. The references were:
+- the ideal dashboard;
+- the expected outcomes ([10](../10-ACCEPTANCE.md) and the card-by-card trace);
+- Design Atlas v2;
+- the launch film, with Rohit's description of the loops.
+
+| Reference | Requirements | Fully covered | Partly | Missing | Contradicted by the plan | Another part's |
+|---|---|---|---|---|---|---|
+| The ideal dashboard | 89 | 2 | 63 | 18 | 3 | 3 |
+| Design Atlas v2 and the GeniOS-008 architecture | 90 | 2 | 63 | 16 | 7 | 2 |
+| The expected outcomes | 71 | 6 | 47 | 11 | 5 | 2 |
+| The launch film and the loops | 59 | 4 | 38 | 13 | 1 | 3 |
+| **All** | **309** | **14** | **211** | **58** | **16** | **10** |
+
+**The 16 places where the plan would have built the wrong thing, and where each is now fixed:**
+
+| The plan said | Why it was wrong | Fixed in |
+|---|---|---|
+| System mail is grouped by its sender | A payment processor's renewal notice never meets the vendor's situation, so `c2` can't form; a processor's or portal's mail belongs to what it is about | 07 §2.3 |
+| Archived mail is read only when it belongs to a live situation | When the obligation mail is the only trace of the work (`f2`'s reminders), there is nothing for it to belong to | 07 §2.3, D-P2-3 |
+| The model writes how long a gap has lasted, and counts in summaries | Every number served must be counted by code | 07 §0 rule 7, A-8, I-17 |
+| A situation goes dormant after its playbook's window, or 90 days | A timer can put `i1` or `s1` to sleep while a door is open in writing, or while we owe them | 07 §5.3 |
+| Other parts read the Notebook's tables; capture reads it to promote and to purge | Atlas: L1 never reads L3, and every read goes through the API | 07 §0 rule 3, §12, §14 |
+| The Notebook forms situations by clustering, and code makes situations | Atlas: L2 forms situations and L3 only admits them | 07 §4.1, P2-9 |
+| A parallel set of conclusion tables kept beside the old situations for good | Atlas: one chain, no second graph | 07 §1, D-P2-12: `work_items` heads the one chain and replaces `context_situations` per tenant at cutover; Atlas III.4 is amended with your yes |
+| The model writes the six confidence words | Atlas A.4: each dimension is computed by units, never asserted | 07 §9.4 |
+| Raw copies are dropped once clean text exists | Raw evidence a fact points at is never deleted while provenance points at it | 07 §14 |
+| Goal links to proposed goals, unremarked | The architecture links only admitted situations to live, printed goals; it needs amending with Rohit's yes | D-P2-13, 07 §6.4 |
+| Proposed goals sit in the goals block the model reads | The same: two separate blocks | D-P2-13 |
+| Links have four relations | Atlas and the work object need about twenty, each with writer, evidence and validity | 07 §4.6 |
+| A goal's next move is one open card owed by us | When nothing is owed by us, the next move is GeniOS's next check (`f4`); some goals need two cards (`i2` and `i3`) | 07 §6.1 |
+| A timer may make work dormant with nothing owed | "Nothing owed by whom?": a timer must never quiet work we owe (`s1`) | 07 §5.3, I-9 |
+| An expected-by date must be in the future when set | That erases `f3`, `i3`, `c1`, `i2` and `b3`, the silences 13 of the 20 ideal cards rest on | 07 §4.3 |
+| System mail about a situation may be noise when the sender isn't the subject | The same as the first row, at the level of placement | 07 §2.3, A-19 |
+
+**Cause.** P2 was written from the measured failures of the product and the notebook, against the 20 ideal cards and the 10 goals. It was not checked element by element against the four references: everything the ideal dashboard shows, everything Atlas v2 requires of L3, and everything the film promises.
+
+**Whose:** mine.
+
+**The fix:** the full specification [07](07-THE-NOTEBOOK-SPEC.md), the decisions and steps in [04](04-WHAT-NEEDS-TO-BE-DONE-NOW.md), and the line-by-line trace [08](08-REQUIREMENTS-TRACE.md). The trace shows that each of the 309 requirements lands in a section and a step.
 
 ---
 
@@ -200,6 +245,7 @@ F1–F8 and N1–N8 were written on 29 Oct morning. F9–F12 and N9–N10 come f
 
 | Failure | Whose | Kind |
 |---|---|---|
+| P0 the plan itself incomplete (14 of 309 covered) | mine | planning; fixed by 07, 04 and 08 |
 | F1 nothing saved | us | architecture (the root) |
 | F2 wrong unit | us | design |
 | F3 notes never close | us | design |

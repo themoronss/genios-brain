@@ -77,9 +77,9 @@ The four loops run across all five parts. Each loop's chain is its trigger, and 
 | Loop | Chain | Parts |
 |---|---|---|
 | **Onboard** | a new customer's data → Notebook → business situations → goals (proposed) → you confirm → intelligence for each goal step | P1, P2, P3, P4, P5 |
-| **Evolve** | new data → questioned through the open situations and goals → Notebook updated → situation updated → goal updated → intelligence updated or closed | P1, P2, P4, P5 |
-| **Act** | intelligence → your decision, or a person or agent you delegate to → a verified outcome → Notebook → goal progress | P1, P2, P5 |
-| **Maintain** | daily or weekly over the whole Notebook: correlate, analyse (mistakes, patterns, progress, performance), lifecycle (decay, ignore, prioritise, refresh) → situations and goals updated → fewer, sharper cards | P1, P2, P4, P5 |
+| **Evolve** | new data → questioned through the open situations and goals → Notebook updated → situation updated → goal updated → intelligence updated or closed | P1, P2, P3 (the knowledge selected for each situation and goal), P4, P5 |
+| **Act** | intelligence → your decision, or a person or agent you delegate to → a verified outcome → Notebook → goal progress | P1, P2, P3 (what proves "done"; feedback on the knowledge), P5 |
+| **Maintain** | daily or weekly over the whole Notebook: correlate, analyse (mistakes, patterns, progress, performance), lifecycle (decay, ignore, prioritise, refresh) → situations and goals updated → fewer, sharper cards | P1, P2, P3 (usage per unit, gaps, review dates, new packs in shadow), P4, P5 |
 
 ## 4 · Why it hasn't worked so far: eight causes
 
