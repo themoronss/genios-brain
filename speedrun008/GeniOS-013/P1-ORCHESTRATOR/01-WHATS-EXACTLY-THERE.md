@@ -60,7 +60,7 @@ L1 does the capture. The Orchestrator only decides when it runs.
 | Caps per tenant and per model site | `_llm_over_daily_cap` ($25 a day and 20,000 calls, checked per org before a pull); `reason/bundle/budget.OWN_BUDGETS` (the L2 judge R-9: $2 a day, $0.25 a call; the expert R-7: $2 a day; narration $2; the brief writer $0.25; card copy $0.50) | ✅ | The caps hold |
 | Spend in priority order, and say what was skipped | R-9's gate | 🟡 | **R-9 hit its $2 every day.** 95 calls were refused for budget, and 38 results were carried as "over budget". These are counted, but nobody sees them |
 | Don't pay for answers that are thrown away | — | ❌ | Of R-9's $13.55, **$5.28 (39%)** went on 30 answers that failed validation and 6 that were cut off |
-| What a tenant costs | `llm_costs`, priced by `platform/metrics.cost_usd_sql` | measured | **$25.44 on the onboarding day** (22 Oct UTC), $14.92 of it L1 reading the backfilled mail. **$4.34–6.86 a day after that**: about $5.70 a day, $170 a month |
+| What a tenant costs | `llm_costs`, priced by `platform/metrics.cost_usd_sql` | measured | **$25.44 on the onboarding day** (22 Oct UTC), $14.92 of it L1 reading the backfilled mail. **$4.34–6.86 a day after that**: about $5.70 a day, $170 a month ($1.88 a day reading the data, $3.78 reasoning and cards) |
 
 ### 1.6 · Knowing what ran
 

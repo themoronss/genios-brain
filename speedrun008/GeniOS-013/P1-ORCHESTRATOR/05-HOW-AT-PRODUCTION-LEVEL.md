@@ -151,10 +151,10 @@ What is skipped is listed in the run's row and in the daily health.
 
 | | Today's product (measured, 22–28 Oct) | Target (from the notebook's measured unit costs) |
 |---|---|---|
-| Onboarding | $25.44 on the day: $14.92 L1 reading of the backfilled mail, the rest the chain | Reasoning under $10 (`b2`: $8.41 for 378 situations), plus capture. Whether the notebook path still needs L1's per-mail extraction is a P2 question |
-| A normal day | $4.34–6.86, about $5.70. The judge is capped at $2 and judges about 11 files | Under $0.50 for reasoning: 10–25 touched situations at about $0.02, plus capture |
-| Maintain | inside the day above | under $1 a week, on the batch API |
-| A month | about $170 | about $25, plus capture. It is measured, not estimated, once the replay runs (P1-8) |
+| Onboarding, **once** | $25.44 on the day: $14.92 L1 reading of the backfilled mail, the rest the chain | Reasoning under $10 for six months of mail (`b2`: $8.41 for 378 situations), under $15 for 365 days. Plus reading the mail at capture. Whether the notebook path still needs L1's per-mail extraction is a P2 question |
+| A normal day | $4.34–6.86, about $5.70: $1.88 reading the data (L1, entity resolution, Screen) and $3.78 reasoning and cards. The judge is capped at $2 and judges about 11 files | Under $0.50 for reasoning: 10–25 touched situations at about $0.02. Reading the data as today, unless P2 changes it |
+| Maintain | inside the day above | Under $1 a week, on the batch API |
+| **A month** | **about $170**: $57 reading the data, $113 reasoning and cards | **Reasoning under about $20** (Evolve about $15, Maintain about $4). Reading the data: $57 today, P2's question. Measured, not estimated, once the replay runs (P1-8) |
 
 ## 7 · Migration order
 

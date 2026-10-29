@@ -52,7 +52,8 @@ These nine stay. The plan in [04](04-WHAT-NEEDS-TO-BE-DONE-NOW.md) builds the lo
 | Replay 23 → 28 Oct: each event moves the right situation, goal and card on its day ([10](../10-ACCEPTANCE.md) §3) | not run | all |
 | A day with no new mail and no date crossing | not measured | 0 model calls |
 | Reasoning cost of one Evolve day | not run | under $0.50 |
-| Onboarding a founder-size company (reasoning only) | $8.41, about 40 min (notebook) | under $10 for six months ($15 for 365 days). First intelligence within 2 h of connect, everything judged within 24 h |
+| Onboarding a founder-size company (reasoning only, once) | $8.41, about 40 min (notebook) | under $10 for six months ($15 for 365 days). First intelligence within 2 h of connect, everything judged within 24 h |
+| A month of reasoning after onboarding | about $113 (product, reasoning and cards) | under about $20 |
 | New mail on a live situation → its page and card updated | 2.5 h wait, then a 97-min chain (product) | 90% within 30 min (product) |
 | A date crossing (7 days, 1 day, today, passed) → that situation judged | never | within 2 h |
 | The morning view at 08:00 company time | missing 1 day in 7, late another | every day, within 15 min |

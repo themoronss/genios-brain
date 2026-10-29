@@ -66,7 +66,7 @@ Each phase is a checkpoint with a ledger row. A crash resumes in the phase it st
 
 Rows marked "est." are scaled from those figures, not measured.
 
-| Company | Mail in the window | Situations | Reasoning cost | Judging, 8 workers | Capture at today's rate |
+| Company | Mail in the window | Situations | Reasoning cost, once | Judging, 8 workers | Capture at today's rate |
 |---|---|---|---|---|---|
 | A small founder, 6 months | ~1,000 (est.) | ~200 (est.) | ~$5.50 (est.) | ~13 min | ~1 h |
 | **This org, 6 months** | **~1,800 (measured)** | **378 (measured)** | **$8.41 (measured)** | **~25 min (measured)** | **2 h 18 min (measured)** |
@@ -74,6 +74,7 @@ Rows marked "est." are scaled from those figures, not measured.
 | A small team, 3 mailboxes, 365 days | ~10,000 (est.) | ~1,500 (est.) | ~$25–30 (est.) | ~1.5 h | ~10 h |
 
 **What this means:**
+- **These are one-time costs, paid when a customer connects.** After that, reasoning costs under about $20 a month for a founder ([05](05-HOW-AT-PRODUCTION-LEVEL.md) §6), plus reading the new data (today about $57 a month).
 - Capture, not reasoning, is the long pole. That is why waves exist: wave 1 needs only about 30 days.
 - The reasoning cap (D-P1-3) is $10 for six months and $15 for 365 days for a founder. A team gets its own number before it is onboarded.
 - **L1 reading the mail at capture** ($14.92 for this org's 180 days) is the biggest single onboarding cost today. Whether the notebook path still needs L1's per-mail extraction, or reads the clean text directly as the notebook does, is a P2 question. The answer could halve onboarding's cost.
