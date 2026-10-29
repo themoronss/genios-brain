@@ -1,10 +1,40 @@
 # GeniOS-013 · From facts about mail to an understanding of the work
 
-**Written for:** Rohit (everything in this file, then 01, 02 and 04) and Harsh with the coding agents he assigns (everything).
+**Written for:** Rohit (everything in this file, then 01, 02 and 04) and Harsh with the coding agents Harsh assigns (everything).
 **Date:** 28 Oct 2026.
 **Measured on:** a local copy of the design partner's org, taken from production in one read-only transaction at 2026-10-28 12:45 UTC. Code read at `harsh/mvp` `7d2c3615`; every `file:line` is from that head.
 **Status:** a plan. Nothing in it is built. Rohit opens each step.
 **No names, by design.** This repo is public. The ideal cards are referred to by their ids in the private ideal file (`p1`, `i1` … `l1`) and a short description.
+
+---
+
+## ⭐ Since 29 Oct: the plan is in five parts. Start here
+
+Read [09 · What we are building, why and how](09-WHAT-WHY-HOW.md) first. It sets out:
+- what GeniOS is (from the launch film);
+- the test it must pass first (`i1`, the film's own example);
+- the five parts and the four loops;
+- why it hasn't worked so far;
+- the ten rules every step follows.
+
+Then read [10 · The acceptance set](10-ACCEPTANCE.md): the cards, goals and replay every part is measured against.
+
+| Part | Folder |
+|---|---|
+| P1 · Orchestrator: what runs when (the four loops, the triggers, the clock, the budget) | [P1-ORCHESTRATOR](P1-ORCHESTRATOR/) |
+| P2 · Notebook (Context Graph, L3): the evidence and the conclusions, checked before they are kept | [P2-NOTEBOOK](P2-NOTEBOOK/) |
+| P3 · Plane D: domain expertise, what a professional knows | [P3-PLANE-D](P3-PLANE-D/) |
+| P4 · Plane R: reasoning, how a professional thinks | [P4-PLANE-R](P4-PLANE-R/) |
+| P5 · Cards: the intelligence a person sees, and what they do with it | [P5-CARDS](P5-CARDS/) |
+
+Every part folder holds the same five files:
+- `01-WHATS-EXACTLY-THERE`;
+- `02-WHATS-FAILING-AND-WHY`;
+- `03-EXPECTED-VS-HAPPENING`;
+- `04-WHAT-NEEDS-TO-BE-DONE-NOW`;
+- `05-HOW-AT-PRODUCTION-LEVEL`.
+
+The four-question files below (01–08) are the 28 Oct analysis the parts build on.
 
 ---
 
