@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harsh notes: GeniOS-013</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#1d1d1f;--muted:#5f6368;--line:#e4e1da;--card:#ffffff;--accent:#2f5bd3;--code:#f3f1ec;--th:#f5f3ee}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15161a;--fg:#e8e6e1;--muted:#a3a7ae;--line:#2c2e35;--card:#1c1d22;--accent:#86a6ff;--code:#24262d;--th:#202228}}
+:root[data-theme="dark"]{--bg:#15161a;--fg:#e8e6e1;--muted:#a3a7ae;--line:#2c2e35;--card:#1c1d22;--accent:#86a6ff;--code:#24262d;--th:#202228}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+.wrap{display:grid;grid-template-columns:270px minmax(0,1fr);gap:40px;max-width:1280px;margin:0 auto;padding:32px 24px 80px}
+nav{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto;font-size:14px;border-right:1px solid var(--line);padding-right:16px}
+nav b{display:block;margin-bottom:8px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:12px}
+nav a{display:block;color:var(--fg);text-decoration:none;padding:4px 0;opacity:.85}
+nav a:hover{color:var(--accent);opacity:1}
+main{min-width:0}
+h1{font-size:30px;line-height:1.25;margin:0 0 16px}
+h2{font-size:23px;margin:48px 0 12px;padding-top:12px;border-top:1px solid var(--line)}
+h3{font-size:18px;margin:28px 0 8px}
+a{color:var(--accent)}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:.88em}
+pre{background:var(--code);padding:16px;border-radius:8px;overflow:auto;font-size:13px;line-height:1.45}
+pre code{background:none;padding:0}
+.tbl{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--th);font-weight:600}
+tr:last-child td{border-bottom:none}
+hr{border:none;border-top:1px solid var(--line);margin:28px 0}
+li{margin:3px 0}
+.tools{display:flex;gap:8px;margin-bottom:18px}
+.tools button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:6px;padding:5px 10px;cursor:pointer}
+#raw{white-space:pre-wrap;font:13px/1.5 ui-monospace,Menlo,monospace}
+@media (max-width:900px){.wrap{grid-template-columns:1fr;padding:20px 16px 60px}nav{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line);padding:0 0 12px}}
+@media print{nav,.tools{display:none}.wrap{display:block}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav id="toc"><b>Contents</b></nav>
+<main>
+<div class="tools"><button id="theme">Light / dark</button><button id="dl">Download the .md</button></div>
+<div id="out"><pre id="raw"># Harsh notes · Why GeniOS&#x27;s cards and goals kept failing, and what the GeniOS-013 plan does about it
+
+- **For:** Harsh, and the coding agents Harsh assigns.
+- **From:** Rohit&#x27;s working sessions with Claude, 28–30 Oct 2026.
+- **Status:** this is an analysis and a plan. **Nothing in it is built in the product yet.** The plan is complete and checked, and it is pushed to `origin/speedrun008` at `96c6546a`, in `speedrun008/GeniOS-013/`.
+- **How to use this file:** read §1 first (one page). Then read §3–§8 to understand what broke and why, §9 for the local setup, §10–§12 for the fix, and §13 for what to do first.
+- **No third-party names:** cases are called by their ids in the private ideal file (`p1`, `f1` … `l1`). Organisations are described by role (&quot;the intro platform&quot;, &quot;the accelerator&quot;, &quot;the incubator&quot;, &quot;the government portal&quot;).
+
+---
+
+## Contents
+
+1. The whole story on one page
+2. What GeniOS is meant to be: the test it must pass first
+3. The yardstick: the ideal dashboard against what GeniOS made
+4. Why the cards kept failing, stage by stage
+5. Why goals never came
+6. Where the business situation broke
+7. The rules that were written wrong
+8. The real root cause, and the eight causes under it
+9. What we built locally, how, and what it proved
+10. The fix: five parts and four loops
+11. Decisions taken while checking the plan (30 Oct)
+12. What is fixed, and what is not
+13. What Harsh should do, in order, and what to watch out for
+14. Where everything is
+15. Corrections: things we said earlier that turned out wrong
+16. Words
+
+---
+
+## 1 · The whole story on one page
+
+- **The test.** On 23 Oct, Claude read Rohit&#x27;s Gmail and wrote an &quot;ideal dashboard&quot;: **20 cards and 10 goals**, every card tied to a goal. That is what a good chief of staff would say. GeniOS&#x27;s own output for the same company, in its first real week (22–28 Oct), was **111 cards (103 open), 0 linked to a goal, 11 goals all only proposed**. Compared card by card on 28 Oct: **0 the same, 9 partly or wrong, 11 missing.**
+- **The model is not the bottleneck.** When the L2 judge got a clean piece of work, it read it almost exactly like the ideal. On the accelerator reconsideration (`i1`, the launch film&#x27;s own example), it saw the stalled reconsideration, the traction numbers rising between updates, and one short follow-up to send. Then the claim checker held the answer, and the founder saw &quot;We held the one we found…&quot;. Meanwhile an old rule card said &quot;you are 71 days late&quot;, which was false.
+- **What broke, in one line each:**
+  1. **Wrong unit of work.** Mail is grouped by sender (&quot;one counterparty&#x27;s file&quot;), not by piece of work. One application sat in 2 files. The intro platform was one file of 500 mails and 61 people, too big to judge at all; it was refused 31 times.
+  2. **Woken at the wrong time.** Only new mail wakes the judge. Every run is labelled `bundle`. Yet 13 of the 20 ideal cards are about something that **did not** happen (no reply, a date passed, a promise not kept).
+  3. **No company context.** No accepted company brief (138 of 138 dossiers), no playbook (every dossier), no approved goals. Knowledge that was approved never reached the model.
+  4. **Good answers thrown out.** The claim checker held 66 of 86 results, mostly because the model cited block letters instead of printed ids.
+  5. **Nothing it concludes is saved.** L3 admission runs in &quot;shadow&quot;. **0 of the graph&#x27;s 16,792 facts came from the brain.** Every judgment starts from scratch, re-reads the evidence, and is forgotten.
+  6. **Too many card makers.** Six writers make cards: legacy rules, the compiled lane, the L2 judge and the team emitter. A test-mode Haiku decision maker outside the model register decides most of them (3,695 calls in a week).
+- **The root (the &quot;trunk&quot;).** Atlas v2&#x27;s L3 has two halves: the **Evidence Graph** (what sources said) and the **Intelligence Graph** (what GeniOS concluded). Only the first was built. Everything above is a branch of that.
+- **The fix (GeniOS-013).** Keep one small saved **page per piece of work** (a &quot;business situation&quot;). Code wakes the brain when something changed **or should have happened**. The brain reads the page plus only what is new and proposes an update. Code checks it and saves it. Cards become views of pages, and every card names its goal. The plan is split into five parts with hard boundaries (P1 Orchestrator, P2 Notebook, P3 Plane D, P4 Plane R, P5 Cards) and four loops (Onboard, Evolve, Act, Maintain).
+- **Proved locally first.** We built a local copy of Rohit&#x27;s org and a local &quot;notebook&quot; prototype (build `b2`). On the ideal&#x27;s own morning it found the work for all 17 ideal cards the mail can see. By hand: 4 same, 2 close, 4 partly, 2 opposite, 5 missed, for **$8.41**. It also exposed the next failures, and the plan fixes them.
+- **What to do first:** read `GeniOS-013/09` and `10`, then each part&#x27;s `04` and `07`. Build **notebook first, then product, per tenant, behind a parity gate**. §13 gives the order.
+
+---
+
+## 2 · What GeniOS is meant to be: the test it must pass first
+
+From Rohit&#x27;s launch film:
+- A manager&#x27;s real problem is delegating the right task and keeping track of it across departments, while the data of many tools keeps changing. LLMs are good for one goal at a time; agents are good &quot;only for a defined state of context&quot;.
+- GeniOS should be &quot;a 24/7 consultant for our company, which says: do this instead of that, to make this happen and get that projected goal&quot;: proactive, without dashboards, tagging or prompting, with &quot;approve before anything is sent&quot;.
+- Inside the engine: &quot;company patterns, domain expertise, reasoning patterns, and the current status of your company&quot;. There are four kinds of intelligence: reactive, proactive, predictive and prescriptive. &quot;Every Done teaches.&quot;
+
+**The first test is the film&#x27;s own example, `i1`.** An accelerator rejected the application. The founder asked them to reconsider, and they said &quot;resend it and keep us posted&quot;. Three follow-ups went out in 20 days with no reply. Then priorities changed, and the founder forgot.
+- **What GeniOS must say:** goal &quot;get the accelerator to reconsider&quot;, at risk, found in your mail. *&quot;Send one update with a new, checkable fact, then stop until they answer.&quot;* Why: they left the door open in writing; three updates got no reply, so the next one must carry a new fact (that day&#x27;s incubator milestone), not a restatement.
+- **What the live product did:** it found the right reading, the checker held it, and an old rule card said &quot;71 days late&quot;.
+- **What the notebook `b2` did:** the opposite call, &quot;stop, wait for the next intake&quot;. It never connected the incubator milestone to this goal, because facts didn&#x27;t travel between situations.
+
+Every step is measured first on `i1`, then on the whole acceptance set (§3).
+
+---
+
+## 3 · The yardstick: the ideal dashboard against what GeniOS made
+
+The ideal file is private (`~/Downloads/GeniOS/GeniOS-Ideal-Dashboard/src/02-data.js`). The public repo only uses the ids. The acceptance set is `GeniOS-013/10-ACCEPTANCE.md`.
+
+### 3.1 · The 20 ideal cards, and what happened to each
+
+The mail copy starts on 25 Apr, so 17 of the 20 are visible. `i6`, `s1` and `s2` rest on older mail.
+
+| Id | The call GeniOS must make | Live product (28 Oct) | Notebook `b2` | Fix owned by |
+|---|---|---|---|---|
+| `p1` | Four different traction numbers went to different people: pick one verified number before today&#x27;s review | Lost: the numbers were stored as plain amounts on a person node, never compared | ✅ same | P4, P5 |
+| `f1` | The incubator&#x27;s final review is today: join early, lead with one number | Card points the wrong way | 🟡 close: read 07:10 IST as &quot;the panel is now&quot; (UTC clock) | P1 (clock), P4 |
+| `f2` | An application is incomplete: finish it or drop it this week | Its reminders were archived by the gate | ✅ same | P2 |
+| `f3` | A referral promised by the intro platform has been silent for 24 days: ask about it | The intro platform&#x27;s file is too big to judge | ❌ missed: buried among 30 intro offers | P2, P4, P5 |
+| `f4` | Waiting on a founder&#x27;s review of the application doc: nothing to do until Monday | Held by the checker | 🟡 close: a dated card where none was needed | P5 |
+| `i1` | The film&#x27;s example: one update with a new, checkable fact, then stop | Right reading held; old rule says &quot;71 days late&quot; | ↔ opposite | P4, P2, P5 |
+| `i2` | An investor asked for current traction and got a projection: answer in three lines | Dormant, never judged | ❌ missed: counted as answered | P4 |
+| `i3` | The follow-up after an investor call was never sent: send it today | Held | ❌ missed: the playbook&#x27;s &quot;silence = soft no&quot; won | P3, P4 |
+| `i4` | One update went to 12 investors with no replies in 10 weeks: which still matter? | Partly, late | ◐ partly | P4, P5 |
+| `i5` | Six mails never arrived, three to investors: resend to working addresses | The bounce stays on the address and joins no work | ◐ partly | P4, P5 |
+| `b1` | Two new introductions are waiting for a yes or no | One held, one never judged | ◐ partly | P2, P5 |
+| `b2` | Two partner calls with no written next step: send the collaboration note | The brain chose a decision; no card was made | ❌ missed: marked &quot;done&quot; | P3, P4 |
+| `b3` | A stalled introduction: the ball is in their court, let it close | Dormant, never judged | ↔ opposite: &quot;you owe them times&quot; | P4 |
+| `c1` | A registration complaint reached only one inbox: call the helpline | Filed as an investor, held, and the correction was not saved | ◐ partly | P2, P5 |
+| `c2` | A tool subscription renews within the week: keep or downgrade, ask for credits | Read, not recognised | ❌ missed: filed as noise | P3, P4 |
+| `h1` | Did the candidate accept the offer? Ask the founder | Filed as an investor contact, held | ✅ same | none |
+| `l1` | A programme&#x27;s round-2 result is outstanding: wait until a set date | A good question card was left in the queue | ✅ same | none |
+| `i6`, `s1`, `s2` | Older investor and prospect threads | Before the capture window | Before the copy | P2 (365 days at onboarding) |
+
+**Scores:** live product 0 same, 9 partly or wrong, 11 missing. Notebook `b2`: 4 same, 2 close, 4 partly, 2 opposite, 5 missed, 3 outside the copy.
+**10 of the 20 never even reached the L2 model** in the live product.
+
+### 3.2 · The 10 ideal goals
+
+- **Live:** 11 goals, all `proposed`, 0 approved, 0 linked to any card. The proposals were built on the wrong files: the raise-the-round goal named the government portal, an incubator and the intro platform as investor threads.
+- **Notebook `b2`:** 15 goals matched 6 of the 10 (plus one in other words). But they had the wrong grain: one goal per investor; no umbrella &quot;get into an accelerator this cycle&quot;, so 21 live situations had no goal, 18 of them applications; and the intro platform as one goal of 163 situations, which is an activity, not an outcome. Goals had no target, plan, progress, status or next move, and **no goal ever raised a card**.
+
+### 3.3 · The replay the plan must pass (23 Oct 07:10 IST → 2 Nov)
+
+| Day | What happened | What GeniOS must do |
+|---|---|---|
+| 23 Oct | The incubator&#x27;s final review happened; the founder sent two update mails after it | `f1` closes; the incubator goal moves; the milestone becomes a new checkable fact for `i1` |
+| 23–28 Oct | New intro offers and calls booked by the intro platform | Each new introduction is its own situation with a yes or no; they never pile into one |
+| 24 Oct | `f2`&#x27;s deadline passes | Closes verified on its confirmation or on the person&#x27;s word; with no confirmation it goes to &quot;verify&quot;, and is missed only on the person&#x27;s word |
+| 27 Oct | The incubation letter arrives | The incubator goal is reached; one &quot;goal reached, confirm&quot; card |
+| 27 Oct | A broadcast states a new traction figure to about 33 recipients | `p1` grows with the new figure; no card per recipient |
+| 29 Oct | The tool subscription renews | `c2` stays open until decided, then closes |
+
+### 3.4 · Targets when the whole plan is done
+
+≥ 15 of 17 in-copy ideal cards same or close, 0 opposite, ≤ 30 open cards for the whole company, ≥ 8 of 9 goals matched with target, plan, progress and next move, every replay event on its day, an Evolve day under $0.50, and onboarding around $8–9 at today&#x27;s model.
+
+---
+
+## 4 · Why the cards kept failing, stage by stage
+
+The path of one mail in today&#x27;s product:
+
+```
+Gmail / Calendar
+   │  L1 Signals: capture, gate (emit or archive), extract signals
+   ▼
+&quot;Files&quot; = one counterparty&#x27;s correlations (by sender), recomputed on every read
+   │  L3 Context: situations formed by rules; facts computed by code
+   ▼
+Chain (every ~100 min): context/runner.process_pending (whole company) → reason/runner.run_all
+   │      ├─ expert pass (R-7)      ├─ L2 judge (R-9, $2/UTC day)   ├─ compiled lane + legacy rules
+   │      │                         │                               │  (decided by a test-mode Haiku
+   │      │                         │                               │   &quot;decision maker&quot;, outside the register)
+   ▼      ▼                         ▼                               ▼
+claim checker (word by word)  ──►  held → turned into a founder question &quot;We held the one we found…&quot;
+   │
+   ▼
+deliver/pipeline: one card per open signal that passes L4&#x27;s authority predicate, from SIX writers
+   ▼
+cards (expire within a week) → screens (each reads a card its own way)
+```
+
+### 4.1 · Input (L1): mostly fine, with specific holes
+
+- Of 1,829 mails (25 Apr → 28 Oct), **1,193 were emitted (65%) and 636 archived (35%)**. The 547 &quot;parked&quot; rows are **attachment stubs**; all 547 of their mails were read. (An earlier claim that &quot;half the mailbox is unread&quot; was wrong.)
+- Most parked attachments are calendar invites (`.ics`, 417 of 421). Some were image or PDF fetches that failed, including 14 of 25 bounces and 13 of 19 government-portal mails.
+- Archived mail carries **no text** by design (F37: archived words are kept from models). Some important mail sits there, such as the &quot;still incomplete&quot; reminders for `f2`.
+- **Only 180 days are captured**, so `i6`, `s1`, `s2` and one ideal goal don&#x27;t exist for GeniOS.
+- **Meaning errors:** the 11 Aug investor update was labelled `contract_renewal` (×10). 80 traction amounts were captured as `financial.amount` facts on the founder&#x27;s own person node, never compared, and some look like quoted text.
+- **Bounces** (7) join no work, so the waiting card stays on a dead address (`i5`).
+- Measured and NOT true: &quot;L1 signals mostly come from quoted text&quot; (only 41 of 1,474).
+
+### 4.2 · Grouping: the wrong unit of work
+
+- A &quot;file&quot; is one counterparty&#x27;s correlations, computed on each read and never stored (264 files).
+- One application is in 2 files, the incubator&#x27;s programme in 4, and one party has 10 files across 4 domains.
+- **The intro platform is one file: 500 mails, 322 threads, 61 people.** It hit `l4_per_decision_ceiling` 31 times with 0 input tokens, so it was never judged. That loses `f3`, `b1` and `b3`.
+- Wrong domains: the government portal and an incubator filed under fundraising/investor; the 11 Aug recipients under sales.
+
+### 4.3 · Waking: only new mail, and the clock is missing
+
+- **138 of 138 L2 request rows carry trigger `bundle`.** Nothing records why a run started. The date triggers (`deadline_crossed`, `expected_reply_absent`, `date_closing_in`, `reply_overdue`) exist as constants and never fire: **0 date wakes in the week**.
+- 13 of the 20 ideal cards are **absence cards**: no reply, a date passed, a promise not kept. A mail-only trigger can never raise them.
+- Priority is newest-first. Situations go dormant after 45 quiet days, which is exactly where `i2` and `b3` live.
+- The chain takes **97 min median, 69 of it whole-company passes**, back to back. One tenant fills the reasoning day. A new mail is read by L2 about 36–54 min after capture, and its chain ends 123–140 min after capture.
+- The clock is **UTC almost everywhere**. The dossier prints UTC only, `orgs.timezone` is never read in `reason/l2` or `reason/expert`, and &quot;30 minutes past due&quot; prints &quot;1 hours ago&quot;. The judge&#x27;s budget day rolls at 05:30 IST, so all cards after 23 Oct were born **07:00–13:59 IST** in one morning burst.
+- The morning brief should be at 08:00 local time. It came 6 times in 7 days: one day none, one day at 13:31. The brief is always written by template, yet each one says a model draft failed.
+- **Switches lie.** A tick is cut after 20 min, but its thread keeps running. Kill switches don&#x27;t bind background threads. `cards_from_situations` only relabels a counter. `cutover.py`&#x27;s parity check has no caller.
+
+### 4.4 · Knowledge: approved expertise never reached the model
+
+- The Atlas&#x27;s **Domain Compiler is built** (`packs/compiler/domain_compiler.py`, eight components). It made 100 packages in the first week. But only the compiled lane reads them, through templates. **`reason/l2` and `reason/expert` import none of it**, so 0 of 138 L2 judgments and 0 of 50 expert reviews got expertise. *The lane with the knowledge has no model; the lane with the model has no knowledge.*
+- Knowledge is chosen only by &quot;kind of work&quot;, the kind comes only from an **accepted brief line**, and **0 of 29 brief lines were accepted**. So every dossier said &quot;No company brief is accepted&quot; and &quot;No playbook for this file&quot;.
+- The playbook reader needs **exactly one staged playbook** per capability. Only 2 of 238 playbooks have stages, so Admin&#x27;s approved renewal and follow-up knowledge (`c2`, `b2`, `i3`, `c1`) is invisible.
+- **165 units were approved by Harsh and never switched to `stable`** (80 rules, 80 playbooks, 5 situations; Admin 44/44/4). The second step of review has no owner.
+- Founder Office: all 29 units are `draft` and unreviewed (written by AI), so the compiler drops all 6 of its capabilities.
+- The reader **drops a rule&#x27;s conditions** (&quot;applies when&quot;, &quot;breaks down when&quot;, failure modes). See §7.
+
+### 4.5 · Judgment (L2): good reasoning, wasted
+
+- 138 request rows: 86 results, 38 refused for budget, 7 failed, 6 truncated.
+- **The claim checker held 66 of 86 results**: 57 of 63 under the first check, 9 of 23 under the newer one. 52 of the 66 were &quot;cites something the file doesn&#x27;t show&quot;, because the model cited block letters and section names (`F`, `C`, &quot;WHAT WAS CHECKED&quot;) instead of printed ids. The contract let an id be any string. The checker was right to hold them, and the design was wrong to turn a hold into a founder question.
+- **Money:** R-9 hits its **$2 per UTC day** cap every day (95 refusals). **39% of its spend ($5.28 of $13.55) bought nothing**: 30 answers failed validation and 6 were cut at the token ceiling. A retry resends everything.
+- **Dossier size:** a paid judgment re-reads about 11,000 characters (max 35,000). Oversized files of 245,000–280,000 characters were refused before any call. The &quot;70,000&quot; figure is a mean over all rows, driven up by the one oversized file refused 31 times.
+- Confidence is written by the model (86 of 86); code measures no coverage. The card uses a different confidence, a count of cited mails.
+- 115 evidence needs were raised and **0 met**, because the fetchers are off and the stored-event fetcher doesn&#x27;t exist.
+- Rules of thinking live in **prompt text, in many disagreeing copies**: the expert prompt (15 rules), the L2 judge (24 rules), the notebook (5 rules), the decision maker, R-1, the brief drafter and the Screen rulebook.
+
+### 4.6 · Nothing is saved (the root)
+
+- `context/l2_admission.py`: &quot;SHADOW: nothing here touches context_situations&quot;. Merge and link have no applier. Of 34 admission decisions, 24 said &quot;admit&quot;, and nothing was written.
+- `situation_interpretations`: 30 rows written, **0 readers**.
+- Of 16,792 graph facts, 6,148 came from source events and 10,644 were computed by code. **0 came from reasoning.**
+- Example: on 28 Oct L2 concluded &quot;this is a government portal correction, not an investor relationship&quot; and said admit/update. The situation is still investor_relationship / fundraising / active.
+- **Notes are never reconciled.** 87 of 87 promises are open (83 past due) and 208 of 212 questions are open. On `i1`, &quot;promise open&quot; and &quot;waiting on the founder&quot; were both false, because the updates had been sent on 11, 13 and 26 Aug. The old rule engine turned the false note into &quot;you are 71 days late&quot;.
+
+### 4.7 · Card making: six writers, no rule for &quot;a person is needed&quot;
+
+- One card per open signal passing L4&#x27;s authority predicate (`deliver/pipeline.py:52-135`). Writers: legacy rules 41, compiled lane 36, L2 judge 33, team emitter 1 (111 in the week). One counterparty owns 25–31 of the 111.
+- 73 of the 77 unit-lane cards were decided by the **test-mode LLM decision maker** (Haiku, outside the register, no dollar cap; 400 calls a day expected, 723 seen on 22 Oct).
+- The lane is decided twice (`output_lane.route` and L2&#x27;s lane). They agree on 16 of 33, and the wrong one wins.
+- **The machine&#x27;s words reach the person:** &quot;We held the one we found…&quot; on 13 open cards, 40 headlines prefixed &quot;Needs a decision —&quot;, 20 headlines cut mid-sentence, internal keys (`dependency_stated`, `commitment_met`), &quot;: undefined&quot; in the Mac app, and verdict codes on the Goals page.
+- The founder is spoken of in the third person on 23 cards.
+- Severity is a utility score cut at 70 and 85, so 22 of 103 open cards are critical. Every question card is scored 0, ranks last and is never pushed.
+- **Every open card expires within a week**, because the card window reuses the decision&#x27;s 168-hour authority window. 0 cards were resolved, Done is just a click, and nothing closes on proof.
+- Delegation and approval are built (`/v1/delegations`) and wired to nothing. 0 outbox rows, so nothing reaches the person outside the app. The card writer (R-10) is built and off. Each screen reads a card its own way.
+
+---
+
+## 5 · Why goals never came
+
+1. **One door, never opened.** A goal is live only when its brief line is accepted. 0 of 29 were accepted, so there were 0 goal links and 0 goals on cards. The card layer shows approved goals only, and proposed goals may not be used in reasoning.
+2. **Proposed from the wrong unit.** The weekly drafter reads at most the 40 latest thread objectives (patterns, not the graph). L2 may propose one goal per file (6 of 86 results did), built on sender files, which is how a government portal ended up counted as an investor.
+3. **A goal is only a sentence.** It has no target (what counts, and where it was said), no plan, no progress, no status and no next move. So it can&#x27;t say what is missing, and **no card can come from a goal** (`f3`, and `i1`&#x27;s &quot;use today&#x27;s milestone&quot;).
+4. **No goal judgment.** Nobody judges a goal as a goal: at risk or not, what&#x27;s next.
+5. **Wrong grain** (notebook): per-investor goals, no umbrella goal, activity goals of 163 situations, and two link sets that disagree on 53 of 233 situations.
+
+**The plan&#x27;s fix:** P2 builds a real goal object (target, captured quote, plan, progress from counted plan rows, status, next move, parent). Goals may be used labelled while unconfirmed (D1), and the founder confirms with one click. P4 judges goals (health, the goal judge, gap cards). P5 raises gap, reached and pattern cards from goals, and every card names its goal.
+
+---
+
+## 6 · Where the business situation broke
+
+- **Formed by rules, not reasoning.** 1,528 situations come from a fixed list of types, and they drive 71 of 103 cards. Atlas v2 says &quot;the situation is formed by reasoning&quot;.
+- **The unit is the sender** (§4.2), so one piece of work splits and one platform swallows hundreds.
+- **Quiet work goes to sleep:** dormant after 45 quiet days (282 dormant).
+- **63% of active situations belong to a department that is off.** Support is off for this org, yet 730 of 1,164 active situations are support-desk types (667 &quot;first response overdue&quot;), and 21% of all facts track first responses. They are recomputed every chain, on UTC working hours.
+- **The brain&#x27;s corrections are not saved** (§4.6), so a wrong situation stays wrong.
+- **Facts don&#x27;t travel.** The incubator milestone never reached the accelerator page (`i1`).
+- **Founder acts, executions and Screen are stored but never joined to the work:** 211 card events, 105 executions and 141 Screen summaries, none of which update a situation or goal. The founder was asked 40 questions and **0 answers** came back.
+- **Evidence text expires 180 days after capture**, not after the work ends, so a long-running situation loses the words behind its earlier pages.
+- **The database is over its ceiling:** 570 MB against 472 MB on 27 Oct, mostly dead rows from whole-company rewrites.
+
+---
+
+## 7 · The rules that were written wrong
+
+These are concrete rules, code paths or prompt lines whose wording or wiring caused wrong cards. &quot;Ours&quot; means the AI build sessions, not Rohit.
+
+| # | Rule or setting | Where | What it did | Hit | Fixed in |
+|---|---|---|---|---|---|
+| 1 | &quot;After a first call that named no next step, silence is usually a soft no&quot;, shown **without its condition** (&quot;applies when the turn is theirs; it reads their quiet, never ours&quot;) | `packs/compiler/playbook_reader.py` drops `applies when`, `breaks down when` and failure modes | Our own missing follow-up read as their soft no | `i3`, `i2` | P3 (reader carries conditions) |
+| 2 | Notebook prompt: &quot;the playbook, when printed, is more specific&quot; (wrong precedence); the investor playbook note cut to 260 characters | notebook `nb/judge.py` prompt and renderer | The generic &quot;re-apply at the next intake&quot; beat the written offer to reconsider | `i1` (opposite), `i3`, `i2` | P4 (precedence as data; product rule &quot;a playbook is a prior, not a fact&quot;) |
+| 3 | Notebook printed only `steps[0]` of each playbook move | `nb/common.playbook_text` | &quot;Write the same day after an investor call&quot; (step 6 of 6) never reached the model | `i3` | P3 |
+| 4 | `money-owed-either-way` fires on **any** dated commitment | Admin corpus | False &quot;a dated payment obligation is open&quot; card about an incubator | live cards | P3-5 |
+| 5 | `dependency-stated` makes a card without the quote that was its value | Admin corpus | Most frequent compiled-lane card (13 of 36), useless | live cards | P3-5 |
+| 6 | `meeting_without_follow_through` fires only 20–240 hours after a meeting | corpus situation | Follow-ups 15–64 days old invisible | `i3`, `b2` | P3 (closed qualifiers) |
+| 7 | `reply_owed` needs them to have written last | corpus situation | Our reply that missed the question is invisible | `i2` | P3, P4 (does the reply answer?) |
+| 8 | `promise_past_its_date` covers our own promises only | corpus situation | A third party&#x27;s promised referral is invisible | `f3` | P3 |
+| 9 | `decision_waiting_on_a_person` = ball in their court | corpus situation | The founder&#x27;s own yes/no on intros misfiled | `b1` | P3 |
+| 10 | &quot;Wave gone silent&quot; excludes updates to existing investors | corpus situation | The 12-investor update wave | `i4` | P3 |
+| 11 | Situations dormant after 45 quiet days | `context` config | Quiet work disappears | `i2`, `b3` | P2 (lifecycle with quiet-work rule) |
+| 12 | Knowledge chosen only by a **confirmed** kind (accepted brief line) | `reason/l2`, `reason/expert` | 0 of 138 got a playbook | all | P3-8 (L2&#x27;s labelled reading is a fine key) |
+| 13 | The reader needs exactly one **staged** playbook | `playbook_for` | Admin&#x27;s 58 unstaged playbooks ignored | `c2`, `b2` | P3-9 |
+| 14 | Goal live only when its brief line is accepted; cards show approved goals only | GeniOS-012 door, card layer | 0 goals on cards | all goals | P2-1, P5-3 |
+| 15 | Trigger constant `bundle`; L2 wakes only on new mail; newest-first priority | `reason/l2/sweep.py`, chain | 0 date wakes; absence cards impossible | 13 of 20 | P1 (closed list of nine triggers, date index) |
+| 16 | Judge budget $2 per **UTC** day; a retry resends the whole dossier | `reason/bundle/budget.py:238`, `gate.py` | Morning burst; 39% waste | all | P1 (local-day caps, order of spend), P4 (one shared retry allowance) |
+| 17 | `l4_per_decision_ceiling` refuses a big file with 0 tokens, forever | L4 | The intro platform was never judged | `f3`, `b1`, `b3` | P2 (the situation is the unit, not the sender) |
+| 18 | A held answer becomes a founder question &quot;We held the one we found…&quot; | `reason/expert/verify.py:812` | The checker&#x27;s words shown to the founder | 13 cards | P5 (held text never shown), P4 (printed ids only) |
+| 19 | The answer contract lets an id be any string | L2 contract | 52 of 66 holds | `i1` and others | P4-5 |
+| 20 | Card window = the decision&#x27;s 168-hour authority window | `card_builder` | Every open card expires within a week | all | P5-4 (close on proof) |
+| 21 | Severity = utility score cut at 70 and 85; question lane score 0 | deliver | 22 critical cards, questions never shown | `l1`, `h1` | P5-5 |
+| 22 | Lane put into the headline as a prefix (&quot;Needs a decision —&quot;) | deliver | 40 robotic headlines | all | P5-7 |
+| 23 | Support readings run for every tenant, department on or off, on UTC working hours | `context/runner.py` support pass | 730 junk situations; every chain slower | — | P2 Q1, P1 |
+| 24 | Clean text deleted 180 days after **capture** | retention | Long work loses its evidence | — | P2-11 (retention follows the work, D-P2-7) |
+| 25 | New tenants get Sales/Support/General packs on and **no brain** (`NOT_DEFAULT_ON`: expert_review, l2_reasoning, l2_cards, morning_brief, card_copy) | activation defaults | A new customer would get only the old rules | new customers | P1-11 (defaults, policy row, parity gate) |
+| 26 | Notebook: a &quot;clock card&quot; for every passed or near date, whoever owes the move | `nb/cards.py` `card_for` | 23 of 63 notebook cards from dates alone; 52 of 63 rest on dates over 30 days old | many | P5-1 (a date wakes a judgment, never makes a card) |
+| 27 | Notebook: a page marked &quot;noise&quot; is never re-judged, even when forced | `nb/judge.py` | `c2`&#x27;s page came from a run 2 minutes before the renewal rule existed | `c2` | P2 lifecycle, P4 |
+| 28 | `cards_from_situations` relabels a counter instead of changing the source | `deliver/pipeline.py:900-902` | The switch does nothing | — | P5-14, P1-11 |
+| 29 | The test-mode decision maker left on in production | `reason/bundle/sites.py` families | 3,695 Haiku calls a week (~$12), uncapped, not replayable | 77 cards | P4-17 (one judge), P1 R8 |
+
+---
+
+## 8 · The real root cause, and the eight causes under it
+
+**The trunk:** L3 was built as an **Evidence Graph only**. The **Intelligence Graph** (what GeniOS concluded, versioned and checked) was designed in Atlas v2 (&quot;L3 only remembers what L2 concluded&quot;) and never built. So the brain re-reads everything every time, can&#x27;t notice silence (no expected-by dates are stored), can&#x27;t close loops, can&#x27;t keep a correction, and is capped and forgotten. Meanwhile the old rule engine, which does write to the graph, wins.
+
+A stored conclusion averages about 2,700 characters, against a dossier of 11,000 for a paid judgment (and far more for large files). Storing the understanding is also what makes it cheap.
+
+| # | Cause | Evidence | Fixed in |
+|---|---|---|---|
+| 1 | Conclusions are never saved | 0 of 16,792 facts from the brain; admission in shadow | P2 |
+| 2 | The wrong unit of work | 2 files for one application; one platform as a 500-mail file | P2 |
+| 3 | The knowledge exists but doesn&#x27;t reach the model | the compiler feeds only templates; conditions dropped; 165 approved units never switched on | P3 |
+| 4 | Rules live in prompts, not in the planes | three or more disagreeing prompt copies | P4 |
+| 5 | No goal layer | 11 proposed, 0 approved, 0 on cards | P2, P4, P5 |
+| 6 | No clock and no single orchestrator | 0 date wakes; 13 of 20 ideal cards are absence cards; three card makers in one sweep | P1 |
+| 7 | The expertise was never reviewed | Founder Office all draft; 22 situations draft | P3 |
+| 8 | Intelligence isn&#x27;t raised, ranked or closed by the reasoning | six writers, held text, cards expire weekly, 0 closed on proof | P5 |
+
+**Why it happened (honestly):** causes 1, 2, 4 and 6 are architecture and process. Each AI build session added a new path step by step without retiring the old one. Causes 3 and 8 are code. Causes 5 and 7 are unfinished work. None is a misunderstanding by Rohit. Every new path added a card writer, and none was retired.
+
+---
+
+## 9 · What we built locally, how, and what it proved
+
+### 9.1 · The local copy of Rohit&#x27;s org
+
+- **Why:** production reads were blocked or slow, and every test against the cloud was risky. Rohit asked for six months of the org&#x27;s data locally, so testing and analysis never touch production.
+- **Where:** Rohit&#x27;s Mac, `~/MacBook Air Professional/My Repos/Local Database (Rohit_Org_GV2)/`. Read its `README.md`.
+- **How it was cut:** one read-only `REPEATABLE READ` transaction on production at **2026-10-28 12:45:12 UTC**. All 204 tables of the `public` schema (pg_dump pre-data and post-data), and only this org&#x27;s rows (`org_id` filter on 198 tables; the config tables `feature_flags`, `pack_registry`, `schema_migrations` and `warm_lane_slots` whole). 262,949 rows, migration head `0256`. `verify` reports 0 mismatches.
+- **Runs as:** Postgres 17 in Docker, container `genios-rohit-gv2`, port 55440. Scripts: `scripts/local.sh start|load|reset|verify|psql|stop`, and `scripts/export.sh` (read-only production → snapshot) to refresh.
+- **What it holds:** Gmail 1,829 unique mails plus 547 attachment stubs (25 Apr → 28 Oct), Calendar 142 events, Screen 1,249 events (22–28 Oct). Production restarted this org from empty on 21 Oct and re-captured on 22 Oct, so **22–28 Oct is a measured first week of a new tenant**, a free onboarding test.
+- **Care:**
+  - `local.env` points `GENIOS_DATABASE_URL` at the copy, but **the model and Composio keys stay live**: a run there can still spend money and fetch mail.
+  - Two columns are encrypted with `GENIOS_CRYPTO_KEY` (`raw_payloads.enc_content`, `screen_session_deltas.payload_enc`).
+  - It holds real mail. **Never copy any of it into the brain repo, which is public.**
+- **Tracer:** `analysis/trace_ideal_items.py i1 f3 …` traces each ideal card mail → gate → signal → file → situation → L2 → card.
+- **To make your own:** run `export.sh` against production with read access, then `local.sh reset`. Production reads need Rohit&#x27;s permission.
+
+### 9.2 · The notebook prototype (the missing half, built locally)
+
+- **What:** a local prototype of the Intelligence Graph, with one saved page per piece of work, built on the copy to prove the trunk fix on real data before porting it. In `notebook/` beside the copy. Read `CONTEXT.md` first; `BUILD-LOG.md` is append-only.
+- **Phases:** A `evidence.py` (+ `recover.py`, which decrypts the archived mails&#x27; stored payload so 635 of 636 have text locally) · B `company.py` (who we are) · C `parties.py` (who is who) · D `works.py` (what is going on: pieces of work) · E `judge.py` + `checks.py` (where each stands, admitted by code) · F `relate.py` (goals and links) · G `cards.py`. Reports: `export.py`, `scorecard.py`, `compare.py` (the side-by-side page), `baseline.py`.
+- **Tables** (`notebook.*`, keyed by `build_id`, never deleted): company, parties, works, work_versions, members, loops, claims, links, goals, held, cards, runs, state.
+- **Run:** `cd notebook &amp;&amp; &lt;genios-brain .venv python&gt; -m nb.cli &lt;cmd&gt; --build &lt;id&gt;`. A build records its as-of instant and model on its first writing command; a different one is refused. Tests: `pytest -q tests`. **Never call a model in a test.** All real calls go through `nb/llm.py`, capped at $20 over all builds.
+- **Build `b2`:** as of **23 Oct 01:40 UTC (07:10 IST)**, the ideal&#x27;s own morning, on `claude-sonnet-5`. Phase B $0.10 (15 pursuits), C $0.66 (441 parties), D $1.11 (417 works + 4 waves, 408 noise threads), full judge (377 ok, 85 held changes, 41 asking the founder), relate (15 goals, 8 links, 1 merge). 63 open cards. **Total $8.41**, about 17 minutes of model time. The judge takes about 8 seconds a page (379 calls in 7.7 min at 8 at once).
+- **Decision taken locally (Rohit can reverse it):** the notebook reads the recovered text of archived mail. Production keeps archived words from models on purpose.
+- **Trap found:** the full judge schema returned API 400 **&quot;The compiled grammar is too large&quot;** on 12 of 12 calls. Each third compiled alone. The page was shrunk to fit (no confidence words, no links, plain-string dates). **Probe before adding any field** (failed compiles cost $0).
+
+### 9.3 · What `b2` proved, and what it broke
+
+- **Proved:** the saved-page approach finds the work. All 17 visible ideal items were found as pieces of work, 4 same, 2 close, 4 partly. The intro platform&#x27;s 500 mails were split well. Goals matched 6 of 10.
+- **Broke** (each is now a planned fix):
+  1. 56 cards beyond the ideal&#x27;s 20, mostly stale July scheduling dates and &quot;confirm whether X happened&quot;. Cause: a date made a card, and there was no lifecycle.
+  2. UTC only, so 07:10 IST read as &quot;the 11:30 panel is now&quot; (`f1`).
+  3. The playbook&#x27;s &quot;silence = soft no&quot; beat &quot;the follow-up after a call is ours&quot; (`i3`, `i2`).
+  4. Facts didn&#x27;t travel between pages (`i1` opposite).
+  5. The renewal was still filed as noise (`c2`).
+  6. Who owes the move was misread (`b3`).
+  7. The intro platform became one goal of 152–163 works, and new offers never surfaced as yes/no (`b1`).
+  8. Goals with the wrong grain and no target, plan or progress; two link sets disagreeing.
+  9. Every mail treated as the founder&#x27;s (no visibility), fine for one founder, wrong for a team.
+- **Side-by-side page:** `notebook/output/b2/compare.html` (with `notes.json` hand reads). **Private: holds real mail. Never publish it.**
+
+---
+
+## 10 · The fix: five parts and four loops
+
+Everything is in `speedrun008/GeniOS-013/`. Each part folder has `01` what exists (measured) · `02` what fails and why · `03` expected vs happening · `04` **decisions and the step-by-step plan, each step with What, Guards, Tests, Done when** · `05` production level · `06` a new customer · `07` **the full specification** · `08` the requirements trace.
+
+### 10.1 · The five parts (hard boundaries)
+
+| Part | Owns | Never does | Key plan content |
+|---|---|---|---|
+| **P1 Orchestrator** | What runs, when, for which situation or goal, in what order, at what cost | Judge, store a conclusion, word a card, make a model call of its own | The company clock (IANA zone, local days, working week, holidays; local hours 02:00 Maintain, 06:00 daily pass, 08:00 brief, Sunday 03:00 weekly, all per-tenant data). A **closed list of nine triggers**, each with a producer: `new_evidence`, `date_rung`, `news`, `goal_changed`, `founder`, `maintain`, `need_met`, `outcome`, `human_ask`. A **date index** (every dated thing, with rungs at 7 days, tomorrow, today and passed; one due per card = its act-by). Evolve as sweeps of at most 10 subjects, one transaction each. Onboard in two waves (30 days of mail + calendar ±14 days, then up to 365). Act, Maintain. Spend in six priority classes with 60% reserved for &quot;founder acted&quot; and &quot;owed or dated today/passed&quot;. A run ledger (`loop_runs`) with one closed reason list. Switches with one gate function and a per-tenant parity gate. A worker process and queue (`loop_wakeups`, SKIP LOCKED, leases). The event-time replay and drills. Steps P1-1 … P1-13, relief R1 … R9 for today&#x27;s product |
+| **P2 Notebook** (L3 Context Graph) | The evidence and the conclusions: company page, parties, business situations (pages), goals, loops, claims, links, founder acts. The code admission that runs before anything is kept | Decide what to conclude | Stable situation ids; the goal object (target, plan, progress, status, next move, parent); one link set; lifecycle (states, quiet work, leases, reopen within 90 days); versions; new evidence kinds (Screen, founder acts, executions); facts travel to five audiences; admission laws A-1…A-32 and invariants I-1…I-28; retention that follows the work. Steps P2-0 … P2-26, Q1–Q3 |
+| **P3 Plane D** (domain expertise) | What a professional knows, per department and kind of work: playbooks, rules with conditions, stages, durations, and how it reaches the model | Reason | **Reuse the built compiler**; join it to the model path; the bridge renders whole packages, conditions included; choose knowledge without an accepted brief line; read unstaged playbooks; fill the founder&#x27;s missing kinds of work; Rohit reviews Founder Office; one act approves AND switches on; a test case for every unit; fix the two wrong items. Steps P3-0 … P3-23, guards D-1…D-26 |
+| **P4 Plane R** (reasoning) | How a professional thinks: the model as the expert, a reasoning library of versioned units, calculators (clock, turns, counts, numbers), precedence, citations, company patterns, goals as goals | Store, render | Fifteen V1 units on one 24-key contract, laws L-1…L-12, about 70 tools, the run as ten components with one transaction per sweep, checks RC-1…RC-33 (printed ids only, one repair), fourteen outcomes, the material-change gate and delta reasoning, **one shared retry allowance (at most one extra paid call per input, never a third)**, receipts and replay, **one judge in the product per tenant at the parity gate** (the test-mode decider retired). Steps P4-0 … P4-17, guards RG-1…RG-34 |
+| **P5 Cards** | When intelligence is raised, what it says, which goal it moves, rank, versions, closing, and what the person can do (Done, Delegate, Later, Feedback, Answer) | Judge the situation behind it | **One card per situation, raised only when the reasoning says a person is needed** (a date wakes a judgment, never makes a card). Gate G-1…G-9; card contract CC-1…CC-28; kinds, severity and rank as hard constraints; every card names its goal; cards from goals; done-when and closing on proof; held text never shown; &quot;you&quot;, never the founder&#x27;s name; one reader (`card-read.ts`) on every surface; delegation with a task contract; one card path in the product. Steps P5-0 … P5-15, guards CG-1…CG-31 |
+
+### 10.2 · The four loops (run across all parts)
+
+| Loop | Chain |
+|---|---|
+| **Onboard** | a new customer&#x27;s data → notebook → situations → goals (proposed) → founder confirms → intelligence per goal step. Phases 0–8, a one-time budget (~$10 for 6 months, $15 for 365 days), &quot;Ready&quot; only after the first judgments |
+| **Evolve** | new data **or a due date** → the open situations and goals it touches → page updated → goal updated → card updated or closed. After a 10-minute quiet window, plus a 06:00 daily pass. A quiet day costs 0 calls; a normal day costs under $0.50 |
+| **Act** | the card → the founder&#x27;s decision, or a person or agent → a **verified** outcome (a report is not proof) → notebook → goal progress |
+| **Maintain** | nightly and weekly over the whole notebook: lifecycle, re-asks, predictions scored, patterns, health, the brief on its own job |
+
+### 10.3 · The ten rules every step follows
+
+1. One source of truth per rule: in Plane D or Plane R as a versioned item, never in prompt text.
+2. The model judges; code remembers, calculates and checks. No score decides on its own, and the model never invents a number, id or quote.
+3. Nothing is kept unless backed: every claim cites evidence and code checks it. A refused change is held with its reason, never silently dropped.
+4. Unknown is not zero. An absence counts only when the source was read in full.
+5. Time is local: the company zone and UTC on every instant.
+6. Prove it in the notebook first, then port.
+7. Measure before and after every step on the acceptance set, and write it in `08-LOG`.
+8. Attribute every failure to a part and an item before fixing it, and fix it at that source.
+9. One writer per file; a step isn&#x27;t done without tests, a measurement and Rohit&#x27;s look.
+10. Fixed words: notebook, business situation, goal, intelligence (card), Plane D, Plane R, orchestrator, loop; layers as L1 Signals … L6 Learning.
+
+---
+
+## 11 · Decisions taken while checking the plan (30 Oct)
+
+While checking P1 against 479 requirements, several cross-part disagreements were found and settled in the documents. These are binding now:
+
+- **Retries:** one input gets at most **one extra paid call**, across the repair, the generic-answer retry and the timeout or model-error retry together. That is at most 2 paid calls, never a third. It is written once in P4 07 §15. P1 adds no attempt; it parks the subject. A parked subject is recovered only when its input changes, or once after a provider-wide outage.
+- **Transactions:** one transaction per **sweep** (P4 07 §2.7, unchanged), with one savepoint per subject. An Evolve run is several sweeps in order: situations, each dependents round, then goals with cards. A crash loses only the open sweep&#x27;s writes, never answers already received (the answer store); a rerun applies them at 0 calls.
+- **One due per card:** `card_due` follows P5&#x27;s `by` (the act-by for a decision; the next check for a waiting card). Surface times and reminders are rungs, never the due.
+- **Reason codes:** one closed list in P1 07 §10.1 (`domain_off`, `zone_unconfirmed`, `not_due`, `embargo`, `readiness`, `past_useful_until`, `duplicate` …). A code outside it fails guard OG-8.
+- **Daily cap:** a founder-size tenant&#x27;s default daily judgment cap is **$0.50**. It changes only by a decision recorded in `08-LOG`. Severity-4 items pass the cap.
+- **Concurrency:** one Evolve run and one Act run per tenant at a time, never two runs on one subject. The product starts with **1 worker** and moves to 4 only after the load drill passes.
+- **Founder defaults:** a new founder tenant gets Founder Office and Admin live, and Sales and Support **off** (shadow only for a company that sells or supports).
+- **New tenants** move to the new path only after the golden tenant and two more design partners pass the acceptance set.
+- **Reopen:** a resolved situation reopens on new evidence only within 90 days (or the playbook&#x27;s stop rule); after that the evidence is new work.
+- **`f2` on 24 Oct:** verify first (&quot;No confirmation by that day&quot;), and missed only on the person&#x27;s word.
+- **Light runs:** a document the person supplies, a met evidence need, and &quot;look again&quot; (`human_ask`) each get a one-call delta run. `human_ask` runs even when nothing is new.
+- **Wave 1 of onboarding:** the last 30 days of mail plus the calendar 14 days back to 14 days ahead; wave 2 goes up to 365 days.
+
+---
+
+## 12 · What is fixed, and what is not
+
+**Be clear on this:** &quot;fixed&quot; here means **designed, specified and checked in the plan**. No product code has changed yet.
+
+| Part | Planned in full (07 spec + 08 trace) | Requirements checked | Final result |
+|---|---|---|---|
+| P1 Orchestrator | ✅ | 479, six full rounds | 447 covered, 19 another part&#x27;s (recorded), **13 partly** (listed in P1 08) |
+| P2 Notebook | ✅ | 309, four rounds | ≈307 covered |
+| P3 Plane D | ✅ | 195, four rounds | ≈188+ covered |
+| P4 Plane R | ✅ | 500, rounds + a regression sweep | 454 covered, 46 another part&#x27;s, 0 partly |
+| P5 Cards | ✅ | 607, seven rounds + two sweeps | 592 covered, 15 another part&#x27;s, 0 partly |
+
+**P1&#x27;s 13 partly rows** are small seams. For example: what a waiting card with no act-by shows as its due; which job fires a snooze return; when a run closes `requeued`; one stale wording in 04. They don&#x27;t block building. They are marked 🟡 in `P1-ORCHESTRATOR/08-REQUIREMENTS-TRACE.md`. Close them when you build the step they belong to.
+
+**Not done yet:** a combined build order across all five parts, and one P1–P5 alignment check (names, contracts, rules nobody needs, anything written and never read). Rohit will open those.
+
+**Nothing in the product changed**, except the documents in the repo.
+
+---
+
+## 13 · What Harsh should do, in order, and what to watch out for
+
+### 13.1 · Read, in this order (about 2 hours)
+
+1. `GeniOS-013/09-WHAT-WHY-HOW.md`: what GeniOS is, the `i1` test, the parts, the loops, the eight causes, the ten rules.
+2. `GeniOS-013/10-ACCEPTANCE.md`: the 20 cards, 10 goals and the replay everything is measured against.
+3. `01-WHAT-IS-HAPPENING.md` (the 28 Oct reasoning on `i1`) and `05-THE-WORK-OBJECT.md` (the page).
+4. For the part you build: its `02` (why it fails), then `04` (the steps), then `07` (the spec). Keep `08` open to see which requirement each section serves.
+
+### 13.2 · Build order
+
+- **First, cheap, independent:** P1-1 the clock, P1-2 the run ledger, P1-7 the budget and its order; P2-0 the company page and stable ids; P3-0 and P4-0 (make each plane measurable); P5-0 the card census.
+- **On the product the same day:** R1 (measure today&#x27;s runs + the release gate), R3 (the company&#x27;s time in every dossier and clock), R7 (name the wake-ups right), R8 (make switches and ticks bind). Then R2 (take the whole-company passes off the per-mail chain), R4 (the brief on its own job), R5 (stop paying twice for a bad answer).
+- **Then the trunk:** P2&#x27;s goal object, lifecycle, admission and pages (P2-1, P2-3, P2-8, P2-17), with P3-7 (compiler → model path) and P4-5 (checks with printed ids). Then P1-4 (Evolve: wake-ups, date index, runner), then P4-10/11 (the run and its result) and P5-1 (one card per situation, from pages).
+- **Then the rest per each part&#x27;s plan table**, ending in P4-17 and P5-14 (one judge and one card path in the product, per tenant, at P1&#x27;s parity gate).
+- Each `04` has a &quot;Needs&quot; column. Never build a step before what it needs.
+
+### 13.3 · How each step is built
+
+- **Notebook first, then the product.** Every step passes on the local copy and the notebook before any production change.
+- **Beside, not instead.** New code goes beside the old path, measured on the golden board and the design partner&#x27;s copy. Old lanes stop delivering only after the parity gate passes, and only by an activation row.
+- **Measure before and after** on `10-ACCEPTANCE` (`nb.cli scorecard` / `compare`; `scripts/ideal_card_gap.py` for the product), and write the numbers in `08-LOG`. A step that makes any line worse is not done.
+- **One writer per file**; guards run per group of 2–3 coupled steps; full suites in CI.
+
+### 13.4 · Watch out for
+
+- **The public repo:** `genios-brain` is public. **No real names, emails or amounts from mail** in it. Use the ideal ids. The local copy, `compare.html` and the ideal file are private.
+- **Production:** read it only with Rohit&#x27;s permission. Never write to it while building a step; use the copy.
+- **Switches:** check the policy row and the switch registry against the ledger. Today a switch can report success and do nothing. **Do not arm calibration&#x27;s auto-mute** (the one-line `card_level` fix arms unattended muting; that is Rohit&#x27;s decision D13).
+- **The old paths are still live:** six card writers, the test-mode decision maker, L3&#x27;s resolution model calls, support readings for every tenant. Retire each only via its step and the parity gate.
+- **Model calls:** Claude 5 models think by default, and thinking eats `max_tokens` (a Sonnet pass once truncated 203 of 203). Set thinking and budgets explicitly. Probe JSON schemas before adding fields (the grammar-size limit).
+- **Python:** local QA runs 3.13 and CI/production run 3.11. A test green locally has failed CI before.
+- **CI was already red** on `speedrun008` before these docs (the `database` job, `test_activate_tenant.py::test_a_typo_in_a_domain_is_refused_before_anything_is_written`, and `golden-pg`), and `/health` reports build `dev`. Fixing both is the first production item (R1).
+- **Golden tests use the ideal reader**, so they prove plumbing, not intelligence. The real test is the acceptance set with a real model, under a cap.
+- **Costs:** onboarding is a **one-time** cost (~$8–15); the running target is under ~$20 a month of reasoning plus reading new data. Today the product costs about $5.67 a day (~$170 a month), and the old lanes are about 29% of that.
+
+---
+
+## 14 · Where everything is
+
+| What | Where |
+|---|---|
+| The plan (public) | `genios-brain` repo, branch `speedrun008`, folder `speedrun008/GeniOS-013/` (pushed `96c6546a`) |
+| Start page | `GeniOS-013/00-START-HERE.md` |
+| The why, the parts, the rules | `GeniOS-013/09-WHAT-WHY-HOW.md` |
+| The acceptance set | `GeniOS-013/10-ACCEPTANCE.md` |
+| Every number with its SQL | `GeniOS-013/06-MEASUREMENTS.md` |
+| The append-only log | `GeniOS-013/08-LOG.md` |
+| Each part | `GeniOS-013/P1-ORCHESTRATOR/` … `P5-CARDS/` (files 01–08) |
+| Local copy of the org (private) | Rohit&#x27;s Mac: `~/MacBook Air Professional/My Repos/Local Database (Rohit_Org_GV2)/` (`README.md`) |
+| Notebook prototype (private) | same folder, `notebook/` (`CONTEXT.md`, `BUILD-LOG.md`, `nb/`, `tests/`, `output/b2/compare.html`) |
+| Ideal dashboard (private) | `~/Downloads/GeniOS/GeniOS-Ideal-Dashboard/` (`src/02-data.js`) |
+| Ideal-card tracer | `Local Database (Rohit_Org_GV2)/analysis/trace_ideal_items.py` |
+| Product code read for the plan | `harsh/mvp` at `7d2c3615` (28 Oct) and `a729b968` (29 Oct) |
+
+---
+
+## 15 · Corrections: things we said earlier that turned out wrong
+
+These were measured again. Use the corrected numbers.
+
+- &quot;Half the mailbox is unread / whole mails parked for an attachment&quot; was **wrong**. 547 parked rows are attachment stubs whose mails were read; 1,193 of 1,829 were emitted.
+- &quot;A new mail waits 147 min for L2&quot; was **wrong**. That was Screen sessions in the warm lane. Mail is read 36–54 min after capture; its chain ends 123–140 min after capture.
+- &quot;Every judgment re-reads 70,000 characters&quot; is **misleading**. A paid judgment reads about 11,000 (max 35,000). 70,000 is a mean over all rows, driven up by one oversized file refused 31 times.
+- &quot;138 of 138 runs started by new mail&quot; **overstates** it. The trigger field is the constant `bundle`; 28 of 67 chains read no new event at all.
+- &quot;80 of 264 files judged&quot; mixed units: the 80 L2 subjects are 48 files and 32 seeds.
+- At &quot;Ready&quot; the brain had reviewed **0** files, not 3. &quot;Ready&quot; came through the busy path after a 15-minute wait.
+- Onboarding cost: $17.55 from connect to Ready ($13.43 of it L1 reading), $27.78 in the first 24 h. Not &quot;$25.44 on the onboarding day&quot;, which included $3.66 spent before the reconnect.
+- The claim check held **57 of 63** (first check) and **9 of 23** (newer), not 64/70 and 9/26.
+- &quot;No rule has a checkable condition&quot; was **wrong**: 50 of 291 rules and 78 of 238 playbooks carry them, though nothing evaluates them.
+- &quot;The L2 judge is in shadow&quot; was **wrong** for this tenant: it has been live since 21 Oct (`l2_cards` on).
+- &quot;No traction facts&quot; was **wrong**: 80 amounts are captured, stored on a person node and never compared.
+
+---
+
+## 16 · Words
+
+| Word | Meaning |
+|---|---|
+| Notebook | GeniOS&#x27;s memory of the company: the evidence it read and the conclusions it reached, versioned and backed by evidence. L3 = Evidence Graph + Intelligence Graph |
+| Business situation (page) | One piece of work in motion (an application, an investor conversation, an introduction, a renewal, a hire), with a saved page: where it stands, whose move it is, what is owed, what should happen next and by when |
+| Goal | An end the company drives toward over weeks or months: a target, a plan, progress (or &quot;unknown, why&quot;), a status and a next move. Proposed by GeniOS, confirmed by the founder |
+| Intelligence (card) | What GeniOS says to a person: what to do and why, for which goal, by when, and how we&#x27;ll know it&#x27;s done |
+| Plane D / Plane R | Domain expertise (what a professional knows) / reasoning (how a professional thinks) |
+| Orchestrator | What runs when |
+| Loop | Onboard, Evolve, Act, Maintain |
+| File (today) | One counterparty&#x27;s correlations, by sender. The unit the plan replaces |
+| Absence card | A card about something that did not happen (no reply, a missed date) |
+| Parity gate | Per tenant and per type, the new path must match or beat the old on the acceptance set before the old path is switched off |
+| `b2` | The notebook build as of the ideal&#x27;s morning (23 Oct, 07:10 IST) |
+| R-7 / R-9 / R-10 | Model sites: the expert review / the L2 judge / the card writer |
+</pre></div>
+</main>
+</div>
+<script id="md" type="text/markdown"># Harsh notes · Why GeniOS's cards and goals kept failing, and what the GeniOS-013 plan does about it
+
+- **For:** Harsh, and the coding agents Harsh assigns.
+- **From:** Rohit's working sessions with Claude, 28–30 Oct 2026.
+- **Status:** this is an analysis and a plan. **Nothing in it is built in the product yet.** The plan is complete and checked, and it is pushed to `origin/speedrun008` at `96c6546a`, in `speedrun008/GeniOS-013/`.
+- **How to use this file:** read §1 first (one page). Then read §3–§8 to understand what broke and why, §9 for the local setup, §10–§12 for the fix, and §13 for what to do first.
+- **No third-party names:** cases are called by their ids in the private ideal file (`p1`, `f1` … `l1`). Organisations are described by role ("the intro platform", "the accelerator", "the incubator", "the government portal").
+
+---
+
+## Contents
+
+1. The whole story on one page
+2. What GeniOS is meant to be: the test it must pass first
+3. The yardstick: the ideal dashboard against what GeniOS made
+4. Why the cards kept failing, stage by stage
+5. Why goals never came
+6. Where the business situation broke
+7. The rules that were written wrong
+8. The real root cause, and the eight causes under it
+9. What we built locally, how, and what it proved
+10. The fix: five parts and four loops
+11. Decisions taken while checking the plan (30 Oct)
+12. What is fixed, and what is not
+13. What Harsh should do, in order, and what to watch out for
+14. Where everything is
+15. Corrections: things we said earlier that turned out wrong
+16. Words
+
+---
+
+## 1 · The whole story on one page
+
+- **The test.** On 23 Oct, Claude read Rohit's Gmail and wrote an "ideal dashboard": **20 cards and 10 goals**, every card tied to a goal. That is what a good chief of staff would say. GeniOS's own output for the same company, in its first real week (22–28 Oct), was **111 cards (103 open), 0 linked to a goal, 11 goals all only proposed**. Compared card by card on 28 Oct: **0 the same, 9 partly or wrong, 11 missing.**
+- **The model is not the bottleneck.** When the L2 judge got a clean piece of work, it read it almost exactly like the ideal. On the accelerator reconsideration (`i1`, the launch film's own example), it saw the stalled reconsideration, the traction numbers rising between updates, and one short follow-up to send. Then the claim checker held the answer, and the founder saw "We held the one we found…". Meanwhile an old rule card said "you are 71 days late", which was false.
+- **What broke, in one line each:**
+  1. **Wrong unit of work.** Mail is grouped by sender ("one counterparty's file"), not by piece of work. One application sat in 2 files. The intro platform was one file of 500 mails and 61 people, too big to judge at all; it was refused 31 times.
+  2. **Woken at the wrong time.** Only new mail wakes the judge. Every run is labelled `bundle`. Yet 13 of the 20 ideal cards are about something that **did not** happen (no reply, a date passed, a promise not kept).
+  3. **No company context.** No accepted company brief (138 of 138 dossiers), no playbook (every dossier), no approved goals. Knowledge that was approved never reached the model.
+  4. **Good answers thrown out.** The claim checker held 66 of 86 results, mostly because the model cited block letters instead of printed ids.
+  5. **Nothing it concludes is saved.** L3 admission runs in "shadow". **0 of the graph's 16,792 facts came from the brain.** Every judgment starts from scratch, re-reads the evidence, and is forgotten.
+  6. **Too many card makers.** Six writers make cards: legacy rules, the compiled lane, the L2 judge and the team emitter. A test-mode Haiku decision maker outside the model register decides most of them (3,695 calls in a week).
+- **The root (the "trunk").** Atlas v2's L3 has two halves: the **Evidence Graph** (what sources said) and the **Intelligence Graph** (what GeniOS concluded). Only the first was built. Everything above is a branch of that.
+- **The fix (GeniOS-013).** Keep one small saved **page per piece of work** (a "business situation"). Code wakes the brain when something changed **or should have happened**. The brain reads the page plus only what is new and proposes an update. Code checks it and saves it. Cards become views of pages, and every card names its goal. The plan is split into five parts with hard boundaries (P1 Orchestrator, P2 Notebook, P3 Plane D, P4 Plane R, P5 Cards) and four loops (Onboard, Evolve, Act, Maintain).
+- **Proved locally first.** We built a local copy of Rohit's org and a local "notebook" prototype (build `b2`). On the ideal's own morning it found the work for all 17 ideal cards the mail can see. By hand: 4 same, 2 close, 4 partly, 2 opposite, 5 missed, for **$8.41**. It also exposed the next failures, and the plan fixes them.
+- **What to do first:** read `GeniOS-013/09` and `10`, then each part's `04` and `07`. Build **notebook first, then product, per tenant, behind a parity gate**. §13 gives the order.
+
+---
+
+## 2 · What GeniOS is meant to be: the test it must pass first
+
+From Rohit's launch film:
+- A manager's real problem is delegating the right task and keeping track of it across departments, while the data of many tools keeps changing. LLMs are good for one goal at a time; agents are good "only for a defined state of context".
+- GeniOS should be "a 24/7 consultant for our company, which says: do this instead of that, to make this happen and get that projected goal": proactive, without dashboards, tagging or prompting, with "approve before anything is sent".
+- Inside the engine: "company patterns, domain expertise, reasoning patterns, and the current status of your company". There are four kinds of intelligence: reactive, proactive, predictive and prescriptive. "Every Done teaches."
+
+**The first test is the film's own example, `i1`.** An accelerator rejected the application. The founder asked them to reconsider, and they said "resend it and keep us posted". Three follow-ups went out in 20 days with no reply. Then priorities changed, and the founder forgot.
+- **What GeniOS must say:** goal "get the accelerator to reconsider", at risk, found in your mail. *"Send one update with a new, checkable fact, then stop until they answer."* Why: they left the door open in writing; three updates got no reply, so the next one must carry a new fact (that day's incubator milestone), not a restatement.
+- **What the live product did:** it found the right reading, the checker held it, and an old rule card said "71 days late".
+- **What the notebook `b2` did:** the opposite call, "stop, wait for the next intake". It never connected the incubator milestone to this goal, because facts didn't travel between situations.
+
+Every step is measured first on `i1`, then on the whole acceptance set (§3).
+
+---
+
+## 3 · The yardstick: the ideal dashboard against what GeniOS made
+
+The ideal file is private (`~/Downloads/GeniOS/GeniOS-Ideal-Dashboard/src/02-data.js`). The public repo only uses the ids. The acceptance set is `GeniOS-013/10-ACCEPTANCE.md`.
+
+### 3.1 · The 20 ideal cards, and what happened to each
+
+The mail copy starts on 25 Apr, so 17 of the 20 are visible. `i6`, `s1` and `s2` rest on older mail.
+
+| Id | The call GeniOS must make | Live product (28 Oct) | Notebook `b2` | Fix owned by |
+|---|---|---|---|---|
+| `p1` | Four different traction numbers went to different people: pick one verified number before today's review | Lost: the numbers were stored as plain amounts on a person node, never compared | ✅ same | P4, P5 |
+| `f1` | The incubator's final review is today: join early, lead with one number | Card points the wrong way | 🟡 close: read 07:10 IST as "the panel is now" (UTC clock) | P1 (clock), P4 |
+| `f2` | An application is incomplete: finish it or drop it this week | Its reminders were archived by the gate | ✅ same | P2 |
+| `f3` | A referral promised by the intro platform has been silent for 24 days: ask about it | The intro platform's file is too big to judge | ❌ missed: buried among 30 intro offers | P2, P4, P5 |
+| `f4` | Waiting on a founder's review of the application doc: nothing to do until Monday | Held by the checker | 🟡 close: a dated card where none was needed | P5 |
+| `i1` | The film's example: one update with a new, checkable fact, then stop | Right reading held; old rule says "71 days late" | ↔ opposite | P4, P2, P5 |
+| `i2` | An investor asked for current traction and got a projection: answer in three lines | Dormant, never judged | ❌ missed: counted as answered | P4 |
+| `i3` | The follow-up after an investor call was never sent: send it today | Held | ❌ missed: the playbook's "silence = soft no" won | P3, P4 |
+| `i4` | One update went to 12 investors with no replies in 10 weeks: which still matter? | Partly, late | ◐ partly | P4, P5 |
+| `i5` | Six mails never arrived, three to investors: resend to working addresses | The bounce stays on the address and joins no work | ◐ partly | P4, P5 |
+| `b1` | Two new introductions are waiting for a yes or no | One held, one never judged | ◐ partly | P2, P5 |
+| `b2` | Two partner calls with no written next step: send the collaboration note | The brain chose a decision; no card was made | ❌ missed: marked "done" | P3, P4 |
+| `b3` | A stalled introduction: the ball is in their court, let it close | Dormant, never judged | ↔ opposite: "you owe them times" | P4 |
+| `c1` | A registration complaint reached only one inbox: call the helpline | Filed as an investor, held, and the correction was not saved | ◐ partly | P2, P5 |
+| `c2` | A tool subscription renews within the week: keep or downgrade, ask for credits | Read, not recognised | ❌ missed: filed as noise | P3, P4 |
+| `h1` | Did the candidate accept the offer? Ask the founder | Filed as an investor contact, held | ✅ same | none |
+| `l1` | A programme's round-2 result is outstanding: wait until a set date | A good question card was left in the queue | ✅ same | none |
+| `i6`, `s1`, `s2` | Older investor and prospect threads | Before the capture window | Before the copy | P2 (365 days at onboarding) |
+
+**Scores:** live product 0 same, 9 partly or wrong, 11 missing. Notebook `b2`: 4 same, 2 close, 4 partly, 2 opposite, 5 missed, 3 outside the copy.
+**10 of the 20 never even reached the L2 model** in the live product.
+
+### 3.2 · The 10 ideal goals
+
+- **Live:** 11 goals, all `proposed`, 0 approved, 0 linked to any card. The proposals were built on the wrong files: the raise-the-round goal named the government portal, an incubator and the intro platform as investor threads.
+- **Notebook `b2`:** 15 goals matched 6 of the 10 (plus one in other words). But they had the wrong grain: one goal per investor; no umbrella "get into an accelerator this cycle", so 21 live situations had no goal, 18 of them applications; and the intro platform as one goal of 163 situations, which is an activity, not an outcome. Goals had no target, plan, progress, status or next move, and **no goal ever raised a card**.
+
+### 3.3 · The replay the plan must pass (23 Oct 07:10 IST → 2 Nov)
+
+| Day | What happened | What GeniOS must do |
+|---|---|---|
+| 23 Oct | The incubator's final review happened; the founder sent two update mails after it | `f1` closes; the incubator goal moves; the milestone becomes a new checkable fact for `i1` |
+| 23–28 Oct | New intro offers and calls booked by the intro platform | Each new introduction is its own situation with a yes or no; they never pile into one |
+| 24 Oct | `f2`'s deadline passes | Closes verified on its confirmation or on the person's word; with no confirmation it goes to "verify", and is missed only on the person's word |
+| 27 Oct | The incubation letter arrives | The incubator goal is reached; one "goal reached, confirm" card |
+| 27 Oct | A broadcast states a new traction figure to about 33 recipients | `p1` grows with the new figure; no card per recipient |
+| 29 Oct | The tool subscription renews | `c2` stays open until decided, then closes |
+
+### 3.4 · Targets when the whole plan is done
+
+≥ 15 of 17 in-copy ideal cards same or close, 0 opposite, ≤ 30 open cards for the whole company, ≥ 8 of 9 goals matched with target, plan, progress and next move, every replay event on its day, an Evolve day under $0.50, and onboarding around $8–9 at today's model.
+
+---
+
+## 4 · Why the cards kept failing, stage by stage
+
+The path of one mail in today's product:
+
+```
+Gmail / Calendar
+   │  L1 Signals: capture, gate (emit or archive), extract signals
+   ▼
+"Files" = one counterparty's correlations (by sender), recomputed on every read
+   │  L3 Context: situations formed by rules; facts computed by code
+   ▼
+Chain (every ~100 min): context/runner.process_pending (whole company) → reason/runner.run_all
+   │      ├─ expert pass (R-7)      ├─ L2 judge (R-9, $2/UTC day)   ├─ compiled lane + legacy rules
+   │      │                         │                               │  (decided by a test-mode Haiku
+   │      │                         │                               │   "decision maker", outside the register)
+   ▼      ▼                         ▼                               ▼
+claim checker (word by word)  ──►  held → turned into a founder question "We held the one we found…"
+   │
+   ▼
+deliver/pipeline: one card per open signal that passes L4's authority predicate, from SIX writers
+   ▼
+cards (expire within a week) → screens (each reads a card its own way)
+```
+
+### 4.1 · Input (L1): mostly fine, with specific holes
+
+- Of 1,829 mails (25 Apr → 28 Oct), **1,193 were emitted (65%) and 636 archived (35%)**. The 547 "parked" rows are **attachment stubs**; all 547 of their mails were read. (An earlier claim that "half the mailbox is unread" was wrong.)
+- Most parked attachments are calendar invites (`.ics`, 417 of 421). Some were image or PDF fetches that failed, including 14 of 25 bounces and 13 of 19 government-portal mails.
+- Archived mail carries **no text** by design (F37: archived words are kept from models). Some important mail sits there, such as the "still incomplete" reminders for `f2`.
+- **Only 180 days are captured**, so `i6`, `s1`, `s2` and one ideal goal don't exist for GeniOS.
+- **Meaning errors:** the 11 Aug investor update was labelled `contract_renewal` (×10). 80 traction amounts were captured as `financial.amount` facts on the founder's own person node, never compared, and some look like quoted text.
+- **Bounces** (7) join no work, so the waiting card stays on a dead address (`i5`).
+- Measured and NOT true: "L1 signals mostly come from quoted text" (only 41 of 1,474).
+
+### 4.2 · Grouping: the wrong unit of work
+
+- A "file" is one counterparty's correlations, computed on each read and never stored (264 files).
+- One application is in 2 files, the incubator's programme in 4, and one party has 10 files across 4 domains.
+- **The intro platform is one file: 500 mails, 322 threads, 61 people.** It hit `l4_per_decision_ceiling` 31 times with 0 input tokens, so it was never judged. That loses `f3`, `b1` and `b3`.
+- Wrong domains: the government portal and an incubator filed under fundraising/investor; the 11 Aug recipients under sales.
+
+### 4.3 · Waking: only new mail, and the clock is missing
+
+- **138 of 138 L2 request rows carry trigger `bundle`.** Nothing records why a run started. The date triggers (`deadline_crossed`, `expected_reply_absent`, `date_closing_in`, `reply_overdue`) exist as constants and never fire: **0 date wakes in the week**.
+- 13 of the 20 ideal cards are **absence cards**: no reply, a date passed, a promise not kept. A mail-only trigger can never raise them.
+- Priority is newest-first. Situations go dormant after 45 quiet days, which is exactly where `i2` and `b3` live.
+- The chain takes **97 min median, 69 of it whole-company passes**, back to back. One tenant fills the reasoning day. A new mail is read by L2 about 36–54 min after capture, and its chain ends 123–140 min after capture.
+- The clock is **UTC almost everywhere**. The dossier prints UTC only, `orgs.timezone` is never read in `reason/l2` or `reason/expert`, and "30 minutes past due" prints "1 hours ago". The judge's budget day rolls at 05:30 IST, so all cards after 23 Oct were born **07:00–13:59 IST** in one morning burst.
+- The morning brief should be at 08:00 local time. It came 6 times in 7 days: one day none, one day at 13:31. The brief is always written by template, yet each one says a model draft failed.
+- **Switches lie.** A tick is cut after 20 min, but its thread keeps running. Kill switches don't bind background threads. `cards_from_situations` only relabels a counter. `cutover.py`'s parity check has no caller.
+
+### 4.4 · Knowledge: approved expertise never reached the model
+
+- The Atlas's **Domain Compiler is built** (`packs/compiler/domain_compiler.py`, eight components). It made 100 packages in the first week. But only the compiled lane reads them, through templates. **`reason/l2` and `reason/expert` import none of it**, so 0 of 138 L2 judgments and 0 of 50 expert reviews got expertise. *The lane with the knowledge has no model; the lane with the model has no knowledge.*
+- Knowledge is chosen only by "kind of work", the kind comes only from an **accepted brief line**, and **0 of 29 brief lines were accepted**. So every dossier said "No company brief is accepted" and "No playbook for this file".
+- The playbook reader needs **exactly one staged playbook** per capability. Only 2 of 238 playbooks have stages, so Admin's approved renewal and follow-up knowledge (`c2`, `b2`, `i3`, `c1`) is invisible.
+- **165 units were approved by Harsh and never switched to `stable`** (80 rules, 80 playbooks, 5 situations; Admin 44/44/4). The second step of review has no owner.
+- Founder Office: all 29 units are `draft` and unreviewed (written by AI), so the compiler drops all 6 of its capabilities.
+- The reader **drops a rule's conditions** ("applies when", "breaks down when", failure modes). See §7.
+
+### 4.5 · Judgment (L2): good reasoning, wasted
+
+- 138 request rows: 86 results, 38 refused for budget, 7 failed, 6 truncated.
+- **The claim checker held 66 of 86 results**: 57 of 63 under the first check, 9 of 23 under the newer one. 52 of the 66 were "cites something the file doesn't show", because the model cited block letters and section names (`F`, `C`, "WHAT WAS CHECKED") instead of printed ids. The contract let an id be any string. The checker was right to hold them, and the design was wrong to turn a hold into a founder question.
+- **Money:** R-9 hits its **$2 per UTC day** cap every day (95 refusals). **39% of its spend ($5.28 of $13.55) bought nothing**: 30 answers failed validation and 6 were cut at the token ceiling. A retry resends everything.
+- **Dossier size:** a paid judgment re-reads about 11,000 characters (max 35,000). Oversized files of 245,000–280,000 characters were refused before any call. The "70,000" figure is a mean over all rows, driven up by the one oversized file refused 31 times.
+- Confidence is written by the model (86 of 86); code measures no coverage. The card uses a different confidence, a count of cited mails.
+- 115 evidence needs were raised and **0 met**, because the fetchers are off and the stored-event fetcher doesn't exist.
+- Rules of thinking live in **prompt text, in many disagreeing copies**: the expert prompt (15 rules), the L2 judge (24 rules), the notebook (5 rules), the decision maker, R-1, the brief drafter and the Screen rulebook.
+
+### 4.6 · Nothing is saved (the root)
+
+- `context/l2_admission.py`: "SHADOW: nothing here touches context_situations". Merge and link have no applier. Of 34 admission decisions, 24 said "admit", and nothing was written.
+- `situation_interpretations`: 30 rows written, **0 readers**.
+- Of 16,792 graph facts, 6,148 came from source events and 10,644 were computed by code. **0 came from reasoning.**
+- Example: on 28 Oct L2 concluded "this is a government portal correction, not an investor relationship" and said admit/update. The situation is still investor_relationship / fundraising / active.
+- **Notes are never reconciled.** 87 of 87 promises are open (83 past due) and 208 of 212 questions are open. On `i1`, "promise open" and "waiting on the founder" were both false, because the updates had been sent on 11, 13 and 26 Aug. The old rule engine turned the false note into "you are 71 days late".
+
+### 4.7 · Card making: six writers, no rule for "a person is needed"
+
+- One card per open signal passing L4's authority predicate (`deliver/pipeline.py:52-135`). Writers: legacy rules 41, compiled lane 36, L2 judge 33, team emitter 1 (111 in the week). One counterparty owns 25–31 of the 111.
+- 73 of the 77 unit-lane cards were decided by the **test-mode LLM decision maker** (Haiku, outside the register, no dollar cap; 400 calls a day expected, 723 seen on 22 Oct).
+- The lane is decided twice (`output_lane.route` and L2's lane). They agree on 16 of 33, and the wrong one wins.
+- **The machine's words reach the person:** "We held the one we found…" on 13 open cards, 40 headlines prefixed "Needs a decision —", 20 headlines cut mid-sentence, internal keys (`dependency_stated`, `commitment_met`), ": undefined" in the Mac app, and verdict codes on the Goals page.
+- The founder is spoken of in the third person on 23 cards.
+- Severity is a utility score cut at 70 and 85, so 22 of 103 open cards are critical. Every question card is scored 0, ranks last and is never pushed.
+- **Every open card expires within a week**, because the card window reuses the decision's 168-hour authority window. 0 cards were resolved, Done is just a click, and nothing closes on proof.
+- Delegation and approval are built (`/v1/delegations`) and wired to nothing. 0 outbox rows, so nothing reaches the person outside the app. The card writer (R-10) is built and off. Each screen reads a card its own way.
+
+---
+
+## 5 · Why goals never came
+
+1. **One door, never opened.** A goal is live only when its brief line is accepted. 0 of 29 were accepted, so there were 0 goal links and 0 goals on cards. The card layer shows approved goals only, and proposed goals may not be used in reasoning.
+2. **Proposed from the wrong unit.** The weekly drafter reads at most the 40 latest thread objectives (patterns, not the graph). L2 may propose one goal per file (6 of 86 results did), built on sender files, which is how a government portal ended up counted as an investor.
+3. **A goal is only a sentence.** It has no target (what counts, and where it was said), no plan, no progress, no status and no next move. So it can't say what is missing, and **no card can come from a goal** (`f3`, and `i1`'s "use today's milestone").
+4. **No goal judgment.** Nobody judges a goal as a goal: at risk or not, what's next.
+5. **Wrong grain** (notebook): per-investor goals, no umbrella goal, activity goals of 163 situations, and two link sets that disagree on 53 of 233 situations.
+
+**The plan's fix:** P2 builds a real goal object (target, captured quote, plan, progress from counted plan rows, status, next move, parent). Goals may be used labelled while unconfirmed (D1), and the founder confirms with one click. P4 judges goals (health, the goal judge, gap cards). P5 raises gap, reached and pattern cards from goals, and every card names its goal.
+
+---
+
+## 6 · Where the business situation broke
+
+- **Formed by rules, not reasoning.** 1,528 situations come from a fixed list of types, and they drive 71 of 103 cards. Atlas v2 says "the situation is formed by reasoning".
+- **The unit is the sender** (§4.2), so one piece of work splits and one platform swallows hundreds.
+- **Quiet work goes to sleep:** dormant after 45 quiet days (282 dormant).
+- **63% of active situations belong to a department that is off.** Support is off for this org, yet 730 of 1,164 active situations are support-desk types (667 "first response overdue"), and 21% of all facts track first responses. They are recomputed every chain, on UTC working hours.
+- **The brain's corrections are not saved** (§4.6), so a wrong situation stays wrong.
+- **Facts don't travel.** The incubator milestone never reached the accelerator page (`i1`).
+- **Founder acts, executions and Screen are stored but never joined to the work:** 211 card events, 105 executions and 141 Screen summaries, none of which update a situation or goal. The founder was asked 40 questions and **0 answers** came back.
+- **Evidence text expires 180 days after capture**, not after the work ends, so a long-running situation loses the words behind its earlier pages.
+- **The database is over its ceiling:** 570 MB against 472 MB on 27 Oct, mostly dead rows from whole-company rewrites.
+
+---
+
+## 7 · The rules that were written wrong
+
+These are concrete rules, code paths or prompt lines whose wording or wiring caused wrong cards. "Ours" means the AI build sessions, not Rohit.
+
+| # | Rule or setting | Where | What it did | Hit | Fixed in |
+|---|---|---|---|---|---|
+| 1 | "After a first call that named no next step, silence is usually a soft no", shown **without its condition** ("applies when the turn is theirs; it reads their quiet, never ours") | `packs/compiler/playbook_reader.py` drops `applies when`, `breaks down when` and failure modes | Our own missing follow-up read as their soft no | `i3`, `i2` | P3 (reader carries conditions) |
+| 2 | Notebook prompt: "the playbook, when printed, is more specific" (wrong precedence); the investor playbook note cut to 260 characters | notebook `nb/judge.py` prompt and renderer | The generic "re-apply at the next intake" beat the written offer to reconsider | `i1` (opposite), `i3`, `i2` | P4 (precedence as data; product rule "a playbook is a prior, not a fact") |
+| 3 | Notebook printed only `steps[0]` of each playbook move | `nb/common.playbook_text` | "Write the same day after an investor call" (step 6 of 6) never reached the model | `i3` | P3 |
+| 4 | `money-owed-either-way` fires on **any** dated commitment | Admin corpus | False "a dated payment obligation is open" card about an incubator | live cards | P3-5 |
+| 5 | `dependency-stated` makes a card without the quote that was its value | Admin corpus | Most frequent compiled-lane card (13 of 36), useless | live cards | P3-5 |
+| 6 | `meeting_without_follow_through` fires only 20–240 hours after a meeting | corpus situation | Follow-ups 15–64 days old invisible | `i3`, `b2` | P3 (closed qualifiers) |
+| 7 | `reply_owed` needs them to have written last | corpus situation | Our reply that missed the question is invisible | `i2` | P3, P4 (does the reply answer?) |
+| 8 | `promise_past_its_date` covers our own promises only | corpus situation | A third party's promised referral is invisible | `f3` | P3 |
+| 9 | `decision_waiting_on_a_person` = ball in their court | corpus situation | The founder's own yes/no on intros misfiled | `b1` | P3 |
+| 10 | "Wave gone silent" excludes updates to existing investors | corpus situation | The 12-investor update wave | `i4` | P3 |
+| 11 | Situations dormant after 45 quiet days | `context` config | Quiet work disappears | `i2`, `b3` | P2 (lifecycle with quiet-work rule) |
+| 12 | Knowledge chosen only by a **confirmed** kind (accepted brief line) | `reason/l2`, `reason/expert` | 0 of 138 got a playbook | all | P3-8 (L2's labelled reading is a fine key) |
+| 13 | The reader needs exactly one **staged** playbook | `playbook_for` | Admin's 58 unstaged playbooks ignored | `c2`, `b2` | P3-9 |
+| 14 | Goal live only when its brief line is accepted; cards show approved goals only | GeniOS-012 door, card layer | 0 goals on cards | all goals | P2-1, P5-3 |
+| 15 | Trigger constant `bundle`; L2 wakes only on new mail; newest-first priority | `reason/l2/sweep.py`, chain | 0 date wakes; absence cards impossible | 13 of 20 | P1 (closed list of nine triggers, date index) |
+| 16 | Judge budget $2 per **UTC** day; a retry resends the whole dossier | `reason/bundle/budget.py:238`, `gate.py` | Morning burst; 39% waste | all | P1 (local-day caps, order of spend), P4 (one shared retry allowance) |
+| 17 | `l4_per_decision_ceiling` refuses a big file with 0 tokens, forever | L4 | The intro platform was never judged | `f3`, `b1`, `b3` | P2 (the situation is the unit, not the sender) |
+| 18 | A held answer becomes a founder question "We held the one we found…" | `reason/expert/verify.py:812` | The checker's words shown to the founder | 13 cards | P5 (held text never shown), P4 (printed ids only) |
+| 19 | The answer contract lets an id be any string | L2 contract | 52 of 66 holds | `i1` and others | P4-5 |
+| 20 | Card window = the decision's 168-hour authority window | `card_builder` | Every open card expires within a week | all | P5-4 (close on proof) |
+| 21 | Severity = utility score cut at 70 and 85; question lane score 0 | deliver | 22 critical cards, questions never shown | `l1`, `h1` | P5-5 |
+| 22 | Lane put into the headline as a prefix ("Needs a decision —") | deliver | 40 robotic headlines | all | P5-7 |
+| 23 | Support readings run for every tenant, department on or off, on UTC working hours | `context/runner.py` support pass | 730 junk situations; every chain slower | — | P2 Q1, P1 |
+| 24 | Clean text deleted 180 days after **capture** | retention | Long work loses its evidence | — | P2-11 (retention follows the work, D-P2-7) |
+| 25 | New tenants get Sales/Support/General packs on and **no brain** (`NOT_DEFAULT_ON`: expert_review, l2_reasoning, l2_cards, morning_brief, card_copy) | activation defaults | A new customer would get only the old rules | new customers | P1-11 (defaults, policy row, parity gate) |
+| 26 | Notebook: a "clock card" for every passed or near date, whoever owes the move | `nb/cards.py` `card_for` | 23 of 63 notebook cards from dates alone; 52 of 63 rest on dates over 30 days old | many | P5-1 (a date wakes a judgment, never makes a card) |
+| 27 | Notebook: a page marked "noise" is never re-judged, even when forced | `nb/judge.py` | `c2`'s page came from a run 2 minutes before the renewal rule existed | `c2` | P2 lifecycle, P4 |
+| 28 | `cards_from_situations` relabels a counter instead of changing the source | `deliver/pipeline.py:900-902` | The switch does nothing | — | P5-14, P1-11 |
+| 29 | The test-mode decision maker left on in production | `reason/bundle/sites.py` families | 3,695 Haiku calls a week (~$12), uncapped, not replayable | 77 cards | P4-17 (one judge), P1 R8 |
+
+---
+
+## 8 · The real root cause, and the eight causes under it
+
+**The trunk:** L3 was built as an **Evidence Graph only**. The **Intelligence Graph** (what GeniOS concluded, versioned and checked) was designed in Atlas v2 ("L3 only remembers what L2 concluded") and never built. So the brain re-reads everything every time, can't notice silence (no expected-by dates are stored), can't close loops, can't keep a correction, and is capped and forgotten. Meanwhile the old rule engine, which does write to the graph, wins.
+
+A stored conclusion averages about 2,700 characters, against a dossier of 11,000 for a paid judgment (and far more for large files). Storing the understanding is also what makes it cheap.
+
+| # | Cause | Evidence | Fixed in |
+|---|---|---|---|
+| 1 | Conclusions are never saved | 0 of 16,792 facts from the brain; admission in shadow | P2 |
+| 2 | The wrong unit of work | 2 files for one application; one platform as a 500-mail file | P2 |
+| 3 | The knowledge exists but doesn't reach the model | the compiler feeds only templates; conditions dropped; 165 approved units never switched on | P3 |
+| 4 | Rules live in prompts, not in the planes | three or more disagreeing prompt copies | P4 |
+| 5 | No goal layer | 11 proposed, 0 approved, 0 on cards | P2, P4, P5 |
+| 6 | No clock and no single orchestrator | 0 date wakes; 13 of 20 ideal cards are absence cards; three card makers in one sweep | P1 |
+| 7 | The expertise was never reviewed | Founder Office all draft; 22 situations draft | P3 |
+| 8 | Intelligence isn't raised, ranked or closed by the reasoning | six writers, held text, cards expire weekly, 0 closed on proof | P5 |
+
+**Why it happened (honestly):** causes 1, 2, 4 and 6 are architecture and process. Each AI build session added a new path step by step without retiring the old one. Causes 3 and 8 are code. Causes 5 and 7 are unfinished work. None is a misunderstanding by Rohit. Every new path added a card writer, and none was retired.
+
+---
+
+## 9 · What we built locally, how, and what it proved
+
+### 9.1 · The local copy of Rohit's org
+
+- **Why:** production reads were blocked or slow, and every test against the cloud was risky. Rohit asked for six months of the org's data locally, so testing and analysis never touch production.
+- **Where:** Rohit's Mac, `~/MacBook Air Professional/My Repos/Local Database (Rohit_Org_GV2)/`. Read its `README.md`.
+- **How it was cut:** one read-only `REPEATABLE READ` transaction on production at **2026-10-28 12:45:12 UTC**. All 204 tables of the `public` schema (pg_dump pre-data and post-data), and only this org's rows (`org_id` filter on 198 tables; the config tables `feature_flags`, `pack_registry`, `schema_migrations` and `warm_lane_slots` whole). 262,949 rows, migration head `0256`. `verify` reports 0 mismatches.
+- **Runs as:** Postgres 17 in Docker, container `genios-rohit-gv2`, port 55440. Scripts: `scripts/local.sh start|load|reset|verify|psql|stop`, and `scripts/export.sh` (read-only production → snapshot) to refresh.
+- **What it holds:** Gmail 1,829 unique mails plus 547 attachment stubs (25 Apr → 28 Oct), Calendar 142 events, Screen 1,249 events (22–28 Oct). Production restarted this org from empty on 21 Oct and re-captured on 22 Oct, so **22–28 Oct is a measured first week of a new tenant**, a free onboarding test.
+- **Care:**
+  - `local.env` points `GENIOS_DATABASE_URL` at the copy, but **the model and Composio keys stay live**: a run there can still spend money and fetch mail.
+  - Two columns are encrypted with `GENIOS_CRYPTO_KEY` (`raw_payloads.enc_content`, `screen_session_deltas.payload_enc`).
+  - It holds real mail. **Never copy any of it into the brain repo, which is public.**
+- **Tracer:** `analysis/trace_ideal_items.py i1 f3 …` traces each ideal card mail → gate → signal → file → situation → L2 → card.
+- **To make your own:** run `export.sh` against production with read access, then `local.sh reset`. Production reads need Rohit's permission.
+
+### 9.2 · The notebook prototype (the missing half, built locally)
+
+- **What:** a local prototype of the Intelligence Graph, with one saved page per piece of work, built on the copy to prove the trunk fix on real data before porting it. In `notebook/` beside the copy. Read `CONTEXT.md` first; `BUILD-LOG.md` is append-only.
+- **Phases:** A `evidence.py` (+ `recover.py`, which decrypts the archived mails' stored payload so 635 of 636 have text locally) · B `company.py` (who we are) · C `parties.py` (who is who) · D `works.py` (what is going on: pieces of work) · E `judge.py` + `checks.py` (where each stands, admitted by code) · F `relate.py` (goals and links) · G `cards.py`. Reports: `export.py`, `scorecard.py`, `compare.py` (the side-by-side page), `baseline.py`.
+- **Tables** (`notebook.*`, keyed by `build_id`, never deleted): company, parties, works, work_versions, members, loops, claims, links, goals, held, cards, runs, state.
+- **Run:** `cd notebook && <genios-brain .venv python> -m nb.cli <cmd> --build <id>`. A build records its as-of instant and model on its first writing command; a different one is refused. Tests: `pytest -q tests`. **Never call a model in a test.** All real calls go through `nb/llm.py`, capped at $20 over all builds.
+- **Build `b2`:** as of **23 Oct 01:40 UTC (07:10 IST)**, the ideal's own morning, on `claude-sonnet-5`. Phase B $0.10 (15 pursuits), C $0.66 (441 parties), D $1.11 (417 works + 4 waves, 408 noise threads), full judge (377 ok, 85 held changes, 41 asking the founder), relate (15 goals, 8 links, 1 merge). 63 open cards. **Total $8.41**, about 17 minutes of model time. The judge takes about 8 seconds a page (379 calls in 7.7 min at 8 at once).
+- **Decision taken locally (Rohit can reverse it):** the notebook reads the recovered text of archived mail. Production keeps archived words from models on purpose.
+- **Trap found:** the full judge schema returned API 400 **"The compiled grammar is too large"** on 12 of 12 calls. Each third compiled alone. The page was shrunk to fit (no confidence words, no links, plain-string dates). **Probe before adding any field** (failed compiles cost $0).
+
+### 9.3 · What `b2` proved, and what it broke
+
+- **Proved:** the saved-page approach finds the work. All 17 visible ideal items were found as pieces of work, 4 same, 2 close, 4 partly. The intro platform's 500 mails were split well. Goals matched 6 of 10.
+- **Broke** (each is now a planned fix):
+  1. 56 cards beyond the ideal's 20, mostly stale July scheduling dates and "confirm whether X happened". Cause: a date made a card, and there was no lifecycle.
+  2. UTC only, so 07:10 IST read as "the 11:30 panel is now" (`f1`).
+  3. The playbook's "silence = soft no" beat "the follow-up after a call is ours" (`i3`, `i2`).
+  4. Facts didn't travel between pages (`i1` opposite).
+  5. The renewal was still filed as noise (`c2`).
+  6. Who owes the move was misread (`b3`).
+  7. The intro platform became one goal of 152–163 works, and new offers never surfaced as yes/no (`b1`).
+  8. Goals with the wrong grain and no target, plan or progress; two link sets disagreeing.
+  9. Every mail treated as the founder's (no visibility), fine for one founder, wrong for a team.
+- **Side-by-side page:** `notebook/output/b2/compare.html` (with `notes.json` hand reads). **Private: holds real mail. Never publish it.**
+
+---
+
+## 10 · The fix: five parts and four loops
+
+Everything is in `speedrun008/GeniOS-013/`. Each part folder has `01` what exists (measured) · `02` what fails and why · `03` expected vs happening · `04` **decisions and the step-by-step plan, each step with What, Guards, Tests, Done when** · `05` production level · `06` a new customer · `07` **the full specification** · `08` the requirements trace.
+
+### 10.1 · The five parts (hard boundaries)
+
+| Part | Owns | Never does | Key plan content |
+|---|---|---|---|
+| **P1 Orchestrator** | What runs, when, for which situation or goal, in what order, at what cost | Judge, store a conclusion, word a card, make a model call of its own | The company clock (IANA zone, local days, working week, holidays; local hours 02:00 Maintain, 06:00 daily pass, 08:00 brief, Sunday 03:00 weekly, all per-tenant data). A **closed list of nine triggers**, each with a producer: `new_evidence`, `date_rung`, `news`, `goal_changed`, `founder`, `maintain`, `need_met`, `outcome`, `human_ask`. A **date index** (every dated thing, with rungs at 7 days, tomorrow, today and passed; one due per card = its act-by). Evolve as sweeps of at most 10 subjects, one transaction each. Onboard in two waves (30 days of mail + calendar ±14 days, then up to 365). Act, Maintain. Spend in six priority classes with 60% reserved for "founder acted" and "owed or dated today/passed". A run ledger (`loop_runs`) with one closed reason list. Switches with one gate function and a per-tenant parity gate. A worker process and queue (`loop_wakeups`, SKIP LOCKED, leases). The event-time replay and drills. Steps P1-1 … P1-13, relief R1 … R9 for today's product |
+| **P2 Notebook** (L3 Context Graph) | The evidence and the conclusions: company page, parties, business situations (pages), goals, loops, claims, links, founder acts. The code admission that runs before anything is kept | Decide what to conclude | Stable situation ids; the goal object (target, plan, progress, status, next move, parent); one link set; lifecycle (states, quiet work, leases, reopen within 90 days); versions; new evidence kinds (Screen, founder acts, executions); facts travel to five audiences; admission laws A-1…A-32 and invariants I-1…I-28; retention that follows the work. Steps P2-0 … P2-26, Q1–Q3 |
+| **P3 Plane D** (domain expertise) | What a professional knows, per department and kind of work: playbooks, rules with conditions, stages, durations, and how it reaches the model | Reason | **Reuse the built compiler**; join it to the model path; the bridge renders whole packages, conditions included; choose knowledge without an accepted brief line; read unstaged playbooks; fill the founder's missing kinds of work; Rohit reviews Founder Office; one act approves AND switches on; a test case for every unit; fix the two wrong items. Steps P3-0 … P3-23, guards D-1…D-26 |
+| **P4 Plane R** (reasoning) | How a professional thinks: the model as the expert, a reasoning library of versioned units, calculators (clock, turns, counts, numbers), precedence, citations, company patterns, goals as goals | Store, render | Fifteen V1 units on one 24-key contract, laws L-1…L-12, about 70 tools, the run as ten components with one transaction per sweep, checks RC-1…RC-33 (printed ids only, one repair), fourteen outcomes, the material-change gate and delta reasoning, **one shared retry allowance (at most one extra paid call per input, never a third)**, receipts and replay, **one judge in the product per tenant at the parity gate** (the test-mode decider retired). Steps P4-0 … P4-17, guards RG-1…RG-34 |
+| **P5 Cards** | When intelligence is raised, what it says, which goal it moves, rank, versions, closing, and what the person can do (Done, Delegate, Later, Feedback, Answer) | Judge the situation behind it | **One card per situation, raised only when the reasoning says a person is needed** (a date wakes a judgment, never makes a card). Gate G-1…G-9; card contract CC-1…CC-28; kinds, severity and rank as hard constraints; every card names its goal; cards from goals; done-when and closing on proof; held text never shown; "you", never the founder's name; one reader (`card-read.ts`) on every surface; delegation with a task contract; one card path in the product. Steps P5-0 … P5-15, guards CG-1…CG-31 |
+
+### 10.2 · The four loops (run across all parts)
+
+| Loop | Chain |
+|---|---|
+| **Onboard** | a new customer's data → notebook → situations → goals (proposed) → founder confirms → intelligence per goal step. Phases 0–8, a one-time budget (~$10 for 6 months, $15 for 365 days), "Ready" only after the first judgments |
+| **Evolve** | new data **or a due date** → the open situations and goals it touches → page updated → goal updated → card updated or closed. After a 10-minute quiet window, plus a 06:00 daily pass. A quiet day costs 0 calls; a normal day costs under $0.50 |
+| **Act** | the card → the founder's decision, or a person or agent → a **verified** outcome (a report is not proof) → notebook → goal progress |
+| **Maintain** | nightly and weekly over the whole notebook: lifecycle, re-asks, predictions scored, patterns, health, the brief on its own job |
+
+### 10.3 · The ten rules every step follows
+
+1. One source of truth per rule: in Plane D or Plane R as a versioned item, never in prompt text.
+2. The model judges; code remembers, calculates and checks. No score decides on its own, and the model never invents a number, id or quote.
+3. Nothing is kept unless backed: every claim cites evidence and code checks it. A refused change is held with its reason, never silently dropped.
+4. Unknown is not zero. An absence counts only when the source was read in full.
+5. Time is local: the company zone and UTC on every instant.
+6. Prove it in the notebook first, then port.
+7. Measure before and after every step on the acceptance set, and write it in `08-LOG`.
+8. Attribute every failure to a part and an item before fixing it, and fix it at that source.
+9. One writer per file; a step isn't done without tests, a measurement and Rohit's look.
+10. Fixed words: notebook, business situation, goal, intelligence (card), Plane D, Plane R, orchestrator, loop; layers as L1 Signals … L6 Learning.
+
+---
+
+## 11 · Decisions taken while checking the plan (30 Oct)
+
+While checking P1 against 479 requirements, several cross-part disagreements were found and settled in the documents. These are binding now:
+
+- **Retries:** one input gets at most **one extra paid call**, across the repair, the generic-answer retry and the timeout or model-error retry together. That is at most 2 paid calls, never a third. It is written once in P4 07 §15. P1 adds no attempt; it parks the subject. A parked subject is recovered only when its input changes, or once after a provider-wide outage.
+- **Transactions:** one transaction per **sweep** (P4 07 §2.7, unchanged), with one savepoint per subject. An Evolve run is several sweeps in order: situations, each dependents round, then goals with cards. A crash loses only the open sweep's writes, never answers already received (the answer store); a rerun applies them at 0 calls.
+- **One due per card:** `card_due` follows P5's `by` (the act-by for a decision; the next check for a waiting card). Surface times and reminders are rungs, never the due.
+- **Reason codes:** one closed list in P1 07 §10.1 (`domain_off`, `zone_unconfirmed`, `not_due`, `embargo`, `readiness`, `past_useful_until`, `duplicate` …). A code outside it fails guard OG-8.
+- **Daily cap:** a founder-size tenant's default daily judgment cap is **$0.50**. It changes only by a decision recorded in `08-LOG`. Severity-4 items pass the cap.
+- **Concurrency:** one Evolve run and one Act run per tenant at a time, never two runs on one subject. The product starts with **1 worker** and moves to 4 only after the load drill passes.
+- **Founder defaults:** a new founder tenant gets Founder Office and Admin live, and Sales and Support **off** (shadow only for a company that sells or supports).
+- **New tenants** move to the new path only after the golden tenant and two more design partners pass the acceptance set.
+- **Reopen:** a resolved situation reopens on new evidence only within 90 days (or the playbook's stop rule); after that the evidence is new work.
+- **`f2` on 24 Oct:** verify first ("No confirmation by that day"), and missed only on the person's word.
+- **Light runs:** a document the person supplies, a met evidence need, and "look again" (`human_ask`) each get a one-call delta run. `human_ask` runs even when nothing is new.
+- **Wave 1 of onboarding:** the last 30 days of mail plus the calendar 14 days back to 14 days ahead; wave 2 goes up to 365 days.
+
+---
+
+## 12 · What is fixed, and what is not
+
+**Be clear on this:** "fixed" here means **designed, specified and checked in the plan**. No product code has changed yet.
+
+| Part | Planned in full (07 spec + 08 trace) | Requirements checked | Final result |
+|---|---|---|---|
+| P1 Orchestrator | ✅ | 479, six full rounds | 447 covered, 19 another part's (recorded), **13 partly** (listed in P1 08) |
+| P2 Notebook | ✅ | 309, four rounds | ≈307 covered |
+| P3 Plane D | ✅ | 195, four rounds | ≈188+ covered |
+| P4 Plane R | ✅ | 500, rounds + a regression sweep | 454 covered, 46 another part's, 0 partly |
+| P5 Cards | ✅ | 607, seven rounds + two sweeps | 592 covered, 15 another part's, 0 partly |
+
+**P1's 13 partly rows** are small seams. For example: what a waiting card with no act-by shows as its due; which job fires a snooze return; when a run closes `requeued`; one stale wording in 04. They don't block building. They are marked 🟡 in `P1-ORCHESTRATOR/08-REQUIREMENTS-TRACE.md`. Close them when you build the step they belong to.
+
+**Not done yet:** a combined build order across all five parts, and one P1–P5 alignment check (names, contracts, rules nobody needs, anything written and never read). Rohit will open those.
+
+**Nothing in the product changed**, except the documents in the repo.
+
+---
+
+## 13 · What Harsh should do, in order, and what to watch out for
+
+### 13.1 · Read, in this order (about 2 hours)
+
+1. `GeniOS-013/09-WHAT-WHY-HOW.md`: what GeniOS is, the `i1` test, the parts, the loops, the eight causes, the ten rules.
+2. `GeniOS-013/10-ACCEPTANCE.md`: the 20 cards, 10 goals and the replay everything is measured against.
+3. `01-WHAT-IS-HAPPENING.md` (the 28 Oct reasoning on `i1`) and `05-THE-WORK-OBJECT.md` (the page).
+4. For the part you build: its `02` (why it fails), then `04` (the steps), then `07` (the spec). Keep `08` open to see which requirement each section serves.
+
+### 13.2 · Build order
+
+- **First, cheap, independent:** P1-1 the clock, P1-2 the run ledger, P1-7 the budget and its order; P2-0 the company page and stable ids; P3-0 and P4-0 (make each plane measurable); P5-0 the card census.
+- **On the product the same day:** R1 (measure today's runs + the release gate), R3 (the company's time in every dossier and clock), R7 (name the wake-ups right), R8 (make switches and ticks bind). Then R2 (take the whole-company passes off the per-mail chain), R4 (the brief on its own job), R5 (stop paying twice for a bad answer).
+- **Then the trunk:** P2's goal object, lifecycle, admission and pages (P2-1, P2-3, P2-8, P2-17), with P3-7 (compiler → model path) and P4-5 (checks with printed ids). Then P1-4 (Evolve: wake-ups, date index, runner), then P4-10/11 (the run and its result) and P5-1 (one card per situation, from pages).
+- **Then the rest per each part's plan table**, ending in P4-17 and P5-14 (one judge and one card path in the product, per tenant, at P1's parity gate).
+- Each `04` has a "Needs" column. Never build a step before what it needs.
+
+### 13.3 · How each step is built
+
+- **Notebook first, then the product.** Every step passes on the local copy and the notebook before any production change.
+- **Beside, not instead.** New code goes beside the old path, measured on the golden board and the design partner's copy. Old lanes stop delivering only after the parity gate passes, and only by an activation row.
+- **Measure before and after** on `10-ACCEPTANCE` (`nb.cli scorecard` / `compare`; `scripts/ideal_card_gap.py` for the product), and write the numbers in `08-LOG`. A step that makes any line worse is not done.
+- **One writer per file**; guards run per group of 2–3 coupled steps; full suites in CI.
+
+### 13.4 · Watch out for
+
+- **The public repo:** `genios-brain` is public. **No real names, emails or amounts from mail** in it. Use the ideal ids. The local copy, `compare.html` and the ideal file are private.
+- **Production:** read it only with Rohit's permission. Never write to it while building a step; use the copy.
+- **Switches:** check the policy row and the switch registry against the ledger. Today a switch can report success and do nothing. **Do not arm calibration's auto-mute** (the one-line `card_level` fix arms unattended muting; that is Rohit's decision D13).
+- **The old paths are still live:** six card writers, the test-mode decision maker, L3's resolution model calls, support readings for every tenant. Retire each only via its step and the parity gate.
+- **Model calls:** Claude 5 models think by default, and thinking eats `max_tokens` (a Sonnet pass once truncated 203 of 203). Set thinking and budgets explicitly. Probe JSON schemas before adding fields (the grammar-size limit).
+- **Python:** local QA runs 3.13 and CI/production run 3.11. A test green locally has failed CI before.
+- **CI was already red** on `speedrun008` before these docs (the `database` job, `test_activate_tenant.py::test_a_typo_in_a_domain_is_refused_before_anything_is_written`, and `golden-pg`), and `/health` reports build `dev`. Fixing both is the first production item (R1).
+- **Golden tests use the ideal reader**, so they prove plumbing, not intelligence. The real test is the acceptance set with a real model, under a cap.
+- **Costs:** onboarding is a **one-time** cost (~$8–15); the running target is under ~$20 a month of reasoning plus reading new data. Today the product costs about $5.67 a day (~$170 a month), and the old lanes are about 29% of that.
+
+---
+
+## 14 · Where everything is
+
+| What | Where |
+|---|---|
+| The plan (public) | `genios-brain` repo, branch `speedrun008`, folder `speedrun008/GeniOS-013/` (pushed `96c6546a`) |
+| Start page | `GeniOS-013/00-START-HERE.md` |
+| The why, the parts, the rules | `GeniOS-013/09-WHAT-WHY-HOW.md` |
+| The acceptance set | `GeniOS-013/10-ACCEPTANCE.md` |
+| Every number with its SQL | `GeniOS-013/06-MEASUREMENTS.md` |
+| The append-only log | `GeniOS-013/08-LOG.md` |
+| Each part | `GeniOS-013/P1-ORCHESTRATOR/` … `P5-CARDS/` (files 01–08) |
+| Local copy of the org (private) | Rohit's Mac: `~/MacBook Air Professional/My Repos/Local Database (Rohit_Org_GV2)/` (`README.md`) |
+| Notebook prototype (private) | same folder, `notebook/` (`CONTEXT.md`, `BUILD-LOG.md`, `nb/`, `tests/`, `output/b2/compare.html`) |
+| Ideal dashboard (private) | `~/Downloads/GeniOS/GeniOS-Ideal-Dashboard/` (`src/02-data.js`) |
+| Ideal-card tracer | `Local Database (Rohit_Org_GV2)/analysis/trace_ideal_items.py` |
+| Product code read for the plan | `harsh/mvp` at `7d2c3615` (28 Oct) and `a729b968` (29 Oct) |
+
+---
+
+## 15 · Corrections: things we said earlier that turned out wrong
+
+These were measured again. Use the corrected numbers.
+
+- "Half the mailbox is unread / whole mails parked for an attachment" was **wrong**. 547 parked rows are attachment stubs whose mails were read; 1,193 of 1,829 were emitted.
+- "A new mail waits 147 min for L2" was **wrong**. That was Screen sessions in the warm lane. Mail is read 36–54 min after capture; its chain ends 123–140 min after capture.
+- "Every judgment re-reads 70,000 characters" is **misleading**. A paid judgment reads about 11,000 (max 35,000). 70,000 is a mean over all rows, driven up by one oversized file refused 31 times.
+- "138 of 138 runs started by new mail" **overstates** it. The trigger field is the constant `bundle`; 28 of 67 chains read no new event at all.
+- "80 of 264 files judged" mixed units: the 80 L2 subjects are 48 files and 32 seeds.
+- At "Ready" the brain had reviewed **0** files, not 3. "Ready" came through the busy path after a 15-minute wait.
+- Onboarding cost: $17.55 from connect to Ready ($13.43 of it L1 reading), $27.78 in the first 24 h. Not "$25.44 on the onboarding day", which included $3.66 spent before the reconnect.
+- The claim check held **57 of 63** (first check) and **9 of 23** (newer), not 64/70 and 9/26.
+- "No rule has a checkable condition" was **wrong**: 50 of 291 rules and 78 of 238 playbooks carry them, though nothing evaluates them.
+- "The L2 judge is in shadow" was **wrong** for this tenant: it has been live since 21 Oct (`l2_cards` on).
+- "No traction facts" was **wrong**: 80 amounts are captured, stored on a person node and never compared.
+
+---
+
+## 16 · Words
+
+| Word | Meaning |
+|---|---|
+| Notebook | GeniOS's memory of the company: the evidence it read and the conclusions it reached, versioned and backed by evidence. L3 = Evidence Graph + Intelligence Graph |
+| Business situation (page) | One piece of work in motion (an application, an investor conversation, an introduction, a renewal, a hire), with a saved page: where it stands, whose move it is, what is owed, what should happen next and by when |
+| Goal | An end the company drives toward over weeks or months: a target, a plan, progress (or "unknown, why"), a status and a next move. Proposed by GeniOS, confirmed by the founder |
+| Intelligence (card) | What GeniOS says to a person: what to do and why, for which goal, by when, and how we'll know it's done |
+| Plane D / Plane R | Domain expertise (what a professional knows) / reasoning (how a professional thinks) |
+| Orchestrator | What runs when |
+| Loop | Onboard, Evolve, Act, Maintain |
+| File (today) | One counterparty's correlations, by sender. The unit the plan replaces |
+| Absence card | A card about something that did not happen (no reply, a missed date) |
+| Parity gate | Per tenant and per type, the new path must match or beat the old on the acceptance set before the old path is switched off |
+| `b2` | The notebook build as of the ideal's morning (23 Oct, 07:10 IST) |
+| R-7 / R-9 / R-10 | Model sites: the expert review / the L2 judge / the card writer |
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script>
+(function(){
+  var src=document.getElementById('md').textContent;
+  try{
+    if(window.marked){
+      var out=document.getElementById('out');
+      out.innerHTML=marked.parse(src,{gfm:true});
+      out.querySelectorAll('table').forEach(function(t){var d=document.createElement('div');d.className='tbl';t.parentNode.insertBefore(d,t);d.appendChild(t);});
+      var toc=document.getElementById('toc');
+      out.querySelectorAll('h2').forEach(function(h,i){if(h.textContent==='Contents')return;h.id='s'+i;var a=document.createElement('a');a.href='#s'+i;a.textContent=h.textContent;toc.appendChild(a);});
+    }
+  }catch(e){}
+  document.getElementById('theme').onclick=function(){var r=document.documentElement;var dark=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);r.setAttribute('data-theme',dark?'light':'dark');};
+  document.getElementById('dl').onclick=function(){var b=new Blob([src],{type:'text/markdown'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='HARSH-NOTES.md';a.click();};
+})();
+</script>
+</body>
+</html>
