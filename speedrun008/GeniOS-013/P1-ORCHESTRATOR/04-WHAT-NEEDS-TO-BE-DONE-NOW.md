@@ -103,6 +103,7 @@ Each has a recommendation. Saying "go" accepts all of them; name any you want ch
   6. the rest.
 - **Before a run:** a dry-run estimate of calls and cost per phase.
 - **At the cap:** stop, and list what was skipped, with the reason.
+- **At most 10 subjects per sweep** (P4 07 §2.7): the rest are carried to the next sweep with a watermark and listed as skipped, never dropped.
 - **A failed answer is retried once, with the error shown to the model.** It is never re-asked blindly.
 - **Tests:**
   - a run with a tiny cap judges the top items and lists the rest as skipped;
@@ -116,7 +117,7 @@ Each has a recommendation. Saying "go" accepts all of them; name any you want ch
 1. **New evidence** since the last instant (mail, calendar, Screen):
    - evidence in a known thread wakes that thread's situation;
    - a new thread wakes "place".
-2. **The date index:** each page's expected-by date, each open loop's due date, each stated deadline and each goal's due date. One fires when it crosses a rung since the last instant, in local days (P1-1).
+2. **The date index:** each page's expected-by date, each open loop's due date, each stated deadline and each goal's due date. One fires when it crosses a rung since the last instant, in local days (P1-1). Each wake-up carries its `rung_kind` (a stated date reaching today; an expected-by date, set from the party's own reply pace at 5 or more instances, else the stage's prior; a stage past its normal length; a verify-by date; a calendar event's end instant, fired at minute grain rather than by local day), as P4 07 §2.1 maps them.
 3. **A goal changed:** confirmed, edited, or its status moved. It wakes the goal's linked situations.
 4. **The founder acted** (P1-5).
 5. **The schedule** (P1-6).
@@ -126,7 +127,7 @@ Each wake-up has a key (build, subject, trigger, rung or evidence id), so it can
 **4b · The runner.** `nb/loops.py`, `evolve(build, until)`. One run per step:
 1. read the wake-ups;
 2. place new threads, using `works.py`'s own functions (`update.py`'s older copy of the rules goes);
-3. judge the touched situations, from their page plus what is new;
+3. judge the touched situations, from their page plus what is new; then mark their dependents dirty (P2's `dependents()`) and re-run only those, to a fixed point with a cap of 3 rounds, writing a receipt on non-convergence (P2 §10.3);
 4. write goal pages for the touched goals;
 5. open, update or close cards;
 6. close the run in the ledger.
@@ -138,7 +139,8 @@ The command `nb.cli update` stays, and calls the runner.
 - a day with one new reply re-judges one situation and its goal;
 - a deadline crossing "today" re-judges that situation with no new mail;
 - the same rung never fires twice;
-- an expected-by date from July that was already judged as passed does not fire again.
+- an expected-by date from July that was already judged as passed does not fire again;
+- a second full sweep is never run: only dirty dependents are re-judged, and a fixed point that does not converge in 3 rounds writes its receipt.
 
 **Done when:** the replay (P1-8) passes, and each day costs under $0.50.
 
@@ -216,7 +218,8 @@ The command `nb.cli update` stays, and calls the runner.
 - **What:** on P1-3's own build, three disruptions:
   - a crash in the middle of each phase;
   - a restart during wave 2, the way a deploy restarts a process;
-  - a cap hit in wave 2.
+  - a cap hit in wave 2;
+  - a second seat connecting a mailbox: its threads join the existing investor and hiring situations, an item only that seat holds stays private to the seat, and the company patterns gain n.
 
   It writes the onboarding report: time to first intelligence, time to everything judged, cost per phase, what was skipped.
 - **Done when:** the targets in [06](06-NEW-CUSTOMER-ONBOARDING.md) §5 are met, with every disruption resumed and nothing paid twice.

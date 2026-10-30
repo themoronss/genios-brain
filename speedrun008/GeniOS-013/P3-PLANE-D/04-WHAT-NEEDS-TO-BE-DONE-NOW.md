@@ -335,21 +335,21 @@ Plane D needs these from the other parts. Where Plane D has its own side (a fiel
 | Hold approval lead times, critical vendors and subscriptions, and an owner per area on the company page (done in P2 07 §3.4) | Units name them as `org.*` paths; without a writer they cannot be admitted | P2-0, P2-26 |
 | Start the Behaviour brain observe-only ("observed, n of m"), and add a demotion rule when later evidence contradicts a promoted entry (done in P2 07 §8) | A unit adapts to an observed entry only as a labelled prior | P2-20 |
 | Mirror Plane D's stage ladders (done in P2 07 §4.10); carry `also_types[]` and `qualifier` on the situation (done in P2 07 §4.2); record the goal package's units on goal versions (done in P2 07 §6.1) | Selection by type, stage and qualifier; goal knowledge | P2-14, P2-1 |
-| Replace D-P4-2's order with the Atlas's precedence, and resolve a unit against a brain entry by it | One precedence, in one place | P4-2 |
-| Build each plan from the package's `reasoning_bindings`, and keep only domain-free methods in the pattern library, referring to Plane D units by id (remove the three rules that repeat Plane D's) | One owner per rule (07 §0 rule 11) | P4-1, P4-8 |
-| Evaluate each selected unit's `derivation` in the tool gateway, printing the result with its tool id and inputs; build `notice_date` and `decision_deadline` | The model never computes a date | P4-3 |
-| Check a proof claim against the unit's `evidence_requirements` | What never counts as proof | P4-5 |
-| When the package says `expected_states: none`, a hypothesiser may propose expected states labelled "not authored", which never ground an authoritative card | The Atlas's fallback for missing knowledge | P4-8 |
-| Include the goal package in the goal dossier | Goals reasoned with knowledge | P4-6 |
-| Show what Plane R lists on the Expertise page (units or the pattern library) | The ideal's Expertise page | P4-1 |
+| Replace D-P4-2's order with the Atlas's precedence, and resolve a unit against a brain entry by it | One precedence, in one place | P4-2 (done in P4 07 §4) |
+| Build each plan from the package's `reasoning_bindings`, and keep only domain-free methods in the pattern library, referring to Plane D units by id (remove the three rules that repeat Plane D's) | One owner per rule (07 §0 rule 11) | P4-1, P4-8 (done in P4 07 §1.4, §1.6, §2.3) |
+| Evaluate each selected unit's `derivation` in the tool gateway, printing the result with its tool id and inputs; build `notice_date` and `decision_deadline` | The model never computes a date | P4-3 (done in P4 07 §3.2) |
+| Check a proof claim against the unit's `evidence_requirements` | What never counts as proof | P4-5 (done in P4 07 §6.2, RC-6) |
+| When the package says `expected_states: none`, a hypothesiser may propose expected states labelled "not authored", which never ground an authoritative card | The Atlas's fallback for missing knowledge | P4-8 (done in P4 07 §13.5) |
+| Include the goal package in the goal dossier | Goals reasoned with knowledge | P4-6 (done in P4 07 §9.2) |
+| Show what Plane R lists on the Expertise page (units or the pattern library) | The ideal's Expertise page | P4-1 (done in P4 07 §1.8) |
 | Render a card with grounding `unreviewed` as an observation; take "done when" and "if you don't" from the outcome definition; take delegation rights from the authority boundary; add "wrong rule" and "missing step" to the feedback menu | Review states and the knowledge reach the card | P5-1, P5-4 |
 | Build the Expertise, Brain and Reasoning-receipts pages on P3-20's data, with the locked domains and "Request" | The ideal's pages | P5 (a new step) |
 | Capture the founder's first-screen priorities as Adaptive leases, and confirm `customer_kind` in the onboarding drill | Day-one adaptation; default domains | P1-3, P1-10 |
 | Compare each activation row with the packages produced (the switch registry) | A switch must change behaviour | P1 §4 |
 | Read the active pack pointer before planning an execution | Execution only from a run under the active pack | L4 (input gate) |
 | Read `_schema/authority_actions.yaml` as the one action vocabulary, map `ActionKind` and `EXTERNAL_EFFECT_KINDS` to it, and publish the authority rule table in it; P2's `rightly_founders` reads the package's `human_only` list | One list, so D-21 has a table to agree with | L4 (`contracts/execution.py`), P2-20, P5 |
-| Record a situation's expectations from the package's `expected_states`, with the unit id; set `if_missed = escalate` and `escalate_to` from a stage's `escalate_when` | Reality compared with an expectation; escalation has a reader | P2 (expectations, P2 07 §4.3), P4-8 |
-| Hold a page that cites a Case unit as evidence; check a qualifier judged by L2 (`answered_not_the_question`) against the quoted ask and reply | A case is never proof; a judged qualifier is checked | P4-5 |
-| Cap the lane at investigation or observation when coverage is `none` or `thin`, and make no recommendation | No recommendation without knowledge | P4-8, P5-1 |
-| The frame calculator reads the capability's maturity level, and keeps the frame at medium or below below Senior-grade; and no judgment resting on a capability below Senior-grade grounds an authoritative card | The maturity cap | P4-3, P5-1 |
+| Record a situation's expectations from the package's `expected_states`, with the unit id; set `if_missed = escalate` and `escalate_to` from a stage's `escalate_when` | Reality compared with an expectation; escalation has a reader | P2 (expectations, P2 07 §4.3), P4-8 (P4's part done in P4 07 §1.4, `r.expected_actual`) |
+| Hold a page that cites a Case unit as evidence; check a qualifier judged by L2 (`answered_not_the_question`) against the quoted ask and reply | A case is never proof; a judged qualifier is checked | P4-5 (done in P4 07 §6.2, RC-7, RC-8) |
+| Cap the lane at investigation or observation when coverage is `none` or `thin`, and make no recommendation | No recommendation without knowledge | P4-8, P5-1 (P4's part done in P4 07 §7.3, RC-10) |
+| The frame calculator reads the capability's maturity level, and keeps the frame at medium or below below Senior-grade; and no judgment resting on a capability below Senior-grade grounds an authoritative card | The maturity cap | P4-3, P5-1 (P4's part done in P4 07 §7.1) |
 | Write unit mutes and pack configuration as data, staged | Learning reaches selection only through data | L6 |

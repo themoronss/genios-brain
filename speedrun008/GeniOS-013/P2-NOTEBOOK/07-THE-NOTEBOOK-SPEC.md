@@ -513,7 +513,7 @@ A situation may hold several expectations. Each has:
 - **A founder decision** may settle a loop. So may an execution outcome in state *verified*, never *reported*.
 - **A condition is `met`** only through an L2 result that cites a member event dated after the opening and matching `satisfied_when`. Company-level facts (§10.2, audience 5) wake the situations holding open conditions on their topic.
 - **Nothing else settles a loop:** a meeting, a bounce, an unread archived mail, or "a reply exists" (that last one is only a hint).
-- **A bounce makes the loops waiting on that recipient from that send `moot`.** The bounce notice is cited, and a loop owed by us opens: "re-send to a working address" (`i5`, `c1`).
+- **A bounce makes the loops waiting on that recipient from that send `moot`.** The bounce notice is cited, and a loop owed by us opens: "re-send to a working address" (`i5`, `c1`), except for an address of kind service or no-reply, or a send older than the situation's `stale_after`, which are recorded on the party only (P4 07 §11).
 - **Meetings owe a follow-through.** For every meeting that is past, not cancelled and has an outside attendee, code opens an `ask` owed by us: "follow-up after <meeting, local date>". It is due one working day after the meeting ends.
   - It is `kept` only by our outbound to an attendee, or their domain, after the meeting ends. It is released by the founder. A `fulfils` link joins it to what kept it: the mail, the decision or the task.
   - **A decision is recorded** after a meeting when a founder decision of kind `approve`, `choose_option` or `answer`, or a decided DecisionObject, is dated after it (`meetings_without_decision`).
@@ -611,7 +611,7 @@ Each admitted change writes **one** interpretation row. Nothing updates a versio
 | `decision_need` | `{state: none · required, reason}`. When required, a DecisionObject is minted (§7.1) |
 | `evidence_need_ids` | The EvidenceNeeds this version raised or still waits on (§9.3) |
 | `confidence` | Six dimensions (§9.4), **computed by units**, each with the tool id that computed it and a reason when not strong |
-| `surface` | `{lane: decision · investigation · conflict · question · waiting · monitor · suppress, why_not, resurface_when}`. `why_not` is closed: `below_gate` · `shadow` · `rolled_up` · `waiting_on_them` · `snoozed` · `duplicate` · `already_handled`. Appended by P5-1 through admission, as `rule:p5-surface` |
+| `surface` | `{lane: decision · investigation · conflict · question · waiting · monitor · suppress, why_not, resurface_when}`. `why_not` is closed: `below_gate` · `shadow` · `rolled_up` · `waiting_on_them` · `snoozed` · `duplicate` · `already_handled` (set by L2, P4 07 §7.3) · `budget` · `cooldown` · `muted` (set by L5 on every card it does not deliver). Appended by P5-1 through admission, as `rule:p5-surface` |
 | `prediction_ids` | Predictions made (§7.5) |
 | `expertise_refs` | `[{item_id, plane D, R or company (a pattern or Behavior id, with `computed_at`), version or pack hash, review_state}]` printed and cited |
 | `tools` | `[{tool_id, name, version, value, input evidence ids}]`, exactly as printed in the dossier |
@@ -922,7 +922,7 @@ It is minted only when L2 marks `decision_need = required` (GeniOS-008 L3-4). It
 |---|---|---|---|---|
 | **Expert** | What any competent professional knows | Git (Plane D, P3) | Human review only | L6 may only open a review item, never write |
 | **Organization** | What is true about this company | the company page (§3.4) | The founder: accepted lines, decisions | A proposed line is accepted by the founder |
-| **Behavior** | How this company actually works: "you reply to rejections within 0–7 days (4 of 4)", "broadcast updates get no replies; personal notes do" | `learned_brain_entries(brain = behavior)` from `learning_objects` | Code, from counted evidence (numerator, denominator, thread and mail ids, computed_at) | Promoted past a threshold of independent instances (at least 4; P4-7 fixes it) and a governance check. Until then an entry is printed as "observed, n of m" and carries weight only as a labelled prior; a promoted entry that later evidence contradicts is demoted |
+| **Behavior** | How this company actually works: "you reply to rejections within 0–7 days (4 of 4)", "broadcast updates get no replies; personal notes do" | `learned_brain_entries(brain = behavior)` from `learning_objects` | Code, from counted evidence (numerator, denominator, thread and mail ids, computed_at) | Promoted past a threshold of independent instances (at least 5 distinct situations, set by P4 [07](../P4-PLANE-R/07-THE-PLANE-R-SPEC.md) §12.3) and a governance check. Until then an entry is printed as "observed, n of m" and carries weight only as a labelled prior; a promoted entry that later evidence contradicts is demoted |
 | **Adaptive** | What matters most right now | leases (§5.4) | Founder, L6, code | Always expires |
 
 **Persona** is not a fifth brain.
@@ -979,6 +979,9 @@ A field that is unknown is stored as `unknown {reason}`, never defaulted.
 | `status` | `open` · `met` · `unavailable` |
 | `met_by`, `met_at` | — |
 | `max_cost_usd`, `expires_at` | As the table has today |
+| `required_evidence` | The kind, the party and any text span the evidence must hold; a need without it cannot be matched and is refused (P4 07 §8) |
+| `time_range`, `fields`, `visibility` | The window to search, the fields wanted, the run's viewer bound (P4 07 §8) |
+| `stop_when`, `idempotency_key` | `met` · `unavailable` · `expired` · `budget`; `hash(work_id, question)`, so a repeat raises none (P4 07 §8) |
 
 - **A HOLD raises a need** that names the missing fact (`hold_needs.py`, wired).
 - **On each new member evidence,** code matches open needs by acceptable source kind and party (0 calls). A match marks the need met, links it, and wakes the situation through P1.

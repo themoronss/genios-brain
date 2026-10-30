@@ -248,7 +248,7 @@ Each has a recommendation. Saying "go" accepts all of them.
   - every guard fails on its mutation and passes on the clean tree.
 
 ### P2-9 · One copy of the grouping rules
-- **What:** placement (grouping threads into situations) is L2's judgment. **It moves to P4** as the placement call, run by P1 and admitted here. P4 has no such step yet; it is listed under **Owed by other parts**.
+- **What:** placement (grouping threads into situations) is L2's judgment. **It moves to P4** as the placement call, run by P1 and admitted here: P4-9 (P4 [07](../P4-PLANE-R/07-THE-PLANE-R-SPEC.md) §10).
   - Code's clustering only proposes candidate bundles: registrable domain, one per introduction, system mail about what it names, and a first mail from an awaited party, proposed to its waiting situation first.
   - `update.py` and `works.py` share one copy of those proposals.
   - Continuation adds a mail to a situation only when it brings no new party, by 07 §4.4's code check: no new address or domain, no introduction cue in `body_new`, no L1 introduction signal.
@@ -396,7 +396,7 @@ Each has a recommendation. Saying "go" accepts all of them.
   - **Whose move, by code** (§4.2): `whose_move`, `awaited_party`, `whose_move_since`, `next_actor` and `next_check` on every admission; a differing L2 value is held (A-5).
   - **Dates** (§4.2): the six deadline-like dates, each with its basis (A-7), and `stated_dates` with `valid_to` and `replaced_by`.
 - **Tests:**
-  - `i5` leaves 0 waiting loops on bounced recipients and 6 re-send loops;
+  - `i5` leaves 0 waiting loops on bounced recipients and 3 re-send loops (the three investor sends; the no-reply notice and the 18 Mar one open none, P4 07 §11);
   - `c1` reads "sent 16 Oct · 1 of 2 delivered" from `delivery` rows;
   - a thread is `awaiting_them` after our ask, `answered` after their reply, `closed` when its loop closes and `bounced` after a notice, each with `since` and loop ids; the nightly pass recomputes them; a send with no notice after 24 hours moves from sent to delivered;
   - `i3`'s call opens a follow-through owed by us;
@@ -558,19 +558,19 @@ The reviewers' fixes below belong to another part, so P2 does not edit that part
 | ATLAS-23 | Compare the situation's `fingerprint` before waking a judgment; a re-sent mail or an identical file costs 0 calls | P1-4 |
 | ATLAS-68 | Call `still_open(work_id, since_version)` before every rung and every send; when it is not open or has changed, drop the rung with the why-not "already handled: outcome evidence exists". On resolution, cancel the situation's pending wake-ups. Test: a reminder about a renewal already signed is dropped with that reason | P1-4; P5-6 at send |
 | IDEAL-74, EXP-13 | Wake on `due_dates()` (it now includes `wake_on.at`), and place a first mail from an awaited party through `waiting_for` | P1-4 |
-| EXP-03, FILM-17 | A new step for the placement call: one prompt that places a new thread or tool item into an existing or a new situation, and returns a reason and the evidence ids printed; its schema probed against the grammar limit; golden cases `b1`, `b3`, the intro platform's other offers, and a platform housekeeping mail, which must be placed in the channel work (never in an introduction child) with a reason and printed ids, and makes no introduction card. P2-9 and P2-12 depend on it | P4 (a new step, after P4-8) |
+| EXP-03, FILM-17 | A new step for the placement call: one prompt that places a new thread or tool item into an existing or a new situation, and returns a reason and the evidence ids printed; its schema probed against the grammar limit; golden cases `b1`, `b3`, the intro platform's other offers, and a platform housekeeping mail, which must be placed in the channel work (never in an introduction child) with a reason and printed ids, and makes no introduction card. P2-9 and P2-12 depend on it | P4-9 (done in P4 07 §10) |
 | EXP-03, FILM-17 | Call that placement call at step 4b.2, instead of placing with code | P1-4 |
 | IDEAL-28 | Pass every draft through `settle_text` before approval and send | P1-5 (A3) |
 | ATLAS-80 | Measure the time to the first admitted situation, and to held relationships, commitments and conditions, against the 1-hour and 40-minute targets; or record the gap as an open decision for the owner | P1-10 |
 | IDEAL-33, IDEAL-34, IDEAL-35 | Author the introduction, application and investor stage ladders with exactly the words of 07 §4.10 (P3 07 §2.5 holds the same list), and rename the existing playbooks' stages to them | P3-3 |
 | ATLAS-32, ATLAS-57 | Hold party kinds, their clusters, A-9's kind-fit table and the node types in the Plane D vocabulary the index compiles, so a new domain adds them as content | P3-1 |
-| IDEAL-78, ATLAS-60, EXP-66 | Six confidence calculators (evidence, frame, temporal, causal, authority, coverage) with 07 §9.4's rules, each printing its tool id. Fixtures: `i1` timing medium (the next cohort date is not in the mail), `i3` frame medium, `p1` authority medium, `c1` coverage medium | P4-3 |
-| ATLAS-42 | The calculators `notice_date`, `decision_deadline` (from the company's approval lead time and the observed 75th-percentile latency), `escalation_at` and `verify_by` | P4-3 |
-| EXP-32 | Align activity with D-P2-20 (a percentage may sit beside the count, never as progress), and use 07 §6.1's closed progress reasons; never count the engineer hire as 0 of 1 while its coverage is partial (it is unknown, `not_counted`) | P4-4 |
+| IDEAL-78, ATLAS-60, EXP-66 | Six confidence calculators (evidence, frame, temporal, causal, authority, coverage) with 07 §9.4's rules, each printing its tool id. Fixtures: `i1` timing medium (the next cohort date is not in the mail), `i3` frame medium, `p1` authority medium, `c1` coverage medium | P4-3 (done in P4 07 §7.1) |
+| ATLAS-42 | The calculators `notice_date`, `decision_deadline` (from the company's approval lead time and the observed 75th-percentile latency), `escalation_at` and `verify_by` | P4-3 (done in P4 07 §3.2) |
+| EXP-32 | Align activity with D-P2-20 (a percentage may sit beside the count, never as progress), and use 07 §6.1's closed progress reasons; never count the engineer hire as 0 of 1 while its coverage is partial (it is unknown, `not_counted`) | P4-4 (done in P4 07 §9.3) |
 | ATLAS-51 | When a higher-order situation exists, suppress its members' separate escalations with why-not `rolled_up` | P5-1 |
 | EXP-39 | A news wake-up: when the Notebook offers a milestone or an opened conflict as news (07 §10.2), wake the receiving situations and goals once per item | P1-4 |
-| EXP-33, EXP-39 | The rule also yields `unmeasured` (progress unknown, no missing source, no pending founder decision) and `done` (outcome achieved), and keeps the one-number goal `blocked` until its metric has a verified value and a verifying source in state `full`. P4-4's fixtures stay the test | P4-4 |
-| EXP-39 | On a conflict's news, form or join the "one verified number everywhere" goal | P4-6 |
+| EXP-33, EXP-39 | The rule also yields `unmeasured` (progress unknown, no missing source, no pending founder decision) and `done` (outcome achieved), and keeps the one-number goal `blocked` until its metric has a verified value and a verifying source in state `full`. P4-4's fixtures stay the test | P4-4 (done in P4 07 §9.3) |
+| EXP-39 | On a conflict's news, form or join the "one verified number everywhere" goal | P4-6 (done in P4 07 §9.1) |
 | ATLAS-11 | Store `work_id`, `page_version` and `trace_id` on the card record, so `lineage` starts from the card | P5-1 |
 | ATLAS-29, EXP-08 | A newer situation version makes a new version of the same card, never an edit and never a second card; a broadcast to 33 recipients grows the one-number situation and makes no card per recipient (tests) | P5-1 |
 | ATLAS-30 | After each card decision, append `surface {lane, why_not, resurface_when}` through admission, as `rule:p5-surface` | P5-1 |
