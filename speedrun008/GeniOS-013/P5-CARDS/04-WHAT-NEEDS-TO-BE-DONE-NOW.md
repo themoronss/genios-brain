@@ -417,7 +417,7 @@ Each has a recommendation. Saying "go" accepts all of them.
   - no card and no placeholder card exists before phase 6 writes real ones; "Ready" never shows before phase 6 has written its cards or its reason, and a fixture with zero cards shows its reason, not an empty frame; the first brief holds at most 3 items, each with its evidence and a coverage line, at about hour 2;
   - dropping a proposed goal moves its cards to "not linked" and re-ranks them; confirming one removes the label; editing one re-judges only its linked cards, once; each of confirm, edit and drop changes the cards in the same pass as the press; no card on the first day is dated in UTC; nothing shows as confirmed before the founder confirms it;
   - on a 30-day fixture, `i1` is a question or a "checking" line carrying "History before <date> not read", and after wave 2 adds the earlier rejection it gains one version with what changed and why; `f1` is raised in wave 1 and never held back; no card disappears while wave 2 re-judges;
-  - a fresh founder fixture tenant has the Founder Office live and Sales and Support in shadow, no hand-written switch row, 0 cards from the domain `general` or any old rule lane, and its first cards come from admitted page versions.
+  - a fresh founder fixture tenant has the Founder Office live and Sales and Support off (in shadow only for a fixture that sells or supports, P1 07 §11.6), no hand-written switch row, 0 cards from the domain `general` or any old rule lane, and its first cards come from admitted page versions.
 - **Done when:** the drill passes on the card side; the onboarding report shows time to first intelligence at or under 2 hours, at most 30 open cards and the cost within P1's onboarding budget (under $10).
 - **Size:** M.
 

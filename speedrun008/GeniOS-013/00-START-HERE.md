@@ -21,7 +21,7 @@ Then read [10 · The acceptance set](10-ACCEPTANCE.md): the cards, goals and rep
 
 | Part | Folder |
 |---|---|
-| P1 · Orchestrator: what runs when (the four loops, the triggers, the clock, the budget). Also holds `06`, onboarding a new customer | [P1-ORCHESTRATOR](P1-ORCHESTRATOR/) |
+| P1 · Orchestrator: what runs when (the four loops, the wake-ups and the date index, the clock, the budget, the switches). Also holds `06`, onboarding a new customer; `07`, the full specification; and `08`, where every requirement from the six sources (Atlas v2, the ideal dashboard, the expected outcomes, the earlier plans, the film, and what the other four parts need from P1) is built | [P1-ORCHESTRATOR](P1-ORCHESTRATOR/) |
 | P2 · Notebook (Context Graph, L3): the evidence and the conclusions, checked before they are kept. Also holds `06`, a new customer's notebook; `07`, the full specification; and `08`, where every requirement from the four references is built | [P2-NOTEBOOK](P2-NOTEBOOK/) |
 | P3 · Plane D: domain expertise, what a professional knows, and how it reaches the model. Also holds `06`, a new customer's expertise; `07`, the full specification; and `08`, where every requirement from the four references is built | [P3-PLANE-D](P3-PLANE-D/) |
 | P4 · Plane R: reasoning, how a professional thinks. Also holds `06`, a new customer's reasoning; `07`, the full specification; and `08`, where every requirement from the five sources (the four references plus the GeniOS-008 L2 plan with Rohit's L2 spec) is built | [P4-PLANE-R](P4-PLANE-R/) |

@@ -1857,7 +1857,7 @@ Each test is a fixture from the ideal cards ([10](../10-ACCEPTANCE.md)), the rep
 | CG-27 | `deliver/` or a card route imports from `feedback/` or from an upper layer, or `feedback/` opens a file for writing | P5-6 |
 | CG-28 | Code updates a stored card's text other than by a new version built from a page | P5-1 |
 | CG-29 | An outbox reminder or ladder row has no L4 execution id | P5-9 |
-| CG-30 | A replay path imports a model client | P5-11 |
+| CG-30 | A receipt-replay path (a card replayed from its receipt, §13.10) or a recorded replay imports a model client; P1's event-time live replay (P1 07 §14.1) calls the model through the register under the replay cap and is outside this check | P5-11 |
 | CG-31 | An endpoint or a surface derives a CardView field at read time instead of serving the stored one, or a surface filters cards with a predicate of its own | P5-12 |
 
 Each guard has a test and a mutation that proves it catches what it names; a guard changed in the same change as the code it guards is re-proved (the repo's rule).

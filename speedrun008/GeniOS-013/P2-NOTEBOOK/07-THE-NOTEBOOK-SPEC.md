@@ -437,7 +437,7 @@ Milestones are what P2-6 offers to other situations (§10.2). A milestone is **n
 | `recurrence` | For repeating work: `{cadence, anchor, last_occurrence, next_due}` (§5.6) | L2 · code |
 | `approver_party`, `blocked_on` | Who must approve; what it waits on (party or decision ids). Both queryable across situations | L2 with evidence |
 | `parent_work_id`, `merged_into` | — | admission |
-| `fingerprint` | A hash of material member ids since the verdict, expertise versions, the live goal set, founder corrections, settled needs, the expectation rung, the company-page version and the accepted claim ids. A member whose `content_digest` equals an existing member's is not material. P1 compares it before waking a judgment | code |
+| `fingerprint` | A hash of the work's own version, material member ids since the verdict, expertise versions, the live goal set, founder corrections, settled needs, the expectation rung, the company-page version and the accepted claim ids. A member whose `content_digest` equals an existing member's is not material. Dossier text and clock-derived values are never members. P1 compares it before waking a judgment | code |
 | `judged_at`, `judged_through` | When it was last judged, and the newest member evidence that judgment saw | code |
 | `last_inbound_at`, `last_outbound_at` | — | code |
 | `version`, `revision` | Compare-and-set version; the tenant revision it was written in | code |
@@ -671,7 +671,7 @@ Every stage keeps `stage_since`. `stage_counts(scope, as_of)` counts situations 
 | Transition | Caused by |
 |---|---|
 | candidate → held / rejected / investigating | admission's verdict on a new-situation mutation |
-| held → candidate | new evidence (a HOLD raises an EvidenceNeed) |
+| held → candidate | new evidence matching the hold's expected items or its EvidenceNeed (a HOLD raises one); the door wakes it through P1 (`new_evidence`, detail `retry_hold`) |
 | investigating ⇄ awaiting_evidence | an EvidenceNeed raised; met or unavailable |
 | investigating → monitoring | nothing to decide yet: waiting on them, or on a date |
 | monitoring → investigating / decision_ready | an expectation missed (the rung's `on_miss_state`, applied by rule with 0 model calls) |
@@ -687,12 +687,12 @@ Every stage keeps `stage_since`. `stage_counts(scope, as_of)` counts situations 
 | any live state → resolved | the founder's `drop` (outcome `withdrawn`), or the founder's word where no connected source can show the outcome (`founder_word`); `outcome_ref` is the founder decision id |
 | decision_ready → monitoring / investigating | the founder's `later` or `not_now`; new evidence that changes the terms |
 | decided → investigating | the founder withdraws the decision |
-| resolved → reopened → investigating | an L2 `reopen` mutation citing the contradicting member (never a new situation) |
+| resolved → reopened → investigating | an L2 `reopen` mutation citing the contradicting member (never a new situation), within P1's `reopen_window` (90 days by default, or the playbook's stop rule); after it the evidence is placed as new work |
 | any → superseded | merged into another (admission, from L2) |
 
 **The rules:**
 - **Admission refuses any transition not in this table** (A-6).
-- **Reopening is L2's.** A contradicting mail, or the awaited party writing after an auto-close, joins as a member and wakes the situation (`wake_on`). Only an L2 `reopen` mutation reopens it.
+- **Reopening is L2's.** A contradicting mail, or the awaited party writing after an auto-close, joins as a member and wakes the situation (`wake_on`). Only an L2 `reopen` mutation reopens it, within P1's `reopen_window`; after it the evidence is placed as new work.
 - **`resolved` needs `outcome_ref`.** A status click or activity alone never resolves. This is invariant I-15.
 - **Whose move is separate from state.** "Waiting on us" and "waiting on them" are `monitoring` or `investigating` with `whose_move`.
 - **A founder's "done" tap writes `check_in = reported`.** It waits for proof before `resolved`. When no connected source can show the outcome, the founder's word closes it, marked `founder_word`, with a reason (D-P2-18).
@@ -1223,7 +1223,7 @@ Every read requires `org_id` and `viewer`, and filters by the viewer's audience.
 
 ### 12.4 · Receipts and replay
 
-- **A run receipt** (`reasoning_runs`) stores the revision read, `eval_time`, the request digest and the parsed answer. It also stores the calls, input and output tokens and cost (from P1's run ledger), the units that ran and those declined with their reasons, the Behavior and Adaptive lines used, and the admission ledger ids. `receipt(run_id)` joins it to the situation and card versions it produced. A replay re-admits from stored answers, with no model call, and gives the same rows.
+- **A run receipt** (`reasoning_runs`) stores the revision read, `eval_time`, the request digest and the parsed answer. It also stores the calls, input and output tokens and cost (read from the call rows that carry its `request_id`, P1 07 §10.1), the units that ran and those declined with their reasons, the Behavior and Adaptive lines used, and the admission ledger ids. `receipt(run_id)` joins it to the situation and card versions it produced. A replay re-admits from stored answers, with no model call, and gives the same rows.
 - **Raw requests and answers** live only in the receipt store, under its own retention. Notebook tables hold no dossier text, unit fragments or raw model answers.
 - **`model_call_evidence`** holds, per run, the evidence ids printed: ids only, never text. It is kept until erasure, so the founder can see which data reached a model, when and for which situation.
 
@@ -1306,7 +1306,7 @@ Each test is a fixture from the ideal cards. The ids refer to [10](../10-ACCEPTA
 | Bounces | `i5` leaves 0 waiting loops on bounced recipients, and opens the re-send loops; `c1` reads "sent 16 Oct · 1 of 2 delivered" |
 | Claims | `p1`'s four statements carry modality and recipients; MRR and ARR compared as one family; the 27 Oct broadcast joins the existing record; a draft with a conflicted number gets the placeholder |
 | Situations | Each introduction is its own child; a new intro inside an old thread goes to placement; `c2`'s renewal notices and the vendor's acceptance are one situation; `f2`'s reminders sit on `f2` |
-| Lifecycle | `s1` stays live with its card (an open loop owed by us); `f2` resolves on the first pass after 24 Oct as submitted or missed; a resolved situation reopens on contradicting evidence, through an L2 `reopen`, instead of spawning a new one; a meeting alone cannot resolve `b2`; every allowed transition passes and a sampled disallowed one is refused (A-6) |
+| Lifecycle | `s1` stays live with its card (an open loop owed by us); `f2` resolves on the first pass after 24 Oct as submitted or missed; a resolved situation reopens on contradicting evidence within the `reopen_window`, through an L2 `reopen`, instead of spawning a new one, and after it the evidence is placed as new work; a meeting alone cannot resolve `b2`; every allowed transition passes and a sampled disallowed one is refused (A-6) |
 | Goals | The 9 in-copy ideal goals load from a fixture with no field lost; the programme applications sit under the accelerator umbrella with `i1`'s reconsideration as its child; the reviewed-application goal's next move is `f4`'s check on Mon 26 Oct; the raise goal shows "nothing committed" as progress and its activity as counts |
 | Travel | The incubator's review appears in the accelerator's dossier, dated, with its source |
 | Time | At 23 Oct 07:10 local, the review at 11:30 is "later today"; a meeting rescheduled after 23 Oct shows its old time in a build as of 23 Oct |

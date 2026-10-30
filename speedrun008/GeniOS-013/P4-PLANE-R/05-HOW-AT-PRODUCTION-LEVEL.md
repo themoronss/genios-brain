@@ -105,7 +105,7 @@ The daily health report (P1 §5) carries the judge's line and the top unit failu
 
 | Failure | What happens |
 |---|---|
-| A model timeout or error | The previous page stands; a receipt; P1 re-queues once (on the policy's fallback model if one is set); a second failure reaches the daily health report |
+| A model timeout or error | The previous page stands; a receipt; P4's ladder retries once on a narrower packet and the policy's fallback model (07 §15); P1 adds no attempt, parks the subject, and the daily health report counts it (P1 07 §9.6) |
 | A malformed or truncated answer | One repair with only the failing part; a truncation adjusts the subject's budget instead of retrying the same request |
 | The snapshot moved during the run | The door's compare-and-set refuses; a "stale read" receipt; P1 re-queues |
 | A unit's required input missing | The unit is skipped with `dependency_not_scheduled` (or `no_input`); the result says what was not checked |

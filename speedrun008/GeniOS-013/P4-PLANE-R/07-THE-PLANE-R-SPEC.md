@@ -543,7 +543,7 @@ A repair of a malformed or truncated answer is not a second pass: it is at most 
 
 ### 2.6 · Cheap on repeat
 
-- **The material-change gate** (step 2): a re-sent mail, a re-uploaded file, a reminder with nothing new cost 0 calls.
+- **The material-change gate** (step 2): a re-sent mail, a re-uploaded file, a reminder with nothing new cost 0 calls. Trigger `human_ask` is exempt: it runs as a delta at depth 1 (the table below) even when nothing is new.
 - **The fingerprint** (P2 §4.2) includes: the material members; the expertise versions and the company-pattern versions the last judgment cited; the live goal set; the founder's corrections; settled needs; the expectation rung; the company-page version; accepted claims; and the versions of the Plane R units, laws, precedence, tools and prompt template it used, and the model policy row's version. It uses the company-page version, **not the tenant revision**, which rises on every admitting transaction and would make every run material. So a change elsewhere never re-judges this page, and a change here always does.
 - **Version changes:** a patch version (wording) leaves the fingerprint unchanged. A minor or major change to a unit, a pattern or a tool re-judges only the pages whose last receipt cites it, queued in Maintain, never in Evolve. A policy-row change re-judges only on adoption, one tenant at a time. A card keeps the pin of the judgment it came from until a new judgment is admitted, so one situation never shows two cards from different expertise.
 - **Delta reasoning:** a change to one part of the page re-runs only the units whose `context_needs` or `required_inputs` read it, and the answer is a delta (P2 §11.1 `update`):
@@ -552,6 +552,9 @@ A repair of a malformed or truncated answer is not a second pass: it is at most 
 |---|---|---|
 | `owner_assigned` | none when the new owner passes the authority check (RC-13, run as code): `u.transition` writes the owner. `r.ownership`, `r.intervention` and `r.planning` re-run only when the owner fails the check, or a plan step's owner or order changes | 0, or 1 |
 | `document_signed` (a signed document or contract joins) | `r.temporal`, `r.risk`, `r.intervention` | 1 |
+| `evidence_supplied` (a person links or uploads a document) | `r.temporal`, `r.risk`, `r.intervention` | 1 |
+| `need_met` | the revision call on the new evidence (§2.5, §8): `r.temporal`, `r.risk`, `r.intervention` | 1 |
+| trigger `human_ask` (the founder asks for depth) | `r.temporal`, `r.risk`, `r.intervention`, at depth 1, past the gate | 1 |
 | `approval_received` | none: `u.transition` writes the exact field (§11) | 0 |
 | a stated date reaches today | none when `u.expectation_missed` or `u.next_check` covers it; otherwise `r.temporal`, `r.intervention` | 0–1 |
 
@@ -576,7 +579,7 @@ GeniOS-008's L2 plan names ten logical components. They are modules in one proce
 
 Each component imports only what its row allows; after step 3 the run imports no graph or database client except the door call at step 11 and the receipt write (RG-24).
 
-**The sweep:** `l2_pass` (`reason/l2/sweep.py`, called today from `reason/runner.py` `run_all`) takes at most 10 subjects per sweep (P1-7; the rest carry over with a watermark, listed as skipped, never dropped) and calls `run_subject` for each. The compiled lane's `shadow_compile` (`reason/domain_shadow.py`) folds into it at each tenant's parity gate (P4-17).
+**The sweep:** `l2_pass` (`reason/l2/sweep.py`, called today from `reason/runner.py` `run_all`) takes at most 10 subjects per sweep (P1-7; the rest carry over with a watermark, listed as skipped, never dropped) and calls `run_subject` for each, judging up to 8 of them concurrently inside the register's rate limits, their results computed first and applied in the one transaction below. The compiled lane's `shadow_compile` (`reason/domain_shadow.py`) folds into it at each tenant's parity gate (P4-17).
 
 **Writes are batched:** every subject's result is computed first; no write happens during a model call. Then **one transaction per sweep** applies all of them through P2's door, one savepoint per subject: a stale or refused subject rolls back only its own savepoint and writes its `stale_read` or refusal receipt; the commit makes the sweep's admissions and receipts visible together, one `reasoning_runs` row per (org, request id). This replaces the old two transactions per situation, keeps P2's rule that everything admitted for one situation is written together (P2 §11.3), and bounds what a crash before the commit loses to one sweep, whose subjects P1-7 re-queues.
 
@@ -1272,7 +1275,7 @@ When the package says `expected_states: none` (P3 07 §4.2), the situation judge
 | Expertise missing | Coverage `none`: G1 and G2 findings only (facts, contradictions, open loops); no frame beyond the evidence, no pattern, no recommendation (RC-10); the receipt names P3's gap row; `abstain` when no EvidenceNeed can be filed | A domain conclusion, or generic reasoning, with no knowledge behind it |
 | Malformed answer | One repair carrying only the failing part (§6.3); then `abstain` with `termination = failed_after_repair` and its reason, no version, the previous page standing, counted in the daily health report | A second full payment; a forced result |
 | Truncated answer | Recorded; the ceiling or thinking budget fixed for the subject (§14) | The same request again |
-| Timeout or a model error | One retry on a narrower packet (dropping, in order, older history, past cases and older members; never the evidence for a dispute); then the policy's fallback model; after both, `abstain` with `termination = timeout` or `model_error` and its open needs; the previous page stands | Overwriting trusted context |
+| Timeout or a model error | One retry, on a narrower packet (dropping, in order, older history, past cases and older members; never the evidence for a dispute) and on the policy's fallback model; after it, `abstain` with `termination = timeout` or `model_error` and its open needs; the previous page stands | Overwriting trusted context |
 | A generic answer (a next move with no unit id and no evidence id) | Downgraded to an observation (RC-1, RC-12), retried once | Admitting advice that rests on nothing |
 | A tool loop, or the tool budget spent | The run ends `incomplete` with `exhausted = tools`; the receipt names the tool; the previous page stands | A forced conclusion |
 | A claim without evidence | Downgraded, line by line (RC-12) | Dropping the whole result |
@@ -1282,6 +1285,8 @@ When the package says `expected_states: none` (P3 07 §4.2), the situation judge
 | Validators disagree | The line held; `review_required` when it is material (§6.4) | A forced conclusion |
 | A run that admits nothing | One receipt, no version (P2 §11.3) | A silent drop |
 | The receipt cannot be written | The subject's savepoint rolls back, so nothing is admitted; an error row records it; the daily health report counts it | A result admitted without its receipt |
+
+**One shared allowance per input hash:** the repair of a malformed answer, the retry of a generic answer and the retry after a timeout or a model error together make at most one extra paid call for one input hash, so never a third paid attempt; a path that has used it ends `abstain` with its termination and reason (P1 07 §0 rule 10, §9.6).
 
 ## §16 · Receipts, versions, replay and shadow
 
@@ -1304,7 +1309,7 @@ When the package says `expected_states: none` (P3 07 §4.2), the situation judge
   - the output hash.
 - **One receipt per request id,** for every run: unchanged, abstain, incomplete, failed and rejected included. A duplicate request writes no second row: it returns the stored receipt and increments that receipt's `duplicate_hits`, so the duplicate is recorded and the id keeps one row. It is written in the sweep's transaction, inside the subject's savepoint, with the door's admissions (§2.7). A run never returns a result before its receipt is stored; a receipt that cannot be written rolls the subject back (§15). A receipt missing a field of this list fails a schema test (RG-28).
 - **Nothing else holds a unit's output.** No table other than `reasoning_runs` and the door's tables holds anything a run produced (RG-24). `reasoning_runs` is on P2's erasure and reset list (P2 §12.4, §14).
-- **Replay** rebuilds the result from the stored answer and the stored dossier, loads the exact package the run used, re-runs every check, compares the output hash and the stored admission outcome, and **never calls a model** (Atlas II.2). It runs nightly over a sample of the day's receipts and on every change to a check (RG-10), and gives the same verdicts with the wall clock moved a day later. Today `reason/l2/replay.py` exists and has no caller outside tests.
+- **Replay** rebuilds the result from the stored answer and the stored dossier, loads the exact package the run used, re-runs every check, compares the output hash and the stored admission outcome, and **never calls a model** (Atlas II.2). It runs nightly over a sample of the day's receipts and on every change to a check's version, for which P4 writes one `maintain` wake-up with detail `check_changed` so P1 runs the sample at once with 0 calls (P1 07 §3.2, §8.1 step 13; RG-10), and gives the same verdicts with the wall clock moved a day later. Today `reason/l2/replay.py` exists and has no caller outside tests.
 - **A new unit version, law, precedence or prompt template runs in shadow** on the acceptance set and the units' evaluation cases beside the live one, and goes live only when it is at least as good on every line of [10](../10-ACCEPTANCE.md) and every case. A shadow run writes only shadow tables and its receipt; it changes no card, situation or signal (RG-24). The pointer per tenant records the library hash, `activated_at` and `activated_by`; rollback moves it back, logged (as P3's packs, P3 07 §8). Existing tenants switch at their own parity gate; once the new path passes the acceptance set, a new tenant starts on it (D-P1-9).
 - **Versions:** every unit, law file, the precedence file and the need table carry a semver; the library has one content hash; receipts record all of them.
 
@@ -1463,7 +1468,7 @@ When a card closes, P2 keeps what GeniOS recommended, what the founder did and w
 | RG-7 | A model call does not go through a registered site with a budget; a reasoning site is not in §14's closed list; a site is both extraction and reasoning; a site row is keyed by a situation's kind or name; a new site, or a change of a site's model or thinking setting, has no record of the acceptance set in 08-LOG; a new site's record does not name which admission test it meets (a distinct package, distinct evidence access, or an independent evaluation job) | P4-16 |
 | RG-8 | A plan runs a unit whose required input no scheduled unit produces | P4-10 |
 | RG-9 | An RC check or a tool has no test or no mutation proof | P4-5, P4-3 |
-| RG-10 | A replay of recorded receipts differs, or makes a model call | P4-14 |
+| RG-10 | A replay of recorded receipts differs, or makes a model call; or a change to a check's version writes no `check_changed` wake-up | P4-14 |
 | RG-11 | The precedence is defined in more than one place (L4 included) | P4-2 |
 | RG-12 | A lower layer imports `feedback/`; a code path writes the Plane R library or the Plane D corpus (company patterns and Behaviour entries can only open a review item); or a learning unit (calibration, `recommendation_acceptance`, the staged ladder, Adaptive leases) writes a live mute, down-rank or threshold change in a tenant that has not armed it | P4-15 |
 | RG-13 | A skipped or declined unit, or a skipped group, has no reason in the receipt; or a `dependency_not_scheduled` or `no_input` entry names no missing input | P4-10 |

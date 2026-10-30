@@ -71,7 +71,7 @@ Start from the notebook as of 23 Oct, 07:10 IST, and move it forward one day per
 |---|---|---|
 | 23 Oct | The incubator's final review was held; the founder sent two update mails after it | `f1` closes; the incubator goal moves a step; the new milestone becomes available to `i1` as a new checkable fact |
 | 23–28 Oct | New intro offers and calls booked by the intro platform | Each new introduction is a situation with a yes/no, and they never pile into one |
-| 24 Oct | The application deadline (`f2`) passes | `f2` closes, as submitted or as missed, and the goal records it |
+| 24 Oct | The application deadline (`f2`) passes | `f2` closes verified on its confirmation or on the person's word; with no confirmation it goes to verify ("No confirmation by that day") and is missed only on the person's word (P5 07 §8.7); the goal records which |
 | 27 Oct | The incubation letter arrives | The incubator goal is reached, and a "goal reached, confirm" card appears |
 | 27 Oct | A broadcast states a new traction figure to about 33 recipients | `p1` grows with the new figure; no new card is made for each recipient |
 | 29 Oct (ahead) | The tool subscription renews | `c2` stays open until decided, then closes |
