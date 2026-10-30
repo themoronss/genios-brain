@@ -298,7 +298,7 @@ Each has a recommendation. Saying "go" accepts all of them.
     - a decision-lane result with a `default_suggestion` is held;
     - a prescriptive result with no alternative is dropped, and a decision-lane result with no `do_nothing` is downgraded (RC-18);
     - `p1` shows the conflict lane, both sides, advice with its basis and no value chosen;
-    - the `i1` fixture avoids repeating the vision paragraphs, offers "close the loop and re-apply next cohort" as the alternative, waits three weeks, and is done when she replies;
+    - the `i1` fixture avoids repeating the vision paragraphs, offers "close the loop and re-apply next cohort" as the alternative, waits three weeks, and is done when they reply;
     - `i1` gives one update carrying the new fact, then stop;
     - `f4` (next check Mon 26 Oct), `l1` (1 Nov) and `b3` each yield monitor with a holder, a next check or wake condition, and `notify` false, while `i1` keeps its decision lane and carries a `wait` ("then stop until they answer");
     - a ranked conflict (unequal authority) keeps the higher value standing and does not take the conflict lane, while an equal-rank one does (`p1`);

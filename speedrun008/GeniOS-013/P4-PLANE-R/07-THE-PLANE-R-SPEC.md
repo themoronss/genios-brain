@@ -16,7 +16,7 @@
 1. The Design Atlas v2: "L2 · Reasoning Layer", "L2 · R · Plane R", "L2 · O · The Orchestrator", Part I (how a manager thinks), II.2 (where the model may touch), the L3 cross-situation intelligence, L6 (attribute first), IV.4 (the ten mechanisms of seniority), A.3 (the lanes) and A.4 (the confidence vector).
 2. GeniOS-008: `00-ARCHITECTURE.md`, `01-RULES.md`, and the L2 plan built in shadow on 18 Oct (`layer-2-reasoning/02-PLAN.md`: components R1–R10, units L2-A1 to L2-I2), with **Rohit's own L2 spec** (`layer-2-reasoning/05-SPEC-layer-2.md`): context first, never rules first.
 3. GeniOS-013: P2's [07](../P2-NOTEBOOK/07-THE-NOTEBOOK-SPEC.md) (the snapshot a run reads, the door it writes through), P3's [07](../P3-PLANE-D/07-THE-PLANE-D-SPEC.md) (the package it receives), P1 (when it runs), and [10](../10-ACCEPTANCE.md) (the acceptance set).
-4. The ideal dashboard, the expected outcomes, and the launch film with Rohit's words on how the expert thinks (5 and 6 Oct) and his description of the four loops.
+4. The ideal dashboard, the expected outcomes, and the launch film with Rohit's words on how the expert thinks (5 and 6 Oct) and Rohit's description of the four loops.
 
 **Status:** a specification. Nothing in it is built.
 
@@ -1047,7 +1047,7 @@ Today the live judge writes, per file, a goal impact (`advances · threatens · 
 
 ### 9.3 · Health and progress, by rule (P4-4)
 
-This is a written rule in code (a hard constraint, §0 rule 15), which sits in tension with Rohit's 5 Oct direction that the model, not a formula, judges. It is kept because a status label must be reproducible; the model still writes the reason line and the next move. D-P4-4 asks Rohit for his yes, or for a switch to a model-judged status checked by code.
+This is a written rule in code (a hard constraint, §0 rule 15), which sits in tension with Rohit's 5 Oct direction that the model, not a formula, judges. It is kept because a status label must be reproducible; the model still writes the reason line and the next move. D-P4-4 asks Rohit for a yes, or for a switch to a model-judged status checked by code.
 
 **Progress** (P2 §6.1 `progress`):
 - `outcome`: an outcome counted against the target (offers committed of the round; 0 of 1 engineer hired), by a named count over admitted outcomes;
@@ -1437,7 +1437,7 @@ When a card closes, P2 keeps what GeniOS recommended, what the founder did and w
 ## §19 · Tests
 
 - **Every unit's evaluation cases** (§1.3): the seven kinds (normal, changed context, conflicting input, missing authoritative input, must abstain, must not apply, must not output), across at least two domains (`r.temporal`: a notice period, a quarter close and an offer's expiry), and one case per distinction of §1.5b.
-- **Rohit's scenario families** (his L2 spec), each at least one fixture in two domains with its expected call, written before the prompts are generated (P4-8): the same mail with a different company history; the same company with different commitments; a similar history with a different cause; conflicting stakeholders; missing data that must not become an absence; a stale status against recent evidence; a case where the right answer is to investigate (`evidence_needed`); a first reading that must change when new evidence lands (`update`, with `why_changed`).
+- **Rohit's scenario families** (Rohit's L2 spec), each at least one fixture in two domains with its expected call, written before the prompts are generated (P4-8): the same mail with a different company history; the same company with different commitments; a similar history with a different cause; conflicting stakeholders; missing data that must not become an absence; a stale status against recent evidence; a case where the right answer is to investigate (`evidence_needed`); a first reading that must change when new evidence lands (`update`, with `why_changed`).
 - **The context-sensitivity set:** one missed-deadline signal judged as (A) a routine delay, (B) a customer commitment at risk, and (C) a repeated pattern that no longer applies because a mitigation exists; each with its expected frame, lane and move, and the three must differ.
 - **The 23 Oct replay fixture:** the review's end wakes the page at 07:30 UTC (13:00 company time); the card closes as held on the calendar's accepted attendance or a conference-join record, else after the first outbound mail that follows; the thank-you loop stays open; the incubator goal moves one step with the event date; the accelerator page's news block holds the held review (P4-12).
 - **The golden tenant:** the 17 in-copy ideal cards, each a fixture with its expected **call** (not only its fields), the 9 in-copy ideal goals with their expected health, and the six replay days ([10](../10-ACCEPTANCE.md)), by card id and thread id only. After every judged replay day, P2's invariants (P2 §15) and "no held text" (RG-19) are asserted; a failure fails the day.

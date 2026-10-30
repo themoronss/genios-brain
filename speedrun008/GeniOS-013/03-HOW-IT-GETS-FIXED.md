@@ -51,7 +51,7 @@ Every unit gets its own tests and a mutation proof. The repo-wide guards run onc
 
 | Unit | Where | What |
 |---|---|---|
-| U13-01 | outside the repo, next to the private ideal file | **The expected-works sheet**, one entry for each of the 17 in-window ideal items. Each entry lists the member thread and event ids (taken from the copy), kind, status, whose move, each loop and the state it should be in, the type of next step, and the goal. Claude drafts it from the local copy; Rohit confirms it, because it is his truth. Names stay out of the repo |
+| U13-01 | outside the repo, next to the private ideal file | **The expected-works sheet**, one entry for each of the 17 in-window ideal items. Each entry lists the member thread and event ids (taken from the copy), kind, status, whose move, each loop and the state it should be in, the type of next step, and the goal. Claude drafts it from the local copy; Rohit confirms it, because it is Rohit's own truth. Names stay out of the repo |
 | U13-02 | `scripts/ideal_work_gap.py` | Compares the sheet with `work_items` once Step 2 exists. Before that, it compares the sheet with today's files (`context/workstreams.files_for`) and situations, to set the baseline. Per item it prints: work found · members precision and recall · status · whose move · loops · next step · goal |
 | U13-03 | `scripts/ideal_trace.py` | The stage-of-loss tracer: gate → signal → file → situation → L2 → check → card. It reads item definitions from the private sheet |
 | U13-04 | `scripts/parity.sh` | Runs all three against one database URL, writes a dated report outside the repo, and prints the line to add to [08-LOG](08-LOG.md) |
