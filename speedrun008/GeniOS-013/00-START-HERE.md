@@ -25,7 +25,7 @@ Then read [10 · The acceptance set](10-ACCEPTANCE.md): the cards, goals and rep
 | P2 · Notebook (Context Graph, L3): the evidence and the conclusions, checked before they are kept. Also holds `06`, a new customer's notebook; `07`, the full specification; and `08`, where every requirement from the four references is built | [P2-NOTEBOOK](P2-NOTEBOOK/) |
 | P3 · Plane D: domain expertise, what a professional knows, and how it reaches the model. Also holds `06`, a new customer's expertise; `07`, the full specification; and `08`, where every requirement from the four references is built | [P3-PLANE-D](P3-PLANE-D/) |
 | P4 · Plane R: reasoning, how a professional thinks. Also holds `06`, a new customer's reasoning; `07`, the full specification; and `08`, where every requirement from the five sources (the four references plus the GeniOS-008 L2 plan with Rohit's L2 spec) is built | [P4-PLANE-R](P4-PLANE-R/) |
-| P5 · Cards: the intelligence a person sees, and what they do with it | [P5-CARDS](P5-CARDS/) |
+| P5 · Cards: the intelligence a person sees, and what they do with it. Also holds `06`, a new customer's cards; `07`, the full specification; and `08`, where every requirement from the six sources (the ideal dashboard, Atlas v2, Rohit's card work in GeniOS-009 to GeniOS-012, the expected outcomes, the film, and what the other four parts hand to P5) is built | [P5-CARDS](P5-CARDS/) |
 
 Every part folder holds the same five files:
 - `01-WHATS-EXACTLY-THERE`;

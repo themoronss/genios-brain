@@ -941,7 +941,7 @@ L1's salience stays on the signal, and P5's rank stays P5's (P2 §4.2). The evid
 | 3 | materiality high or critical (and not 4); or an irreversible move with a shrinking window and materiality high or critical; or a goal at risk or blocked, when the card's move is one of that goal's next-move items (§9.2) or on its critical path (`g.critical_path`), including a card with no stated date (`s1`) | high |
 | 2 | an irreversible move at materiality medium or low, whatever its time state (`c2`) | standard |
 | 2 | any other decision, conflict or question lane | standard |
-| 1 | a monitor or watch with nothing owed by us; a suppress below the gate | standard (not shown) |
+| 1 | a monitor or watch with nothing owed by us that is not a waiting card (a monitor with a dated check on an open loop we started is a waiting card at severity 2 that never interrupts, P5 07 §2.2 G-8, §5.3); a suppress below the gate | not a card |
 
 A card with no stated date and no goal at risk or blocked cannot exceed standard (`c2`, a tool subscription at band medium, is standard, as the ideal labels it). A goal that is blocked or at risk but whose next moves and critical path do not include the card only moves the card's rank, never its tier. The rank inside a tier is P5's: severity, then time to the act-by date, then goal health (blocked, at risk, on track, unmeasured), dependency weight and what we owe, then the oldest act-by date, then the card id, so the order is total and the home banner is the same on every run; the card prints these inputs and `why_now`. A goal's stated priority is not a tier input; it enters only through goal health and dependency weight in the rank.
 
@@ -985,8 +985,9 @@ The table is the Atlas's (A.3):
 | L2 | `already_handled` | P2's `still_open()` is false |
 | L2 | `duplicate` | the same request or the same card identity |
 | L2 | `waiting_on_them` | a watch: the move is theirs |
-| L2 | `below_gate` | severity 1, or materiality low on a watch |
+| L2 | `below_gate` | severity 1, or materiality low on a watch that is not a waiting card |
 | L2 | `rolled_up` | a member of a pattern finding (§12.2) |
+| L2 | `checking` | an investigation whose ask goes to a source: the page shows "GeniOS is checking: <the ask>" and makes no card (P5 07 §2.4) |
 | L5 | `budget`, `cooldown`, `muted`, `snoozed` | P5's delivery rules (P2's closed list gains the first three; owed row) |
 
 **Uncertainty routes; it never deletes.** A weak finding becomes an investigation with one precise ask, not silence (Atlas A.3). P5-1 maps the lane to the card's surface (P2 §4.7, `rule:p5-surface`), which the ideal shows as four card lanes:
@@ -1132,7 +1133,7 @@ The film's "multidimensional patterns" are what no single page shows. The Atlas'
 - **Over pages, never mail.** Input: the compact table of live pages, the nightly counts, the candidates, last week's findings, and the open predictions due. On the batch API; under $1 a week (P1 D-P1-3).
 - **Units:** `r.pattern` (at company level), `r.quantitative` (trends), `r.dependency` (shared blockers), `r.causal` (why it repeats), `r.monitoring` (predictions against actuals), `r.intervention` (one consolidated move).
 - **What it may conclude,** each citing at least two situations and code's counts, each through admission:
-  - **repeats:** "15 follow-ups after calls never sent" becomes **one** pattern finding with one card, and the members' duplicate escalations are suppressed with `why_not = rolled_up` (P2 §4.9). A member keeps its own card when it carries a stated ask, a dated window or a goal's weight (`i3` and `b2` stay; the rest roll up), so no ideal card is lost;
+  - **repeats:** "15 follow-ups after calls never sent" becomes **one** pattern finding with one card, and the members' duplicate escalations are suppressed with `why_not = rolled_up` (P2 §4.9). A member keeps its own card when it carries a stated ask, a dated window or a goal's weight (`i3` and `b2` stay; the rest roll up), so no ideal card is lost; a member of a multi-item card (introduction offers, bounces, a wave's recipients) is a row of that card even with its own date or ask (P5 07 §2.2 G-6, `b1`);
   - **mistakes:** numbers told two ways (P2's conflicts), bounces never re-sent, promises broken (code counts, the pass words them and recommends: the founder picks the verified number; re-send to working addresses; which recipients still matter);
   - **progress and performance per goal and per department** (the goal's department, from the goal package): trends, reply times, intros → calls → partners, each figure with n, window and coverage, and a goal off its projected trajectory flagged (`q.vs_projection`);
   - **higher-order situations:** for each candidate group, it asks whether the overlap is a coincidence, whether the authority classes differ, whether a delegation exists, and only then proposes a meta-situation with `part_of` members and one consolidated move (Atlas L3.2);
@@ -1175,7 +1176,7 @@ The film's "multidimensional patterns" are what no single page shows. The Atlas'
 | **Second pass** | disputed lines, or the challenge (§2.5) | the units the lines came from | per line: confirm, downgrade, withdraw |
 | **Draft** | an admitted page's next move that sends something | `r.planning` (communication only) | the words to send, each sentence with the ids of the page facts it states |
 
-**The draft is its own task, not part of the judgment** (GeniOS-008 06 §2: "the draft moves out of L2"; the ideal's `i1` draft is a second call). It runs in Act (P1-5) only when a card's move sends something and the founder or a delegated agent asks for it, from the **admitted** page only:
+**The draft is its own task, not part of the judgment** (GeniOS-008 06 §2: "the draft moves out of L2"; the ideal's `i1` draft is a second call). It runs in Act (P1-5) only when a card's move sends something and the founder or a delegated agent asks for it, or when P5 asks for it for a high or critical card whose first step sends one message, or a waiting card turning into a nudge (P5 07 §10.4; D-P5-21), from the **admitted** page only:
 - every company number, count or date that is not settled in the admitted page becomes a bracketed placeholder naming what is missing ("[one verified MRR]", "[n] paying design partners"), through `settle_text` (RC-28);
 - each sentence carries the ids of the page facts it states; a sentence without one is dropped; RC-14 applies to the draft against `eval_time` in the company's time, so an event that has not happened yet is written as pending (`i1` at 07:12: the 11:30 panel is pending), and an application still at "submitted" is never written "in review";
 - the claim check runs on it, with its recipient and contact rules (§6.1): the addressee comes from the admitted page's party, an address only from the dossier;
@@ -1362,6 +1363,8 @@ A negative verdict today lowers the precision of the rule that produced the card
 | `stale_data` | a re-check wake-up (the fetch or the snapshot refreshed) | the same | the same | `missing_context` or `outcome_changed` |
 | `wrong_person` | a review item on the layer that failed (L1 identity, L4 assignment) | the same | an Organisation proposal (who owns what) | `wrong_entity_resolution` or `wrong_owner` |
 | `not_how_we_work` | that file's next review | a learning candidate (Behaviour or Adaptive) | an Organisation proposal for the founder (P3-18) | the brains |
+
+**The nine reasons P5 adds** to P2's seven (P5 07 §9.5: `wrong_subject`, `bad_link`, `wrong_frame`, `bad_reasoning`, `missing_context`, `already_handled`, `wrong_playbook`, `missing_step`, `badly_written`) route like the row of their attribution in the first table above, and each also opens a review item on its layer.
 
 Each attribution is stored against the card version, the page version, the evidence shown and the units used (P2 §7.4). A recurring `wrong_reasoning` on one unit across companies opens one review item with counts and redacted structure only, from tenants that opted in (D-P3-13).
 

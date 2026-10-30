@@ -611,7 +611,7 @@ Each admitted change writes **one** interpretation row. Nothing updates a versio
 | `decision_need` | `{state: none · required, reason}`. When required, a DecisionObject is minted (§7.1) |
 | `evidence_need_ids` | The EvidenceNeeds this version raised or still waits on (§9.3) |
 | `confidence` | Six dimensions (§9.4), **computed by units**, each with the tool id that computed it and a reason when not strong |
-| `surface` | `{lane: decision · investigation · conflict · question · waiting · monitor · suppress, why_not, resurface_when}`. `why_not` is closed: `below_gate` · `shadow` · `rolled_up` · `waiting_on_them` · `snoozed` · `duplicate` · `already_handled` (set by L2, P4 07 §7.3) · `budget` · `cooldown` · `muted` (set by L5 on every card it does not deliver). Appended by P5-1 through admission, as `rule:p5-surface` |
+| `surface` | `{lane: decision · investigation · conflict · question · waiting · monitor · suppress, why_not, resurface_when}`. `why_not` is closed: `below_gate` · `shadow` · `rolled_up` · `waiting_on_them` · `snoozed` · `duplicate` · `already_handled` · `checking` (an investigation whose ask goes to a source; set by L2, P4 07 §7.3) · `budget` · `cooldown` · `muted` (set by L5 on every card it does not deliver). Appended by P5-1 through admission, as `rule:p5-surface` |
 | `prediction_ids` | Predictions made (§7.5) |
 | `expertise_refs` | `[{item_id, plane D, R or company (a pattern or Behavior id, with `computed_at`), version or pack hash, review_state}]` printed and cited |
 | `tools` | `[{tool_id, name, version, value, input evidence ids}]`, exactly as printed in the dossier |
@@ -810,12 +810,12 @@ This follows the ideal and amends the architecture's D10 ("one goal per piece of
 - `through` (how the situation moves the goal), required unless the relation is `unclear`, and `why`;
 - `evidence`;
 - `size_basis` (what share of the goal it can move, and why);
-- `confirmed` (false while the goal is proposed; such a link is never counted in a live goal's progress or shown on a card, and is promoted when the goal is approved);
+- `confirmed` (false while the goal is proposed; such a link is never counted in a live goal's progress or shown on a card as confirmed (a card shows it labelled "proposed", P5 07 §11.1), and is promoted when the goal is approved);
 - `writer`, `valid_from` and `valid_to`.
 
 There is **one** link set. Pages and relate both write it, and the same link from both writes one row. Every live situation is linked, or listed as "not linked" (counted, never hidden).
 - A link is written in the same transaction as the admitted situation (§11.3), and its relation is from the list above (A-26).
-- A situation whose only links are `unclear` is listed as not linked.
+- A situation whose only links are `unclear` is listed as not linked, and stays outside every goal's linked set and progress; its card is still drawn under that goal, labelled unclear (P5 07 §11.1).
 - When goals merge, or one is dropped, its links get `valid_to`. A merge re-creates them on the survivor in the same transaction; the linked situations' fingerprints change, so they are re-checked.
 
 **`goal_links`** (goal → goal) carry a relation of `depends_on` or `part_of`, with evidence. For example, every goal whose situations state traction depends on "one verified number everywhere".
@@ -862,7 +862,7 @@ It is minted only when L2 marks `decision_need = required` (GeniOS-008 L3-4). It
 | `kind` | `answer` · `approve` · `confirm_goal` · `state_goal` · `edit` · `choose_option` · `done` · `drop` · `not_now` · `later` · `ignore` · `undo` (ends an earlier decision, `dec_id`, with `valid_to`) · `delegate` · `correct` · `feedback` |
 | `scope`, `scope_ref` | `situation` · `party` · `sender domain or mail kind` · `goal` · `card` · `company_page` · `address`; and what it applies to (a `work_id`, party id, goal id, domain or mail kind, card id, company-page field name or address) |
 | `until_at`, `until_event` | — |
-| `reason`, `feedback_scope` | From a closed list for feedback: `not_relevant`, `wrong_facts`, `bad_timing`, `misread_source`, `stale_data`, `wrong_person`, `not_how_we_work`; and the feedback's reach: `this_thread` · `this_kind_of_work` · `how_we_work` |
+| `reason`, `feedback_scope` | From a closed list for feedback: `not_relevant`, `wrong_facts`, `bad_timing`, `misread_source`, `stale_data`, `wrong_person`, `not_how_we_work`, and the nine P5 adds (P5 07 §9.5): `wrong_subject`, `bad_link`, `wrong_frame`, `bad_reasoning`, `missing_context`, `already_handled`, `wrong_playbook`, `missing_step`, `badly_written`; and the feedback's reach: `this_thread` · `this_kind_of_work` · `how_we_work` |
 | `text`, `assignee`, `due_at`, `done_when` | For a delegation: to whom, by when, and how we will know it is done |
 | `handover_state` | `proposed` → `approved` → `dispatched` → `reported` → `verified` |
 | `dec_id`, `option`, `exe_id` | — |

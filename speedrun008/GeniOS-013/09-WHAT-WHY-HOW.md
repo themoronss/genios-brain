@@ -94,7 +94,7 @@ Each cause is measured. Each is fixed by a named part.
 | 5 | **No goal layer** | 7 goals proposed and 0 approved; 0 cards linked to a goal. The notebook's goals have no target, plan or progress | P2, P4, P5 |
 | 6 | **No clock and no single orchestrator** | 138 of 138 brain runs were started by new mail, yet 13 of the 20 ideal cards are about something that did *not* happen. Three card makers run in one sweep | P1 |
 | 7 | **The expertise was never reviewed** | The Founder Office domain is `draft`, `unreviewed`, written by AI; 22 situations corpus-wide are still `draft` | P3 |
-| 8 | **Intelligence isn't ranked or closed** | 56 notebook cards beyond the ideal's 20 (stale dates). The live product repeats a card up to 9 times and shows the checker's text on about 13 | P5 |
+| 8 | **Intelligence isn't raised, ranked or closed by the reasoning** | The live product makes one card per signal from six writers (111 in a week; one counterparty on 25 to 31 of them), shows the checker's text on 13, and expires every open card within a week; 0 cards carry a goal or close on proof. In the notebook, 23 of 63 cards come from dates alone and 53 answer no ideal card | P5 |
 
 None of these is a misunderstanding on Rohit's part. Causes 1, 2, 4 and 6 are architecture and process (built by us, the AI sessions, step by step without retiring the old path). Causes 3 and 8 are code. Causes 5 and 7 are unfinished work.
 

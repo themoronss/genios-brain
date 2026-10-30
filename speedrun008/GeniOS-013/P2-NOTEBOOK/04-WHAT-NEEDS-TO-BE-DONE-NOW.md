@@ -556,7 +556,7 @@ The reviewers' fixes below belong to another part, so P2 does not edit that part
 | ATLAS-41 | When an expectation is missed, let the Notebook's rule transition run first (0 calls); wake a judgment afterwards only if the new state needs reasoning | P1-4 |
 | ATLAS-48 | After each admitted version, mark `dependents(work_id)` dirty and re-run until no version changes, at most 3 passes; write a non-convergence receipt in the run ledger. Test a three-step chain (it converges in 3) and a cyclic fixture (it stops at the cap, with a receipt) | P1-4 |
 | ATLAS-23 | Compare the situation's `fingerprint` before waking a judgment; a re-sent mail or an identical file costs 0 calls | P1-4 |
-| ATLAS-68 | Call `still_open(work_id, since_version)` before every rung and every send; when it is not open or has changed, drop the rung with the why-not "already handled: outcome evidence exists". On resolution, cancel the situation's pending wake-ups. Test: a reminder about a renewal already signed is dropped with that reason | P1-4; P5-6 at send |
+| ATLAS-68 | Call `still_open(work_id, since_version)` before every rung and every send; when it is not open or has changed, drop the rung with the why-not "already handled: outcome evidence exists". On resolution, cancel the situation's pending wake-ups. Test: a reminder about a renewal already signed is dropped with that reason | P1-4; P5-8 and P5-9 at send |
 | IDEAL-74, EXP-13 | Wake on `due_dates()` (it now includes `wake_on.at`), and place a first mail from an awaited party through `waiting_for` | P1-4 |
 | EXP-03, FILM-17 | A new step for the placement call: one prompt that places a new thread or tool item into an existing or a new situation, and returns a reason and the evidence ids printed; its schema probed against the grammar limit; golden cases `b1`, `b3`, the intro platform's other offers, and a platform housekeeping mail, which must be placed in the channel work (never in an introduction child) with a reason and printed ids, and makes no introduction card. P2-9 and P2-12 depend on it | P4-9 (done in P4 07 §10) |
 | EXP-03, FILM-17 | Call that placement call at step 4b.2, instead of placing with code | P1-4 |
@@ -567,14 +567,14 @@ The reviewers' fixes below belong to another part, so P2 does not edit that part
 | IDEAL-78, ATLAS-60, EXP-66 | Six confidence calculators (evidence, frame, temporal, causal, authority, coverage) with 07 §9.4's rules, each printing its tool id. Fixtures: `i1` timing medium (the next cohort date is not in the mail), `i3` frame medium, `p1` authority medium, `c1` coverage medium | P4-3 (done in P4 07 §7.1) |
 | ATLAS-42 | The calculators `notice_date`, `decision_deadline` (from the company's approval lead time and the observed 75th-percentile latency), `escalation_at` and `verify_by` | P4-3 (done in P4 07 §3.2) |
 | EXP-32 | Align activity with D-P2-20 (a percentage may sit beside the count, never as progress), and use 07 §6.1's closed progress reasons; never count the engineer hire as 0 of 1 while its coverage is partial (it is unknown, `not_counted`) | P4-4 (done in P4 07 §9.3) |
-| ATLAS-51 | When a higher-order situation exists, suppress its members' separate escalations with why-not `rolled_up` | P5-1 |
+| ATLAS-51 | When a higher-order situation exists, suppress its members' separate escalations with why-not `rolled_up` | P5-2 |
 | EXP-39 | A news wake-up: when the Notebook offers a milestone or an opened conflict as news (07 §10.2), wake the receiving situations and goals once per item | P1-4 |
 | EXP-33, EXP-39 | The rule also yields `unmeasured` (progress unknown, no missing source, no pending founder decision) and `done` (outcome achieved), and keeps the one-number goal `blocked` until its metric has a verified value and a verifying source in state `full`. P4-4's fixtures stay the test | P4-4 (done in P4 07 §9.3) |
 | EXP-39 | On a conflict's news, form or join the "one verified number everywhere" goal | P4-6 (done in P4 07 §9.1) |
 | ATLAS-11 | Store `work_id`, `page_version` and `trace_id` on the card record, so `lineage` starts from the card | P5-1 |
-| ATLAS-29, EXP-08 | A newer situation version makes a new version of the same card, never an edit and never a second card; a broadcast to 33 recipients grows the one-number situation and makes no card per recipient (tests) | P5-1 |
+| ATLAS-29, EXP-08 | A newer situation version makes a new version of the same card, never an edit and never a second card; a broadcast to 33 recipients grows the one-number situation and makes no card per recipient (tests) | P5-1, P5-2 |
 | ATLAS-30 | After each card decision, append `surface {lane, why_not, resurface_when}` through admission, as `rule:p5-surface` | P5-1 |
 | ATLAS-31 | No card on a shadow situation (test) | P5-1 |
-| EXP-09 | A situation with `next_actor = geniOS` and `notify = false` is listed under "waiting" with its next check, and raises no notification | P5-1 |
-| EXP-36 | A fifth reason: a goal is `reached_pending` (one card per goal); the founder's confirm closes that goal's other cards | P5-1 |
+| EXP-09 | A situation with `next_actor = geniOS` and `notify = false` is listed under "waiting" with its next check, and raises no notification | P5-1, P5-9 |
+| EXP-36 | A fifth reason: a goal is `reached_pending` (one card per goal); the founder's confirm closes that goal's other cards | P5-2 |
 | IDEAL-28 | Pass card text through `settle_text` before it is shown | P5-1 |

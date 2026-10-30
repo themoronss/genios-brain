@@ -280,7 +280,7 @@ Each has a recommendation. Saying "go" accepts all of them.
 - **What:** the data the ideal's pages show, as one read for P5's pages: per domain, its state, counts, `unlocks` line and `authoring_state`; the areas, capabilities and situations by `display_path`; the capabilities used on the company's mail, the situations recognised and the rules used on its cards, each with its review state; the categories; the four brains with their entries and the person's confirmed preferences; the local-knowledge gaps; and the `domain_requests` a "Request" writes.
 - **Test:** the Admin tile's counts equal the sum of the Admin and Founder Office packs (65 capabilities and 36 situations on today's corpus; 67 and 41 after P3-3 and P3-10), each capability under its `display_path`; a founder tenant's package shows one "Admin" pack label and two hashes; every domain (live, off, or a `coming_next` stub) returns its state, counts, `unlocks` line and `authoring_state`; a "Request" writes one `domain_requests` row that appears in the authoring queue.
 - **Done when:** the pages' numbers match the P3-0 report.
-- **Size:** S here; P5 builds the pages.
+- **Size:** S here; P5-11 builds the pages.
 
 ### P3-21 · Each new department proves itself in shadow
 - **What:** a department's domain, authored in D-P3-10's order, runs in shadow for a tenant (P3-17) and is compared with what the team actually did, until it reaches Reliable (D-P3-8). For Finance, a case checks that it judges only the spend-approval aspect of a vendor renewal while Admin keeps the notice window.
@@ -342,12 +342,12 @@ Plane D needs these from the other parts. Where Plane D has its own side (a fiel
 | When the package says `expected_states: none`, a hypothesiser may propose expected states labelled "not authored", which never ground an authoritative card | The Atlas's fallback for missing knowledge | P4-8 (done in P4 07 §13.5) |
 | Include the goal package in the goal dossier | Goals reasoned with knowledge | P4-6 (done in P4 07 §9.2) |
 | Show what Plane R lists on the Expertise page (units or the pattern library) | The ideal's Expertise page | P4-1 (done in P4 07 §1.8) |
-| Render a card with grounding `unreviewed` as an observation; take "done when" and "if you don't" from the outcome definition; take delegation rights from the authority boundary; add "wrong rule" and "missing step" to the feedback menu | Review states and the knowledge reach the card | P5-1, P5-4 |
-| Build the Expertise, Brain and Reasoning-receipts pages on P3-20's data, with the locked domains and "Request" | The ideal's pages | P5 (a new step) |
+| Render a card with grounding `unreviewed` as an observation; take "done when" and "if you don't" from the outcome definition; take delegation rights from the authority boundary; add "wrong rule" and "missing step" to the feedback menu | Review states and the knowledge reach the card | P5-1, P5-4, P5-6, P5-8 |
+| Build the Expertise, Brain and Reasoning-receipts pages on P3-20's data, with the locked domains and "Request" | The ideal's pages | P5-11 |
 | Capture the founder's first-screen priorities as Adaptive leases, and confirm `customer_kind` in the onboarding drill | Day-one adaptation; default domains | P1-3, P1-10 |
 | Compare each activation row with the packages produced (the switch registry) | A switch must change behaviour | P1 §4 |
 | Read the active pack pointer before planning an execution | Execution only from a run under the active pack | L4 (input gate) |
-| Read `_schema/authority_actions.yaml` as the one action vocabulary, map `ActionKind` and `EXTERNAL_EFFECT_KINDS` to it, and publish the authority rule table in it; P2's `rightly_founders` reads the package's `human_only` list | One list, so D-21 has a table to agree with | L4 (`contracts/execution.py`), P2-20, P5 |
+| Read `_schema/authority_actions.yaml` as the one action vocabulary, map `ActionKind` and `EXTERNAL_EFFECT_KINDS` to it, and publish the authority rule table in it; P2's `rightly_founders` reads the package's `human_only` list | One list, so D-21 has a table to agree with | L4 (`contracts/execution.py`), P2-20, P5-8 |
 | Record a situation's expectations from the package's `expected_states`, with the unit id; set `if_missed = escalate` and `escalate_to` from a stage's `escalate_when` | Reality compared with an expectation; escalation has a reader | P2 (expectations, P2 07 §4.3), P4-8 (P4's part done in P4 07 §1.4, `r.expected_actual`) |
 | Hold a page that cites a Case unit as evidence; check a qualifier judged by L2 (`answered_not_the_question`) against the quoted ask and reply | A case is never proof; a judged qualifier is checked | P4-5 (done in P4 07 §6.2, RC-7, RC-8) |
 | Cap the lane at investigation or observation when coverage is `none` or `thin`, and make no recommendation | No recommendation without knowledge | P4-8, P5-1 (P4's part done in P4 07 §7.3, RC-10) |

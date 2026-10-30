@@ -117,7 +117,7 @@ Each has a recommendation. Saying "go" accepts all of them; name any you want ch
 1. **New evidence** since the last instant (mail, calendar, Screen):
    - evidence in a known thread wakes that thread's situation;
    - a new thread wakes "place".
-2. **The date index:** each page's expected-by date, each open loop's due date, each stated deadline and each goal's due date. One fires when it crosses a rung since the last instant, in local days (P1-1). Each wake-up carries its `rung_kind` (a stated date reaching today; an expected-by date, set from the party's own reply pace at 5 or more instances, else the stage's prior; a stage past its normal length; a verify-by date; a calendar event's end instant, fired at minute grain rather than by local day), as P4 07 §2.1 maps them.
+2. **The date index:** each page's expected-by date, each open loop's due date, each stated deadline and each goal's due date. One fires when it crosses a rung since the last instant, in local days (P1-1). Each wake-up carries its `rung_kind` (a stated date reaching today; a stated date of ours coming within 7 days, and again at its act-by date less the effort and the dependency's lead (P5 07 §2.1; D-P5-1); an expected-by date, set from the party's own reply pace at 5 or more instances, else the stage's prior; a stage past its normal length; a verify-by date; a calendar event's end instant, fired at minute grain rather than by local day), as P4 07 §2.1 maps them.
 3. **A goal changed:** confirmed, edited, or its status moved. It wakes the goal's linked situations.
 4. **The founder acted** (P1-5).
 5. **The schedule** (P1-6).
