@@ -41,7 +41,7 @@ li{margin:3px 0}
 <div class="wrap">
 <nav id="toc"><b>Contents</b></nav>
 <main>
-<div class="tools"><button id="theme">Light / dark</button><button id="dl">Download the .md</button></div>
+<div class="tools"><button id="theme">Light / dark</button></div>
 <div id="out"><pre id="raw"># Harsh notes · Why GeniOS&#x27;s cards and goals kept failing, and what the GeniOS-013 plan does about it
 
 - **For:** Harsh, and the coding agents Harsh assigns.
@@ -1072,7 +1072,6 @@ These were measured again. Use the corrected numbers.
     }
   }catch(e){}
   document.getElementById('theme').onclick=function(){var r=document.documentElement;var dark=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);r.setAttribute('data-theme',dark?'light':'dark');};
-  document.getElementById('dl').onclick=function(){var b=new Blob([src],{type:'text/markdown'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='HARSH-NOTES.md';a.click();};
 })();
 </script>
 </body>
